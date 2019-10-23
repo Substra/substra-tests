@@ -76,11 +76,8 @@ def test_download_asset_access_restricted(factory, session_1, session_2):
     content = session_1.download_opener(dataset.key)
     assert content == spec.read_opener()
 
-    # TODO update with custom Authentication/NotAuthorized errors when they are
-    #      implement in the substra sdk
-    with pytest.raises(substra.exceptions.HTTPError) as excinfo:
+    with pytest.raises(substra.exceptions.AuthorizationError):
         session_2.download_opener(dataset.key)
-    assert "Unauthorized" in str(excinfo.value)
 
 
 @pytest.mark.parametrize('permissions_1,permissions_2,expected_permissions', [
@@ -189,8 +186,5 @@ def test_merge_permissions_denied_process(factory, network):
         # failed to add testtuple from node 3
         spec = factory.create_testtuple(traintuple_2)
 
-        # TODO update with custom Authentication/NotAuthorized errors when they are
-        #      implement in the substra sdk
-        with pytest.raises(substra.exceptions.HTTPError) as excinfo:
+        with pytest.raises(substra.exceptions.AuthorizationError):
             session_3.add_testtuple(spec)
-        assert "Unauthorized" in str(excinfo.value)
