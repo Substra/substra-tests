@@ -55,7 +55,6 @@ def test_tuples_execution_on_same_node(factory, session):
     assert len(traintuple.in_models) == 1
 
 
-@pytest.mark.skip('conflict not returned in chaincode')
 def test_federated_learning_workflow(factory, session):
     """Test federated learning workflow."""
     # create test environment
