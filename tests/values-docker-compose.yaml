@@ -1,0 +1,11 @@
+nodes:
+  - name: 'node-1'
+    msp_id: 'owkinMSP'
+    address: 'http://owkin.substra-backend:8000'
+    user: 'admin'
+    password: 'admin'
+  - name: 'node-2'
+    msp_id: 'chu-nantesMSP'
+    address: 'http://chunantes.substra-backend:8001'
+    user: 'admin'
+    password: 'admin'

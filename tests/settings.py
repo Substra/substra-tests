@@ -11,7 +11,8 @@ CURRENT_DIR = os.path.dirname(__file__)
 # TODO values.yaml file could be renamed to network_configuration.yaml and move to the
 #      parent dir
 
-NETWORK_CONFIGURATION_PATH = os.path.join(CURRENT_DIR, 'values.yaml')
+SUBSTRAT_CONFIG_FILE = os.getenv('SUBSTRAT_CONFIG_FILE', 'values.yaml')
+NETWORK_CONFIGURATION_PATH = os.path.join(CURRENT_DIR, SUBSTRAT_CONFIG_FILE)
 MIN_NODES = 2
 
 
