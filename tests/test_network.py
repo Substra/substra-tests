@@ -1,3 +1,7 @@
+import os
+import shutil
+import tempfile
+
 import substra
 
 import pytest
@@ -37,6 +41,19 @@ def test_add_data_sample(factory, session):
 
     spec = factory.create_data_sample(test_only=False, datasets=[dataset])
     session.add_data_sample(spec)
+
+
+def test_add_data_sample_located_in_shared_path(factory, session, node_cfg):
+    spec = factory.create_dataset()
+    dataset = session.add_dataset(spec)
+
+    spec = factory.create_data_sample(test_only=True, datasets=[dataset])
+
+    # move data sample to substra backend shared file system
+    with tempfile.TemporaryDirectory(prefix=node_cfg.shared_path + '/') as dst:
+        shutil.move(spec.path, dst)
+        spec.path = os.path.join(dst, os.path.basename(spec.path))
+        session.add_data_sample(spec, local=False)
 
 
 def test_add_objective(factory, session):
