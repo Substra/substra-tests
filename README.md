@@ -1,7 +1,14 @@
 # substra-tests
-Substra e2e tests
 
-# Run end-to-end tests
+Substra end-to-end (e2e) tests
+
+# Prepare
+
+```
+pip3 install -r requirements.txt
+```
+
+# Run
 
 With skaffold
 
