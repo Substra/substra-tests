@@ -27,16 +27,23 @@ To run the tests using the default `values.yaml` file:
 make test
 ```
 
-To run the tests using the provided `values-docker-compose.yaml` (or a custom config file):
+To run the tests using the provided `local-values.yaml` (or a custom config file):
+
+With docker-compose or locally
 
 ```
-SUBSTRAT_CONFIG_FILEPATH=values-docker-compose.yaml make test
+SUBSTRAT_CONFIG_FILEPATH=local-values.yaml make test
 ```
 
 ## Using a skaffold file
 
 It is possible to use a `substra-backend` skaffold file as the source for the network configuration:
-
 ```
 SUBSTRAT_SKAFFOLD_FILEPATH=$SUBSTRA_SOURCE/substra-backend/skaffold.yaml make test
+```
+
+# Install substra cli
+
+```shell
+$> pip install -e ../substra
 ```

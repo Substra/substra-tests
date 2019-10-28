@@ -1,11 +1,11 @@
 nodes:
   - name: 'node-1'
     msp_id: 'MyPeer1MSP'
-    address: 'http://substra-backend.node-1'
+    address: 'http://substra-backend.node-1.com'
     user: 'node-1'
     password: 'node-1pwd'
   - name: 'node-2'
     msp_id: 'MyPeer2MSP'
-    address: 'http://substra-backend.node-2'
+    address: 'http://substra-backend.node-2.com'
     user: 'node-2'
     password: 'node-2pwd'
