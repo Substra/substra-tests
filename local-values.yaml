@@ -4,7 +4,7 @@ nodes:
     address: 'http://substra-backend.owkin.xyz:8000'
     user: 'substra'
     password: 'p@$swr0d44'
-    shared_path: '/tmp/substra/'
+    shared_path: '/tmp/substra'
   - name: 'chunantes'
     msp_id: 'chu-nantesMSP'
     address: 'http://substra-backend.chunantes.xyz:8001'
