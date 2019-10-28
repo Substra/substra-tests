@@ -103,13 +103,6 @@ def data_network():
 
 
 @pytest.fixture
-def node_cfg_1():
-    """Node configuration (first node)."""
-    cfg = settings.load()
-    return cfg.nodes[0]
-
-
-@pytest.fixture
 def session_1(network):
     """Client fixture (first node)."""
     return network.sessions[0]
@@ -122,7 +115,7 @@ def session_2(network):
 
 
 @pytest.fixture
-def node_cfg(network):
+def node_cfg():
     """Node configuration (first node)."""
     cfg = settings.load()
     return cfg.nodes[0]
