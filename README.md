@@ -44,6 +44,7 @@ SUBSTRAT_SKAFFOLD_FILEPATH=$SUBSTRA_SOURCE/substra-backend/skaffold.yaml make te
 
 # Install substra cli
 
-```shell
-$> pip install -e ../substra
-```
+The substra project is needed for running the tests.  
+It can be found [here](https://github.com/SubstraFoundation/substra)
+
+You will need to install it thanks to the `pip` binary.
