@@ -1,6 +1,5 @@
 import os
 import shutil
-import tempfile
 
 import substra
 
@@ -50,10 +49,13 @@ def test_add_data_sample_located_in_shared_path(factory, session, node_cfg):
     spec = factory.create_data_sample(test_only=True, datasets=[dataset])
 
     # move data sample to substra backend shared file system
-    with tempfile.TemporaryDirectory(prefix=node_cfg.shared_path + '/') as dst:
-        shutil.move(spec.path, dst)
-        spec.path = os.path.join(dst, os.path.basename(spec.path))
-        session.add_data_sample(spec, local=False)
+    dst = node_cfg.shared_path
+    dst = dst if dst.endswith('/') else dst + '/'
+    shutil.move(spec.path, dst)
+
+    # update spec path and add data sample
+    spec.path = os.path.join(dst, os.path.basename(spec.path))
+    session.add_data_sample(spec, local=False)  # should not raise
 
 
 def test_add_objective(factory, session):
