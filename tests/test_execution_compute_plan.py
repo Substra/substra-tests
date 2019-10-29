@@ -223,10 +223,26 @@ def test_compute_plan_single_session_failure(factory, session):
     # Submit compute plan and wait for it to complete
     cp = session.add_compute_plan(cp_spec)
 
+    print()
+    print()
+    print()
+    print('WAIT FOR TRAIN 1')
+    traintuple = session.get_traintuple(cp.traintuple_keys[0]).future().wait()
+    print('status:', traintuple.status)
+    print('WAIT FOR TRAIN 2')
+    traintuple = session.get_traintuple(cp.traintuple_keys[1]).future().wait()
+    print('status:', traintuple.status)
+    print('WAIT FOR TRAIN 3')
+    traintuple = session.get_traintuple(cp.traintuple_keys[2]).future().wait()
+    print('status:', traintuple.status)
+    
+
     traintuples = [
         session.get_traintuple(key).future().wait()
         for key in cp.traintuple_keys
     ]
+
+    print('WAIT FOR TEST')
 
     testtuples = [
         session.get_testtuple(key).future().wait()
@@ -234,5 +250,8 @@ def test_compute_plan_single_session_failure(factory, session):
     ]
 
     # All the train/test tuples should be marked as failed
+    for t in traintuples + testtuples:
+        print(t.status)
+
     for t in traintuples + testtuples:
         assert t.status == 'failed'

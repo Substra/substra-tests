@@ -29,10 +29,11 @@ class Future:
         key = self._asset.key
         return_statuses = ['done', 'failed']
         while self._asset.status not in return_statuses:
+            print('status:', self._asset.status)
             if time.time() - tstart > timeout:
                 raise errors.TError(f'Future timeout on {self._asset}')
 
-            time.sleep(3)
+            time.sleep(1)
             self._asset = self._getter(key)
         return self.get()
 
