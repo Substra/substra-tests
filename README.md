@@ -19,9 +19,18 @@ either with skaffold (Kubernetes), with docker-compose, or manually.
 
 This is the mode used by default. Two files are currently available:
 - `values.yaml` (default): for networks started with Kubernetes
-- `values-docker-compose.yaml`: for networks started with docker-compose, or started manually
+- `local-values.yaml`: for networks started with docker-compose, or started manually
 
 To run the tests using the default `values.yaml` file:
+
+Make sure you have pulled the different substra-tools images:
+```
+$> docker pull eu.gcr.io/substra-208412/substra-tools:0.0.1
+$> docker pull eu.gcr.io/substra-208412/substra-tools:0.1.0
+$> docker pull eu.gcr.io/substra-208412/substra-tools:0.2.0
+```
+
+With skaffold
 
 ```
 make test
