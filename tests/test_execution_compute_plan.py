@@ -1,5 +1,3 @@
-import substra
-
 import pytest
 
 import substratest as sbt
@@ -129,21 +127,21 @@ def test_compute_plan_single_session_success(factory, session):
         dataset=dataset,
         data_samples=[data_sample_1]
     )
-    testtuple_spec_1 = cp_spec.add_testtuple(traintuple_spec_1)
+    cp_spec.add_testtuple(traintuple_spec_1)
 
     traintuple_spec_2 = cp_spec.add_traintuple(
         dataset=dataset,
         data_samples=[data_sample_2],
         traintuple_specs=[traintuple_spec_1]
     )
-    testtuple_spec_2 = cp_spec.add_testtuple(traintuple_spec_2)
+    cp_spec.add_testtuple(traintuple_spec_2)
 
     traintuple_spec_3 = cp_spec.add_traintuple(
         dataset=dataset,
         data_samples=[data_sample_3],
         traintuple_specs=[traintuple_spec_2]
     )
-    testtuple_spec_3 = cp_spec.add_testtuple(traintuple_spec_3)
+    cp_spec.add_testtuple(traintuple_spec_3)
 
     # Submit compute plan and wait for it to complete
     cp = session.add_compute_plan(cp_spec)
@@ -164,7 +162,8 @@ def test_compute_plan_single_session_success(factory, session):
 
 
 def test_compute_plan_single_session_failure(factory, session):
-    """In a compute plan with 3 traintuples, failing the root traintuple should also fail its descendents and the associated testtuples"""
+    """In a compute plan with 3 traintuples, failing the root traintuple should also
+    fail its descendents and the associated testtuples"""
 
     # Create a compute plan with 3 steps:
     #
@@ -204,21 +203,21 @@ def test_compute_plan_single_session_failure(factory, session):
         dataset=dataset,
         data_samples=[data_sample_1]
     )
-    testtuple_spec_1 = cp_spec.add_testtuple(traintuple_spec_1)
+    cp_spec.add_testtuple(traintuple_spec_1)
 
     traintuple_spec_2 = cp_spec.add_traintuple(
         dataset=dataset,
         data_samples=[data_sample_2],
         traintuple_specs=[traintuple_spec_1]
     )
-    testtuple_spec_2 = cp_spec.add_testtuple(traintuple_spec_2)
+    cp_spec.add_testtuple(traintuple_spec_2)
 
     traintuple_spec_3 = cp_spec.add_traintuple(
         dataset=dataset,
         data_samples=[data_sample_3],
         traintuple_specs=[traintuple_spec_2]
     )
-    testtuple_spec_3 = cp_spec.add_testtuple(traintuple_spec_3)
+    cp_spec.add_testtuple(traintuple_spec_3)
 
     # Submit compute plan and wait for it to complete
     cp = session.add_compute_plan(cp_spec)
