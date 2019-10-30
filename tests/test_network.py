@@ -52,7 +52,7 @@ def test_add_data_sample_located_in_shared_path(factory, session, node_cfg):
     # move data sample to substra backend shared file system
     dst = node_cfg.shared_path
     dst = dst if dst.endswith('/') else dst + '/'
-    dst = tempfile.mkdtemp(prefix=dst)
+    dst = tempfile.mkdtemp(dir=dst)
     shutil.move(spec.path, dst)
 
     # update spec path and add data sample
