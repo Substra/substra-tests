@@ -8,11 +8,9 @@ SUBSTRAT_SKAFFOLD_FILEPATH = os.getenv('SUBSTRAT_SKAFFOLD_FILEPATH')
 
 CURRENT_DIR = os.path.dirname(__file__)
 
-# TODO values.yaml file could be renamed to network_configuration.yaml and move to the
-#      parent dir
+DEFAULT_NETWORK_CONFIGURATION_PATH = os.path.join(CURRENT_DIR, '../', 'values.yaml')
+SUBSTRAT_CONFIG_FILEPATH = os.getenv('SUBSTRAT_CONFIG_FILE', DEFAULT_NETWORK_CONFIGURATION_PATH)
 
-SUBSTRAT_CONFIG_FILE = os.getenv('SUBSTRAT_CONFIG_FILE', 'values.yaml')
-NETWORK_CONFIGURATION_PATH = os.path.join(CURRENT_DIR, SUBSTRAT_CONFIG_FILE)
 MIN_NODES = 2
 
 
@@ -82,7 +80,7 @@ def load():
     if SUBSTRAT_SKAFFOLD_FILEPATH:
         s = _load_skaffold(SUBSTRAT_SKAFFOLD_FILEPATH)
     else:
-        s = _load_yaml(NETWORK_CONFIGURATION_PATH)
+        s = _load_yaml(SUBSTRAT_CONFIG_FILEPATH)
     _SETTINGS = s
     return _SETTINGS
 
