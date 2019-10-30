@@ -66,6 +66,8 @@ if __name__ == '__main__':
     tools.algo.execute(TestAlgo())
 """
 
+INVALID_ALGO_SCRIPT = DEFAULT_ALGO_SCRIPT.replace('train', 'naitr')
+
 DEFAULT_METRICS_DOCKERFILE = f"""
 FROM eu.gcr.io/substra-208412/substra-tools:{DEFAULT_SUBSTRATOOLS_VERSION}
 RUN mkdir -p /sandbox/opener
@@ -215,7 +217,7 @@ class ComputePlanSpec(_Spec):
 
     def add_testtuple(self, traintuple_spec, tag=None):
         spec = ComputePlanTesttupleSpec(
-            traintuple_key=traintuple_spec.traintuple_id,
+            traintuple_id=traintuple_spec.traintuple_id,
             tag=tag or '',
         )
         self.testtuples.append(spec)
