@@ -14,6 +14,7 @@ class Future:
     _methods = {
         'Traintuple': 'get_traintuple',
         'Testtuple': 'get_testtuple',
+        'CompositeTraintuple': 'get_composite_traintuple',
     }
 
     def __init__(self, asset, session):
@@ -163,11 +164,21 @@ class Dataset(_Asset):
 
 
 @dataclasses.dataclass(frozen=True)
-class Algo(_Asset):
+class _Algo(_Asset):
     key: str
     name: str
     owner: str
     permissions: Permissions
+
+
+@dataclasses.dataclass(frozen=True)
+class Algo(_Algo):
+    pass
+
+
+@dataclasses.dataclass(frozen=True)
+class CompositeAlgo(_Algo):
+    pass
 
 
 @dataclasses.dataclass(frozen=True)
@@ -227,6 +238,28 @@ class Traintuple(_Asset, _FutureMixin):
     log: str
     in_models: typing.List[InModel]
     out_model: OutModel = None
+
+    class Meta:
+        mapper = {
+            'pkhash': 'key',
+        }
+
+
+@dataclasses.dataclass
+class CompositeTraintuple(_Asset, _FutureMixin):
+    key: str
+    creator: str
+    status: str
+    dataset: TupleDataset
+    permissions: Permissions
+    compute_plan_id: str
+    rank: int
+    tag: str
+    log: str
+    in_head_model: InModel = None
+    in_trunk_model: InModel = None
+    out_head_model: OutModel = None
+    out_trunk_model: OutModel = None
 
     class Meta:
         mapper = {

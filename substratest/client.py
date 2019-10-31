@@ -20,7 +20,9 @@ class _State:
         self.train_data_samples = []
         self.objectives = []
         self.algos = []
+        self.composite_algos = []
         self.traintuples = []
+        self.composite_traintuples = []
         self.testtuples = []
 
 
@@ -71,11 +73,23 @@ class Session:
         self.state.algos.append(algo)
         return algo
 
+    def add_composite_algo(self, spec):
+        res = self._client.add_composite_algo(spec.to_dict())
+        composite_algo = assets.CompositeAlgo.load(res)
+        self.state.composite_algos.append(composite_algo)
+        return composite_algo
+
     def add_traintuple(self, spec, *args, **kwargs):
         res = self._client.add_traintuple(spec.to_dict(), *args, **kwargs)
         traintuple = assets.Traintuple.load(res).attach(self)
         self.state.traintuples.append(traintuple)
         return traintuple
+
+    def add_composite_traintuple(self, spec, *args, **kwargs):
+        res = self._client.add_composite_traintuple(spec.to_dict(), *args, **kwargs)
+        composite_traintuple = assets.CompositeTraintuple.load(res).attach(self)
+        self.state.composite_traintuples.append(composite_traintuple)
+        return composite_traintuple
 
     def add_testtuple(self, spec):
         res = self._client.add_testtuple(spec.to_dict())

@@ -184,3 +184,35 @@ def test_traintuple_execution_failure(factory, session):
     traintuple = session.add_traintuple(spec).future().wait()
     assert traintuple.status == 'failed'
     assert traintuple.out_model is None
+
+
+def test_composite_traintuple_execution(factory, session):
+    """Execution of a composite traintuple."""
+    spec = factory.create_dataset()
+    dataset = session.add_dataset(spec)
+
+    spec = factory.create_data_sample(test_only=True, datasets=[dataset])
+    test_data_sample = session.add_data_sample(spec)
+
+    spec = factory.create_data_sample(test_only=False, datasets=[dataset])
+    train_data_sample = session.add_data_sample(spec)
+
+    spec = factory.create_objective(
+        dataset=dataset,
+        data_samples=[test_data_sample],
+    )
+    objective = session.add_objective(spec)
+
+    spec = factory.create_composite_algo()
+    algo = session.add_composite_algo(spec)
+
+    spec = factory.create_composite_traintuple(
+        algo=algo,
+        objective=objective,
+        dataset=dataset,
+        data_samples=[train_data_sample],
+    )
+    composite_traintuple = session.add_composite_traintuple(spec).future().wait()
+    assert composite_traintuple.status == 'done'
+    assert composite_traintuple.out_head_model is not None
+    assert composite_traintuple.out_trunk_head_model is not None
