@@ -199,8 +199,8 @@ class CompositeTraintupleSpec(_Spec):
     in_trunk_model_key: str
     tag: str
     compute_plan_id: str
-    rank: int = None
     out_trunk_model_permissions: typing.Dict
+    rank: int = None
 
 
 @dataclasses.dataclass
