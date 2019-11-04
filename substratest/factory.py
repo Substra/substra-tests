@@ -435,16 +435,19 @@ class AssetsFactory:
         if head_traintuple and trunk_traintuple:
             assert isinstance(head_traintuple, assets.CompositeTraintuple)
             assert isinstance(trunk_traintuple, assets.CompositeTraintuple)
-            kwargs.update({
-                'in_head_model_key': head_traintuple.key,
-                'in_trunk_model_key': trunk_traintuple.key,
-            })
+            in_head_model_key = head_traintuple.key
+            in_trunk_model_key = trunk_traintuple.key
+        else:
+            in_head_model_key = None
+            in_trunk_model_key = None
 
         return CompositeTraintupleSpec(
             algo_key=algo.key if algo else None,
             objective_key=objective.key if objective else None,
             data_manager_key=dataset.key if dataset else None,
             train_data_sample_keys=_get_keys(data_samples),
+            in_head_model_key=in_head_model_key,
+            in_trunk_model_key=in_trunk_model_key,
             tag=tag,
             compute_plan_id=compute_plan_id,
             rank=rank,
