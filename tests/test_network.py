@@ -83,6 +83,14 @@ def test_add_algo(factory, session):
     assert algo == algo_copy
 
 
+def test_add_composite_algo(factory, session):
+    spec = factory.create_composite_algo()
+    algo = session.add_composite_algo(spec)
+
+    algo_copy = session.get_composite_algo(algo.key)
+    assert algo == algo_copy
+
+
 def test_list_nodes(network, session):
     """Nodes are properly registered and list nodes returns expected nodes."""
     nodes = session.list_node()
@@ -99,3 +107,21 @@ def test_list_asset(asset_type, session):
     """Simple check that list_asset method can be called without raising errors."""
     method = getattr(session, f'list_{asset_type.name}')
     method()  # should not raise
+
+
+def test_query_algos(factory, session):
+    spec = factory.create_algo()
+    algo = session.add_algo(spec)
+
+    spec = factory.create_composite_algo()
+    compo_algo = session.add_composite_algo(spec)
+
+    # check the created composite algo is not returned when listing algos
+    algo_keys = [a.key for a in session.list_algo()]
+    assert algo.key in algo_keys
+    assert compo_algo.key not in algo_keys
+
+    # check the created algo is not returned when listing composite algos
+    compo_algo_keys = [a.key for a in session.list_composite_algo()]
+    assert compo_algo.key in compo_algo_keys
+    assert algo.key not in compo_algo_keys

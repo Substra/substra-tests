@@ -123,6 +123,14 @@ class Session:
         res = self._client.list_algo(*args, **kwargs)
         return [assets.Algo.load(x) for x in res]
 
+    def get_composite_algo(self, *args, **kwargs):
+        res = self._client.get_composite_algo(*args, **kwargs)
+        return assets.CompositeAlgo.load(res)
+
+    def list_composite_algo(self, *args, **kwargs):
+        res = self._client.list_composite_algo(*args, **kwargs)
+        return [assets.CompositeAlgo.load(x) for x in res]
+
     def get_dataset(self, *args, **kwargs):
         res = self._client.get_dataset(*args, **kwargs)
         return assets.Dataset.load(res)
@@ -146,6 +154,14 @@ class Session:
     def list_traintuple(self, *args, **kwargs):
         res = self._client.list_traintuple(*args, **kwargs)
         return [assets.Traintuple.load(x) for x in res]
+
+    def get_composite_traintuple(self, *args, **kwargs):
+        res = self._client.get_composite_traintuple(*args, **kwargs)
+        return assets.CompositeTraintuple.load(res).attach(self)
+
+    def list_composite_traintuple(self, *args, **kwargs):
+        res = self._client.list_composite_traintuple(*args, **kwargs)
+        return [assets.CompositeTraintuple.load(x) for x in res]
 
     def get_testtuple(self, *args, **kwargs):
         res = self._client.get_testtuple(*args, **kwargs)
