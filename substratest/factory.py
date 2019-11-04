@@ -451,7 +451,7 @@ class AssetsFactory:
             tag=tag,
             compute_plan_id=compute_plan_id,
             rank=rank,
-            out_trunk_model_permissions=permissions,
+            out_trunk_model_permissions=permissions or DEFAULT_PERMISSIONS,
             **kwargs,
         )
 
