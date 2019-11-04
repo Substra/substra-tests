@@ -186,8 +186,8 @@ def test_traintuple_execution_failure(factory, session):
     assert traintuple.out_model is None
 
 
-def test_composite_traintuple_execution(factory, session):
-    """Execution of a composite traintuple."""
+def test_composite_traintuples_execution(factory, session):
+    """Execution of composite traintuples."""
     spec = factory.create_dataset()
     dataset = session.add_dataset(spec)
 
@@ -206,13 +206,28 @@ def test_composite_traintuple_execution(factory, session):
     spec = factory.create_composite_algo()
     algo = session.add_composite_algo(spec)
 
+    # first composite traintuple
     spec = factory.create_composite_traintuple(
         algo=algo,
         objective=objective,
         dataset=dataset,
         data_samples=[train_data_sample],
     )
-    composite_traintuple = session.add_composite_traintuple(spec).future().wait()
-    assert composite_traintuple.status == 'done'
-    assert composite_traintuple.out_head_model is not None
-    assert composite_traintuple.out_trunk_head_model is not None
+    composite_traintuple_1 = session.add_composite_traintuple(spec).future().wait()
+    assert composite_traintuple_1.status == 'done'
+    assert composite_traintuple_1.out_head_model is not None
+    assert composite_traintuple_1.out_trunk_head_model is not None
+
+    # second composite traintuple
+    spec = factory.create_composite_traintuple(
+        algo=algo,
+        objective=objective,
+        dataset=dataset,
+        data_samples=[train_data_sample],
+        head_traintuple=composite_traintuple_1,
+        trunk_traintuple=composite_traintuple_1,
+    )
+    composite_traintuple_2 = session.add_composite_traintuple(spec).future().wait()
+    assert composite_traintuple_2.status == 'done'
+    assert composite_traintuple_2.out_head_model is not None
+    assert composite_traintuple_2.out_trunk_head_model is not None
