@@ -39,9 +39,8 @@ class Session:
         # node / client
         self.node_id = node_id
         self._client = substra.Client()
-        self._client.add_profile(node_name, address, '0.0',
-                                 user=user,
-                                 password=password)
+        self._client.add_profile(node_name, user, password, address, '0.0')
+        self._client.login()
 
     def add_data_sample(self, spec):
         res = self._client.add_data_sample(spec.to_dict())
