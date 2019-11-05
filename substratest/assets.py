@@ -245,21 +245,26 @@ class Traintuple(_Asset, _FutureMixin):
         }
 
 
+@dataclasses.dataclass(frozen=True)
+class OutCompositeModel(_DataclassLoader):
+    permissions: Permissions
+    out_model: OutModel = None
+
+
 @dataclasses.dataclass
 class CompositeTraintuple(_Asset, _FutureMixin):
     key: str
     creator: str
     status: str
     dataset: TupleDataset
-    permissions: Permissions
     compute_plan_id: str
     rank: int
     tag: str
     log: str
     in_head_model: InModel = None
     in_trunk_model: InModel = None
-    out_head_model: OutModel = None
-    out_trunk_model: OutModel = None
+    out_head_model: OutCompositeModel = None
+    out_trunk_model: OutCompositeModel = None
 
     class Meta:
         mapper = {
