@@ -42,8 +42,8 @@ class Session:
         self._client.add_profile(node_name, user, password, address, '0.0')
         self._client.login()
 
-    def add_data_sample(self, spec):
-        res = self._client.add_data_sample(spec.to_dict())
+    def add_data_sample(self, spec, *args, **kwargs):
+        res = self._client.add_data_sample(spec.to_dict(), *args, **kwargs)
         data_sample = assets.DataSample.load(res)
 
         if spec.test_only:

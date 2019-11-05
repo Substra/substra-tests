@@ -21,6 +21,7 @@ class NodeCfg:
     address: str
     user: str = None
     password: str = None
+    shared_path: str = None
 
 
 @dataclasses.dataclass(frozen=True)
@@ -50,7 +51,7 @@ def _load_skaffold(path):
         skaffold = yaml.load(f, Loader=yaml.Loader)
 
     services = skaffold['deploy']['helm']['releases']
-    backends = [s for s in services if s['name'].startswith('substrabac-peer')]
+    backends = [s for s in services if s['name'].startswith('substra-backend-peer')]
 
     nodes = [NodeCfg(
         name=b['name'],
@@ -58,6 +59,7 @@ def _load_skaffold(path):
         address=b['overrides']['backend']['defaultDomain'],
         user=b['overrides']['backend']['auth']['user'],
         password=b['overrides']['backend']['auth']['password'],
+        shared_path=b['overrides']['persistence']['hostPath'],
     ) for b in backends]
 
     return Settings(
