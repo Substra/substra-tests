@@ -232,7 +232,7 @@ def test_composite_traintuples_execution(factory, session):
     composite_traintuple_2 = session.add_composite_traintuple(spec).future().wait()
     assert composite_traintuple_2.status == 'done'
     assert composite_traintuple_2.out_head_model is not None
-    assert composite_traintuple_2.out_trunk_head_model is not None
+    assert composite_traintuple_2.out_trunk_model is not None
 
     # add a 'composite' testtuple
     spec = factory.create_testtuple(traintuple=composite_traintuple_2)
