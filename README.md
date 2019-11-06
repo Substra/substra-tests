@@ -13,13 +13,6 @@ pip3 install -r requirements.txt
 The tests suite requires a Substra network up and running. The network can be started
 either with skaffold (Kubernetes), with docker-compose, or manually.
 
-Make sure you have pulled the different substra-tools images:
-```
-$> docker pull eu.gcr.io/substra-208412/substra-tools:0.0.1
-$> docker pull eu.gcr.io/substra-208412/substra-tools:0.1.0
-$> docker pull eu.gcr.io/substra-208412/substra-tools:0.2.0
-```
-
 The substra project is needed for running the tests.  
 It can be found [here](https://github.com/SubstraFoundation/substra)
 
