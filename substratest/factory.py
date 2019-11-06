@@ -68,7 +68,7 @@ if __name__ == '__main__':
 DEFAULT_COMPOSITE_ALGO_SCRIPT = f"""
 import json
 import substratools as tools
-class TestAlgo(tools.CompositeAlgo):
+class TestCompositeAlgo(tools.CompositeAlgo):
     def train(self, X, y, head_model, trunk_model, rank):
         return [0, 42], [0, 1], [0, 2]
     def predict(self, X, head_model, trunk_model):
@@ -80,7 +80,7 @@ class TestAlgo(tools.CompositeAlgo):
         with open(path, 'w') as f:
             return json.dump(model, f)
 if __name__ == '__main__':
-    tools.algo.execute(TestAlgo())
+    tools.algo.execute(TestCompositeAlgo())
 """
 
 INVALID_ALGO_SCRIPT = DEFAULT_ALGO_SCRIPT.replace('train', 'naitr')
