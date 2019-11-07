@@ -35,12 +35,12 @@ make test
 To run the tests using the provided `local-values.yaml` (or a custom config file):
 
 ```
-SUBSTRAT_CONFIG_FILEPATH=local-values.yaml make test
+SUBSTRA_TESTS_CONFIG_FILEPATH=local-values.yaml make test
 ```
 
 ## Using a skaffold file
 
 It is possible to use a `substra-backend` skaffold file as the source for the network configuration:
 ```
-SUBSTRAT_SKAFFOLD_FILEPATH=$SUBSTRA_SOURCE/substra-backend/skaffold.yaml make test
+SUBSTRA_TESTS_SKAFFOLD_FILEPATH=$SUBSTRA_SOURCE/substra-backend/skaffold.yaml make test
 ```
