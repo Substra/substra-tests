@@ -1,4 +1,5 @@
 import abc
+import enum
 import dataclasses
 import re
 import time
@@ -120,14 +121,22 @@ class Permissions(_DataclassLoader):
 
 
 @dataclasses.dataclass(frozen=True)
-class DataSample(_Asset):
+class DataSampleCreated(_Asset):
     key: str
     validated: bool
+    path: str
 
     class Meta:
         mapper = {
             'pkhash': 'key',
         }
+
+
+@dataclasses.dataclass(frozen=True)
+class DataSample(_Asset):
+    key: str
+    owner: bool
+    data_manager_keys: typing.List[str]
 
 
 @dataclasses.dataclass(frozen=True)
@@ -147,9 +156,9 @@ class Dataset(_Asset):
     name: str
     owner: str
     objective_key: str
-    train_data_sample_keys: typing.List[str]
-    test_data_sample_keys: typing.List[str]
     permissions: Permissions
+    train_data_sample_keys: typing.List[str] = None
+    test_data_sample_keys: typing.List[str] = None
 
 
 @dataclasses.dataclass(frozen=True)
@@ -251,3 +260,21 @@ class ComputePlan(_Asset):
 class Node(_Asset):
     id: str
     is_current: bool
+
+
+class AssetType(enum.Enum):
+    algo = enum.auto()
+    data_sample = enum.auto()
+    dataset = enum.auto()
+    objective = enum.auto()
+    node = enum.auto()
+    testtuple = enum.auto()
+    traintuple = enum.auto()
+
+    @classmethod
+    def all(cls):
+        return [e for e in cls]
+
+    @classmethod
+    def can_be_listed(cls):
+        return cls.all()

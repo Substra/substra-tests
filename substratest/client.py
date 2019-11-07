@@ -44,7 +44,7 @@ class Session:
 
     def add_data_sample(self, spec, *args, **kwargs):
         res = self._client.add_data_sample(spec.to_dict(), *args, **kwargs)
-        data_sample = assets.DataSample.load(res)
+        data_sample = assets.DataSampleCreated.load(res)
 
         if spec.test_only:
             self.state.test_data_samples.append(data_sample)
@@ -87,6 +87,10 @@ class Session:
         res = self._client.add_compute_plan(spec.to_dict())
         cp = assets.ComputePlan.load(res)
         return cp
+
+    def list_data_sample(self, *args, **kwargs):
+        res = self._client.list_data_sample(*args, **kwargs)
+        return [assets.DataSample.load(x) for x in res]
 
     def get_algo(self, *args, **kwargs):
         res = self._client.get_algo(*args, **kwargs)
