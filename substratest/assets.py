@@ -135,7 +135,7 @@ class DataSampleCreated(_Asset):
 @dataclasses.dataclass(frozen=True)
 class DataSample(_Asset):
     key: str
-    owner: bool
+    owner: str
     data_manager_keys: typing.List[str]
 
 
