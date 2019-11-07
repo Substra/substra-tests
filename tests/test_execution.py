@@ -238,3 +238,10 @@ def test_composite_traintuples_execution(factory, session):
     spec = factory.create_testtuple(traintuple=composite_traintuple_2)
     testtuple = session.add_testtuple(spec).future().wait()
     assert testtuple.status == 'done'
+
+    # list composite traintuple
+    composite_traintuples = session.list_composite_traintuple()
+    composite_traintuple_keys = set([t.key for t in composite_traintuples])
+    assert set([composite_traintuple_1.key, composite_traintuple_2.key]).issubset(
+        composite_traintuple_keys
+    )
