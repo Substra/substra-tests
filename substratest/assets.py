@@ -316,6 +316,8 @@ class Node(_Asset):
 
 class AssetType(enum.Enum):
     algo = enum.auto()
+    composite_algo = enum.auto()
+    composite_traintuple = enum.auto()
     data_sample = enum.auto()
     dataset = enum.auto()
     objective = enum.auto()
