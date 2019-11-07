@@ -6,6 +6,8 @@ import substra
 
 import pytest
 
+import substratest as sbt
+
 
 def test_connection_to_nodes(network):
     """Connect to each substra nodes using the session."""
@@ -88,3 +90,12 @@ def test_list_nodes(network, session):
     network_node_ids = [s.node_id for s in network.sessions]
     # check all nodes configured are correctly registered
     assert set(network_node_ids).issubset(set(node_ids))
+
+
+@pytest.mark.parametrize(
+    'asset_type', sbt.assets.AssetType.can_be_listed(),
+)
+def test_list_asset(asset_type, session):
+    """Simple check that list_asset method can be called without raising errors."""
+    method = getattr(session, f'list_{asset_type.name}')
+    method()  # should not raise
