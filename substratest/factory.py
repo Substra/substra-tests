@@ -11,7 +11,6 @@ from . import utils
 
 
 DEFAULT_DATA_SAMPLE_FILENAME = 'data.csv'
-DEFAULT_PERMISSIONS = {'public': True, 'authorized_ids': []}
 
 DEFAULT_SUBSTRATOOLS_VERSION = '0.1.0'
 
@@ -103,6 +102,15 @@ class _Spec(abc.ABC):
 
 
 @dataclasses.dataclass
+class Permissions:
+    public: bool
+    authorized_ids: typing.List[str]
+
+
+DEFAULT_PERMISSIONS = Permissions(public=True, authorized_ids=[])
+
+
+@dataclasses.dataclass
 class DataSampleSpec(_Spec):
     path: str
     test_only: bool
@@ -115,7 +123,7 @@ class DatasetSpec(_Spec):
     data_opener: str
     type: str
     description: str
-    permissions: typing.Dict
+    permissions: Permissions = None
 
     def read_opener(self):
         with open(self.data_opener, 'rb') as f:
@@ -130,7 +138,7 @@ class ObjectiveSpec(_Spec):
     metrics: str
     test_data_sample_keys: typing.List[str]
     test_data_manager_key: str
-    permissions: typing.Dict
+    permissions: Permissions = None
 
 
 @dataclasses.dataclass
@@ -138,7 +146,7 @@ class AlgoSpec(_Spec):
     name: str
     description: str
     file: str
-    permissions: typing.Dict
+    permissions: Permissions = None
 
 
 @dataclasses.dataclass

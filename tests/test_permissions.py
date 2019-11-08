@@ -2,6 +2,8 @@ import substra
 
 import pytest
 
+from substratest.factory import Permissions
+
 from . import settings
 
 MSP_IDS = settings.MSP_IDS
@@ -10,18 +12,18 @@ MSP_IDS = settings.MSP_IDS
 @pytest.mark.parametrize('is_public', [True, False])
 def test_permission_creation(is_public, factory, session):
     """Test asset creation with simple permission."""
-    permissions = {'public': is_public, 'authorized_ids': []}
+    permissions = Permissions(public=is_public, authorized_ids=[])
     spec = factory.create_dataset(permissions=permissions)
     dataset = session.add_dataset(spec)
     assert dataset.permissions.process.public is is_public
 
 
 @pytest.mark.parametrize('permissions', [
-    {'public': True, 'authorized_ids': []},
-    {'public': False, 'authorized_ids': []},
-    {'public': False, 'authorized_ids': MSP_IDS},
-    {'public': False, 'authorized_ids': [MSP_IDS[0]]},
-    {'public': False, 'authorized_ids': [MSP_IDS[1]]},
+    Permissions(public=True, authorized_ids=[]),
+    Permissions(public=False, authorized_ids=[]),
+    Permissions(public=False, authorized_ids=MSP_IDS),
+    Permissions(public=False, authorized_ids=[MSP_IDS[0]]),
+    Permissions(public=False, authorized_ids=[MSP_IDS[1]]),
 ])
 def test_get_metadata(permissions, factory, network):
     """Test get metadata assets with various permissions."""
@@ -38,13 +40,13 @@ def test_get_metadata(permissions, factory, network):
     for session in sessions:
         for d in datasets:
             d = session.get_dataset(d.key)
-            assert d.permissions.process.public == permissions['public']
+            assert d.permissions.process.public == permissions.public
 
 
 def test_permission_invalid_node_id(factory, session):
     """Test asset creation with invalid permission."""
     invalid_node = 'unknown-node'
-    invalid_permissions = {'public': False, 'authorized_ids': [invalid_node]}
+    invalid_permissions = Permissions(public=False, authorized_ids=[invalid_node])
     spec = factory.create_dataset(permissions=invalid_permissions)
     with pytest.raises(substra.exceptions.InvalidRequest) as exc:
         session.add_dataset(spec)
@@ -52,8 +54,8 @@ def test_permission_invalid_node_id(factory, session):
 
 
 @pytest.mark.parametrize('permissions', [
-    {'public': True, 'authorized_ids': []},
-    {'public': False, 'authorized_ids': [MSP_IDS[1]]},
+    Permissions(public=True, authorized_ids=[]),
+    Permissions(public=False, authorized_ids=[MSP_IDS[1]]),
 ])
 def test_download_asset_access_granted(permissions, factory, session_1, session_2):
     """Test asset can be downloaded by all permitted nodes."""
@@ -69,7 +71,7 @@ def test_download_asset_access_granted(permissions, factory, session_1, session_
 
 def test_download_asset_access_restricted(factory, session_1, session_2):
     """Test public asset can be downloaded by all nodes."""
-    permissions = {'public': False, 'authorized_ids': []}
+    permissions = Permissions(public=False, authorized_ids=[])
     spec = factory.create_dataset(permissions=permissions)
     dataset = session_1.add_dataset(spec)
 
@@ -82,14 +84,14 @@ def test_download_asset_access_restricted(factory, session_1, session_2):
 
 @pytest.mark.parametrize('permissions_1,permissions_2,expected_permissions', [
     (
-        {'public': False, 'authorized_ids': [MSP_IDS[1]]},
-        {'public': False, 'authorized_ids': [MSP_IDS[0]]},
-        {'public': False, 'authorized_ids': [MSP_IDS[0], MSP_IDS[1]]}
+        Permissions(public=False, authorized_ids=[MSP_IDS[1]]),
+        Permissions(public=False, authorized_ids=[MSP_IDS[0]]),
+        Permissions(public=False, authorized_ids=[MSP_IDS[0], MSP_IDS[1]])
     ),
     (
-        {'public': True, 'authorized_ids': []},
-        {'public': False, 'authorized_ids': [MSP_IDS[0]]},
-        {'public': False, 'authorized_ids': [MSP_IDS[0], MSP_IDS[1]]}
+        Permissions(public=True, authorized_ids=[]),
+        Permissions(public=False, authorized_ids=[MSP_IDS[0]]),
+        Permissions(public=False, authorized_ids=[MSP_IDS[0], MSP_IDS[1]])
     ),
 ])
 def test_merge_permissions(permissions_1, permissions_2, expected_permissions,
@@ -129,8 +131,8 @@ def test_merge_permissions(permissions_1, permissions_2, expected_permissions,
     assert traintuple.out_model is not None
     assert traintuple.dataset.worker == session_1.node_id
     tuple_permissions = traintuple.permissions.process
-    assert tuple_permissions.public == expected_permissions['public']
-    assert set(tuple_permissions.authorized_ids) == set(expected_permissions['authorized_ids'])
+    assert tuple_permissions.public == expected_permissions.public
+    assert set(tuple_permissions.authorized_ids) == set(expected_permissions.authorized_ids)
 
 
 @pytest.mark.skipif(len(MSP_IDS) < 3, reason='requires at least 3 nodes')
@@ -148,11 +150,11 @@ def test_merge_permissions_denied_process(factory, network):
     session_3 = network.sessions[2]
 
     permissions_list = [(
-            {'public': False, 'authorized_ids': [MSP_IDS[1], MSP_IDS[2]]},
-            {'public': False, 'authorized_ids': [MSP_IDS[0]]},
+            Permissions(public=False, authorized_ids=[MSP_IDS[1], MSP_IDS[2]]),
+            Permissions(public=False, authorized_ids=[MSP_IDS[0]]),
         ), (
-            {'public': True, 'authorized_ids': []},
-            {'public': False, 'authorized_ids': [MSP_IDS[0]]},
+            Permissions(public=True, authorized_ids=[]),
+            Permissions(public=False, authorized_ids=[MSP_IDS[0]]),
     )]
     for permissions_1, permissions_2 in permissions_list:
 
