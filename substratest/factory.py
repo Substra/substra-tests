@@ -70,16 +70,12 @@ INVALID_ALGO_SCRIPT = DEFAULT_ALGO_SCRIPT.replace('train', 'naitr')
 
 DEFAULT_METRICS_DOCKERFILE = f"""
 FROM substrafoundation/substra-tools:{DEFAULT_SUBSTRATOOLS_VERSION}
-RUN mkdir -p /sandbox/opener
-WORKDIR /sandbox
 COPY metrics.py .
 ENTRYPOINT ["python3", "metrics.py"]
 """
 
 DEFAULT_ALGO_DOCKERFILE = f"""
 FROM substrafoundation/substra-tools:{DEFAULT_SUBSTRATOOLS_VERSION}
-RUN mkdir -p /sandbox/opener
-WORKDIR /sandbox
 COPY algo.py .
 ENTRYPOINT ["python3", "algo.py"]
 """
