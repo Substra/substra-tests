@@ -14,6 +14,7 @@ class Future:
     _methods = {
         'Traintuple': 'get_traintuple',
         'Testtuple': 'get_testtuple',
+        'AggregateTraintuple': 'get_aggregate_traintuple',
         'CompositeTraintuple': 'get_composite_traintuple',
     }
 
@@ -177,6 +178,11 @@ class Algo(_Algo):
 
 
 @dataclasses.dataclass(frozen=True)
+class AggregateAlgo(_Algo):
+    pass
+
+
+@dataclasses.dataclass(frozen=True)
 class CompositeAlgo(_Algo):
     pass
 
@@ -231,6 +237,26 @@ class Traintuple(_Asset, _FutureMixin):
     creator: str
     status: str
     dataset: TupleDataset
+    permissions: Permissions
+    compute_plan_id: str
+    rank: int
+    tag: str
+    log: str
+    in_models: typing.List[InModel]
+    out_model: OutModel = None
+
+    class Meta:
+        mapper = {
+            'pkhash': 'key',
+        }
+
+
+@dataclasses.dataclass
+class AggregateTraintuple(_Asset, _FutureMixin):
+    key: str
+    creator: str
+    status: str
+    worker: str
     permissions: Permissions
     compute_plan_id: str
     rank: int
@@ -316,6 +342,8 @@ class Node(_Asset):
 
 class AssetType(enum.Enum):
     algo = enum.auto()
+    aggregate_algo = enum.auto()
+    aggregate_traintuple = enum.auto()
     composite_algo = enum.auto()
     composite_traintuple = enum.auto()
     data_sample = enum.auto()

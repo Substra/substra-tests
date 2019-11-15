@@ -65,6 +65,22 @@ if __name__ == '__main__':
     tools.algo.execute(TestAlgo())
 """
 
+DEFAULT_AGGREGATE_ALGO_SCRIPT = f"""
+import json
+import substratools as tools
+class TestAggregateAlgo(tools.AggregateAlgo):
+    def aggregate(self, models, rank):
+        return [0, 66]
+    def load_model(self, path):
+        with open(path) as f:
+            return json.load(f)
+    def save_model(self, model, path):
+        with open(path, 'w') as f:
+            return json.dump(model, f)
+if __name__ == '__main__':
+    tools.algo.execute(TestAggregateAlgo())
+"""
+
 DEFAULT_COMPOSITE_ALGO_SCRIPT = f"""
 import json
 import substratools as tools
@@ -173,6 +189,11 @@ class AlgoSpec(_AlgoSpec):
 
 
 @dataclasses.dataclass
+class AggregateAlgoSpec(_AlgoSpec):
+    pass
+
+
+@dataclasses.dataclass
 class CompositeAlgoSpec(_AlgoSpec):
     pass
 
@@ -183,6 +204,17 @@ class TraintupleSpec(_Spec):
     objective_key: str
     data_manager_key: str
     train_data_sample_keys: str
+    in_models_keys: str
+    tag: str
+    compute_plan_id: str
+    rank: int = None
+
+
+@dataclasses.dataclass
+class AggregateTraintupleSpec(_Spec):
+    algo_key: str
+    objective_key: str
+    worker: str
     in_models_keys: str
     tag: str
     compute_plan_id: str
@@ -397,6 +429,12 @@ class AssetsFactory:
             permissions=permissions,
         )
 
+    def create_aggregate_algo(self, py_script=None, permissions=None):
+        return self._create_algo(
+            py_script or DEFAULT_AGGREGATE_ALGO_SCRIPT,
+            permissions=permissions,
+        )
+
     def create_composite_algo(self, py_script=None, permissions=None):
         return self._create_algo(
             py_script or DEFAULT_COMPOSITE_ALGO_SCRIPT,
@@ -417,6 +455,24 @@ class AssetsFactory:
             objective_key=objective.key if objective else None,
             data_manager_key=dataset.key if dataset else None,
             train_data_sample_keys=_get_keys(data_samples),
+            in_models_keys=[t.key for t in traintuples],
+            tag=tag,
+            compute_plan_id=compute_plan_id,
+            rank=rank,
+        )
+
+    def create_aggregate_traintuple(self, algo=None, objective=None, worker=None,
+                                    traintuples=None, tag=None,
+                                    compute_plan_id=None, rank=None):
+        traintuples = traintuples or []
+
+        for t in traintuples:
+            assert isinstance(t, assets.Traintuple)
+
+        return AggregateTraintupleSpec(
+            algo_key=algo.key if algo else None,
+            objective_key=objective.key if objective else None,
+            worker=worker,
             in_models_keys=[t.key for t in traintuples],
             tag=tag,
             compute_plan_id=compute_plan_id,
