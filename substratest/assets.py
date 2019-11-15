@@ -252,8 +252,10 @@ class Testtuple(_Asset, _FutureMixin):
 @dataclasses.dataclass
 class ComputePlan(_Asset):
     compute_plan_id: str
-    traintuple_keys: typing.List[str]
-    testtuple_keys: typing.List[str]
+    algo_key: str
+    objective_key: str
+    traintuples: typing.List[str]
+    testtuples: typing.List[str]
 
 
 @dataclasses.dataclass(frozen=True)
@@ -270,6 +272,7 @@ class AssetType(enum.Enum):
     node = enum.auto()
     testtuple = enum.auto()
     traintuple = enum.auto()
+    compute_plan = enum.auto()
 
     @classmethod
     def all(cls):

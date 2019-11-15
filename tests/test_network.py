@@ -92,6 +92,28 @@ def test_list_nodes(network, session):
     assert set(network_node_ids).issubset(set(node_ids))
 
 
+def test_add_compute_plan(factory, session):
+    spec = factory.create_objective()
+    objective = session.add_objective(spec)
+
+    spec = factory.create_algo()
+    algo = session.add_algo(spec)
+
+    spec = factory.create_dataset()
+    dataset = session.add_dataset(spec)
+
+    spec = factory.create_data_sample(test_only=False, datasets=[dataset])
+    data_sample = session.add_data_sample(spec)
+
+    spec = factory.create_compute_plan(algo=algo, objective=objective)
+    spec.add_traintuple(dataset=dataset,
+                        data_samples=[data_sample])
+
+    compute_plan = session.add_compute_plan(spec)
+    compute_plan_copy = session.get_compute_plan(compute_plan.compute_plan_id)
+    assert compute_plan_copy == compute_plan
+
+
 @pytest.mark.parametrize(
     'asset_type', sbt.assets.AssetType.can_be_listed(),
 )

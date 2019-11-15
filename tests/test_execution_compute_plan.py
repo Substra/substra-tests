@@ -148,12 +148,12 @@ def test_compute_plan_single_session_success(factory, session):
 
     traintuples = [
         session.get_traintuple(key).future().wait()
-        for key in cp.traintuple_keys
+        for key in cp.traintuples
     ]
 
     testtuples = [
         session.get_testtuple(key).future().wait()
-        for key in cp.testtuple_keys
+        for key in cp.testtuples
     ]
 
     # All the train/test tuples should succeed
@@ -224,12 +224,12 @@ def test_compute_plan_single_session_failure(factory, session):
 
     traintuples = [
         session.get_traintuple(key).future().wait()
-        for key in cp.traintuple_keys
+        for key in cp.traintuples
     ]
 
     testtuples = [
         session.get_testtuple(key).future().wait()
-        for key in cp.testtuple_keys
+        for key in cp.testtuples
     ]
 
     # All the train/test tuples should be marked as failed
