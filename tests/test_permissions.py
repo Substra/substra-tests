@@ -48,7 +48,7 @@ def test_permission_invalid_node_id(factory, session):
     spec = factory.create_dataset(permissions=invalid_permissions)
     with pytest.raises(substra.exceptions.InvalidRequest) as exc:
         session.add_dataset(spec)
-    assert "Invalid permission input values" in str(exc.value)
+    assert "invalid permission input values" in str(exc.value)
 
 
 @pytest.mark.parametrize('permissions', [

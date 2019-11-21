@@ -85,8 +85,17 @@ class Session:
 
     def add_compute_plan(self, spec):
         res = self._client.add_compute_plan(spec.to_dict())
-        cp = assets.ComputePlan.load(res)
-        return cp
+        compute_plan = assets.ComputePlanCreated.load(res)
+        return compute_plan
+
+    def list_compute_plan(self, *args, **kwargs):
+        res = self._client.list_compute_plan(*args, **kwargs)
+        return [assets.ComputePlan.load(x) for x in res]
+
+    def get_compute_plan(self, *args, **kwargs):
+        res = self._client.get_compute_plan(*args, **kwargs)
+        compute_plan = assets.ComputePlan.load(res)
+        return compute_plan
 
     def list_data_sample(self, *args, **kwargs):
         res = self._client.list_data_sample(*args, **kwargs)

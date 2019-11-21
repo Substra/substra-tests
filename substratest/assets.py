@@ -77,6 +77,7 @@ class _DataclassLoader(abc.ABC):
         """Create asset from dictionary."""
         if isinstance(d, cls):
             return d
+
         mapper = cls.Meta.mapper
         kwargs = {}
         for k, v in d.items():
@@ -250,10 +251,23 @@ class Testtuple(_Asset, _FutureMixin):
 
 
 @dataclasses.dataclass
-class ComputePlan(_Asset):
+class ComputePlanCreated(_Asset):
     compute_plan_id: str
     traintuple_keys: typing.List[str]
     testtuple_keys: typing.List[str]
+
+
+@dataclasses.dataclass
+class ComputePlan(_Asset):
+    compute_plan_id: str
+    algo_key: str
+    objective_key: str
+    traintuples: typing.List[str]
+    testtuples: typing.List[str]
+
+    def __post_init__(self):
+        if self.testtuples is None:
+            self.testtuples = []
 
 
 @dataclasses.dataclass(frozen=True)
@@ -270,6 +284,7 @@ class AssetType(enum.Enum):
     node = enum.auto()
     testtuple = enum.auto()
     traintuple = enum.auto()
+    compute_plan = enum.auto()
 
     @classmethod
     def all(cls):

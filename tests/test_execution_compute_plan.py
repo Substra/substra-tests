@@ -160,6 +160,11 @@ def test_compute_plan_single_session_success(factory, session):
     for t in traintuples + testtuples:
         assert t.status == 'done'
 
+    compute_plan = session.get_compute_plan(cp.compute_plan_id)
+    assert cp.compute_plan_id == compute_plan.compute_plan_id
+    assert set(cp.traintuple_keys) == set(compute_plan.traintuples)
+    assert set(cp.testtuple_keys) == set(compute_plan.testtuples)
+
 
 def test_compute_plan_single_session_failure(factory, session):
     """In a compute plan with 3 traintuples, failing the root traintuple should also
@@ -235,3 +240,8 @@ def test_compute_plan_single_session_failure(factory, session):
     # All the train/test tuples should be marked as failed
     for t in traintuples + testtuples:
         assert t.status == 'failed'
+
+    compute_plan = session.get_compute_plan(cp.compute_plan_id)
+    assert cp.compute_plan_id == compute_plan.compute_plan_id
+    assert set(cp.traintuple_keys) == set(compute_plan.traintuples)
+    assert set(cp.testtuple_keys) == set(compute_plan.testtuples)
