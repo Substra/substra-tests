@@ -14,7 +14,7 @@ class Future:
     _methods = {
         'Traintuple': 'get_traintuple',
         'Testtuple': 'get_testtuple',
-        'AggregateTraintuple': 'get_aggregate_traintuple',
+        'Aggregatetuple': 'get_aggregatetuple',
         'CompositeTraintuple': 'get_composite_traintuple',
     }
 
@@ -252,7 +252,7 @@ class Traintuple(_Asset, _FutureMixin):
 
 
 @dataclasses.dataclass
-class AggregateTraintuple(_Asset, _FutureMixin):
+class Aggregatetuple(_Asset, _FutureMixin):
     key: str
     creator: str
     status: str
@@ -343,7 +343,7 @@ class Node(_Asset):
 class AssetType(enum.Enum):
     algo = enum.auto()
     aggregate_algo = enum.auto()
-    aggregate_traintuple = enum.auto()
+    aggregatetuple = enum.auto()
     composite_algo = enum.auto()
     composite_traintuple = enum.auto()
     data_sample = enum.auto()

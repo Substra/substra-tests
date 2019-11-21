@@ -23,7 +23,7 @@ class _State:
         self.aggregate_algos = []
         self.composite_algos = []
         self.traintuples = []
-        self.aggregate_traintuples = []
+        self.aggregatetuples = []
         self.composite_traintuples = []
         self.testtuples = []
 
@@ -93,11 +93,11 @@ class Session:
         self.state.traintuples.append(traintuple)
         return traintuple
 
-    def add_aggregate_traintuple(self, spec, *args, **kwargs):
-        res = self._client.add_aggregate_traintuple(spec.to_dict(), *args, **kwargs)
-        aggregate_traintuple = assets.AggregateTraintuple.load(res).attach(self)
-        self.state.aggregate_traintuples.append(aggregate_traintuple)
-        return aggregate_traintuple
+    def add_aggregatetuple(self, spec, *args, **kwargs):
+        res = self._client.add_aggregatetuple(spec.to_dict(), *args, **kwargs)
+        aggregatetuple = assets.Aggregatetuple.load(res).attach(self)
+        self.state.aggregatetuples.append(aggregatetuple)
+        return aggregatetuple
 
     def add_composite_traintuple(self, spec, *args, **kwargs):
         res = self._client.add_composite_traintuple(spec.to_dict(), *args, **kwargs)
@@ -177,13 +177,13 @@ class Session:
         res = self._client.list_traintuple(*args, **kwargs)
         return [assets.Traintuple.load(x) for x in res]
 
-    def get_aggregate_traintuple(self, *args, **kwargs):
-        res = self._client.get_aggregate_traintuple(*args, **kwargs)
-        return assets.AggregateTraintuple.load(res).attach(self)
+    def get_aggregatetuple(self, *args, **kwargs):
+        res = self._client.get_aggregatetuple(*args, **kwargs)
+        return assets.Aggregatetuple.load(res).attach(self)
 
-    def list_aggregate_traintuple(self, *args, **kwargs):
-        res = self._client.list_aggregate_traintuple(*args, **kwargs)
-        return [assets.AggregateTraintuple.load(x) for x in res]
+    def list_aggregatetuple(self, *args, **kwargs):
+        res = self._client.list_aggregatetuple(*args, **kwargs)
+        return [assets.Aggregatetuple.load(x) for x in res]
 
     def get_composite_traintuple(self, *args, **kwargs):
         res = self._client.get_composite_traintuple(*args, **kwargs)

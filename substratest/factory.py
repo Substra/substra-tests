@@ -211,7 +211,7 @@ class TraintupleSpec(_Spec):
 
 
 @dataclasses.dataclass
-class AggregateTraintupleSpec(_Spec):
+class AggregatetupleSpec(_Spec):
     algo_key: str
     objective_key: str
     worker: str
@@ -461,7 +461,7 @@ class AssetsFactory:
             rank=rank,
         )
 
-    def create_aggregate_traintuple(self, algo=None, objective=None, worker=None,
+    def create_aggregatetuple(self, algo=None, objective=None, worker=None,
                                     traintuples=None, tag=None,
                                     compute_plan_id=None, rank=None):
         traintuples = traintuples or []
@@ -469,7 +469,7 @@ class AssetsFactory:
         for t in traintuples:
             assert isinstance(t, assets.Traintuple)
 
-        return AggregateTraintupleSpec(
+        return AggregatetupleSpec(
             algo_key=algo.key if algo else None,
             objective_key=objective.key if objective else None,
             worker=worker,
