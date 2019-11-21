@@ -109,9 +109,11 @@ def test_add_compute_plan(factory, session):
     spec.add_traintuple(dataset=dataset,
                         data_samples=[data_sample])
 
-    compute_plan = session.add_compute_plan(spec)
-    compute_plan_copy = session.get_compute_plan(compute_plan.compute_plan_id)
-    assert compute_plan_copy == compute_plan
+    compute_plan_created = session.add_compute_plan(spec)
+    compute_plan = session.get_compute_plan(compute_plan_created.compute_plan_id)
+    assert compute_plan_created.compute_plan_id == compute_plan.compute_plan_id
+    assert compute_plan_created.traintuple_keys == compute_plan.traintuples
+    assert compute_plan_created.testtuple_keys == compute_plan.testtuples
 
 
 @pytest.mark.parametrize(

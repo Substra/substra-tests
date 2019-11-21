@@ -85,19 +85,8 @@ class Session:
 
     def add_compute_plan(self, spec):
         res = self._client.add_compute_plan(spec.to_dict())
-        # The API outputs of the create and get/list methods differ at the
-        # moment. This harmonizes the returns so that they can be parsed.
-        # See:
-        # https://github.com/SubstraFoundation/substra-chaincode/issues/36
-        res['traintuples'] = res['traintupleKeys']
-        res['testtuples'] = res['testtupleKeys']
-        del res['traintupleKeys']
-        del res['testtupleKeys']
-        res['algoKey'] = spec.algo_key
-        res['objectiveKey'] = spec.objective_key
-
-        cp = assets.ComputePlan.load(res)
-        return cp
+        compute_plan = assets.ComputePlanCreated.load(res)
+        return compute_plan
 
     def list_compute_plan(self, *args, **kwargs):
         res = self._client.list_compute_plan(*args, **kwargs)
@@ -106,11 +95,6 @@ class Session:
     def get_compute_plan(self, *args, **kwargs):
         res = self._client.get_compute_plan(*args, **kwargs)
         compute_plan = assets.ComputePlan.load(res)
-        # the testtuples key of the compute_plan may be null instead
-        # of [] but should really be []
-        # See:
-        # https://github.com/SubstraFoundation/substra-chaincode/issues/36
-        compute_plan.testtuples = compute_plan.testtuples or []
         return compute_plan
 
     def list_data_sample(self, *args, **kwargs):
