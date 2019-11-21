@@ -73,7 +73,11 @@ class _DataclassLoader(abc.ABC):
         mapper = {}
 
     @classmethod
-    def get_cls_kwargs(cls, d):
+    def load(cls, d):
+        """Create asset from dictionary."""
+        if isinstance(d, cls):
+            return d
+
         mapper = cls.Meta.mapper
         kwargs = {}
         for k, v in d.items():
@@ -86,15 +90,6 @@ class _DataclassLoader(abc.ABC):
             if dataclasses.is_dataclass(attr_type) and isinstance(v, dict):
                 v = attr_type.load(v)
             kwargs[attr_name] = v
-        return kwargs
-
-    @classmethod
-    def load(cls, d):
-        """Create asset from dictionary."""
-        if isinstance(d, cls):
-            return d
-
-        kwargs = cls.get_cls_kwargs(d)
 
         try:
             return cls(**kwargs)
@@ -270,12 +265,9 @@ class ComputePlan(_Asset):
     traintuples: typing.List[str]
     testtuples: typing.List[str]
 
-    @classmethod
-    def get_cls_kwargs(cls, d):
-        kwargs = super().get_cls_kwargs(d)
-        if kwargs['testtuples'] is None:
-            kwargs['testtuples'] = []
-        return kwargs
+    def __post_init__(self):
+        if self.testtuples is None:
+            self.testtuples = []
 
 
 @dataclasses.dataclass(frozen=True)
