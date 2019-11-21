@@ -462,12 +462,12 @@ class AssetsFactory:
         )
 
     def create_aggregatetuple(self, algo=None, objective=None, worker=None,
-                                    traintuples=None, tag=None,
-                                    compute_plan_id=None, rank=None):
+                              traintuples=None, tag=None, compute_plan_id=None,
+                              rank=None):
         traintuples = traintuples or []
 
         for t in traintuples:
-            assert isinstance(t, assets.Traintuple)
+            assert isinstance(t, (assets.Traintuple, assets.CompositeTraintuple))
 
         return AggregatetupleSpec(
             algo_key=algo.key if algo else None,
