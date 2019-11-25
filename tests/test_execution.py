@@ -254,7 +254,7 @@ def test_aggregate_traintuples(factory, session):
     dataset = session.add_dataset(spec)
 
     train_data_samples = []
-    for i in range(number_of_traintuples_to_aggregate):
+    for _ in range(number_of_traintuples_to_aggregate):
         spec = factory.create_data_sample(test_only=False, datasets=[dataset])
         data_sample = session.add_data_sample(spec)
         train_data_samples.append(data_sample)
@@ -278,7 +278,7 @@ def test_aggregate_traintuples(factory, session):
             data_samples=[data_sample],
         )
         traintuple = session.add_traintuple(spec).future().wait()
-        traintuples.add(traintuple)
+        traintuples.append(traintuple)
 
     spec = factory.create_aggregate_algo()
     aggregate_algo = session.add_aggregate_algo(spec)
@@ -287,7 +287,7 @@ def test_aggregate_traintuples(factory, session):
         algo=aggregate_algo,
         objective=objective,
         worker=session.node_id,
-        in_models_keys=traintuples,
+        traintuples=traintuples,
     )
     aggregatetuple = session.add_aggregatetuple(spec).future().wait()
     assert aggregatetuple.status == 'done'
@@ -295,6 +295,22 @@ def test_aggregate_traintuples(factory, session):
 
 def test_aggregate_composite_traintuples(factory, session_1, session_2):
     """Do 2 rounds of composite traintuples aggregations on multiple nodes.
+
+    Compute plan details:
+
+    Round 1:
+    - Create 2 composite traintuples executed on two datasets located on node 1 and
+      node 2.
+    - Create an aggregatetuple on node 1, aggregating the two previous composite
+      traintuples (trunk models aggregation).
+
+    Round 2:
+    - Create 2 composite traintuples executed on each nodes that depend on: the
+      aggregated tuple and the previous composite traintuple executed on this node. That
+      is to say, the previous round aggregated trunk models from all nodes and the
+      previous round head model from this node.
+    - Create an aggregatetuple on node 1, aggregating the two previous composite
+      traintuples (similar to round 1 aggregatetuple).
 
     This test refers to the model composition use case.
     """
@@ -311,7 +327,7 @@ def test_aggregate_composite_traintuples(factory, session_1, session_2):
         datasets.append(dataset)
 
         # register one data sample per dataset per round of aggregation
-        for i in range(number_of_rounds):
+        for _ in range(number_of_rounds):
             spec = factory.create_data_sample(test_only=False, datasets=[dataset])
             s.add_data_sample(spec)
     # register test data on first node
@@ -325,7 +341,7 @@ def test_aggregate_composite_traintuples(factory, session_1, session_2):
     objective = sessions[0].add_objective(spec)
 
     # register algos on first node
-    spec = factory.create_algo()
+    spec = factory.create_composite_algo()
     composite_algo = sessions[0].add_composite_algo(spec)
     spec = factory.create_aggregate_algo()
     aggregate_algo = sessions[0].add_aggregate_algo(spec)
@@ -359,10 +375,12 @@ def test_aggregate_composite_traintuples(factory, session_1, session_2):
             algo=aggregate_algo,
             objective=objective,
             worker=aggregate_worker,
-            in_models_keys=composite_traintuples,
+            traintuples=composite_traintuples,
         )
         aggregatetuple = sessions[0].add_aggregatetuple(spec).future().wait()
 
         # save state of round
         previous_aggregatetuple = aggregatetuple
         previous_composite_traintuples = composite_traintuples
+
+    # TODO add missing testtuples (and update description)
