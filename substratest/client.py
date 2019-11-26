@@ -20,8 +20,10 @@ class _State:
         self.train_data_samples = []
         self.objectives = []
         self.algos = []
+        self.aggregate_algos = []
         self.composite_algos = []
         self.traintuples = []
+        self.aggregatetuples = []
         self.composite_traintuples = []
         self.testtuples = []
 
@@ -73,6 +75,12 @@ class Session:
         self.state.algos.append(algo)
         return algo
 
+    def add_aggregate_algo(self, spec):
+        res = self._client.add_aggregate_algo(spec.to_dict())
+        aggregate_algo = assets.AggregateAlgo.load(res)
+        self.state.aggregate_algos.append(aggregate_algo)
+        return aggregate_algo
+
     def add_composite_algo(self, spec):
         res = self._client.add_composite_algo(spec.to_dict())
         composite_algo = assets.CompositeAlgo.load(res)
@@ -84,6 +92,12 @@ class Session:
         traintuple = assets.Traintuple.load(res).attach(self)
         self.state.traintuples.append(traintuple)
         return traintuple
+
+    def add_aggregatetuple(self, spec, *args, **kwargs):
+        res = self._client.add_aggregatetuple(spec.to_dict(), *args, **kwargs)
+        aggregatetuple = assets.Aggregatetuple.load(res).attach(self)
+        self.state.aggregatetuples.append(aggregatetuple)
+        return aggregatetuple
 
     def add_composite_traintuple(self, spec, *args, **kwargs):
         res = self._client.add_composite_traintuple(spec.to_dict(), *args, **kwargs)
@@ -123,6 +137,14 @@ class Session:
         res = self._client.list_algo(*args, **kwargs)
         return [assets.Algo.load(x) for x in res]
 
+    def get_aggregate_algo(self, *args, **kwargs):
+        res = self._client.get_aggregate_algo(*args, **kwargs)
+        return assets.AggregateAlgo.load(res)
+
+    def list_aggregate_algo(self, *args, **kwargs):
+        res = self._client.list_aggregate_algo(*args, **kwargs)
+        return [assets.AggregateAlgo.load(x) for x in res]
+
     def get_composite_algo(self, *args, **kwargs):
         res = self._client.get_composite_algo(*args, **kwargs)
         return assets.CompositeAlgo.load(res)
@@ -154,6 +176,14 @@ class Session:
     def list_traintuple(self, *args, **kwargs):
         res = self._client.list_traintuple(*args, **kwargs)
         return [assets.Traintuple.load(x) for x in res]
+
+    def get_aggregatetuple(self, *args, **kwargs):
+        res = self._client.get_aggregatetuple(*args, **kwargs)
+        return assets.Aggregatetuple.load(res).attach(self)
+
+    def list_aggregatetuple(self, *args, **kwargs):
+        res = self._client.list_aggregatetuple(*args, **kwargs)
+        return [assets.Aggregatetuple.load(x) for x in res]
 
     def get_composite_traintuple(self, *args, **kwargs):
         res = self._client.get_composite_traintuple(*args, **kwargs)
