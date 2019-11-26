@@ -311,6 +311,8 @@ def test_aggregate_composite_traintuples(factory, session_1, session_2):
       previous round head model from this node.
     - Create an aggregatetuple on node 1, aggregating the two previous composite
       traintuples (similar to round 1 aggregatetuple).
+    - Create a testtuple for each previous composite traintuples and aggregate tuple
+      created during this round.
 
     This test refers to the model composition use case.
     """
@@ -383,4 +385,13 @@ def test_aggregate_composite_traintuples(factory, session_1, session_2):
         previous_aggregatetuple = aggregatetuple
         previous_composite_traintuples = composite_traintuples
 
-    # TODO add missing testtuples (and update description)
+    # last round: create associated testtuple
+    for traintuple in previous_composite_traintuples:
+        spec = factory.create_testtuple(
+            traintuple=traintuple,
+        )
+        sessions[0].add_testtuple(spec).future().wait()
+    spec = factory.create_testtuple(
+        traintuple=previous_aggregatetuple,
+    )
+    sessions[0].add_testtuple(spec).future().wait()
