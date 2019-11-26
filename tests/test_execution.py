@@ -247,8 +247,8 @@ def test_composite_traintuples_execution(factory, session):
     )
 
 
-def test_aggregatetuples(factory, session):
-    """Execution of Aggregatetuples."""
+def test_aggregatetuple(factory, session):
+    """Execution of aggregatetuple aggregating traintuples."""
     number_of_traintuples_to_aggregate = 3
     spec = factory.create_dataset()
     dataset = session.add_dataset(spec)
@@ -291,6 +291,7 @@ def test_aggregatetuples(factory, session):
     )
     aggregatetuple = session.add_aggregatetuple(spec).future().wait()
     assert aggregatetuple.status == 'done'
+    assert len(aggregatetuple.in_models) == number_of_traintuples_to_aggregate
 
 
 def test_aggregate_composite_traintuples(factory, session_1, session_2):
