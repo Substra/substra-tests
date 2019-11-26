@@ -204,7 +204,7 @@ class TraintupleSpec(_Spec):
     objective_key: str
     data_manager_key: str
     train_data_sample_keys: str
-    in_models_keys: str
+    in_models_keys: typing.List[str]
     tag: str
     compute_plan_id: str
     rank: int = None
@@ -215,7 +215,7 @@ class AggregatetupleSpec(_Spec):
     algo_key: str
     objective_key: str
     worker: str
-    in_models_keys: str
+    in_models_keys: typing.List[str]
     tag: str
     compute_plan_id: str
     rank: int = None
