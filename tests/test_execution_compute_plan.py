@@ -228,12 +228,12 @@ def test_compute_plan_single_session_failure(factory, session):
     cp = session.add_compute_plan(cp_spec)
 
     traintuples = [
-        session.get_traintuple(key).future().wait()
+        session.get_traintuple(key).future().wait(raises=False)
         for key in cp.traintuple_keys
     ]
 
     testtuples = [
-        session.get_testtuple(key).future().wait()
+        session.get_testtuple(key).future().wait(raises=False)
         for key in cp.testtuple_keys
     ]
 

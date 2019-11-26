@@ -8,6 +8,9 @@ import typing
 from . import errors
 
 
+FUTURE_TIMEOUT = 120  # seconds
+
+
 class Future:
     """Future asset."""
     # mapper from asset class name to client getter method
@@ -26,17 +29,20 @@ class Future:
             assert False, 'Future not supported'
         self._getter = getattr(session, m)
 
-    def wait(self, timeout=120):
+    def wait(self, timeout=FUTURE_TIMEOUT, raises=True):
         """Wait until completed (done or failed)."""
         tstart = time.time()
         key = self._asset.key
-        return_statuses = ['done', 'failed']
-        while self._asset.status not in return_statuses:
+        completed_statuses = ['done', 'failed']
+        while self._asset.status not in completed_statuses:
             if time.time() - tstart > timeout:
-                raise errors.TError(f'Future timeout on {self._asset}')
+                raise errors.FutureTimeoutError(f'Future timeout on {self._asset}')
 
             time.sleep(3)
             self._asset = self._getter(key)
+
+        if raises and self._asset.status == 'failed':
+            raise errors.FutureFailureError(f'Future execution failed on {self._asset}')
         return self.get()
 
     def get(self):

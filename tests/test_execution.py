@@ -181,7 +181,7 @@ def test_traintuple_execution_failure(factory, session):
         dataset=dataset,
         data_samples=[train_data_sample],
     )
-    traintuple = session.add_traintuple(spec).future().wait()
+    traintuple = session.add_traintuple(spec).future().wait(raises=False)
     assert traintuple.status == 'failed'
     assert traintuple.out_model is None
 
