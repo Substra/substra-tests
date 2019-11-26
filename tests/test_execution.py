@@ -332,6 +332,11 @@ def test_aggregate_composite_traintuples(factory, session_1, session_2):
         for _ in range(number_of_rounds):
             spec = factory.create_data_sample(test_only=False, datasets=[dataset])
             s.add_data_sample(spec)
+    # reload datasets (to ensure they are properly linked with the created data samples)
+    datasets = [
+        sessions[i].get_dataset(d.key)
+        for i, d in enumerate(list(datasets))
+    ]
     # register test data on first node
     spec = factory.create_data_sample(test_only=True, datasets=[datasets[0]])
     test_data_sample = sessions[0].add_data_sample(spec)

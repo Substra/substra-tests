@@ -490,7 +490,10 @@ class AssetsFactory:
 
         if head_traintuple and trunk_traintuple:
             assert isinstance(head_traintuple, assets.CompositeTraintuple)
-            assert isinstance(trunk_traintuple, assets.CompositeTraintuple)
+            assert isinstance(
+                trunk_traintuple,
+                (assets.CompositeTraintuple, assets.Aggregatetuple)
+            )
             in_head_model_key = head_traintuple.key
             in_trunk_model_key = trunk_traintuple.key
         else:
