@@ -397,7 +397,3 @@ def test_aggregate_composite_traintuples(factory, session_1, session_2):
             traintuple=traintuple,
         )
         sessions[0].add_testtuple(spec).future().wait()
-    spec = factory.create_testtuple(
-        traintuple=previous_aggregatetuple,
-    )
-    sessions[0].add_testtuple(spec).future().wait()
