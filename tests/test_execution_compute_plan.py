@@ -182,26 +182,19 @@ def test_compute_plan_single_session_failure(global_execution_env):
     cp_spec.add_testtuple(traintuple_spec_3)
 
     # Submit compute plan and wait for it to complete
-    cp = session.add_compute_plan(cp_spec)
+    cp_created = session.add_compute_plan(cp_spec)
+    cp = cp_created.future().wait()
 
-    traintuples = [
-        session.get_traintuple(key).future().wait(raises=False)
-        for key in cp.traintuple_keys
-    ]
-
-    testtuples = [
-        session.get_testtuple(key).future().wait(raises=False)
-        for key in cp.testtuple_keys
-    ]
+    traintuples = cp.list_traintuples(session)
+    testtuples = cp.list_testtuples(session)
 
     # All the train/test tuples should be marked as failed
     for t in traintuples + testtuples:
         assert t.status == 'failed'
 
-    compute_plan = session.get_compute_plan(cp.compute_plan_id)
-    assert cp.compute_plan_id == compute_plan.compute_plan_id
-    assert set(cp.traintuple_keys) == set(compute_plan.traintuples)
-    assert set(cp.testtuple_keys) == set(compute_plan.testtuples)
+    assert cp_created.compute_plan_id == cp.compute_plan_id
+    assert set(cp_created.traintuple_keys) == set(cp.traintuples)
+    assert set(cp_created.testtuple_keys) == set(cp.testtuples)
 
 
 def test_compute_plan_aggregate_composite_traintuples(factory, session_1, session_2):
@@ -286,7 +279,13 @@ def test_compute_plan_aggregate_composite_traintuples(factory, session_1, sessio
             traintuple_spec=composite_traintuple_spec,
         )
 
-    session_1.add_compute_plan(cp_spec).future().wait()
+    cp = session_1.add_compute_plan(cp_spec).future().wait()
+    tuples = (cp.list_traintuple(session_1) +
+              cp.list_composite_traintuples(session_1) +
+              cp.list_aggregate_tuples(session_1) +
+              cp.list_testtuples(session_1))
+    for t in tuples:
+        assert t.status == 'done'
 
 
 def test_compute_plan_circular_dependency_failure(factory, session):
