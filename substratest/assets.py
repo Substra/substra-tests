@@ -8,12 +8,17 @@ import typing
 from . import errors
 
 
+FUTURE_TIMEOUT = 120  # seconds
+
+
 class Future:
     """Future asset."""
     # mapper from asset class name to client getter method
     _methods = {
         'Traintuple': 'get_traintuple',
         'Testtuple': 'get_testtuple',
+        'Aggregatetuple': 'get_aggregatetuple',
+        'CompositeTraintuple': 'get_composite_traintuple',
     }
 
     def __init__(self, asset, session):
@@ -24,17 +29,20 @@ class Future:
             assert False, 'Future not supported'
         self._getter = getattr(session, m)
 
-    def wait(self, timeout=120):
+    def wait(self, timeout=FUTURE_TIMEOUT, raises=True):
         """Wait until completed (done or failed)."""
         tstart = time.time()
         key = self._asset.key
-        return_statuses = ['done', 'failed']
-        while self._asset.status not in return_statuses:
+        completed_statuses = ['done', 'failed']
+        while self._asset.status not in completed_statuses:
             if time.time() - tstart > timeout:
-                raise errors.TError(f'Future timeout on {self._asset}')
+                raise errors.FutureTimeoutError(f'Future timeout on {self._asset}')
 
             time.sleep(3)
             self._asset = self._getter(key)
+
+        if raises and self._asset.status == 'failed':
+            raise errors.FutureFailureError(f'Future execution failed on {self._asset}')
         return self.get()
 
     def get(self):
@@ -163,11 +171,26 @@ class Dataset(_Asset):
 
 
 @dataclasses.dataclass(frozen=True)
-class Algo(_Asset):
+class _Algo(_Asset):
     key: str
     name: str
     owner: str
     permissions: Permissions
+
+
+@dataclasses.dataclass(frozen=True)
+class Algo(_Algo):
+    pass
+
+
+@dataclasses.dataclass(frozen=True)
+class AggregateAlgo(_Algo):
+    pass
+
+
+@dataclasses.dataclass(frozen=True)
+class CompositeAlgo(_Algo):
+    pass
 
 
 @dataclasses.dataclass(frozen=True)
@@ -235,6 +258,53 @@ class Traintuple(_Asset, _FutureMixin):
 
 
 @dataclasses.dataclass
+class Aggregatetuple(_Asset, _FutureMixin):
+    key: str
+    creator: str
+    status: str
+    worker: str
+    permissions: Permissions
+    compute_plan_id: str
+    rank: int
+    tag: str
+    log: str
+    in_models: typing.List[InModel]
+    out_model: OutModel = None
+
+    class Meta:
+        mapper = {
+            'pkhash': 'key',
+        }
+
+
+@dataclasses.dataclass(frozen=True)
+class OutCompositeModel(_DataclassLoader):
+    permissions: Permissions
+    out_model: OutModel = None
+
+
+@dataclasses.dataclass
+class CompositeTraintuple(_Asset, _FutureMixin):
+    key: str
+    creator: str
+    status: str
+    dataset: TupleDataset
+    compute_plan_id: str
+    rank: int
+    tag: str
+    log: str
+    in_head_model: InModel = None
+    in_trunk_model: InModel = None
+    out_head_model: OutCompositeModel = None
+    out_trunk_model: OutCompositeModel = None
+
+    class Meta:
+        mapper = {
+            'pkhash': 'key',
+        }
+
+
+@dataclasses.dataclass
 class Testtuple(_Asset, _FutureMixin):
     key: str
     creator: str
@@ -278,6 +348,10 @@ class Node(_Asset):
 
 class AssetType(enum.Enum):
     algo = enum.auto()
+    aggregate_algo = enum.auto()
+    aggregatetuple = enum.auto()
+    composite_algo = enum.auto()
+    composite_traintuple = enum.auto()
     data_sample = enum.auto()
     dataset = enum.auto()
     objective = enum.auto()

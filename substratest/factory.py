@@ -7,12 +7,12 @@ import tempfile
 import typing
 import uuid
 
-from . import utils
+from . import utils, assets
 
 
 DEFAULT_DATA_SAMPLE_FILENAME = 'data.csv'
 
-DEFAULT_SUBSTRATOOLS_VERSION = '0.1.0'
+DEFAULT_SUBSTRATOOLS_VERSION = '0.3.0'
 
 # TODO improve opener get_X/get_y methods
 # TODO improve metrics score method
@@ -63,6 +63,40 @@ class TestAlgo(tools.Algo):
             return json.dump(model, f)
 if __name__ == '__main__':
     tools.algo.execute(TestAlgo())
+"""
+
+DEFAULT_AGGREGATE_ALGO_SCRIPT = f"""
+import json
+import substratools as tools
+class TestAggregateAlgo(tools.AggregateAlgo):
+    def aggregate(self, models, rank):
+        return [0, 66]
+    def load_model(self, path):
+        with open(path) as f:
+            return json.load(f)
+    def save_model(self, model, path):
+        with open(path, 'w') as f:
+            return json.dump(model, f)
+if __name__ == '__main__':
+    tools.algo.execute(TestAggregateAlgo())
+"""
+
+DEFAULT_COMPOSITE_ALGO_SCRIPT = f"""
+import json
+import substratools as tools
+class TestCompositeAlgo(tools.CompositeAlgo):
+    def train(self, X, y, head_model, trunk_model, rank):
+        return [0, 42], [0, 1], [0, 2]
+    def predict(self, X, head_model, trunk_model):
+        return [0, 99]
+    def load_model(self, path):
+        with open(path) as f:
+            return json.load(f)
+    def save_model(self, model, path):
+        with open(path, 'w') as f:
+            return json.dump(model, f)
+if __name__ == '__main__':
+    tools.algo.execute(TestCompositeAlgo())
 """
 
 INVALID_ALGO_SCRIPT = DEFAULT_ALGO_SCRIPT.replace('train', 'naitr')
@@ -142,11 +176,26 @@ class ObjectiveSpec(_Spec):
 
 
 @dataclasses.dataclass
-class AlgoSpec(_Spec):
+class _AlgoSpec(_Spec):
     name: str
     description: str
     file: str
     permissions: Permissions = None
+
+
+@dataclasses.dataclass
+class AlgoSpec(_AlgoSpec):
+    pass
+
+
+@dataclasses.dataclass
+class AggregateAlgoSpec(_AlgoSpec):
+    pass
+
+
+@dataclasses.dataclass
+class CompositeAlgoSpec(_AlgoSpec):
+    pass
 
 
 @dataclasses.dataclass
@@ -155,9 +204,34 @@ class TraintupleSpec(_Spec):
     objective_key: str
     data_manager_key: str
     train_data_sample_keys: str
-    in_models_keys: str
+    in_models_keys: typing.List[str]
     tag: str
     compute_plan_id: str
+    rank: int = None
+
+
+@dataclasses.dataclass
+class AggregatetupleSpec(_Spec):
+    algo_key: str
+    objective_key: str
+    worker: str
+    in_models_keys: typing.List[str]
+    tag: str
+    compute_plan_id: str
+    rank: int = None
+
+
+@dataclasses.dataclass
+class CompositeTraintupleSpec(_Spec):
+    algo_key: str
+    objective_key: str
+    data_manager_key: str
+    train_data_sample_keys: str
+    in_head_model_key: str
+    in_trunk_model_key: str
+    tag: str
+    compute_plan_id: str
+    out_trunk_model_permissions: typing.Dict
     rank: int = None
 
 
@@ -322,7 +396,7 @@ class AssetsFactory:
             test_data_manager_key=dataset.key if dataset else None,
         )
 
-    def create_algo(self, py_script=None, permissions=None):
+    def _create_algo(self, py_script, permissions=None):
         rdm = random.random()
         idx = self._algo_counter.inc()
         tmpdir = self._workdir / f'algo-{idx}'
@@ -334,8 +408,7 @@ class AssetsFactory:
         with open(description_path, 'w') as f:
             f.write(description_content)
 
-        algo_content = py_script or DEFAULT_ALGO_SCRIPT
-        algo_content = f'# random={rdm} \n' + algo_content
+        algo_content = f'# random={rdm} \n' + py_script
 
         algo_zip = utils.create_archive(
             tmpdir / 'algo',
@@ -350,11 +423,33 @@ class AssetsFactory:
             permissions=permissions or DEFAULT_PERMISSIONS,
         )
 
+    def create_algo(self, py_script=None, permissions=None):
+        return self._create_algo(
+            py_script or DEFAULT_ALGO_SCRIPT,
+            permissions=permissions,
+        )
+
+    def create_aggregate_algo(self, py_script=None, permissions=None):
+        return self._create_algo(
+            py_script or DEFAULT_AGGREGATE_ALGO_SCRIPT,
+            permissions=permissions,
+        )
+
+    def create_composite_algo(self, py_script=None, permissions=None):
+        return self._create_algo(
+            py_script or DEFAULT_COMPOSITE_ALGO_SCRIPT,
+            permissions=permissions,
+        )
+
     def create_traintuple(self, algo=None, objective=None, dataset=None,
                           data_samples=None, traintuples=None, tag=None,
                           compute_plan_id=None, rank=None):
         data_samples = data_samples or []
         traintuples = traintuples or []
+
+        for t in traintuples:
+            assert isinstance(t, assets.Traintuple)
+
         return TraintupleSpec(
             algo_key=algo.key if algo else None,
             objective_key=objective.key if objective else None,
@@ -364,6 +459,59 @@ class AssetsFactory:
             tag=tag,
             compute_plan_id=compute_plan_id,
             rank=rank,
+        )
+
+    def create_aggregatetuple(self, algo=None, objective=None, worker=None,
+                              traintuples=None, tag=None, compute_plan_id=None,
+                              rank=None):
+        traintuples = traintuples or []
+
+        for t in traintuples:
+            assert isinstance(t, (assets.Traintuple, assets.CompositeTraintuple))
+
+        return AggregatetupleSpec(
+            algo_key=algo.key if algo else None,
+            objective_key=objective.key if objective else None,
+            worker=worker,
+            in_models_keys=[t.key for t in traintuples],
+            tag=tag,
+            compute_plan_id=compute_plan_id,
+            rank=rank,
+        )
+
+    def create_composite_traintuple(self, algo=None, objective=None, dataset=None,
+                                    data_samples=None, head_traintuple=None,
+                                    trunk_traintuple=None, tag=None,
+                                    compute_plan_id=None, rank=None,
+                                    permissions=None):
+        data_samples = data_samples or []
+
+        kwargs = {}
+
+        if head_traintuple and trunk_traintuple:
+            assert isinstance(head_traintuple, assets.CompositeTraintuple)
+            assert isinstance(
+                trunk_traintuple,
+                (assets.CompositeTraintuple, assets.Aggregatetuple)
+            )
+            in_head_model_key = head_traintuple.key
+            in_trunk_model_key = trunk_traintuple.key
+        else:
+            in_head_model_key = None
+            in_trunk_model_key = None
+
+        return CompositeTraintupleSpec(
+            algo_key=algo.key if algo else None,
+            objective_key=objective.key if objective else None,
+            data_manager_key=dataset.key if dataset else None,
+            train_data_sample_keys=_get_keys(data_samples),
+            in_head_model_key=in_head_model_key,
+            in_trunk_model_key=in_trunk_model_key,
+            tag=tag,
+            compute_plan_id=compute_plan_id,
+            rank=rank,
+            out_trunk_model_permissions=permissions or DEFAULT_PERMISSIONS,
+            **kwargs,
         )
 
     def create_testtuple(self, traintuple=None, tag=None):
