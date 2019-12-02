@@ -4,46 +4,23 @@ import substratest as sbt
 
 
 @pytest.mark.skip('may raise MVCC errors')
-def test_compute_plan(factory, session_1, session_2):
+def test_compute_plan(data_network):
     """Execution of a compute plan containing multiple traintuples:
     - 1 traintuple executed on node 1
     - 1 traintuple executed on node 2
     - 1 traintuple executed on node 1 depending on previous traintuples
     """
+    factory, network = data_network
+    session_1, session_2 = data_network.sessions
 
-    # TODO create a fixture for initializing network with a set of nodes!
-
-    # add test data samples / dataset / ojective on node 1
-    spec = factory.create_dataset()
-    dataset_1 = session_1.add_dataset(spec)
-
-    spec = factory.create_data_sample(test_only=True, datasets=[dataset_1])
-    test_data_sample_1 = session_1.add_data_sample(spec)
-
-    spec = factory.create_data_sample(test_only=False, datasets=[dataset_1])
-    data_sample_11 = session_1.add_data_sample(spec)
-
-    spec = factory.create_objective(
-        dataset=dataset_1,
-        data_samples=[test_data_sample_1],
-    )
-    objective_1 = session_1.add_objective(spec)
-
-    # refresh dataset_1 as data samples have been added
-    dataset_1 = session_1.get_dataset(dataset_1.key)
-
-    # add train data samples / dataset / algo on node 2
-    spec = factory.create_dataset()
-    dataset_2 = session_2.add_dataset(spec)
-
-    spec = factory.create_data_sample(test_only=False, datasets=[dataset_2])
-    data_sample_21 = session_2.add_data_sample(spec)
+    dataset_1 = session_1.state.datasets[0]
+    dataset_2 = session_2.state.datasets[0]
+    objective_1 = session_1.state.objective[0]
+    train_data_samples_1 = session_1.state.train_data_samples
+    train_data_samples_2 = session_2.state.train_data_samples
 
     spec = factory.create_algo()
     algo_2 = session_2.add_algo(spec)
-
-    # refresh dataset_2 as data samples have been added
-    dataset_2 = session_2.get_dataset(dataset_2.key)
 
     # create compute plan
     cp_spec = factory.create_compute_plan(algo=algo_2, objective=objective_1)
@@ -52,17 +29,17 @@ def test_compute_plan(factory, session_1, session_2):
 
     traintuple_spec_1 = cp_spec.add_traintuple(
         dataset=dataset_1,
-        data_samples=[data_sample_11]
+        data_samples=train_data_samples_1,
     )
 
     traintuple_spec_2 = cp_spec.add_traintuple(
         dataset=dataset_2,
-        data_samples=[data_sample_21]
+        data_samples=train_data_samples_2,
     )
 
     _ = cp_spec.add_traintuple(
         dataset=dataset_1,
-        data_samples=[data_sample_11],
+        data_samples=train_data_samples_1,
         traintuple_specs=[traintuple_spec_1, traintuple_spec_2],
     )
 
@@ -88,7 +65,7 @@ def test_compute_plan(factory, session_1, session_2):
     assert traintuple_3.dataset.worker == session_1.node_id
 
 
-def test_compute_plan_single_session_success(factory, session):
+def test_compute_plan_single_session_success(data_network):
     """A compute plan with 3 traintuples and 3 associated testtuples"""
 
     # Create a compute plan with 3 steps:
@@ -97,29 +74,15 @@ def test_compute_plan_single_session_success(factory, session):
     # 2. traintuple + testtuple
     # 3. traintuple + testtuple
 
-    spec = factory.create_dataset()
-    dataset = session.add_dataset(spec)
+    factory, network = data_network
+    session = network.sessions[0]
+
+    dataset = session.state.datasets[0]
+    data_sample_1, data_sample_2, data_sample_3, _ = session.state.train_data_samples
+    objective = session.state.objectives[0]
 
     spec = factory.create_algo()
     algo = session.add_algo(spec)
-
-    spec = factory.create_data_sample(test_only=False, datasets=[dataset])
-    data_sample_1 = session.add_data_sample(spec)
-
-    spec = factory.create_data_sample(test_only=False, datasets=[dataset])
-    data_sample_2 = session.add_data_sample(spec)
-
-    spec = factory.create_data_sample(test_only=False, datasets=[dataset])
-    data_sample_3 = session.add_data_sample(spec)
-
-    spec = factory.create_data_sample(test_only=True, datasets=[dataset])
-    test_data_sample_1 = session.add_data_sample(spec)
-
-    spec = factory.create_objective(
-        dataset=dataset,
-        data_samples=[test_data_sample_1],
-    )
-    objective = session.add_objective(spec)
 
     cp_spec = factory.create_compute_plan(algo=algo, objective=objective)
 
@@ -166,7 +129,7 @@ def test_compute_plan_single_session_success(factory, session):
     assert set(cp.testtuple_keys) == set(compute_plan.testtuples)
 
 
-def test_compute_plan_single_session_failure(factory, session):
+def test_compute_plan_single_session_failure(data_network):
     """In a compute plan with 3 traintuples, failing the root traintuple should also
     fail its descendents and the associated testtuples"""
 
@@ -178,29 +141,15 @@ def test_compute_plan_single_session_failure(factory, session):
     #
     # Intentionally use an invalid (broken) algo.
 
-    spec = factory.create_dataset()
-    dataset = session.add_dataset(spec)
+    factory, network = data_network
+    session = network.sessions[0]
+
+    dataset = session.state.datasets[0]
+    data_sample_1, data_sample_2, data_sample_3, _ = session.state.train_data_samples
+    objective = session.state.objectives[0]
 
     spec = factory.create_algo(py_script=sbt.factory.INVALID_ALGO_SCRIPT)
     algo = session.add_algo(spec)
-
-    spec = factory.create_data_sample(test_only=False, datasets=[dataset])
-    data_sample_1 = session.add_data_sample(spec)
-
-    spec = factory.create_data_sample(test_only=False, datasets=[dataset])
-    data_sample_2 = session.add_data_sample(spec)
-
-    spec = factory.create_data_sample(test_only=False, datasets=[dataset])
-    data_sample_3 = session.add_data_sample(spec)
-
-    spec = factory.create_data_sample(test_only=True, datasets=[dataset])
-    test_data_sample_1 = session.add_data_sample(spec)
-
-    spec = factory.create_objective(
-        dataset=dataset,
-        data_samples=[test_data_sample_1],
-    )
-    objective = session.add_objective(spec)
 
     cp_spec = factory.create_compute_plan(algo=algo, objective=objective)
 

@@ -62,7 +62,7 @@ def network():
     return _get_network()
 
 
-@pytest.fixture(scope='session')
+@pytest.yield_fixture(scope='session')
 def data_network():
     """Network fixture with pre-existing assets in all nodes.
 
@@ -84,22 +84,22 @@ def data_network():
 
             # create dataset
             spec = f.create_dataset()
-            sess.add_dataset(spec)
+            dataset = sess.add_dataset(spec)
 
             # create train data samples
             for i in range(4):
-                spec = f.create_data_sample(test_only=False).fill_from_session(sess)
+                spec = f.create_data_sample(datasets=[dataset], test_only=False)
                 sess.add_data_sample(spec)
 
             # create test data sample
-            spec = f.create_data_sample(test_only=True).fill_from_session(sess)
-            sess.add_data_sample(spec)
+            spec = f.create_data_sample(datasets=[dataset], test_only=True)
+            test_data_sample = sess.add_data_sample(spec)
 
             # create objective
-            spec = f.create_objective().fill_from_session(sess)
+            spec = f.create_objective(dataset=dataset, data_samples=[test_data_sample])
             sess.add_objective(spec)
 
-        return f, n
+        yield f, n
 
 
 @pytest.fixture
