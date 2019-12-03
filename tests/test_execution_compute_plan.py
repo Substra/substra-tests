@@ -1,4 +1,5 @@
 import pytest
+import copy
 
 import substratest as sbt
 
@@ -11,13 +12,11 @@ def test_compute_plan(data_network):
     - 1 traintuple executed on node 1 depending on previous traintuples
     """
     factory, network = data_network
-    session_1, session_2 = data_network.sessions
+    session_1, session_2 = copy.deepcopy(data_network.sessions)
 
     dataset_1 = session_1.state.datasets[0]
     dataset_2 = session_2.state.datasets[0]
     objective_1 = session_1.state.objective[0]
-    train_data_samples_1 = session_1.state.train_data_samples
-    train_data_samples_2 = session_2.state.train_data_samples
 
     spec = factory.create_algo()
     algo_2 = session_2.add_algo(spec)
@@ -29,17 +28,17 @@ def test_compute_plan(data_network):
 
     traintuple_spec_1 = cp_spec.add_traintuple(
         dataset=dataset_1,
-        data_samples=train_data_samples_1,
+        data_samples=dataset_1.train_data_sample_keys,
     )
 
     traintuple_spec_2 = cp_spec.add_traintuple(
         dataset=dataset_2,
-        data_samples=train_data_samples_2,
+        data_samples=dataset_2.train_data_sample_keys,
     )
 
     _ = cp_spec.add_traintuple(
         dataset=dataset_1,
-        data_samples=train_data_samples_1,
+        data_samples=dataset_1.train_data_sample_keys,
         traintuple_specs=[traintuple_spec_1, traintuple_spec_2],
     )
 
@@ -75,10 +74,10 @@ def test_compute_plan_single_session_success(data_network):
     # 3. traintuple + testtuple
 
     factory, network = data_network
-    session = network.sessions[0]
+    session = copy.deepcopy(network.sessions[0])
 
     dataset = session.state.datasets[0]
-    data_sample_1, data_sample_2, data_sample_3, _ = session.state.train_data_samples
+    data_sample_1, data_sample_2, data_sample_3, _ = dataset.train_data_sample_keys
     objective = session.state.objectives[0]
 
     spec = factory.create_algo()
@@ -142,10 +141,10 @@ def test_compute_plan_single_session_failure(data_network):
     # Intentionally use an invalid (broken) algo.
 
     factory, network = data_network
-    session = network.sessions[0]
+    session = copy.deepcopy(network.sessions[0])
 
     dataset = session.state.datasets[0]
-    data_sample_1, data_sample_2, data_sample_3, _ = session.state.train_data_samples
+    data_sample_1, data_sample_2, data_sample_3, _ = dataset.train_data_sample_keys
     objective = session.state.objectives[0]
 
     spec = factory.create_algo(py_script=sbt.factory.INVALID_ALGO_SCRIPT)

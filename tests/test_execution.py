@@ -1,6 +1,7 @@
-import substra
-
 import pytest
+import copy
+
+import substra
 
 import substratest as sbt
 
@@ -8,11 +9,10 @@ import substratest as sbt
 def test_tuples_execution_on_same_node(data_network):
     """Execution of a traintuple, a following testtuple and a following traintuple."""
     factory, network = data_network
-    session = network.sessions[0]
+    session = copy.deepcopy(network.sessions[0])
 
     dataset = session.state.datasets[0]
     objective = session.state.objectives[0]
-    train_data_samples = session.state.train_data_samples
 
     spec = factory.create_algo()
     algo = session.add_algo(spec)
@@ -22,7 +22,7 @@ def test_tuples_execution_on_same_node(data_network):
         algo=algo,
         objective=objective,
         dataset=dataset,
-        data_samples=train_data_samples,
+        data_samples=dataset.train_data_sample_keys,
     )
     traintuple = session.add_traintuple(spec).future().wait()
     assert traintuple.status == 'done'
@@ -39,7 +39,7 @@ def test_tuples_execution_on_same_node(data_network):
         algo=algo,
         objective=objective,
         dataset=dataset,
-        data_samples=train_data_samples,
+        data_samples=dataset.train_data_sample_keys,
         traintuples=[traintuple],
     )
     traintuple = session.add_traintuple(spec).future().wait()
@@ -50,11 +50,10 @@ def test_tuples_execution_on_same_node(data_network):
 def test_federated_learning_workflow(data_network):
     """Test federated learning workflow."""
     factory, network = data_network
-    session = network.sessions[0]
+    session = copy.deepcopy(network.sessions[0])
 
-    # create test environment
+    # get test environment
     dataset = session.state.datasets[0]
-    train_data_samples = session.state.train_data_samples
     objective = session.state.objectives[0]
 
     spec = factory.create_algo()
@@ -65,7 +64,7 @@ def test_federated_learning_workflow(data_network):
         algo=algo,
         objective=objective,
         dataset=dataset,
-        data_samples=train_data_samples,
+        data_samples=dataset.train_data_sample_keys,
         tag='foo',
         rank=0,
     )
@@ -83,7 +82,7 @@ def test_federated_learning_workflow(data_network):
         algo=algo,
         objective=objective,
         dataset=dataset,
-        data_samples=train_data_samples,
+        data_samples=dataset.train_data_sample_keys,
         traintuples=[traintuple_1],
         tag='foo',
         compute_plan_id=traintuple_1.compute_plan_id,
@@ -103,11 +102,10 @@ def test_tuples_execution_on_different_nodes(data_network):
     """Execution of a traintuple on node 1 and the following testtuple on node 2."""
     # add test data samples / dataset / ojective on node 1
     factory, network = data_network
-    session_1, session_2 = network.sessions
+    session_1, session_2 = copy.deepcopy(network.sessions)
 
     objective_1 = session_1.state.objectives[0]
     dataset_2 = session_2.state.datasets[0]
-    train_data_samples_2 = session_2.state.train_data_samples
 
     spec = factory.create_algo()
     algo_2 = session_2.add_algo(spec)
@@ -117,7 +115,7 @@ def test_tuples_execution_on_different_nodes(data_network):
         algo=algo_2,
         objective=objective_1,
         dataset=dataset_2,
-        data_samples=train_data_samples_2,
+        data_samples=dataset_2.train_data_sample_keys,
     )
     traintuple = session_1.add_traintuple(spec).future().wait()
     assert traintuple.status == 'done'
@@ -134,11 +132,10 @@ def test_tuples_execution_on_different_nodes(data_network):
 def test_traintuple_execution_failure(data_network):
     """Invalid algo script is causing traintuple failure."""
     factory, network = data_network
-    session = network.sessions[0]
+    session = copy.deepcopy(network.sessions[0])
 
     objective = session.state.objectives[0]
     dataset = session.state.datasets[0]
-    train_data_samples = session.state.train_data_samples
 
     spec = factory.create_algo(py_script=sbt.factory.INVALID_ALGO_SCRIPT)
     algo = session.add_algo(spec)
@@ -147,7 +144,7 @@ def test_traintuple_execution_failure(data_network):
         algo=algo,
         objective=objective,
         dataset=dataset,
-        data_samples=train_data_samples,
+        data_samples=dataset.train_data_sample_keys,
     )
     traintuple = session.add_traintuple(spec).future().wait(raises=False)
     assert traintuple.status == 'failed'
@@ -158,11 +155,10 @@ def test_composite_traintuples_execution(data_network):
     """Execution of composite traintuples."""
 
     factory, network = data_network
-    session = network.sessions[0]
+    session = copy.deepcopy(network.sessions[0])
 
     dataset = session.state.datasets[0]
     objective = session.state.objectives[0]
-    train_data_samples = session.state.train_data_samples
 
     spec = factory.create_composite_algo()
     algo = session.add_composite_algo(spec)
@@ -172,7 +168,7 @@ def test_composite_traintuples_execution(data_network):
         algo=algo,
         objective=objective,
         dataset=dataset,
-        data_samples=train_data_samples,
+        data_samples=dataset.train_data_sample_keys,
     )
     composite_traintuple_1 = session.add_composite_traintuple(spec).future().wait()
     assert composite_traintuple_1.status == 'done'
@@ -186,7 +182,7 @@ def test_composite_traintuples_execution(data_network):
         algo=algo,
         objective=objective,
         dataset=dataset,
-        data_samples=train_data_samples,
+        data_samples=dataset.train_data_sample_keys,
         head_traintuple=composite_traintuple_1,
         trunk_traintuple=composite_traintuple_1,
     )
@@ -214,23 +210,23 @@ def test_aggregatetuple(data_network):
     number_of_traintuples_to_aggregate = 3
 
     factory, network = data_network
-    session = network.sessions[0]
+    session = copy.deepcopy(network.sessions[0])
 
     dataset = session.state.datasets[0]
     objective = session.state.objectives[0]
-    train_data_samples = session.state.train_data_samples[:number_of_traintuples_to_aggregate]
+    train_data_sample_keys = dataset.train_data_sample_keys[:number_of_traintuples_to_aggregate]
 
     spec = factory.create_algo()
     algo = session.add_algo(spec)
 
     # add traintuples
     traintuples = []
-    for data_sample in train_data_samples:
+    for data_sample_key in train_data_sample_keys:
         spec = factory.create_traintuple(
             algo=algo,
             objective=objective,
             dataset=dataset,
-            data_samples=[data_sample],
+            data_samples=[data_sample_key],
         )
         traintuple = session.add_traintuple(spec).future().wait()
         traintuples.append(traintuple)
@@ -273,18 +269,12 @@ def test_aggregate_composite_traintuples(data_network):
     This test refers to the model composition use case.
     """
     factory, network = data_network
-    sessions = network.sessions
+    sessions = copy.deepcopy(network.sessions)
 
     aggregate_worker = sessions[0].node_id
     number_of_rounds = 2
 
-    # reload datasets (to ensure they are properly linked with the created data samples)
     datasets = sessions[0].state.datasets + sessions[1].state.datasets
-    datasets = [
-        sessions[i].get_dataset(d.key)
-        for i, d in enumerate(list(datasets))
-    ]
-
     objective = sessions[0].state.objectives[0]
 
     # register algos on first node
