@@ -317,30 +317,30 @@ class ComputePlanSpec(_Spec):
     aggregatetuples: typing.List[ComputePlanAggregatetupleSpec]
     testtuples: typing.List[ComputePlanTesttupleSpec]
 
-    def add_traintuple(self, algo, dataset, data_samples, in_models_tuples=None, tag=''):
-        in_models_tuples = in_models_tuples or []
+    def add_traintuple(self, algo, dataset, data_samples, in_models=None, tag=''):
+        in_models = in_models or []
         spec = ComputePlanTraintupleSpec(
             algo_key=algo.key,
             traintuple_id=random_uuid(),
             data_manager_key=dataset.key,
             train_data_sample_keys=_get_keys(data_samples),
-            in_models_ids=[t.id for t in in_models_tuples],
+            in_models_ids=[t.id for t in in_models],
             tag=tag,
         )
         self.traintuples.append(spec)
         return spec
 
-    def add_aggregatetuple(self, aggregate_algo, worker, in_models_tuples=None, tag=''):
-        in_models_tuples = in_models_tuples or []
+    def add_aggregatetuple(self, aggregate_algo, worker, in_models=None, tag=''):
+        in_models = in_models or []
 
-        for t in in_models_tuples:
+        for t in in_models:
             assert isinstance(t, (ComputePlanTraintupleSpec, ComputePlanCompositeTraintupleSpec))
 
         spec = ComputePlanAggregatetupleSpec(
             aggregatetuple_id=random_uuid(),
             algo_key=aggregate_algo.key,
             worker=worker,
-            in_models_ids=[t.id for t in in_models_tuples],
+            in_models_ids=[t.id for t in in_models],
             tag=tag,
         )
         self.aggregatetuples.append(spec)
