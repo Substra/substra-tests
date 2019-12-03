@@ -1,5 +1,5 @@
 import pytest
-
+import substra
 import substratest as sbt
 
 
@@ -46,12 +46,9 @@ def test_compute_plan(global_execution_env):
     )
 
     # submit compute plan and wait for it to complete
-    cp = session_1.add_compute_plan(cp_spec)
+    cp = session_1.add_compute_plan(cp_spec).future().wait()
 
-    traintuples = [
-        session_1.get_traintuple(key).future().wait()
-        for key in cp.traintuple_keys
-    ]
+    traintuples = cp.list_traintuples(session_1)
 
     # check all traintuples are done and check they have been executed on the expected
     # node
@@ -112,20 +109,10 @@ def test_compute_plan_single_session_success(global_execution_env):
     cp_spec.add_testtuple(traintuple_spec_3)
 
     # Submit compute plan and wait for it to complete
-    cp = session.add_compute_plan(cp_spec)
-
-    traintuples = [
-        session.get_traintuple(key).future().wait()
-        for key in cp.traintuple_keys
-    ]
-
-    testtuples = [
-        session.get_testtuple(key).future().wait()
-        for key in cp.testtuple_keys
-    ]
+    cp = session.add_compute_plan(cp_spec).future().wait()
 
     # All the train/test tuples should succeed
-    for t in traintuples + testtuples:
+    for t in cp.list_traintuples(session) + cp.list_testtuples(session):
         assert t.status == 'done'
 
     compute_plan = session.get_compute_plan(cp.compute_plan_id)
@@ -319,5 +306,7 @@ def test_compute_plan_circular_dependency_failure(factory, session):
     traintuple_spec_2.in_models_ids.append(traintuple_spec_1.id)
 
     # TODO make sur the creation is rejected
-    cp = session.add_compute_plan(cp_spec)
-    assert False
+    with pytest.raises(substra.exceptions.InvalidRequest) as e:
+        session.add_compute_plan(cp_spec)
+
+    assert 'circular' in str(e)

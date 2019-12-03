@@ -11,7 +11,17 @@ from . import errors
 FUTURE_TIMEOUT = 120  # seconds
 
 
-class Future:
+class BaseFuture(abc.ABC):
+    @abc.abstractmethod
+    def wait(self, timeout=FUTURE_TIMEOUT, raises=True):
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def get(self):
+        raise NotImplementedError
+
+
+class Future(BaseFuture):
     """Future asset."""
     # mapper from asset class name to client getter method
     _methods = {
@@ -50,43 +60,25 @@ class Future:
         return self._asset
 
 
-class ComputePlanFuture(Future):
-    _keys_properties = {
-        'ComputePlan': {
-            'traintuple_keys': 'traintuples',
-            'composite_traintuple_keys': 'composite_traintuples',
-            'aggregatetuple_keys': 'aggregatetuples',
-            'testtuple_keys': 'testtuples',
-        },
-        'ComputePlanCreated': {
-            'traintuple_keys': 'traintuple_keys',
-            'composite_traintuple_keys': 'composite_traintuple_keys',
-            'aggregatetuple_keys': 'aggregatetuple_keys',
-            'testtuple_keys': 'testtuple_keys',
-
-        },
-    }
-
+class ComputePlanFuture(BaseFuture):
     def __init__(self, asset, session):
         self._asset = asset
         self._getter = session.get_compute_plan
-        for k, v in enumerate(self._keys_properties[asset.__class__.name]):
-            setattr(self, f'_{k}', getattr(asset, v))
         self._get_traintuple = session.get_traintuple
         self._get_composite_traintuple = session.get_composite_traintuple
         self._get_aggregatetuple = session.get_aggregatetuple
         self._get_testtuple = session.get_testtuple
 
-    def wait(self, timeout=FUTURE_TIMEOUT, raises=True):
+    def wait(self, timeout=FUTURE_TIMEOUT):
         """wait until all tuples are completed (done or failed)."""
-        for key in self._traintuple_keys:
-            self._get_traintuple(key).future().wait(timeout, raises)
-        for key in self._composite_traintuple_keys:
-            self._get_composite_traintuple(key).future().wait(timeout, raises)
-        for key in self._aggregatetuple_keys:
-            self._get_aggregatetuple(key).future().wait(timeout, raises)
-        for key in self._testtuple_keys:
-            self._get_testtuple(key).future().wait(timeout, raises)
+        for key in self._asset.traintuple_keys:
+            self._get_traintuple(key).future().wait(timeout, raises=False)
+        for key in self._asset.composite_traintuple_keys:
+            self._get_composite_traintuple(key).future().wait(timeout, raises=False)
+        for key in self._asset.aggregatetuple_keys:
+            self._get_aggregatetuple(key).future().wait(timeout, raises=False)
+        for key in self._asset.testtuple_keys:
+            self._get_testtuple(key).future().wait(timeout, raises=False)
 
         return self.get()
 
@@ -95,6 +87,8 @@ class ComputePlanFuture(Future):
 
 
 class _FutureMixin(abc.ABC):
+    _future_cls = Future
+
     def attach(self, session):
         """Attach session to asset."""
         self._session = session
@@ -104,11 +98,11 @@ class _FutureMixin(abc.ABC):
         """Returns future from asset."""
         assert hasattr(self, 'status')
         assert hasattr(self, 'key')
+        return self._future_cls(self, self._session)
 
-        try:
-            return self.Meta.FutureCls(self, self._session)
-        except AttributeError:
-            return Future(self, self._session)
+
+class _ComputePlanFutureMixin(abc.ABC):
+    _future_cls = ComputePlanFuture
 
 
 def _convert(name):
@@ -376,26 +370,35 @@ class ComputePlanCreated(_Asset, _FutureMixin):
     aggregatetuple_keys: typing.List[str]
     testtuple_keys: typing.List[str]
 
-    class Meta:
-        FutureCls = ComputePlanFuture
-
 
 @dataclasses.dataclass
 class ComputePlan(_Asset):
     compute_plan_id: str
-    algo_key: str
     objective_key: str
     traintuples: typing.List[str]
     composite_traintuples: typing.List[str]
     aggregatetuples: typing.List[str]
     testtuples: typing.List[str]
 
-    class Meta:
-        FutureCls = ComputePlanFuture
-
     def __post_init__(self):
         if self.testtuples is None:
             self.testtuples = []
+
+    @property
+    def traintuple_keys(self):
+        return self.traintuples
+
+    @property
+    def composite_traintuple_keys(self):
+        return self.composite_traintuples
+
+    @property
+    def aggregatetuple_keys(self):
+        return self.aggregatetuples
+
+    @property
+    def testtuple_keys(self):
+        return self.testtuples
 
     def list_traintuples(self, session):
         return session.list_traintuples(filters=[f'traintuple:computePlanId:{self.compute_plan_id}'])
