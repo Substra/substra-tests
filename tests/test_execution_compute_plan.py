@@ -1,18 +1,18 @@
 import pytest
-import copy
 
 import substratest as sbt
 
 
 @pytest.mark.skip('may raise MVCC errors')
-def test_compute_plan(data_network):
+def test_compute_plan(global_execution_env):
     """Execution of a compute plan containing multiple traintuples:
     - 1 traintuple executed on node 1
     - 1 traintuple executed on node 2
     - 1 traintuple executed on node 1 depending on previous traintuples
     """
-    factory, network = data_network
-    session_1, session_2 = copy.deepcopy(data_network.sessions)
+    factory, network = global_execution_env
+    session_1 = network.sessions[0].copy()
+    session_2 = network.sessions[1].copy()
 
     dataset_1 = session_1.state.datasets[0]
     dataset_2 = session_2.state.datasets[0]
@@ -64,7 +64,7 @@ def test_compute_plan(data_network):
     assert traintuple_3.dataset.worker == session_1.node_id
 
 
-def test_compute_plan_single_session_success(data_network):
+def test_compute_plan_single_session_success(global_execution_env):
     """A compute plan with 3 traintuples and 3 associated testtuples"""
 
     # Create a compute plan with 3 steps:
@@ -73,8 +73,8 @@ def test_compute_plan_single_session_success(data_network):
     # 2. traintuple + testtuple
     # 3. traintuple + testtuple
 
-    factory, network = data_network
-    session = copy.deepcopy(network.sessions[0])
+    factory, network = global_execution_env
+    session = network.sessions[0].copy()
 
     dataset = session.state.datasets[0]
     data_sample_1, data_sample_2, data_sample_3, _ = dataset.train_data_sample_keys
@@ -128,7 +128,7 @@ def test_compute_plan_single_session_success(data_network):
     assert set(cp.testtuple_keys) == set(compute_plan.testtuples)
 
 
-def test_compute_plan_single_session_failure(data_network):
+def test_compute_plan_single_session_failure(global_execution_env):
     """In a compute plan with 3 traintuples, failing the root traintuple should also
     fail its descendents and the associated testtuples"""
 
@@ -140,8 +140,8 @@ def test_compute_plan_single_session_failure(data_network):
     #
     # Intentionally use an invalid (broken) algo.
 
-    factory, network = data_network
-    session = copy.deepcopy(network.sessions[0])
+    factory, network = global_execution_env
+    session = network.sessions[0].copy()
 
     dataset = session.state.datasets[0]
     data_sample_1, data_sample_2, data_sample_3, _ = dataset.train_data_sample_keys

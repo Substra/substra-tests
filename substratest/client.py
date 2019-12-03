@@ -1,5 +1,6 @@
 import os
 import tempfile
+import copy
 
 import substra
 
@@ -45,6 +46,9 @@ class Session:
         self._client = substra.Client()
         self._client.add_profile(node_name, user, password, address, '0.0')
         self._client.login()
+
+    def copy(self):
+        return copy.deepcopy(self)
 
     def add_data_sample(self, spec, *args, **kwargs):
         res = self._client.add_data_sample(spec.to_dict(), *args, **kwargs)

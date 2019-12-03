@@ -62,8 +62,8 @@ def network():
     return _get_network()
 
 
-@pytest.yield_fixture(scope='session')
-def data_network():
+@pytest.fixture(scope='session')
+def global_execution_env():
     """Network fixture with pre-existing assets in all nodes.
 
     The following asssets will be created for each node:

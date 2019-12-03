@@ -1,15 +1,14 @@
 import pytest
-import copy
 
 import substra
 
 import substratest as sbt
 
 
-def test_tuples_execution_on_same_node(data_network):
+def test_tuples_execution_on_same_node(global_execution_env):
     """Execution of a traintuple, a following testtuple and a following traintuple."""
-    factory, network = data_network
-    session = copy.deepcopy(network.sessions[0])
+    factory, network = global_execution_env
+    session = network.sessions[0].copy()
 
     dataset = session.state.datasets[0]
     objective = session.state.objectives[0]
@@ -47,10 +46,10 @@ def test_tuples_execution_on_same_node(data_network):
     assert len(traintuple.in_models) == 1
 
 
-def test_federated_learning_workflow(data_network):
+def test_federated_learning_workflow(global_execution_env):
     """Test federated learning workflow."""
-    factory, network = data_network
-    session = copy.deepcopy(network.sessions[0])
+    factory, network = global_execution_env
+    session = network.sessions[0].copy()
 
     # get test environment
     dataset = session.state.datasets[0]
@@ -98,11 +97,12 @@ def test_federated_learning_workflow(data_network):
         session.add_traintuple(spec)
 
 
-def test_tuples_execution_on_different_nodes(data_network):
+def test_tuples_execution_on_different_nodes(global_execution_env):
     """Execution of a traintuple on node 1 and the following testtuple on node 2."""
     # add test data samples / dataset / ojective on node 1
-    factory, network = data_network
-    session_1, session_2 = copy.deepcopy(network.sessions)
+    factory, network = global_execution_env
+    session_1 = network.sessions[0].copy()
+    session_2 = network.sessions[1].copy()
 
     objective_1 = session_1.state.objectives[0]
     dataset_2 = session_2.state.datasets[0]
@@ -129,10 +129,10 @@ def test_tuples_execution_on_different_nodes(data_network):
     assert testtuple.dataset.worker == session_1.node_id
 
 
-def test_traintuple_execution_failure(data_network):
+def test_traintuple_execution_failure(global_execution_env):
     """Invalid algo script is causing traintuple failure."""
-    factory, network = data_network
-    session = copy.deepcopy(network.sessions[0])
+    factory, network = global_execution_env
+    session = network.sessions[0].copy()
 
     objective = session.state.objectives[0]
     dataset = session.state.datasets[0]
@@ -151,11 +151,11 @@ def test_traintuple_execution_failure(data_network):
     assert traintuple.out_model is None
 
 
-def test_composite_traintuples_execution(data_network):
+def test_composite_traintuples_execution(global_execution_env):
     """Execution of composite traintuples."""
 
-    factory, network = data_network
-    session = copy.deepcopy(network.sessions[0])
+    factory, network = global_execution_env
+    session = network.sessions[0].copy()
 
     dataset = session.state.datasets[0]
     objective = session.state.objectives[0]
@@ -204,13 +204,13 @@ def test_composite_traintuples_execution(data_network):
     )
 
 
-def test_aggregatetuple(data_network):
+def test_aggregatetuple(global_execution_env):
     """Execution of aggregatetuple aggregating traintuples."""
 
     number_of_traintuples_to_aggregate = 3
 
-    factory, network = data_network
-    session = copy.deepcopy(network.sessions[0])
+    factory, network = global_execution_env
+    session = network.sessions[0].copy()
 
     dataset = session.state.datasets[0]
     objective = session.state.objectives[0]
@@ -245,7 +245,7 @@ def test_aggregatetuple(data_network):
     assert len(aggregatetuple.in_models) == number_of_traintuples_to_aggregate
 
 
-def test_aggregate_composite_traintuples(data_network):
+def test_aggregate_composite_traintuples(global_execution_env):
     """Do 2 rounds of composite traintuples aggregations on multiple nodes.
 
     Compute plan details:
@@ -268,8 +268,8 @@ def test_aggregate_composite_traintuples(data_network):
 
     This test refers to the model composition use case.
     """
-    factory, network = data_network
-    sessions = copy.deepcopy(network.sessions)
+    factory, network = global_execution_env
+    sessions = [s.copy() for s in network.sessions]
 
     aggregate_worker = sessions[0].node_id
     number_of_rounds = 2
