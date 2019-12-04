@@ -217,8 +217,8 @@ def test_compute_plan_aggregate_composite_traintuples(global_execution_env):
             kwargs = {}
             if previous_aggregatetuple_spec:
                 kwargs = {
-                    'in_head_model_tuple': previous_composite_traintuple_specs[index],
-                    'in_trunk_model_tuple': previous_aggregatetuple_spec,
+                    'in_head_model': previous_composite_traintuple_specs[index],
+                    'in_trunk_model': previous_aggregatetuple_spec,
                 }
             spec = cp_spec.add_composite_traintuple(
                 composite_algo=composite_algo,

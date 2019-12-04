@@ -347,14 +347,14 @@ class ComputePlanSpec(_Spec):
         return spec
 
     def add_composite_traintuple(self, composite_algo, dataset=None, data_samples=None,
-                                 in_head_model_tuple=None, in_trunk_model_tuple=None,
+                                 in_head_model=None, in_trunk_model=None,
                                  out_trunk_model_permissions=None, tag=''):
         data_samples = data_samples or []
 
-        if in_head_model_tuple and in_trunk_model_tuple:
-            assert isinstance(in_head_model_tuple, ComputePlanCompositeTraintupleSpec)
+        if in_head_model and in_trunk_model:
+            assert isinstance(in_head_model, ComputePlanCompositeTraintupleSpec)
             assert isinstance(
-                in_trunk_model_tuple,
+                in_trunk_model,
                 (ComputePlanCompositeTraintupleSpec, ComputePlanAggregatetupleSpec)
             )
 
@@ -363,8 +363,8 @@ class ComputePlanSpec(_Spec):
             algo_key=composite_algo.key,
             data_manager_key=dataset.key if dataset else None,
             train_data_sample_keys=_get_keys(data_samples),
-            in_head_model_id=in_head_model_tuple.id if in_head_model_tuple else None,
-            in_trunk_model_id=in_trunk_model_tuple.id if in_trunk_model_tuple else None,
+            in_head_model_id=in_head_model.id if in_head_model else None,
+            in_trunk_model_id=in_trunk_model.id if in_trunk_model else None,
             out_trunk_model_permissions=out_trunk_model_permissions or DEFAULT_OUT_MODEL_PERMISSIONS,
             tag=tag,
         )
