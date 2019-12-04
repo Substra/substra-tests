@@ -146,7 +146,7 @@ class Session:
 
     def add_compute_plan(self, spec):
         res = self._client.add_compute_plan(spec.to_dict())
-        compute_plan = assets.ComputePlanCreated.load(res).attach(self)
+        compute_plan = assets.ComputePlan.load(res).attach(self)
         self.state.compute_plans.append(compute_plan)
         return compute_plan
 

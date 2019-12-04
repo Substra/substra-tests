@@ -169,8 +169,7 @@ def test_compute_plan_single_session_failure(global_execution_env):
     cp_spec.add_testtuple(traintuple_spec_3)
 
     # Submit compute plan and wait for it to complete
-    cp_created = session.add_compute_plan(cp_spec)
-    cp = cp_created.future().wait()
+    cp = session.add_compute_plan(cp_spec).future().wait()
 
     traintuples = cp.list_traintuples(session)
     testtuples = cp.list_testtuples(session)
@@ -178,10 +177,6 @@ def test_compute_plan_single_session_failure(global_execution_env):
     # All the train/test tuples should be marked as failed
     for t in traintuples + testtuples:
         assert t.status == 'failed'
-
-    assert cp_created.compute_plan_id == cp.compute_plan_id
-    assert set(cp_created.traintuple_keys) == set(cp.traintuples)
-    assert set(cp_created.testtuple_keys) == set(cp.testtuples)
 
 
 def test_compute_plan_aggregate_composite_traintuples(global_execution_env):

@@ -86,8 +86,8 @@ class ComputePlanFuture(BaseFuture):
         return self._getter(self._asset.key)
 
 
-class _FutureMixin(abc.ABC):
-    _future_cls = Future
+class _BaseFutureMixin(abc.ABC):
+    _future_cls = None
 
     def attach(self, session):
         """Attach session to asset."""
@@ -96,12 +96,23 @@ class _FutureMixin(abc.ABC):
 
     def future(self):
         """Returns future from asset."""
-        assert hasattr(self, 'status')
-        assert hasattr(self, 'key')
         return self._future_cls(self, self._session)
 
 
-class _ComputePlanFutureMixin(abc.ABC):
+class _FutureMixin(_BaseFutureMixin):
+    _future_cls = Future
+
+    def attach(self, session):
+        self._session = session
+        return self
+
+    def future(self):
+        assert hasattr(self, 'status')
+        assert hasattr(self, 'key')
+        return super().future()
+
+
+class _ComputePlanFutureMixin(_BaseFutureMixin):
     _future_cls = ComputePlanFuture
 
 
@@ -363,42 +374,17 @@ class Testtuple(_Asset, _FutureMixin):
 
 
 @dataclasses.dataclass
-class ComputePlanCreated(_Asset, _ComputePlanFutureMixin):
+class ComputePlan(_Asset, _ComputePlanFutureMixin):
     compute_plan_id: str
+    objective_key: str
     traintuple_keys: typing.List[str]
     composite_traintuple_keys: typing.List[str]
     aggregatetuple_keys: typing.List[str]
     testtuple_keys: typing.List[str]
 
-
-@dataclasses.dataclass
-class ComputePlan(_Asset, _ComputePlanFutureMixin):
-    compute_plan_id: str
-    objective_key: str
-    traintuples: typing.List[str]
-    composite_traintuples: typing.List[str]
-    aggregatetuples: typing.List[str]
-    testtuples: typing.List[str]
-
     def __post_init__(self):
-        if self.testtuples is None:
-            self.testtuples = []
-
-    @property
-    def traintuple_keys(self):
-        return self.traintuples
-
-    @property
-    def composite_traintuple_keys(self):
-        return self.composite_traintuples
-
-    @property
-    def aggregatetuple_keys(self):
-        return self.aggregatetuples
-
-    @property
-    def testtuple_keys(self):
-        return self.testtuples
+        if self.testtuple_keys is None:
+            self.testtuple_keys = []
 
     def list_traintuples(self, session):
         return session.list_traintuples(filters=[f'traintuple:computePlanId:{self.compute_plan_id}'])
