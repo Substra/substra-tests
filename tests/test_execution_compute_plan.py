@@ -279,4 +279,4 @@ def test_compute_plan_circular_dependency_failure(global_execution_env):
     with pytest.raises(substra.exceptions.InvalidRequest) as e:
         session.add_compute_plan(cp_spec)
 
-    assert 'circular' in str(e)
+    assert 'missing dependency among inModels IDs' in str(e)
