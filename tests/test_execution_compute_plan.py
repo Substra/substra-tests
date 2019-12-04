@@ -236,9 +236,9 @@ def test_compute_plan_aggregate_composite_traintuples(global_execution_env):
         )
 
     cp = sessions[0].add_compute_plan(cp_spec).future().wait()
-    tuples = (cp.list_traintuple(sessions) +
+    tuples = (cp.list_traintuple(sessions[0]) +
               cp.list_composite_traintuple(sessions[0]) +
-              cp.list_aggregate_tuple(sessions[0]) +
+              cp.list_aggregatetuple(sessions[0]) +
               cp.list_testtuple(sessions[0]))
     for t in tuples:
         assert t.status == 'done'
@@ -274,4 +274,4 @@ def test_compute_plan_circular_dependency_failure(global_execution_env):
     with pytest.raises(substra.exceptions.InvalidRequest) as e:
         session.add_compute_plan(cp_spec)
 
-    assert 'missing dependency among inModels IDs' in str(e)
+    assert 'missing dependency among inModels IDs' in str(e.value)
