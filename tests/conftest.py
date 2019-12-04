@@ -97,7 +97,6 @@ def global_execution_env():
 
             # reload datasets (to ensure they are properly linked with the created data samples)
             dataset = sess.get_dataset(dataset.key)
-            sess.state.datasets = [dataset]
 
             # create objective
             spec = f.create_objective(dataset=dataset, data_samples=[test_data_sample])

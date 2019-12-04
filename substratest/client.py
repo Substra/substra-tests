@@ -10,10 +10,10 @@ DATASET_DOWNLOAD_FILENAME = 'opener.py'
 
 
 class _State:
-    """Session state."""
+    """Session state.
 
-    # TODO handle state updates when getting asset for instance; that would be
-    #      particularly useful for dataset update when adding a traintuple for instance
+    Represents all the assets that have been added during the life of the session.
+    """
 
     def __init__(self):
         self.datasets = []
@@ -27,6 +27,35 @@ class _State:
         self.aggregatetuples = []
         self.composite_traintuples = []
         self.testtuples = []
+        self.compute_plans = []
+
+    def _update_assets(self, asset_list_name, asset):
+        asset_list = getattr(self, asset_list_name)
+        setattr(self, asset_list_name, [
+            asset if asset.key == a.key else a
+            for a in asset_list
+        ])
+
+    def update_dataset(self, dataset):
+        self._update_assets('datasets', dataset)
+
+    def update_traintuple(self, traintuple):
+        self._update_assets('traintuples', traintuple)
+
+    def update_composite_traintuple(self, composite_traintuple):
+        self._update_assets('composite_traintuples', composite_traintuple)
+
+    def update_aggregatetuple(self, aggregatetuple):
+        self._update_assets('aggregatetuples', aggregatetuple)
+
+    def update_testtuple(self, testtuple):
+        self._update_assets('testtuples', testtuple)
+
+    def update_compute_plan(self, compute_plan):
+        self.compute_plans = [
+            compute_plan if cp.compute_plan_id == compute_plan.compute_plan_id else cp
+            for cp in self.compute_plans
+        ]
 
 
 class Session:
@@ -118,6 +147,7 @@ class Session:
     def add_compute_plan(self, spec):
         res = self._client.add_compute_plan(spec.to_dict())
         compute_plan = assets.ComputePlanCreated.load(res)
+        self.state.compute_plans.append(compute_plan)
         return compute_plan
 
     def list_compute_plan(self, *args, **kwargs):
@@ -127,6 +157,7 @@ class Session:
     def get_compute_plan(self, *args, **kwargs):
         res = self._client.get_compute_plan(*args, **kwargs)
         compute_plan = assets.ComputePlan.load(res)
+        self.state.update_compute_plan(compute_plan)
         return compute_plan
 
     def list_data_sample(self, *args, **kwargs):
@@ -159,7 +190,9 @@ class Session:
 
     def get_dataset(self, *args, **kwargs):
         res = self._client.get_dataset(*args, **kwargs)
-        return assets.Dataset.load(res)
+        dataset = assets.Dataset.load(res)
+        self.state.update_dataset(dataset)
+        return dataset
 
     def list_dataset(self, *args, **kwargs):
         res = self._client.list_dataset(*args, **kwargs)
@@ -175,7 +208,9 @@ class Session:
 
     def get_traintuple(self, *args, **kwargs):
         res = self._client.get_traintuple(*args, **kwargs)
-        return assets.Traintuple.load(res).attach(self)
+        traintuple = assets.Traintuple.load(res).attach(self)
+        self.state.update_traintuple(traintuple)
+        return traintuple
 
     def list_traintuple(self, *args, **kwargs):
         res = self._client.list_traintuple(*args, **kwargs)
@@ -183,7 +218,9 @@ class Session:
 
     def get_aggregatetuple(self, *args, **kwargs):
         res = self._client.get_aggregatetuple(*args, **kwargs)
-        return assets.Aggregatetuple.load(res).attach(self)
+        aggregatetuple = assets.Aggregatetuple.load(res).attach(self)
+        self.state.update_aggregatetuple(aggregatetuple)
+        return aggregatetuple
 
     def list_aggregatetuple(self, *args, **kwargs):
         res = self._client.list_aggregatetuple(*args, **kwargs)
@@ -191,7 +228,9 @@ class Session:
 
     def get_composite_traintuple(self, *args, **kwargs):
         res = self._client.get_composite_traintuple(*args, **kwargs)
-        return assets.CompositeTraintuple.load(res).attach(self)
+        composite_traintuple = assets.CompositeTraintuple.load(res).attach(self)
+        self.state.update_composite_traintuple(composite_traintuple)
+        return composite_traintuple
 
     def list_composite_traintuple(self, *args, **kwargs):
         res = self._client.list_composite_traintuple(*args, **kwargs)
@@ -199,7 +238,9 @@ class Session:
 
     def get_testtuple(self, *args, **kwargs):
         res = self._client.get_testtuple(*args, **kwargs)
-        return assets.Testtuple.load(res).attach(self)
+        testtuple = assets.Testtuple.load(res).attach(self)
+        self.state.update_testtuple(testtuple)
+        return testtuple
 
     def list_testtuple(self, *args, **kwargs):
         res = self._client.list_testtuple(*args, **kwargs)
