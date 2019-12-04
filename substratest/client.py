@@ -12,7 +12,7 @@ DATASET_DOWNLOAD_FILENAME = 'opener.py'
 class _State:
     """Session state.
 
-    Represents all the asset that's been added during the life of the session.
+    Represents all the assets that have been added during the life of the session.
     """
 
     def __init__(self):
