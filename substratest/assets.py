@@ -83,7 +83,7 @@ class ComputePlanFuture(BaseFuture):
         return self.get()
 
     def get(self):
-        return self._getter(self._asset.key)
+        return self._getter(self._asset.compute_plan_id)
 
 
 class _BaseFutureMixin(abc.ABC):
@@ -383,22 +383,28 @@ class ComputePlan(_Asset, _ComputePlanFutureMixin):
     testtuple_keys: typing.List[str]
 
     def __post_init__(self):
+        if self.composite_traintuple_keys is None:
+            self.composite_traintuple_keys = []
+
+        if self.aggregatetuple_keys is None:
+            self.aggregatetuple_keys = []
+
         if self.testtuple_keys is None:
             self.testtuple_keys = []
 
-    def list_traintuples(self, session):
-        return session.list_traintuples(filters=[f'traintuple:computePlanId:{self.compute_plan_id}'])
+    def list_traintuple(self, session):
+        return session.list_traintuple(filters=[f'traintuple:computePlanId:{self.compute_plan_id}'])
 
-    def list_composite_traintuples(self, session):
-        return session.list_composite_traintuples(
+    def list_composite_traintuple(self, session):
+        return session.list_composite_traintuple(
             filters=[f'composite_traintuple:computePlanId:{self.compute_plan_id}']
         )
 
-    def list_aggregatetuples(self, session):
-        return session.list_aggregatetuples(filters=[f'aggregatetuple:computePlanId:{self.compute_plan_id}'])
+    def list_aggregatetuple(self, session):
+        return session.list_aggregatetuple(filters=[f'aggregatetuple:computePlanId:{self.compute_plan_id}'])
 
-    def list_testtuples(self, session):
-        return session.list_testtuples(filters=[f'testtuple:computePlanId:{self.compute_plan_id}'])
+    def list_testtuple(self, session):
+        return session.list_testtuple(filters=[f'testtuple:computePlanId:{self.compute_plan_id}'])
 
 
 @dataclasses.dataclass(frozen=True)

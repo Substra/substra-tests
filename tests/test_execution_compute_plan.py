@@ -48,7 +48,7 @@ def test_compute_plan(global_execution_env):
     # submit compute plan and wait for it to complete
     cp = session_1.add_compute_plan(cp_spec).future().wait()
 
-    traintuples = cp.list_traintuples(session_1)
+    traintuples = cp.list_traintuple(session_1)
 
     # check all traintuples are done and check they have been executed on the expected
     # node
@@ -112,13 +112,8 @@ def test_compute_plan_single_session_success(global_execution_env):
     cp = session.add_compute_plan(cp_spec).future().wait()
 
     # All the train/test tuples should succeed
-    for t in cp.list_traintuples(session) + cp.list_testtuples(session):
+    for t in cp.list_traintuple(session) + cp.list_testtuple(session):
         assert t.status == 'done'
-
-    compute_plan = session.get_compute_plan(cp.compute_plan_id)
-    assert cp.compute_plan_id == compute_plan.compute_plan_id
-    assert set(cp.traintuple_keys) == set(compute_plan.traintuples)
-    assert set(cp.testtuple_keys) == set(compute_plan.testtuples)
 
 
 def test_compute_plan_single_session_failure(global_execution_env):
@@ -171,8 +166,8 @@ def test_compute_plan_single_session_failure(global_execution_env):
     # Submit compute plan and wait for it to complete
     cp = session.add_compute_plan(cp_spec).future().wait()
 
-    traintuples = cp.list_traintuples(session)
-    testtuples = cp.list_testtuples(session)
+    traintuples = cp.list_traintuple(session)
+    testtuples = cp.list_testtuple(session)
 
     # All the train/test tuples should be marked as failed
     for t in traintuples + testtuples:
@@ -242,9 +237,9 @@ def test_compute_plan_aggregate_composite_traintuples(global_execution_env):
 
     cp = sessions[0].add_compute_plan(cp_spec).future().wait()
     tuples = (cp.list_traintuple(sessions) +
-              cp.list_composite_traintuples(sessions[0]) +
-              cp.list_aggregate_tuples(sessions[0]) +
-              cp.list_testtuples(sessions[0]))
+              cp.list_composite_traintuple(sessions[0]) +
+              cp.list_aggregate_tuple(sessions[0]) +
+              cp.list_testtuple(sessions[0]))
     for t in tuples:
         assert t.status == 'done'
 
