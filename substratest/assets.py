@@ -61,29 +61,25 @@ class Future(BaseFuture):
 
 
 class ComputePlanFuture(BaseFuture):
-    def __init__(self, asset, session):
-        self._asset = asset
-        self._getter = session.get_compute_plan
-        self._get_traintuple = session.get_traintuple
-        self._get_composite_traintuple = session.get_composite_traintuple
-        self._get_aggregatetuple = session.get_aggregatetuple
-        self._get_testtuple = session.get_testtuple
+    def __init__(self, compute_plan, session):
+        self._compute_plan = compute_plan
+        self._session = session
 
     def wait(self, timeout=FUTURE_TIMEOUT):
         """wait until all tuples are completed (done or failed)."""
-        for key in self._asset.traintuple_keys:
-            self._get_traintuple(key).future().wait(timeout, raises=False)
-        for key in self._asset.composite_traintuple_keys:
-            self._get_composite_traintuple(key).future().wait(timeout, raises=False)
-        for key in self._asset.aggregatetuple_keys:
-            self._get_aggregatetuple(key).future().wait(timeout, raises=False)
-        for key in self._asset.testtuple_keys:
-            self._get_testtuple(key).future().wait(timeout, raises=False)
+        for key in self._compute_plan.traintuple_keys:
+            self._session.get_traintuple(key).future().wait(timeout, raises=False)
+        for key in self._compute_plan.composite_traintuple_keys:
+            self._session.get_composite_traintuple(key).future().wait(timeout, raises=False)
+        for key in self._compute_plan.aggregatetuple_keys:
+            self._session.get_aggregatetuple(key).future().wait(timeout, raises=False)
+        for key in self._compute_plan.testtuple_keys:
+            self._session.get_testtuple(key).future().wait(timeout, raises=False)
 
         return self.get()
 
     def get(self):
-        return self._getter(self._asset.compute_plan_id)
+        return self._session.get_compute_plan(self._compute_plan.compute_plan_id)
 
 
 class _BaseFutureMixin(abc.ABC):
