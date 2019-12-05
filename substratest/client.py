@@ -146,7 +146,7 @@ class Session:
 
     def add_compute_plan(self, spec):
         res = self._client.add_compute_plan(spec.to_dict())
-        compute_plan = assets.ComputePlanCreated.load(res)
+        compute_plan = assets.ComputePlan.load(res).attach(self)
         self.state.compute_plans.append(compute_plan)
         return compute_plan
 
@@ -156,7 +156,7 @@ class Session:
 
     def get_compute_plan(self, *args, **kwargs):
         res = self._client.get_compute_plan(*args, **kwargs)
-        compute_plan = assets.ComputePlan.load(res)
+        compute_plan = assets.ComputePlan.load(res).attach(self)
         self.state.update_compute_plan(compute_plan)
         return compute_plan
 
@@ -214,7 +214,7 @@ class Session:
 
     def list_traintuple(self, *args, **kwargs):
         res = self._client.list_traintuple(*args, **kwargs)
-        return [assets.Traintuple.load(x) for x in res]
+        return [assets.Traintuple.load(x).attach(self) for x in res]
 
     def get_aggregatetuple(self, *args, **kwargs):
         res = self._client.get_aggregatetuple(*args, **kwargs)
@@ -224,7 +224,7 @@ class Session:
 
     def list_aggregatetuple(self, *args, **kwargs):
         res = self._client.list_aggregatetuple(*args, **kwargs)
-        return [assets.Aggregatetuple.load(x) for x in res]
+        return [assets.Aggregatetuple.load(x).attach(self) for x in res]
 
     def get_composite_traintuple(self, *args, **kwargs):
         res = self._client.get_composite_traintuple(*args, **kwargs)
@@ -234,7 +234,7 @@ class Session:
 
     def list_composite_traintuple(self, *args, **kwargs):
         res = self._client.list_composite_traintuple(*args, **kwargs)
-        return [assets.CompositeTraintuple.load(x) for x in res]
+        return [assets.CompositeTraintuple.load(x).attach(self) for x in res]
 
     def get_testtuple(self, *args, **kwargs):
         res = self._client.get_testtuple(*args, **kwargs)
@@ -244,7 +244,7 @@ class Session:
 
     def list_testtuple(self, *args, **kwargs):
         res = self._client.list_testtuple(*args, **kwargs)
-        return [assets.Testtuple.load(x) for x in res]
+        return [assets.Testtuple.load(x).attach(self) for x in res]
 
     def list_node(self, *args, **kwargs):
         res = self._client.list_node(*args, **kwargs)

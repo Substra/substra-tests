@@ -142,6 +142,7 @@ class Permissions:
 
 
 DEFAULT_PERMISSIONS = Permissions(public=True, authorized_ids=[])
+DEFAULT_OUT_MODEL_PERMISSIONS = Permissions(public=False, authorized_ids=[])
 
 
 @dataclasses.dataclass
@@ -243,11 +244,45 @@ class TesttupleSpec(_Spec):
 
 @dataclasses.dataclass
 class ComputePlanTraintupleSpec:
+    algo_key: str
     data_manager_key: str
     train_data_sample_keys: str
     traintuple_id: str
     in_models_ids: typing.List[str]
     tag: str
+
+    @property
+    def id(self):
+        return self.traintuple_id
+
+
+@dataclasses.dataclass
+class ComputePlanAggregatetupleSpec(_Spec):
+    aggregatetuple_id: str
+    algo_key: str
+    worker: str
+    in_models_ids: typing.List[str]
+    tag: str
+
+    @property
+    def id(self):
+        return self.aggregatetuple_id
+
+
+@dataclasses.dataclass
+class ComputePlanCompositeTraintupleSpec(_Spec):
+    composite_traintuple_id: str
+    algo_key: str
+    data_manager_key: str
+    train_data_sample_keys: str
+    in_head_model_id: str
+    in_trunk_model_id: str
+    tag: str
+    out_trunk_model_permissions: typing.Dict
+
+    @property
+    def id(self):
+        return self.composite_traintuple_id
 
 
 @dataclasses.dataclass
@@ -276,26 +311,69 @@ def _get_keys(obj, field='key'):
 
 @dataclasses.dataclass
 class ComputePlanSpec(_Spec):
-    algo_key: str
     objective_key: str
     traintuples: typing.List[ComputePlanTraintupleSpec]
+    composite_traintuples: typing.List[ComputePlanCompositeTraintupleSpec]
+    aggregatetuples: typing.List[ComputePlanAggregatetupleSpec]
     testtuples: typing.List[ComputePlanTesttupleSpec]
 
-    def add_traintuple(self, dataset, data_samples, traintuple_specs=None, tag=None):
-        traintuple_specs = traintuple_specs or []
+    def add_traintuple(self, algo, dataset, data_samples, in_models=None, tag=''):
+        in_models = in_models or []
         spec = ComputePlanTraintupleSpec(
+            algo_key=algo.key,
             traintuple_id=random_uuid(),
             data_manager_key=dataset.key,
             train_data_sample_keys=_get_keys(data_samples),
-            in_models_ids=[t.traintuple_id for t in traintuple_specs],
-            tag=tag or '',
+            in_models_ids=[t.id for t in in_models],
+            tag=tag,
         )
         self.traintuples.append(spec)
         return spec
 
+    def add_aggregatetuple(self, aggregate_algo, worker, in_models=None, tag=''):
+        in_models = in_models or []
+
+        for t in in_models:
+            assert isinstance(t, (ComputePlanTraintupleSpec, ComputePlanCompositeTraintupleSpec))
+
+        spec = ComputePlanAggregatetupleSpec(
+            aggregatetuple_id=random_uuid(),
+            algo_key=aggregate_algo.key,
+            worker=worker,
+            in_models_ids=[t.id for t in in_models],
+            tag=tag,
+        )
+        self.aggregatetuples.append(spec)
+        return spec
+
+    def add_composite_traintuple(self, composite_algo, dataset=None, data_samples=None,
+                                 in_head_model=None, in_trunk_model=None,
+                                 out_trunk_model_permissions=None, tag=''):
+        data_samples = data_samples or []
+
+        if in_head_model and in_trunk_model:
+            assert isinstance(in_head_model, ComputePlanCompositeTraintupleSpec)
+            assert isinstance(
+                in_trunk_model,
+                (ComputePlanCompositeTraintupleSpec, ComputePlanAggregatetupleSpec)
+            )
+
+        spec = ComputePlanCompositeTraintupleSpec(
+            composite_traintuple_id=random_uuid(),
+            algo_key=composite_algo.key,
+            data_manager_key=dataset.key if dataset else None,
+            train_data_sample_keys=_get_keys(data_samples),
+            in_head_model_id=in_head_model.id if in_head_model else None,
+            in_trunk_model_id=in_trunk_model.id if in_trunk_model else None,
+            out_trunk_model_permissions=out_trunk_model_permissions or DEFAULT_OUT_MODEL_PERMISSIONS,
+            tag=tag,
+        )
+        self.composite_traintuples.append(spec)
+        return spec
+
     def add_testtuple(self, traintuple_spec, tag=None):
         spec = ComputePlanTesttupleSpec(
-            traintuple_id=traintuple_spec.traintuple_id,
+            traintuple_id=traintuple_spec.id,
             tag=tag or '',
         )
         self.testtuples.append(spec)
@@ -486,8 +564,6 @@ class AssetsFactory:
                                     permissions=None):
         data_samples = data_samples or []
 
-        kwargs = {}
-
         if head_traintuple and trunk_traintuple:
             assert isinstance(head_traintuple, assets.CompositeTraintuple)
             assert isinstance(
@@ -511,7 +587,6 @@ class AssetsFactory:
             compute_plan_id=compute_plan_id,
             rank=rank,
             out_trunk_model_permissions=permissions or DEFAULT_PERMISSIONS,
-            **kwargs,
         )
 
     def create_testtuple(self, traintuple=None, tag=None):
@@ -520,10 +595,11 @@ class AssetsFactory:
             tag=tag,
         )
 
-    def create_compute_plan(self, algo=None, objective=None):
+    def create_compute_plan(self, objective=None):
         return ComputePlanSpec(
-            algo_key=algo.key if algo else None,
             objective_key=objective.key if objective else None,
             traintuples=[],
+            composite_traintuples=[],
+            aggregatetuples=[],
             testtuples=[],
         )
