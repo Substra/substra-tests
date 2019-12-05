@@ -67,14 +67,15 @@ class ComputePlanFuture(BaseFuture):
 
     def wait(self, timeout=FUTURE_TIMEOUT):
         """wait until all tuples are completed (done or failed)."""
-        for key in self._compute_plan.traintuple_keys:
-            self._session.get_traintuple(key).future().wait(timeout, raises=False)
-        for key in self._compute_plan.composite_traintuple_keys:
-            self._session.get_composite_traintuple(key).future().wait(timeout, raises=False)
-        for key in self._compute_plan.aggregatetuple_keys:
-            self._session.get_aggregatetuple(key).future().wait(timeout, raises=False)
-        for key in self._compute_plan.testtuple_keys:
-            self._session.get_testtuple(key).future().wait(timeout, raises=False)
+        tuples = (self._compute_plan.list_traintuple(self._session) +
+                  self._compute_plan.list_composite_traintuple(self._session) +
+                  self._compute_plan.list_aggregatetuple(self._session))
+        tuples = sorted(tuples, key=lambda t: t.rank)
+        # testtuples do not have a rank attribute
+        tuples += self._compute_plan.list_testtuple(self._session)
+
+        for tuple in tuples:
+            tuple.future().wait(timeout, raises=False)
 
         return self.get()
 
@@ -400,7 +401,8 @@ class ComputePlan(_Asset, _ComputePlanFutureMixin):
         return session.list_aggregatetuple(filters=[f'aggregatetuple:computePlanId:{self.compute_plan_id}'])
 
     def list_testtuple(self, session):
-        return session.list_testtuple(filters=[f'testtuple:computePlanId:{self.compute_plan_id}'])
+        filters = [f'testtuple:key:{k}' for k in self.testtuple_keys]
+        return session.list_testtuple(filters=filters)
 
 
 @dataclasses.dataclass(frozen=True)
