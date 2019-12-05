@@ -74,8 +74,8 @@ class ComputePlanFuture(BaseFuture):
         # testtuples do not have a rank attribute
         tuples += self._compute_plan.list_testtuple(self._session)
 
-        for tuple in tuples:
-            tuple.future().wait(timeout, raises=False)
+        for tuple_ in tuples:
+            tuple_.future().wait(timeout, raises=False)
 
         return self.get()
 
