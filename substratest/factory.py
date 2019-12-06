@@ -124,8 +124,6 @@ if __name__ == '__main__':
     # The counter is above the retry count
     tools.algo.execute(TestAlgo())
 """
-    # with open(counter_path, 'w') as f:
-    #     f.write("0") # hack around the fact that /local/sandbox doesn't always get deleted as it should :/
 
 INVALID_ALGO_SCRIPT = DEFAULT_ALGO_SCRIPT.replace('train', 'naitr')
 
@@ -534,6 +532,7 @@ class AssetsFactory:
             py_script or DEFAULT_ALGO_SCRIPT,
             permissions=permissions,
         )
+
     def create_aggregate_algo(self, py_script=None, permissions=None):
         return self._create_algo(
             py_script or DEFAULT_AGGREGATE_ALGO_SCRIPT,
