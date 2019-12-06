@@ -1,6 +1,4 @@
 import os
-import shutil
-import tempfile
 
 import substra
 
@@ -50,15 +48,19 @@ def test_add_data_sample_located_in_shared_path(factory, session, node_cfg):
     dataset = session.add_dataset(spec)
 
     spec = factory.create_data_sample(test_only=True, datasets=[dataset])
+    spec.move_data_to(node_cfg.shared_path)
+    session.add_data_sample(spec, local=False)  # should not raise
 
-    # move data sample to substra backend shared file system
-    dst = node_cfg.shared_path
-    dst = dst if dst.endswith('/') else dst + '/'
-    dst = tempfile.mkdtemp(dir=dst)
-    shutil.move(spec.path, dst)
 
-    # update spec path and add data sample
-    spec.path = os.path.join(dst, os.path.basename(spec.path))
+@pytest.mark.skip(reason='may fill up disk as shared folder is not cleanup')
+@pytest.mark.parametrize('filesize', [1, 10, 100, 1000])  # in mega
+def test_add_data_sample_path_big_files(filesize, factory, session, node_cfg):
+    spec = factory.create_dataset()
+    dataset = session.add_dataset(spec)
+
+    content = os.urandom(filesize * 1000 * 1000)
+    spec = factory.create_data_sample(content=content, datasets=[dataset])
+    spec.move_data_to(node_cfg.shared_path)
     session.add_data_sample(spec, local=False)  # should not raise
 
 

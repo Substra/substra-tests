@@ -1,5 +1,6 @@
 import abc
 import dataclasses
+import os
 import pathlib
 import random
 import shutil
@@ -150,6 +151,12 @@ class DataSampleSpec(_Spec):
     path: str
     test_only: bool
     data_manager_keys: typing.List[str]
+
+    def move_data_to(self, destination):
+        destination = destination if destination.endswith('/') else destination + '/'
+        destination = tempfile.mkdtemp(dir=destination)
+        shutil.move(self.path, destination)
+        self.path = os.path.join(destination, os.path.basename(self.path))
 
 
 @dataclasses.dataclass
@@ -396,17 +403,18 @@ class AssetsFactory:
     def __exit__(self, type, value, traceback):
         shutil.rmtree(str(self._workdir), ignore_errors=True)
 
-    def create_data_sample(self, datasets=None, test_only=False):
+    def create_data_sample(self, content=None, datasets=None, test_only=False):
         rdm = random.random()
         idx = self._data_sample_counter.inc()
         tmpdir = self._workdir / f'data-{idx}'
         tmpdir.mkdir()
 
-        content = '0,{idx}'
-        content = f'# random={rdm} \n' + content
+        encoding = 'utf-8'
+        content = content or f'0,{idx}'.encode(encoding)
+        content = f'# random={rdm} \n'.encode(encoding) + content
 
         data_filepath = tmpdir / DEFAULT_DATA_SAMPLE_FILENAME
-        with open(data_filepath, 'w') as f:
+        with open(data_filepath, 'wb') as f:
             f.write(content)
 
         datasets = datasets or []
