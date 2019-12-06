@@ -245,8 +245,6 @@ class TesttupleSpec(_Spec):
     objective_key: str
     traintuple_key: str
     tag: str
-    compute_plan_id: str
-    rank: int = None
 
 
 @dataclasses.dataclass
@@ -595,14 +593,11 @@ class AssetsFactory:
             out_trunk_model_permissions=permissions or DEFAULT_PERMISSIONS,
         )
 
-    def create_testtuple(self, objective=None, traintuple=None, tag=None,
-                         compute_plan_id=None, rank=None):
+    def create_testtuple(self, objective=None, traintuple=None, tag=None):
         return TesttupleSpec(
             objective_key=objective.key if objective else None,
             traintuple_key=traintuple.key if traintuple else None,
             tag=tag,
-            rank=rank,
-            compute_plan_id=compute_plan_id,
         )
 
     def create_compute_plan(self):
