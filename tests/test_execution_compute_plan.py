@@ -17,13 +17,12 @@ def test_compute_plan(global_execution_env):
 
     dataset_1 = session_1.state.datasets[0]
     dataset_2 = session_2.state.datasets[0]
-    objective_1 = session_1.state.objectives[0]
 
     spec = factory.create_algo()
     algo_2 = session_2.add_algo(spec)
 
     # create compute plan
-    cp_spec = factory.create_compute_plan(objective=objective_1)
+    cp_spec = factory.create_compute_plan()
 
     # TODO add a testtuple in the compute plan
 
@@ -85,14 +84,17 @@ def test_compute_plan_single_session_success(global_execution_env):
     spec = factory.create_algo()
     algo = session.add_algo(spec)
 
-    cp_spec = factory.create_compute_plan(objective=objective)
+    cp_spec = factory.create_compute_plan()
 
     traintuple_spec_1 = cp_spec.add_traintuple(
         algo=algo,
         dataset=dataset,
         data_samples=[data_sample_1]
     )
-    cp_spec.add_testtuple(traintuple_spec_1)
+    cp_spec.add_testtuple(
+        objective=objective,
+        traintuple_spec=traintuple_spec_1
+    )
 
     traintuple_spec_2 = cp_spec.add_traintuple(
         algo=algo,
@@ -100,7 +102,10 @@ def test_compute_plan_single_session_success(global_execution_env):
         data_samples=[data_sample_2],
         in_models=[traintuple_spec_1]
     )
-    cp_spec.add_testtuple(traintuple_spec_2)
+    cp_spec.add_testtuple(
+        objective=objective,
+        traintuple_spec=traintuple_spec_2
+    )
 
     traintuple_spec_3 = cp_spec.add_traintuple(
         algo=algo,
@@ -108,7 +113,10 @@ def test_compute_plan_single_session_success(global_execution_env):
         data_samples=[data_sample_3],
         in_models=[traintuple_spec_2]
     )
-    cp_spec.add_testtuple(traintuple_spec_3)
+    cp_spec.add_testtuple(
+        objective=objective,
+        traintuple_spec=traintuple_spec_3
+    )
 
     # Submit compute plan and wait for it to complete
     cp = session.add_compute_plan(cp_spec).future().wait()
@@ -140,14 +148,17 @@ def test_compute_plan_single_session_failure(global_execution_env):
     spec = factory.create_algo(py_script=sbt.factory.INVALID_ALGO_SCRIPT)
     algo = session.add_algo(spec)
 
-    cp_spec = factory.create_compute_plan(objective=objective)
+    cp_spec = factory.create_compute_plan()
 
     traintuple_spec_1 = cp_spec.add_traintuple(
         algo=algo,
         dataset=dataset,
         data_samples=[data_sample_1]
     )
-    cp_spec.add_testtuple(traintuple_spec_1)
+    cp_spec.add_testtuple(
+        objective=objective,
+        traintuple_spec=traintuple_spec_1,
+    )
 
     traintuple_spec_2 = cp_spec.add_traintuple(
         algo=algo,
@@ -155,7 +166,10 @@ def test_compute_plan_single_session_failure(global_execution_env):
         data_samples=[data_sample_2],
         in_models=[traintuple_spec_1]
     )
-    cp_spec.add_testtuple(traintuple_spec_2)
+    cp_spec.add_testtuple(
+        objective=objective,
+        traintuple_spec=traintuple_spec_2,
+    )
 
     traintuple_spec_3 = cp_spec.add_traintuple(
         algo=algo,
@@ -163,7 +177,10 @@ def test_compute_plan_single_session_failure(global_execution_env):
         data_samples=[data_sample_3],
         in_models=[traintuple_spec_2]
     )
-    cp_spec.add_testtuple(traintuple_spec_3)
+    cp_spec.add_testtuple(
+        objective=objective,
+        traintuple_spec=traintuple_spec_3,
+    )
 
     # Submit compute plan and wait for it to complete
     cp = session.add_compute_plan(cp_spec).future().wait()
@@ -200,7 +217,7 @@ def test_compute_plan_aggregate_composite_traintuples(global_execution_env):
     previous_aggregatetuple_spec = None
     previous_composite_traintuple_specs = []
 
-    cp_spec = factory.create_compute_plan(objective=objective)
+    cp_spec = factory.create_compute_plan()
 
     for round_ in range(number_of_rounds):
         # create composite traintuple on each node
@@ -234,6 +251,7 @@ def test_compute_plan_aggregate_composite_traintuples(global_execution_env):
     # last round: create associated testtuple
     for composite_traintuple_spec in previous_composite_traintuple_specs:
         cp_spec.add_testtuple(
+            objective=objective,
             traintuple_spec=composite_traintuple_spec,
         )
 
@@ -251,12 +269,11 @@ def test_compute_plan_circular_dependency_failure(global_execution_env):
     session = network.sessions[0].copy()
 
     dataset = session.state.datasets[0]
-    objective = session.state.objectives[0]
 
     spec = factory.create_algo()
     algo = session.add_algo(spec)
 
-    cp_spec = factory.create_compute_plan(objective=objective)
+    cp_spec = factory.create_compute_plan()
 
     traintuple_spec_1 = cp_spec.add_traintuple(
         dataset=dataset,

@@ -209,7 +209,6 @@ class CompositeAlgoSpec(_AlgoSpec):
 @dataclasses.dataclass
 class TraintupleSpec(_Spec):
     algo_key: str
-    objective_key: str
     data_manager_key: str
     train_data_sample_keys: str
     in_models_keys: typing.List[str]
@@ -221,7 +220,6 @@ class TraintupleSpec(_Spec):
 @dataclasses.dataclass
 class AggregatetupleSpec(_Spec):
     algo_key: str
-    objective_key: str
     worker: str
     in_models_keys: typing.List[str]
     tag: str
@@ -232,7 +230,6 @@ class AggregatetupleSpec(_Spec):
 @dataclasses.dataclass
 class CompositeTraintupleSpec(_Spec):
     algo_key: str
-    objective_key: str
     data_manager_key: str
     train_data_sample_keys: str
     in_head_model_key: str
@@ -245,8 +242,11 @@ class CompositeTraintupleSpec(_Spec):
 
 @dataclasses.dataclass
 class TesttupleSpec(_Spec):
+    objective_key: str
     traintuple_key: str
     tag: str
+    compute_plan_id: str
+    rank: int = None
 
 
 @dataclasses.dataclass
@@ -294,6 +294,7 @@ class ComputePlanCompositeTraintupleSpec(_Spec):
 
 @dataclasses.dataclass
 class ComputePlanTesttupleSpec:
+    objective_key: str
     traintuple_id: str
     tag: str
 
@@ -318,7 +319,6 @@ def _get_keys(obj, field='key'):
 
 @dataclasses.dataclass
 class ComputePlanSpec(_Spec):
-    objective_key: str
     traintuples: typing.List[ComputePlanTraintupleSpec]
     composite_traintuples: typing.List[ComputePlanCompositeTraintupleSpec]
     aggregatetuples: typing.List[ComputePlanAggregatetupleSpec]
@@ -378,8 +378,9 @@ class ComputePlanSpec(_Spec):
         self.composite_traintuples.append(spec)
         return spec
 
-    def add_testtuple(self, traintuple_spec, tag=None):
+    def add_testtuple(self, objective, traintuple_spec, tag=None):
         spec = ComputePlanTesttupleSpec(
+            objective_key=objective.key,
             traintuple_id=traintuple_spec.id,
             tag=tag or '',
         )
@@ -527,7 +528,7 @@ class AssetsFactory:
             permissions=permissions,
         )
 
-    def create_traintuple(self, algo=None, objective=None, dataset=None,
+    def create_traintuple(self, algo=None, dataset=None,
                           data_samples=None, traintuples=None, tag=None,
                           compute_plan_id=None, rank=None):
         data_samples = data_samples or []
@@ -538,7 +539,6 @@ class AssetsFactory:
 
         return TraintupleSpec(
             algo_key=algo.key if algo else None,
-            objective_key=objective.key if objective else None,
             data_manager_key=dataset.key if dataset else None,
             train_data_sample_keys=_get_keys(data_samples),
             in_models_keys=[t.key for t in traintuples],
@@ -547,7 +547,7 @@ class AssetsFactory:
             rank=rank,
         )
 
-    def create_aggregatetuple(self, algo=None, objective=None, worker=None,
+    def create_aggregatetuple(self, algo=None, worker=None,
                               traintuples=None, tag=None, compute_plan_id=None,
                               rank=None):
         traintuples = traintuples or []
@@ -557,7 +557,6 @@ class AssetsFactory:
 
         return AggregatetupleSpec(
             algo_key=algo.key if algo else None,
-            objective_key=objective.key if objective else None,
             worker=worker,
             in_models_keys=[t.key for t in traintuples],
             tag=tag,
@@ -565,7 +564,7 @@ class AssetsFactory:
             rank=rank,
         )
 
-    def create_composite_traintuple(self, algo=None, objective=None, dataset=None,
+    def create_composite_traintuple(self, algo=None, dataset=None,
                                     data_samples=None, head_traintuple=None,
                                     trunk_traintuple=None, tag=None,
                                     compute_plan_id=None, rank=None,
@@ -586,7 +585,6 @@ class AssetsFactory:
 
         return CompositeTraintupleSpec(
             algo_key=algo.key if algo else None,
-            objective_key=objective.key if objective else None,
             data_manager_key=dataset.key if dataset else None,
             train_data_sample_keys=_get_keys(data_samples),
             in_head_model_key=in_head_model_key,
@@ -597,15 +595,18 @@ class AssetsFactory:
             out_trunk_model_permissions=permissions or DEFAULT_PERMISSIONS,
         )
 
-    def create_testtuple(self, traintuple=None, tag=None):
+    def create_testtuple(self, objective=None, traintuple=None, tag=None,
+                         compute_plan_id=None, rank=None):
         return TesttupleSpec(
+            objective_key=objective.key if objective else None,
             traintuple_key=traintuple.key if traintuple else None,
             tag=tag,
+            rank=rank,
+            compute_plan_id=compute_plan_id,
         )
 
-    def create_compute_plan(self, objective=None):
+    def create_compute_plan(self):
         return ComputePlanSpec(
-            objective_key=objective.key if objective else None,
             traintuples=[],
             composite_traintuples=[],
             aggregatetuples=[],

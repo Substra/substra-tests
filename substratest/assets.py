@@ -384,7 +384,6 @@ class Testtuple(_Asset, _FutureMixin):
 @dataclasses.dataclass
 class ComputePlan(_Asset, _ComputePlanFutureMixin):
     compute_plan_id: str
-    objective_key: str
     traintuple_keys: typing.List[str]
     composite_traintuple_keys: typing.List[str]
     aggregatetuple_keys: typing.List[str]
