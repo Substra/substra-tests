@@ -326,3 +326,34 @@ def test_aggregate_composite_traintuples(global_execution_env):
             traintuple=traintuple,
         )
         sessions[0].add_testtuple(spec).future().wait()
+
+
+@pytest.mark.parametrize('fail_count', [4, 5])
+def test_execution_retry_on_fail(fail_count, global_execution_env):
+    """Execution of a traintuple which fails on the N first tries, and suceeds on the N+1th try"""
+    factory, network = global_execution_env
+    session = network.sessions[0].copy()
+
+    dataset = session.state.datasets[0]
+    objective = session.state.objectives[0]
+
+    spec = factory.create_retry_algo(fail_count)
+    algo = session.add_algo(spec)
+
+    spec = factory.create_traintuple(
+        algo=algo,
+        objective=objective,
+        dataset=dataset,
+        data_samples=dataset.train_data_sample_keys,
+        rank=0,  # make sure it's part of a compute plan, so we have access to the /sandbox/local
+                 # folder (that's where we store the counter)
+    )
+    traintuple = session.add_traintuple(spec).future().wait(raises=False)
+
+    # The algo should be retried no more than 5 times
+    # - if it succeeds before the 5th try, it should be marked as succeeded
+    # - if it stil hasn't suceeded on the 5th try, it should be marked as failed
+    if fail_count < 5:
+        assert traintuple.status == 'done'
+    else:
+        assert traintuple.status == 'failed'

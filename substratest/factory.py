@@ -99,6 +99,34 @@ if __name__ == '__main__':
     tools.algo.execute(TestCompositeAlgo())
 """
 
+RETRY_ALGO_SNIPPET_TOREPLACE = f"""
+if __name__ == '__main__':
+    tools.algo.execute(TestAlgo())
+"""
+
+RETRY_ALGO_SNIPPET_REPLACEMENT = f"""
+if __name__ == '__main__':
+    counter_path = "/sandbox/local/counter"
+    counter = 0
+    try:
+        with open(counter_path) as f:
+            counter = int(f.read())
+    except IOError:
+        pass # file doesn't exist yet
+    
+    # Fail if the counter is below the retry count
+    if counter < <FAIL_COUNT>:
+        counter = counter + 1
+        with open(counter_path, 'w') as f:
+            f.write(str(counter))
+        raise Exception("Intentionally keep on failing until we have failed <FAIL_COUNT> time(s). The algo has now failed " + str(counter) + " time(s).")
+
+    # The counter is above the retry count
+    tools.algo.execute(TestAlgo())
+"""
+    # with open(counter_path, 'w') as f:
+    #     f.write("0") # hack around the fact that /local/sandbox doesn't always get deleted as it should :/
+
 INVALID_ALGO_SCRIPT = DEFAULT_ALGO_SCRIPT.replace('train', 'naitr')
 
 DEFAULT_METRICS_DOCKERFILE = f"""
@@ -506,7 +534,6 @@ class AssetsFactory:
             py_script or DEFAULT_ALGO_SCRIPT,
             permissions=permissions,
         )
-
     def create_aggregate_algo(self, py_script=None, permissions=None):
         return self._create_algo(
             py_script or DEFAULT_AGGREGATE_ALGO_SCRIPT,
@@ -517,6 +544,14 @@ class AssetsFactory:
         return self._create_algo(
             py_script or DEFAULT_COMPOSITE_ALGO_SCRIPT,
             permissions=permissions,
+        )
+
+    def create_retry_algo(self, fail_count, permissions=None):
+        retry_snippet = RETRY_ALGO_SNIPPET_REPLACEMENT.replace("<FAIL_COUNT>", str(fail_count))
+        py_script = DEFAULT_ALGO_SCRIPT.replace(RETRY_ALGO_SNIPPET_TOREPLACE, retry_snippet)
+        return self._create_algo(
+            py_script,
+            permissions = permissions
         )
 
     def create_traintuple(self, algo=None, objective=None, dataset=None,
