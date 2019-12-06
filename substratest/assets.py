@@ -21,12 +21,13 @@ class BaseFuture(abc.ABC):
         raise NotImplementedError
 
 
-class TupleStatus:
+class Status:
     doing = 'doing'
     done = 'done'
     failed = 'failed'
     todo = 'todo'
     waiting = 'waiting'
+    canceled = 'canceled'
 
 
 class Future(BaseFuture):
@@ -51,15 +52,19 @@ class Future(BaseFuture):
         """Wait until completed (done or failed)."""
         tstart = time.time()
         key = self._asset.key
-        while self._asset.status not in [TupleStatus.done, TupleStatus.failed]:
+        while self._asset.status not in [Status.done, Status.failed, Status.canceled]:
             if time.time() - tstart > timeout:
                 raise errors.FutureTimeoutError(f'Future timeout on {self._asset}')
 
             time.sleep(3)
             self._asset = self._getter(key)
 
-        if raises and self._asset.status == TupleStatus.failed:
+        if raises and self._asset.status == Status.failed:
             raise errors.FutureFailureError(f'Future execution failed on {self._asset}')
+
+        if raises and self._asset.status == Status.canceled:
+            raise errors.FutureFailureError(f'Future execution canceled on {self._asset}')
+
         return self.get()
 
     def get(self):
@@ -397,6 +402,7 @@ class Testtuple(_Asset, _FutureMixin):
 @dataclasses.dataclass
 class ComputePlan(_Asset, _ComputePlanFutureMixin):
     compute_plan_id: str
+    status: str
     traintuple_keys: typing.List[str]
     composite_traintuple_keys: typing.List[str]
     aggregatetuple_keys: typing.List[str]

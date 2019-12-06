@@ -54,7 +54,7 @@ def test_compute_plan(global_execution_env):
     # check all traintuples are done and check they have been executed on the expected
     # node
     for t in traintuples:
-        assert t.status == assets.TupleStatus.done
+        assert t.status == assets.Status.done
 
     traintuple_1, traintuple_2, traintuple_3 = traintuples
 
@@ -123,7 +123,7 @@ def test_compute_plan_single_session_success(global_execution_env):
 
     # All the train/test tuples should succeed
     for t in cp.list_traintuple() + cp.list_testtuple():
-        assert t.status == assets.TupleStatus.done
+        assert t.status == assets.Status.done
 
 
 def test_compute_plan_single_session_failure(global_execution_env):
@@ -190,7 +190,7 @@ def test_compute_plan_single_session_failure(global_execution_env):
 
     # All the train/test tuples should be marked as failed
     for t in traintuples + testtuples:
-        assert t.status == assets.TupleStatus.failed
+        assert t.status == assets.Status.failed
 
 
 def test_compute_plan_aggregate_composite_traintuples(global_execution_env):
@@ -261,7 +261,7 @@ def test_compute_plan_aggregate_composite_traintuples(global_execution_env):
               cp.list_aggregatetuple() +
               cp.list_testtuple())
     for t in tuples:
-        assert t.status == assets.TupleStatus.done
+        assert t.status == assets.Status.done
 
 
 def test_compute_plan_circular_dependency_failure(global_execution_env):
@@ -294,3 +294,35 @@ def test_compute_plan_circular_dependency_failure(global_execution_env):
         session.add_compute_plan(cp_spec)
 
     assert 'missing dependency among inModels IDs' in str(e.value)
+
+
+def test_execution_compute_plan_cancelled(global_execution_env):
+    factory, network = global_execution_env
+    session = network.sessions[0].copy()
+
+    dataset = session.state.datasets[0]
+
+    spec = factory.create_algo()
+    algo = session.add_algo(spec)
+
+    cp_spec = factory.create_compute_plan()
+    previous_traintuple = None
+    for data_sample_key in dataset.train_data_sample_keys:
+        previous_traintuple = cp_spec.add_traintuple(
+            algo=algo,
+            dataset=dataset,
+            data_samples=[data_sample_key],
+            in_models=[previous_traintuple] if previous_traintuple else None
+        )
+
+    cp = session.add_compute_plan(cp_spec)
+    first_traintuple = [t for t in cp.list_traintuple() if t.rank == 0][0]
+    first_traintuple = first_traintuple.future().wait()
+    assert first_traintuple.status == assets.Status.done
+
+    cp = session.cancel_compute_plan(cp.compute_plan_id)
+    assert cp.status == assets.Status.canceled
+
+    traintuples = cp.list_traintuple()
+    for t in traintuples:
+        assert t.status == assets.Status.canceled
