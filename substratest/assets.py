@@ -399,6 +399,7 @@ class ComputePlan(_Asset, _ComputePlanFutureMixin):
         ]
         tuples = self._session.list_traintuple(filters=filters)
         assert len(tuples) == len(self.traintuple_keys)
+        tuples = sorted(tuples, key=lambda t: t.rank)
         return tuples
 
     def list_composite_traintuple(self):
@@ -407,6 +408,7 @@ class ComputePlan(_Asset, _ComputePlanFutureMixin):
         ]
         tuples = self._session.list_composite_traintuple(filters=filters)
         assert len(tuples) == len(self.composite_traintuple_keys)
+        tuples = sorted(tuples, key=lambda t: t.rank)
         return tuples
 
     def list_aggregatetuple(self):
@@ -415,6 +417,7 @@ class ComputePlan(_Asset, _ComputePlanFutureMixin):
         ]
         tuples = self._session.list_aggregatetuple(filters=filters)
         assert len(tuples) == len(self.aggregatetuple_keys)
+        tuples = sorted(tuples, key=lambda t: t.rank)
         return tuples
 
     def list_testtuple(self):
