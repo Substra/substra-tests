@@ -67,12 +67,13 @@ class ComputePlanFuture(BaseFuture):
 
     def wait(self, timeout=FUTURE_TIMEOUT):
         """wait until all tuples are completed (done or failed)."""
-        tuples = (self._compute_plan.list_traintuple(self._session) +
-                  self._compute_plan.list_composite_traintuple(self._session) +
-                  self._compute_plan.list_aggregatetuple(self._session))
+        tuples = (self._compute_plan.list_traintuple() +
+                  self._compute_plan.list_composite_traintuple() +
+                  self._compute_plan.list_aggregatetuple())
+        # order tuples by rank to wait on the tuples that should be executed first
         tuples = sorted(tuples, key=lambda t: t.rank)
         # testtuples do not have a rank attribute
-        tuples += self._compute_plan.list_testtuple(self._session)
+        tuples += self._compute_plan.list_testtuple()
 
         for tuple_ in tuples:
             tuple_.future().wait(timeout, raises=False)
@@ -88,8 +89,14 @@ class _BaseFutureMixin(abc.ABC):
 
     def attach(self, session):
         """Attach session to asset."""
-        self._session = session
+        self.__session = session
         return self
+
+    @property
+    def _session(self):
+        if not self.__session:
+            raise errors.TError(f'No session attached with {self}')
+        return self.__session
 
     def future(self):
         """Returns future from asset."""
@@ -97,11 +104,8 @@ class _BaseFutureMixin(abc.ABC):
 
 
 class _FutureMixin(_BaseFutureMixin):
+    """Represents a single task that is executed on the platform."""
     _future_cls = Future
-
-    def attach(self, session):
-        self._session = session
-        return self
 
     def future(self):
         assert hasattr(self, 'status')
@@ -389,20 +393,37 @@ class ComputePlan(_Asset, _ComputePlanFutureMixin):
         if self.testtuple_keys is None:
             self.testtuple_keys = []
 
-    def list_traintuple(self, session):
-        return session.list_traintuple(filters=[f'traintuple:computePlanID:{self.compute_plan_id}'])
+    def list_traintuple(self):
+        filters = [
+            f'traintuple:computePlanID:{self.compute_plan_id}',
+        ]
+        tuples = self._session.list_traintuple(filters=filters)
+        assert len(tuples) == len(self.traintuple_keys)
+        return tuples
 
-    def list_composite_traintuple(self, session):
-        return session.list_composite_traintuple(
-            filters=[f'composite_traintuple:computePlanID:{self.compute_plan_id}']
-        )
+    def list_composite_traintuple(self):
+        filters = [
+            f'composite_traintuple:computePlanID:{self.compute_plan_id}',
+        ]
+        tuples = self._session.list_composite_traintuple(filters=filters)
+        assert len(tuples) == len(self.composite_traintuple_keys)
+        return tuples
 
-    def list_aggregatetuple(self, session):
-        return session.list_aggregatetuple(filters=[f'aggregatetuple:computePlanID:{self.compute_plan_id}'])
+    def list_aggregatetuple(self):
+        filters = [
+            f'aggregatetuple:computePlanID:{self.compute_plan_id}',
+        ]
+        tuples = self._session.list_aggregatetuple(filters=filters)
+        assert len(tuples) == len(self.aggregatetuple_keys)
+        return tuples
 
-    def list_testtuple(self, session):
+    def list_testtuple(self):
+        if not self.testtuple_keys:
+            return []
         filters = [f'testtuple:key:{k}' for k in self.testtuple_keys]
-        return session.list_testtuple(filters=filters)
+        tuples = self._session.list_testtuple(filters=filters)
+        assert len(tuples) == len(self.testtuple_keys)
+        return tuples
 
 
 @dataclasses.dataclass(frozen=True)
