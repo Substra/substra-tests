@@ -427,11 +427,12 @@ class ComputePlan(_Asset, _ComputePlanFutureMixin):
         return tuples
 
     def list_testtuple(self):
-        if not self.testtuple_keys:
-            return []
-        filters = [f'testtuple:key:{k}' for k in self.testtuple_keys]
+        filters = [
+            f'testtuple:computePlanID:{self.compute_plan_id}',
+        ]
         tuples = self._session.list_testtuple(filters=filters)
         assert len(tuples) == len(self.testtuple_keys)
+        tuples = sorted(tuples, key=lambda t: t.rank)
         return tuples
 
 
