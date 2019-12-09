@@ -390,15 +390,15 @@ class ComputePlan(_Asset, _ComputePlanFutureMixin):
             self.testtuple_keys = []
 
     def list_traintuple(self, session):
-        return session.list_traintuple(filters=[f'traintuple:computePlanId:{self.compute_plan_id}'])
+        return session.list_traintuple(filters=[f'traintuple:computePlanID:{self.compute_plan_id}'])
 
     def list_composite_traintuple(self, session):
         return session.list_composite_traintuple(
-            filters=[f'composite_traintuple:computePlanId:{self.compute_plan_id}']
+            filters=[f'composite_traintuple:computePlanID:{self.compute_plan_id}']
         )
 
     def list_aggregatetuple(self, session):
-        return session.list_aggregatetuple(filters=[f'aggregatetuple:computePlanId:{self.compute_plan_id}'])
+        return session.list_aggregatetuple(filters=[f'aggregatetuple:computePlanID:{self.compute_plan_id}'])
 
     def list_testtuple(self, session):
         filters = [f'testtuple:key:{k}' for k in self.testtuple_keys]
