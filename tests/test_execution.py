@@ -4,6 +4,9 @@ import substra
 
 import substratest as sbt
 
+status_done = 'done'
+status_failed = 'failed'
+
 
 def test_tuples_execution_on_same_node(global_execution_env):
     """Execution of a traintuple, a following testtuple and a following traintuple."""
@@ -24,14 +27,14 @@ def test_tuples_execution_on_same_node(global_execution_env):
         data_samples=dataset.train_data_sample_keys,
     )
     traintuple = session.add_traintuple(spec).future().wait()
-    assert traintuple.status == 'done'
+    assert traintuple.status == status_done
     assert traintuple.out_model is not None
 
     # create testtuple
     # don't create it before to avoid MVCC errors
     spec = factory.create_testtuple(traintuple=traintuple)
     testtuple = session.add_testtuple(spec).future().wait()
-    assert testtuple.status == 'done'
+    assert testtuple.status == status_done
 
     # add a traintuple depending on first traintuple
     spec = factory.create_traintuple(
@@ -42,7 +45,7 @@ def test_tuples_execution_on_same_node(global_execution_env):
         traintuples=[traintuple],
     )
     traintuple = session.add_traintuple(spec).future().wait()
-    assert traintuple.status == 'done'
+    assert traintuple.status == status_done
     assert len(traintuple.in_models) == 1
 
 
@@ -68,7 +71,7 @@ def test_federated_learning_workflow(global_execution_env):
         rank=0,
     )
     traintuple_1 = session.add_traintuple(spec).future().wait()
-    assert traintuple_1.status == 'done'
+    assert traintuple_1.status == status_done
     assert traintuple_1.out_model is not None
     assert traintuple_1.tag == 'foo'
     assert traintuple_1.compute_plan_id is not None
@@ -88,7 +91,7 @@ def test_federated_learning_workflow(global_execution_env):
         rank=1,
     )
     traintuple_2 = session.add_traintuple(spec).future().wait()
-    assert traintuple_2.status == 'done'
+    assert traintuple_2.status == status_done
     assert traintuple_2.out_model is not None
     assert traintuple_2.tag == 'foo'
     assert traintuple_2.compute_plan_id == traintuple_1.compute_plan_id
@@ -118,14 +121,14 @@ def test_tuples_execution_on_different_nodes(global_execution_env):
         data_samples=dataset_2.train_data_sample_keys,
     )
     traintuple = session_1.add_traintuple(spec).future().wait()
-    assert traintuple.status == 'done'
+    assert traintuple.status == status_done
     assert traintuple.out_model is not None
     assert traintuple.dataset.worker == session_2.node_id
 
     # add testtuple; should execute on node 1 (objective dataset is located on node 1)
     spec = factory.create_testtuple(traintuple=traintuple)
     testtuple = session_1.add_testtuple(spec).future().wait()
-    assert testtuple.status == 'done'
+    assert testtuple.status == status_done
     assert testtuple.dataset.worker == session_1.node_id
 
 
@@ -147,7 +150,7 @@ def test_traintuple_execution_failure(global_execution_env):
         data_samples=dataset.train_data_sample_keys,
     )
     traintuple = session.add_traintuple(spec).future().wait(raises=False)
-    assert traintuple.status == 'failed'
+    assert traintuple.status == status_failed
     assert traintuple.out_model is None
 
 
@@ -171,7 +174,7 @@ def test_composite_traintuples_execution(global_execution_env):
         data_samples=dataset.train_data_sample_keys,
     )
     composite_traintuple_1 = session.add_composite_traintuple(spec).future().wait()
-    assert composite_traintuple_1.status == 'done'
+    assert composite_traintuple_1.status == status_done
     assert composite_traintuple_1.out_head_model is not None
     assert composite_traintuple_1.out_head_model.out_model is not None
     assert composite_traintuple_1.out_trunk_model is not None
@@ -187,14 +190,14 @@ def test_composite_traintuples_execution(global_execution_env):
         trunk_traintuple=composite_traintuple_1,
     )
     composite_traintuple_2 = session.add_composite_traintuple(spec).future().wait()
-    assert composite_traintuple_2.status == 'done'
+    assert composite_traintuple_2.status == status_done
     assert composite_traintuple_2.out_head_model is not None
     assert composite_traintuple_2.out_trunk_model is not None
 
     # add a 'composite' testtuple
     spec = factory.create_testtuple(traintuple=composite_traintuple_2)
     testtuple = session.add_testtuple(spec).future().wait()
-    assert testtuple.status == 'done'
+    assert testtuple.status == status_done
 
     # list composite traintuple
     composite_traintuples = session.list_composite_traintuple()
@@ -241,7 +244,7 @@ def test_aggregatetuple(global_execution_env):
         traintuples=traintuples,
     )
     aggregatetuple = session.add_aggregatetuple(spec).future().wait()
-    assert aggregatetuple.status == 'done'
+    assert aggregatetuple.status == status_done
     assert len(aggregatetuple.in_models) == number_of_traintuples_to_aggregate
 
 

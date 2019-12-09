@@ -7,6 +7,7 @@ from substratest.factory import Permissions
 from . import settings
 
 MSP_IDS = settings.MSP_IDS
+status_done = 'done'
 
 
 @pytest.mark.parametrize('is_public', [True, False])
@@ -127,7 +128,7 @@ def test_merge_permissions(permissions_1, permissions_2, expected_permissions,
         data_samples=[train_data_sample_1],
     )
     traintuple = session_1.add_traintuple(spec).future().wait()
-    assert traintuple.status == 'done'
+    assert traintuple.status == status_done
     assert traintuple.out_model is not None
     assert traintuple.dataset.worker == session_1.node_id
     tuple_permissions = traintuple.permissions.process
