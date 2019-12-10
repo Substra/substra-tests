@@ -3,7 +3,6 @@ import substra
 import substratest as sbt
 
 
-@pytest.mark.skip('may raise MVCC errors')
 def test_compute_plan(global_execution_env):
     """Execution of a compute plan containing multiple traintuples:
     - 1 traintuple executed on node 1
