@@ -1,5 +1,5 @@
 import abc
-from enum import Enum, auto
+import enum
 import dataclasses
 import re
 import time
@@ -21,9 +21,12 @@ class BaseFuture(abc.ABC):
         raise NotImplementedError
 
 
-class TupleStatus(Enum):
-    done = auto()
-    failed = auto()
+class TupleStatus(enum.Enum):
+    doing = enum.auto()
+    done = enum.auto()
+    failed = enum.auto()
+    todo = enum.auto()
+    waiting = enum.auto()
 
 
 class Future(BaseFuture):
@@ -439,19 +442,19 @@ class Node(_Asset):
     is_current: bool
 
 
-class AssetType(Enum):
-    algo = auto()
-    aggregate_algo = auto()
-    aggregatetuple = auto()
-    composite_algo = auto()
-    composite_traintuple = auto()
-    data_sample = auto()
-    dataset = auto()
-    objective = auto()
-    node = auto()
-    testtuple = auto()
-    traintuple = auto()
-    compute_plan = auto()
+class AssetType(enum.Enum):
+    algo = enum.auto()
+    aggregate_algo = enum.auto()
+    aggregatetuple = enum.auto()
+    composite_algo = enum.auto()
+    composite_traintuple = enum.auto()
+    data_sample = enum.auto()
+    dataset = enum.auto()
+    objective = enum.auto()
+    node = enum.auto()
+    testtuple = enum.auto()
+    traintuple = enum.auto()
+    compute_plan = enum.auto()
 
     @classmethod
     def all(cls):
