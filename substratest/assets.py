@@ -21,12 +21,12 @@ class BaseFuture(abc.ABC):
         raise NotImplementedError
 
 
-class TupleStatus(enum.Enum):
-    doing = enum.auto()
-    done = enum.auto()
-    failed = enum.auto()
-    todo = enum.auto()
-    waiting = enum.auto()
+class TupleStatus:
+    doing = 'doing'
+    done = 'done'
+    failed = 'failed'
+    todo = 'todo'
+    waiting = 'waiting'
 
 
 class Future(BaseFuture):
@@ -51,14 +51,14 @@ class Future(BaseFuture):
         """Wait until completed (done or failed)."""
         tstart = time.time()
         key = self._asset.key
-        while self._asset.status not in [TupleStatus.done.name, TupleStatus.failed.name]:
+        while self._asset.status not in [TupleStatus.done, TupleStatus.failed]:
             if time.time() - tstart > timeout:
                 raise errors.FutureTimeoutError(f'Future timeout on {self._asset}')
 
             time.sleep(3)
             self._asset = self._getter(key)
 
-        if raises and self._asset.status == TupleStatus.failed.name:
+        if raises and self._asset.status == TupleStatus.failed:
             raise errors.FutureFailureError(f'Future execution failed on {self._asset}')
         return self.get()
 
@@ -302,7 +302,7 @@ class OutModel(_DataclassLoader):
 class Traintuple(_Asset, _FutureMixin):
     key: str
     creator: str
-    status: TupleStatus
+    status: str
     dataset: TupleDataset
     permissions: Permissions
     compute_plan_id: str
@@ -322,7 +322,7 @@ class Traintuple(_Asset, _FutureMixin):
 class Aggregatetuple(_Asset, _FutureMixin):
     key: str
     creator: str
-    status: TupleStatus
+    status: str
     worker: str
     permissions: Permissions
     compute_plan_id: str
@@ -348,7 +348,7 @@ class OutCompositeModel(_DataclassLoader):
 class CompositeTraintuple(_Asset, _FutureMixin):
     key: str
     creator: str
-    status: TupleStatus
+    status: str
     dataset: TupleDataset
     compute_plan_id: str
     rank: int
@@ -369,7 +369,7 @@ class CompositeTraintuple(_Asset, _FutureMixin):
 class Testtuple(_Asset, _FutureMixin):
     key: str
     creator: str
-    status: TupleStatus
+    status: str
     dataset: TupleDataset
     certified: bool
     tag: str
