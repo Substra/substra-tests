@@ -1,4 +1,5 @@
 import substra
+import substratest as sbt
 
 import pytest
 
@@ -7,7 +8,7 @@ from substratest.factory import Permissions
 from . import settings
 
 MSP_IDS = settings.MSP_IDS
-status_done = 'done'
+status_done = sbt.client.assets.TupleStatus.done.name
 
 
 @pytest.mark.parametrize('is_public', [True, False])

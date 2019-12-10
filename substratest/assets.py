@@ -1,5 +1,5 @@
 import abc
-import enum
+from enum import Enum, auto
 import dataclasses
 import re
 import time
@@ -19,6 +19,11 @@ class BaseFuture(abc.ABC):
     @abc.abstractmethod
     def get(self):
         raise NotImplementedError
+
+
+class TupleStatus(Enum):
+    done = auto()
+    failed = auto()
 
 
 class Future(BaseFuture):
@@ -43,15 +48,14 @@ class Future(BaseFuture):
         """Wait until completed (done or failed)."""
         tstart = time.time()
         key = self._asset.key
-        completed_statuses = ['done', 'failed']
-        while self._asset.status not in completed_statuses:
+        while self._asset.status not in [TupleStatus.done.name, TupleStatus.failed.name]:
             if time.time() - tstart > timeout:
                 raise errors.FutureTimeoutError(f'Future timeout on {self._asset}')
 
             time.sleep(3)
             self._asset = self._getter(key)
 
-        if raises and self._asset.status == 'failed':
+        if raises and self._asset.status == TupleStatus.failed.name:
             raise errors.FutureFailureError(f'Future execution failed on {self._asset}')
         return self.get()
 
@@ -295,7 +299,7 @@ class OutModel(_DataclassLoader):
 class Traintuple(_Asset, _FutureMixin):
     key: str
     creator: str
-    status: str
+    status: TupleStatus
     dataset: TupleDataset
     permissions: Permissions
     compute_plan_id: str
@@ -315,7 +319,7 @@ class Traintuple(_Asset, _FutureMixin):
 class Aggregatetuple(_Asset, _FutureMixin):
     key: str
     creator: str
-    status: str
+    status: TupleStatus
     worker: str
     permissions: Permissions
     compute_plan_id: str
@@ -341,7 +345,7 @@ class OutCompositeModel(_DataclassLoader):
 class CompositeTraintuple(_Asset, _FutureMixin):
     key: str
     creator: str
-    status: str
+    status: TupleStatus
     dataset: TupleDataset
     compute_plan_id: str
     rank: int
@@ -362,7 +366,7 @@ class CompositeTraintuple(_Asset, _FutureMixin):
 class Testtuple(_Asset, _FutureMixin):
     key: str
     creator: str
-    status: str
+    status: TupleStatus
     dataset: TupleDataset
     certified: bool
     tag: str
@@ -435,19 +439,19 @@ class Node(_Asset):
     is_current: bool
 
 
-class AssetType(enum.Enum):
-    algo = enum.auto()
-    aggregate_algo = enum.auto()
-    aggregatetuple = enum.auto()
-    composite_algo = enum.auto()
-    composite_traintuple = enum.auto()
-    data_sample = enum.auto()
-    dataset = enum.auto()
-    objective = enum.auto()
-    node = enum.auto()
-    testtuple = enum.auto()
-    traintuple = enum.auto()
-    compute_plan = enum.auto()
+class AssetType(Enum):
+    algo = auto()
+    aggregate_algo = auto()
+    aggregatetuple = auto()
+    composite_algo = auto()
+    composite_traintuple = auto()
+    data_sample = auto()
+    dataset = auto()
+    objective = auto()
+    node = auto()
+    testtuple = auto()
+    traintuple = auto()
+    compute_plan = auto()
 
     @classmethod
     def all(cls):

@@ -2,8 +2,8 @@ import pytest
 import substra
 import substratest as sbt
 
-status_done = 'done'
-status_failed = 'failed'
+status_done = sbt.client.assets.TupleStatus.done.name
+status_failed = sbt.client.assets.TupleStatus.failed.name
 
 
 def test_compute_plan(global_execution_env):
