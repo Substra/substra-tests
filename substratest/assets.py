@@ -21,6 +21,14 @@ class BaseFuture(abc.ABC):
         raise NotImplementedError
 
 
+class TupleStatus:
+    doing = 'doing'
+    done = 'done'
+    failed = 'failed'
+    todo = 'todo'
+    waiting = 'waiting'
+
+
 class Future(BaseFuture):
     """Future asset."""
     # mapper from asset class name to client getter method
@@ -43,15 +51,14 @@ class Future(BaseFuture):
         """Wait until completed (done or failed)."""
         tstart = time.time()
         key = self._asset.key
-        completed_statuses = ['done', 'failed']
-        while self._asset.status not in completed_statuses:
+        while self._asset.status not in [TupleStatus.done, TupleStatus.failed]:
             if time.time() - tstart > timeout:
                 raise errors.FutureTimeoutError(f'Future timeout on {self._asset}')
 
             time.sleep(3)
             self._asset = self._getter(key)
 
-        if raises and self._asset.status == 'failed':
+        if raises and self._asset.status == TupleStatus.failed:
             raise errors.FutureFailureError(f'Future execution failed on {self._asset}')
         return self.get()
 

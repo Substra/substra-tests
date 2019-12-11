@@ -2,6 +2,8 @@ import pytest
 import substra
 import substratest as sbt
 
+from substratest import assets
+
 
 def test_compute_plan(global_execution_env):
     """Execution of a compute plan containing multiple traintuples:
@@ -53,7 +55,7 @@ def test_compute_plan(global_execution_env):
     # check all traintuples are done and check they have been executed on the expected
     # node
     for t in traintuples:
-        assert t.status == 'done'
+        assert t.status == assets.TupleStatus.done
 
     traintuple_1, traintuple_2, traintuple_3 = traintuples
 
@@ -113,7 +115,7 @@ def test_compute_plan_single_session_success(global_execution_env):
 
     # All the train/test tuples should succeed
     for t in cp.list_traintuple() + cp.list_testtuple():
-        assert t.status == 'done'
+        assert t.status == assets.TupleStatus.done
 
 
 def test_compute_plan_single_session_failure(global_execution_env):
@@ -171,7 +173,7 @@ def test_compute_plan_single_session_failure(global_execution_env):
 
     # All the train/test tuples should be marked as failed
     for t in traintuples + testtuples:
-        assert t.status == 'failed'
+        assert t.status == assets.TupleStatus.failed
 
 
 def test_compute_plan_aggregate_composite_traintuples(global_execution_env):
@@ -241,7 +243,7 @@ def test_compute_plan_aggregate_composite_traintuples(global_execution_env):
               cp.list_aggregatetuple() +
               cp.list_testtuple())
     for t in tuples:
-        assert t.status == 'done'
+        assert t.status == assets.TupleStatus.done
 
 
 def test_compute_plan_circular_dependency_failure(global_execution_env):
