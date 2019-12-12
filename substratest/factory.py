@@ -13,7 +13,7 @@ from . import utils, assets
 
 DEFAULT_DATA_SAMPLE_FILENAME = 'data.csv'
 
-DEFAULT_SUBSTRATOOLS_VERSION = '0.3.0'
+DEFAULT_SUBSTRATOOLS_VERSION = '0.4.0'
 
 # TODO improve opener get_X/get_y methods
 # TODO improve metrics score method
@@ -82,6 +82,8 @@ if __name__ == '__main__':
     tools.algo.execute(TestAggregateAlgo())
 """
 
+# TODO we should have a different serializer for head and trunk models
+
 DEFAULT_COMPOSITE_ALGO_SCRIPT = f"""
 import json
 import substratools as tools
@@ -90,10 +92,18 @@ class TestCompositeAlgo(tools.CompositeAlgo):
         return [0, 42], [0, 1], [0, 2]
     def predict(self, X, head_model, trunk_model):
         return [0, 99]
-    def load_model(self, path):
+    def load_head_model(self, path):
+        return self._load_model(path)
+    def save_head_model(self, model, path):
+        return self._save_model(model, path)
+    def load_trunk_model(self, path):
+        return self._load_model(path)
+    def save_trunk_model(self, model, path):
+        return self._save_model(model, path)
+    def _load_model(self, path):
         with open(path) as f:
             return json.load(f)
-    def save_model(self, model, path):
+    def _save_model(self, model, path):
         with open(path, 'w') as f:
             return json.dump(model, f)
 if __name__ == '__main__':
