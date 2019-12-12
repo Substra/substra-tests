@@ -264,9 +264,21 @@ class Objective(_Asset):
 
 
 @dataclasses.dataclass(frozen=True)
-class TupleDataset(_DataclassLoader):
+class TesttupleDataset(_DataclassLoader):
     key: str
     perf: float
+    keys: typing.List[str]
+    worker: str
+
+    class Meta:
+        mapper = {
+            'openerHash': 'key',
+        }
+
+
+@dataclasses.dataclass(frozen=True)
+class TraintupleDataset(_DataclassLoader):
+    key: str
     keys: typing.List[str]
     worker: str
 
@@ -303,7 +315,7 @@ class Traintuple(_Asset, _FutureMixin):
     key: str
     creator: str
     status: str
-    dataset: TupleDataset
+    dataset: TraintupleDataset
     permissions: Permissions
     compute_plan_id: str
     rank: int
@@ -349,7 +361,7 @@ class CompositeTraintuple(_Asset, _FutureMixin):
     key: str
     creator: str
     status: str
-    dataset: TupleDataset
+    dataset: TraintupleDataset
     compute_plan_id: str
     rank: int
     tag: str
@@ -370,7 +382,7 @@ class Testtuple(_Asset, _FutureMixin):
     key: str
     creator: str
     status: str
-    dataset: TupleDataset
+    dataset: TesttupleDataset
     certified: bool
     tag: str
     log: str
