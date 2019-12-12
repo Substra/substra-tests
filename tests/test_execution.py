@@ -379,9 +379,9 @@ def test_execution_retry_on_fail(fail_count, global_execution_env):
     )
     traintuple = session.add_traintuple(spec).future().wait(raises=False)
 
-    # The algo should be retried no more than 5 times
-    # - if it succeeds before the 5th try, it should be marked as succeeded
-    # - if it stil hasn't suceeded on the 5th try, it should be marked as failed
+    # The algo should be retried up to 5 times (i.e. max 6 attempts in total)
+    # - if it fails less than 6 times, it should be marked as "done"
+    # - if it fails 6 times or more, it should be marked as "failed"
     if fail_count < 6:
         assert traintuple.status == 'done'
     else:
