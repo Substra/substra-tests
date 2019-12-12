@@ -384,6 +384,7 @@ class Testtuple(_Asset, _FutureMixin):
     status: str
     dataset: TesttupleDataset
     certified: bool
+    rank: int
     tag: str
     log: str
 
