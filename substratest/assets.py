@@ -264,9 +264,21 @@ class Objective(_Asset):
 
 
 @dataclasses.dataclass(frozen=True)
-class TupleDataset(_DataclassLoader):
+class TesttupleDataset(_DataclassLoader):
     key: str
     perf: float
+    keys: typing.List[str]
+    worker: str
+
+    class Meta:
+        mapper = {
+            'openerHash': 'key',
+        }
+
+
+@dataclasses.dataclass(frozen=True)
+class TraintupleDataset(_DataclassLoader):
+    key: str
     keys: typing.List[str]
     worker: str
 
@@ -303,7 +315,7 @@ class Traintuple(_Asset, _FutureMixin):
     key: str
     creator: str
     status: str
-    dataset: TupleDataset
+    dataset: TraintupleDataset
     permissions: Permissions
     compute_plan_id: str
     rank: int
@@ -349,7 +361,7 @@ class CompositeTraintuple(_Asset, _FutureMixin):
     key: str
     creator: str
     status: str
-    dataset: TupleDataset
+    dataset: TraintupleDataset
     compute_plan_id: str
     rank: int
     tag: str
@@ -370,8 +382,9 @@ class Testtuple(_Asset, _FutureMixin):
     key: str
     creator: str
     status: str
-    dataset: TupleDataset
+    dataset: TesttupleDataset
     certified: bool
+    rank: int
     tag: str
     log: str
 
@@ -384,7 +397,6 @@ class Testtuple(_Asset, _FutureMixin):
 @dataclasses.dataclass
 class ComputePlan(_Asset, _ComputePlanFutureMixin):
     compute_plan_id: str
-    objective_key: str
     traintuple_keys: typing.List[str]
     composite_traintuple_keys: typing.List[str]
     aggregatetuple_keys: typing.List[str]
@@ -428,11 +440,12 @@ class ComputePlan(_Asset, _ComputePlanFutureMixin):
         return tuples
 
     def list_testtuple(self):
-        if not self.testtuple_keys:
-            return []
-        filters = [f'testtuple:key:{k}' for k in self.testtuple_keys]
+        filters = [
+            f'testtuple:computePlanID:{self.compute_plan_id}',
+        ]
         tuples = self._session.list_testtuple(filters=filters)
         assert len(tuples) == len(self.testtuple_keys)
+        tuples = sorted(tuples, key=lambda t: t.rank)
         return tuples
 
 

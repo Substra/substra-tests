@@ -21,7 +21,6 @@ def test_tuples_execution_on_same_node(global_execution_env):
     # create traintuple
     spec = factory.create_traintuple(
         algo=algo,
-        objective=objective,
         dataset=dataset,
         data_samples=dataset.train_data_sample_keys,
     )
@@ -31,14 +30,13 @@ def test_tuples_execution_on_same_node(global_execution_env):
 
     # create testtuple
     # don't create it before to avoid MVCC errors
-    spec = factory.create_testtuple(traintuple=traintuple)
+    spec = factory.create_testtuple(objective=objective, traintuple=traintuple)
     testtuple = session.add_testtuple(spec).future().wait()
     assert testtuple.status == assets.TupleStatus.done
 
     # add a traintuple depending on first traintuple
     spec = factory.create_traintuple(
         algo=algo,
-        objective=objective,
         dataset=dataset,
         data_samples=dataset.train_data_sample_keys,
         traintuples=[traintuple],
@@ -55,7 +53,6 @@ def test_federated_learning_workflow(global_execution_env):
 
     # get test environment
     dataset = session.state.datasets[0]
-    objective = session.state.objectives[0]
 
     spec = factory.create_algo()
     algo = session.add_algo(spec)
@@ -63,7 +60,6 @@ def test_federated_learning_workflow(global_execution_env):
     # create traintuple with rank 0
     spec = factory.create_traintuple(
         algo=algo,
-        objective=objective,
         dataset=dataset,
         data_samples=dataset.train_data_sample_keys,
         tag='foo',
@@ -81,7 +77,6 @@ def test_federated_learning_workflow(global_execution_env):
     # create traintuple with rank 1
     spec = factory.create_traintuple(
         algo=algo,
-        objective=objective,
         dataset=dataset,
         data_samples=dataset.train_data_sample_keys,
         traintuples=[traintuple_1],
@@ -101,7 +96,7 @@ def test_federated_learning_workflow(global_execution_env):
 
 def test_tuples_execution_on_different_nodes(global_execution_env):
     """Execution of a traintuple on node 1 and the following testtuple on node 2."""
-    # add test data samples / dataset / ojective on node 1
+    # add test data samples / dataset / objective on node 1
     factory, network = global_execution_env
     session_1 = network.sessions[0].copy()
     session_2 = network.sessions[1].copy()
@@ -115,7 +110,6 @@ def test_tuples_execution_on_different_nodes(global_execution_env):
     # add traintuple on node 2; should execute on node 2 (dataset located on node 2)
     spec = factory.create_traintuple(
         algo=algo_2,
-        objective=objective_1,
         dataset=dataset_2,
         data_samples=dataset_2.train_data_sample_keys,
     )
@@ -125,7 +119,7 @@ def test_tuples_execution_on_different_nodes(global_execution_env):
     assert traintuple.dataset.worker == session_2.node_id
 
     # add testtuple; should execute on node 1 (objective dataset is located on node 1)
-    spec = factory.create_testtuple(traintuple=traintuple)
+    spec = factory.create_testtuple(objective=objective_1, traintuple=traintuple)
     testtuple = session_1.add_testtuple(spec).future().wait()
     assert testtuple.status == assets.TupleStatus.done
     assert testtuple.dataset.worker == session_1.node_id
@@ -136,7 +130,6 @@ def test_traintuple_execution_failure(global_execution_env):
     factory, network = global_execution_env
     session = network.sessions[0].copy()
 
-    objective = session.state.objectives[0]
     dataset = session.state.datasets[0]
 
     spec = factory.create_algo(py_script=sbt.factory.INVALID_ALGO_SCRIPT)
@@ -144,7 +137,6 @@ def test_traintuple_execution_failure(global_execution_env):
 
     spec = factory.create_traintuple(
         algo=algo,
-        objective=objective,
         dataset=dataset,
         data_samples=dataset.train_data_sample_keys,
     )
@@ -168,7 +160,6 @@ def test_composite_traintuples_execution(global_execution_env):
     # first composite traintuple
     spec = factory.create_composite_traintuple(
         algo=algo,
-        objective=objective,
         dataset=dataset,
         data_samples=dataset.train_data_sample_keys,
     )
@@ -182,7 +173,6 @@ def test_composite_traintuples_execution(global_execution_env):
     # second composite traintuple
     spec = factory.create_composite_traintuple(
         algo=algo,
-        objective=objective,
         dataset=dataset,
         data_samples=dataset.train_data_sample_keys,
         head_traintuple=composite_traintuple_1,
@@ -194,7 +184,7 @@ def test_composite_traintuples_execution(global_execution_env):
     assert composite_traintuple_2.out_trunk_model is not None
 
     # add a 'composite' testtuple
-    spec = factory.create_testtuple(traintuple=composite_traintuple_2)
+    spec = factory.create_testtuple(objective=objective, traintuple=composite_traintuple_2)
     testtuple = session.add_testtuple(spec).future().wait()
     assert testtuple.status == assets.TupleStatus.done
 
@@ -215,7 +205,6 @@ def test_aggregatetuple(global_execution_env):
     session = network.sessions[0].copy()
 
     dataset = session.state.datasets[0]
-    objective = session.state.objectives[0]
     train_data_sample_keys = dataset.train_data_sample_keys[:number_of_traintuples_to_aggregate]
 
     spec = factory.create_algo()
@@ -226,7 +215,6 @@ def test_aggregatetuple(global_execution_env):
     for data_sample_key in train_data_sample_keys:
         spec = factory.create_traintuple(
             algo=algo,
-            objective=objective,
             dataset=dataset,
             data_samples=[data_sample_key],
         )
@@ -238,7 +226,6 @@ def test_aggregatetuple(global_execution_env):
 
     spec = factory.create_aggregatetuple(
         algo=aggregate_algo,
-        objective=objective,
         worker=session.node_id,
         traintuples=traintuples,
     )
@@ -301,7 +288,6 @@ def test_aggregate_composite_traintuples(global_execution_env):
                 }
             spec = factory.create_composite_traintuple(
                 algo=composite_algo,
-                objective=objective,
                 dataset=dataset,
                 data_samples=[dataset.train_data_sample_keys[0 + round_]],
                 **kwargs,
@@ -312,7 +298,6 @@ def test_aggregate_composite_traintuples(global_execution_env):
         # create aggregate on its node
         spec = factory.create_aggregatetuple(
             algo=aggregate_algo,
-            objective=objective,
             worker=aggregate_worker,
             traintuples=composite_traintuples,
         )
@@ -325,6 +310,7 @@ def test_aggregate_composite_traintuples(global_execution_env):
     # last round: create associated testtuple
     for traintuple in previous_composite_traintuples:
         spec = factory.create_testtuple(
+            objective=objective,
             traintuple=traintuple,
         )
         sessions[0].add_testtuple(spec).future().wait()
