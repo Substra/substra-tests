@@ -316,7 +316,7 @@ def test_aggregate_composite_traintuples(global_execution_env):
         sessions[0].add_testtuple(spec).future().wait()
 
 
-@pytest.mark.parametrize('fail_count', [1,2])
+@pytest.mark.parametrize('fail_count', [1, 2])
 def test_execution_retry_on_fail(fail_count, global_execution_env):
     """Execution of a traintuple which fails on the N first tries, and suceeds on the N+1th try"""
 
