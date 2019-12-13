@@ -325,7 +325,6 @@ def test_execution_compute_plan_canceled(global_execution_env):
 
     traintuples = cp.list_traintuple()
     for t in traintuples:
-        # first traintuple should be done, others traintuples should be canceled
-        if t.rank == 0:
-            continue
-        assert t.status == assets.Status.canceled
+        # first asset is done, second asset is doing, others should be canceled
+        # no traintuple should be todo or waiting.
+        assert t.status not in [assets.Status.todo, assets.Status.waiting]
