@@ -296,7 +296,7 @@ def test_compute_plan_circular_dependency_failure(global_execution_env):
     assert 'missing dependency among inModels IDs' in str(e.value)
 
 
-def test_execution_compute_plan_cancelled(global_execution_env):
+def test_execution_compute_plan_canceled(global_execution_env):
     factory, network = global_execution_env
     session = network.sessions[0].copy()
 
@@ -325,4 +325,7 @@ def test_execution_compute_plan_cancelled(global_execution_env):
 
     traintuples = cp.list_traintuple()
     for t in traintuples:
+        # first traintuple should be done, others traintuples should be canceled
+        if t.rank == 0:
+            continue
         assert t.status == assets.Status.canceled
