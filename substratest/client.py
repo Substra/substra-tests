@@ -256,3 +256,9 @@ class Session:
             path = os.path.join(tmp, DATASET_DOWNLOAD_FILENAME)
             with open(path, 'rb') as f:
                 return f.read()
+
+    def cancel_compute_plan(self, *args, **kwargs):
+        res = self._client.cancel_compute_plan(*args, **kwargs)
+        compute_plan = assets.ComputePlan.load(res).attach(self)
+        self.state.update_compute_plan(compute_plan)
+        return compute_plan
