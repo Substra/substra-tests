@@ -129,6 +129,13 @@ def random_uuid():
     return uuid.uuid4().hex
 
 
+def _shorten_name(name):
+    """Format asset name to ensure they match the backend requirements."""
+    if len(name) < 100:
+        return name
+    return name[:75] + '...' + name[:20]
+
+
 class Counter:
     def __init__(self):
         self._idx = -1
@@ -439,7 +446,7 @@ class AssetsFactory:
         idx = self._dataset_counter.inc()
         tmpdir = self._workdir / f'dataset-{idx}'
         tmpdir.mkdir()
-        name = f'{self._uuid} - Dataset {idx}'
+        name = _shorten_name(f'{self._uuid} - Dataset {idx}')
 
         description_path = tmpdir / 'description.md'
         description_content = name
@@ -464,7 +471,7 @@ class AssetsFactory:
         idx = self._objective_counter.inc()
         tmpdir = self._workdir / f'objective-{idx}'
         tmpdir.mkdir()
-        name = f'{self._uuid} - Objective {idx}'
+        name = _shorten_name(f'{self._uuid} - Objective {idx}')
 
         description_path = tmpdir / 'description.md'
         description_content = f'# random={rdm} {name}'
@@ -496,7 +503,7 @@ class AssetsFactory:
         idx = self._algo_counter.inc()
         tmpdir = self._workdir / f'algo-{idx}'
         tmpdir.mkdir()
-        name = f'{self._uuid} - Algo {idx}'
+        name = _shorten_name(f'{self._uuid} - Algo {idx}')
 
         description_path = tmpdir / 'description.md'
         description_content = name

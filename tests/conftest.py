@@ -1,5 +1,6 @@
 import dataclasses
 import typing
+import uuid
 
 import pytest
 
@@ -7,10 +8,14 @@ import substratest as sbt
 from . import settings
 
 
+TESTS_RUN_UUID = uuid.uuid4().hex  # unique uuid identifying the tests run
+
+
 def pytest_report_header(config):
     """Print network configuration in pytest header to help configuration debugging."""
     cfg = settings.load()
     messages = [
+        f"tests run uuid: {TESTS_RUN_UUID}'",
         f"substra network configuration loaded from: '{cfg.path}'",
         "substra network setup:",
     ]
@@ -46,7 +51,8 @@ def factory(request):
     Provide class methods to simply create asset specification in order to add them
     to the substra framework.
     """
-    with sbt.AssetsFactory(name=request.node.name) as f:
+    name = f"{TESTS_RUN_UUID}_{request.node.name}"
+    with sbt.AssetsFactory(name=name) as f:
         yield f
 
 
@@ -78,8 +84,8 @@ def global_execution_env():
     Returns a tuple (factory, Network)
     """
     n = _get_network()
-
-    with sbt.AssetsFactory(name='data-network') as f:
+    factory_name = f"{TESTS_RUN_UUID}_global"
+    with sbt.AssetsFactory(name=factory_name) as f:
         for sess in n.sessions:
 
             # create dataset
