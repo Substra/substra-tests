@@ -316,7 +316,7 @@ def test_aggregate_composite_traintuples(global_execution_env):
         sessions[0].add_testtuple(spec).future().wait()
 
 
-@pytest.mark.parametrize('fail_count', [5, 6])
+@pytest.mark.parametrize('fail_count', [1,2])
 def test_execution_retry_on_fail(fail_count, global_execution_env):
     """Execution of a traintuple which fails on the N first tries, and suceeds on the N+1th try"""
 
@@ -337,10 +337,10 @@ def test_execution_retry_on_fail(fail_count, global_execution_env):
     #     would be tested, since errors in the docker build are the main use-case
     #     the retry feature was build for.
 
-    RETRY_ALGO_SNIPPET_TOREPLACE = f"""
+    retry_algo_snippet_toreplace = """
     tools.algo.execute(TestAlgo())"""
 
-    RETRY_ALGO_SNIPPET_REPLACEMENT = f"""
+    retry_snippet_replacement = f"""
     counter_path = "/sandbox/local/counter"
     counter = 0
     try:
@@ -350,11 +350,11 @@ def test_execution_retry_on_fail(fail_count, global_execution_env):
         pass # file doesn't exist yet
 
     # Fail if the counter is below the retry count
-    if counter < <FAIL_COUNT>:
+    if counter < {fail_count}:
         counter = counter + 1
         with open(counter_path, 'w') as f:
             f.write(str(counter))
-        raise Exception("Intentionally keep on failing until we have failed <FAIL_COUNT> time(s). The algo has now \
+        raise Exception("Intentionally keep on failing until we have failed {fail_count} time(s). The algo has now \
             failed " + str(counter) + " time(s).")
 
     # The counter is greater than the retry count
@@ -365,8 +365,7 @@ def test_execution_retry_on_fail(fail_count, global_execution_env):
 
     dataset = session.state.datasets[0]
 
-    retry_snippet = RETRY_ALGO_SNIPPET_REPLACEMENT.replace("<FAIL_COUNT>", str(fail_count))
-    py_script = sbt.factory.DEFAULT_ALGO_SCRIPT.replace(RETRY_ALGO_SNIPPET_TOREPLACE, retry_snippet)
+    py_script = sbt.factory.DEFAULT_ALGO_SCRIPT.replace(retry_algo_snippet_toreplace, retry_snippet_replacement)
     spec = factory.create_algo(py_script)
     algo = session.add_algo(spec)
 
@@ -379,10 +378,11 @@ def test_execution_retry_on_fail(fail_count, global_execution_env):
     )
     traintuple = session.add_traintuple(spec).future().wait(raises=False)
 
-    # The algo should be retried up to 5 times (i.e. max 6 attempts in total)
-    # - if it fails less than 6 times, it should be marked as "done"
-    # - if it fails 6 times or more, it should be marked as "failed"
-    if fail_count < 6:
+    # Assuming that, on the backend, CELERY_TASK_MAX_RETRIES is set to 1, the algo
+    # should be retried up to 1 time(s) (i.e. max 2 attempts in total)
+    # - if it fails less than 2 times, it should be marked as "done"
+    # - if it fails 2 times or more, it should be marked as "failed"
+    if fail_count < 2:
         assert traintuple.status == 'done'
     else:
         assert traintuple.status == 'failed'
