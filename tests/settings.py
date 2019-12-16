@@ -25,8 +25,14 @@ class NodeCfg:
 
 
 @dataclasses.dataclass(frozen=True)
+class Options:
+    enable_intermediate_model_removal: bool
+
+
+@dataclasses.dataclass(frozen=True)
 class Settings:
     path: str
+    options: Options
     nodes: typing.List[NodeCfg] = dataclasses.field(default_factory=list)
 
 
@@ -42,6 +48,9 @@ def _load_yaml(path):
     return Settings(
         path=path,
         nodes=nodes,
+        options=Options(
+            enable_intermediate_model_removal=data['enable_intermediate_model_removal']
+        )
     )
 
 
@@ -97,7 +106,3 @@ load()
 
 
 MSP_IDS = [n.msp_id for n in _SETTINGS.nodes]
-
-# <Additional network features>
-ENABLE_INTERMEDIATE_MODEL_REMOVAL = os.getenv('ENABLE_INTERMEDIATE_MODEL_REMOVAL') == '1'
-# </End additional network features>

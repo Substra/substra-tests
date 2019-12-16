@@ -8,8 +8,6 @@ from substratest import assets
 
 from . import settings
 
-ENABLE_INTERMEDIATE_MODEL_REMOVAL = settings.ENABLE_INTERMEDIATE_MODEL_REMOVAL
-
 
 def test_tuples_execution_on_same_node(global_execution_env):
     """Execution of a traintuple, a following testtuple and a following traintuple."""
@@ -259,8 +257,8 @@ def test_aggregate_composite_traintuples(global_execution_env):
     - Create a testtuple for each previous composite traintuples and aggregate tuple
       created during this round.
 
-    (optional) if ENABLE_INTERMEDIATE_MODEL_REMOVAL is True:
-    - Since option ENABLE_INTERMEDIATE_MODEL_REMOVAL is True, the aggregate model created on round 1 should
+    (optional) if the option "enable_intermediate_model_removal" is True:
+    - Since option "enable_intermediate_model_removal" is True, the aggregate model created on round 1 should
       have been deleted from the backend after round 2 has completed.
     - Create a traintuple that depends on the aggregate tuple created on round 1. Ensure that it fails to start.
 
@@ -324,10 +322,10 @@ def test_aggregate_composite_traintuples(global_execution_env):
         )
         sessions[0].add_testtuple(spec).future().wait()
 
-    if not ENABLE_INTERMEDIATE_MODEL_REMOVAL:
+    if not network.options.enable_intermediate_model_removal:
         return
 
-    # Optional (if ENABLE_INTERMEDIATE_MODEL_REMOVAL is True): ensure the aggregatetuple of round 1 has been deleted
+    # Optional (if "enable_intermediate_model_removal" is True): ensure the aggregatetuple of round 1 has been deleted
     session = sessions[0]
     dataset = session.state.datasets[0]
     algo = session.add_algo(spec)
