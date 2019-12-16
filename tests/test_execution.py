@@ -6,8 +6,6 @@ import substratest as sbt
 
 from substratest import assets
 
-from . import settings
-
 
 def test_tuples_execution_on_same_node(global_execution_env):
     """Execution of a traintuple, a following testtuple and a following traintuple."""
