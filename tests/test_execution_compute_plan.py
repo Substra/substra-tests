@@ -323,8 +323,8 @@ def test_execution_compute_plan_canceled(global_execution_env):
     cp = session.cancel_compute_plan(cp.compute_plan_id)
     assert cp.status == assets.Status.canceled
 
-    traintuples = cp.list_traintuple()
-    for t in traintuples:
-        # first asset is done, second asset is doing, others should be canceled
-        # no traintuple should be todo or waiting.
-        assert t.status not in [assets.Status.todo, assets.Status.waiting]
+    cp = cp.future().wait()
+    assert cp.status == assets.Status.canceled
+
+    first_traintuple = [t for t in cp.list_traintuple() if t.rank == 0][0]
+    assert first_traintuple.status == assets.Status.done
