@@ -10,6 +10,7 @@ from . import settings
 
 ENABLE_INTERMEDIATE_MODEL_REMOVAL = settings.ENABLE_INTERMEDIATE_MODEL_REMOVAL
 
+
 def test_tuples_execution_on_same_node(global_execution_env):
     """Execution of a traintuple, a following testtuple and a following traintuple."""
     factory, network = global_execution_env
