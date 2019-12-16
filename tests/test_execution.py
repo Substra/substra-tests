@@ -6,6 +6,9 @@ import substratest as sbt
 
 from substratest import assets
 
+from . import settings
+
+ENABLE_INTERMEDIATE_MODEL_REMOVAL = settings.ENABLE_INTERMEDIATE_MODEL_REMOVAL
 
 def test_tuples_execution_on_same_node(global_execution_env):
     """Execution of a traintuple, a following testtuple and a following traintuple."""
@@ -255,6 +258,11 @@ def test_aggregate_composite_traintuples(global_execution_env):
     - Create a testtuple for each previous composite traintuples and aggregate tuple
       created during this round.
 
+    (optional) if ENABLE_INTERMEDIATE_MODEL_REMOVAL is True:
+    - Since option ENABLE_INTERMEDIATE_MODEL_REMOVAL is True, the aggregate model created on round 1 should
+      have been deleted from the backend after round 2 has completed.
+    - Create a traintuple that depends on the aggregate tuple created on round 1. Ensure that it fails to start.
+
     This test refers to the model composition use case.
     """
     factory, network = global_execution_env
@@ -314,6 +322,22 @@ def test_aggregate_composite_traintuples(global_execution_env):
             traintuple=traintuple,
         )
         sessions[0].add_testtuple(spec).future().wait()
+
+    if not ENABLE_INTERMEDIATE_MODEL_REMOVAL:
+        return
+
+    # Optional (if ENABLE_INTERMEDIATE_MODEL_REMOVAL is True): ensure the aggregatetuple of round 1 has been deleted
+    session = sessions[0]
+    dataset = session.state.datasets[0]
+    algo = session.add_algo(spec)
+
+    spec = factory.create_traintuple(
+        algo=algo,
+        dataset=dataset,
+        data_samples=dataset.train_data_sample_keys,
+    )
+    traintuple = session.add_traintuple(spec).future().wait()
+    assert traintuple.status == assets.Status.failed
 
 
 @pytest.mark.parametrize('fail_count', [1, 2])

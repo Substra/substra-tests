@@ -97,3 +97,7 @@ load()
 
 
 MSP_IDS = [n.msp_id for n in _SETTINGS.nodes]
+
+# <Additional network features>
+ENABLE_INTERMEDIATE_MODEL_REMOVAL = os.getenv('ENABLE_INTERMEDIATE_MODEL_REMOVAL') == '1'
+# </End additional network features>
