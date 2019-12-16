@@ -60,8 +60,15 @@ def test_compute_plan(global_execution_env):
 
     assert len(traintuple_3.in_models) == 2
 
-    assert traintuple_1.dataset.worker == session_1.node_id
-    assert traintuple_2.dataset.worker == session_2.node_id
+    # check tuples rank
+    assert traintuple_1.rank == 0
+    assert traintuple_2.rank == 0
+    assert traintuple_3.rank == 1
+
+    # XXX as the first two tuples have the same rank, there is currently no way to know
+    #     which one will be returned first
+    workers_rank_0 = set([traintuple_1.dataset.worker, traintuple_2.dataset.worker])
+    assert workers_rank_0 == set([session_1.node_id, session_2.node_id])
     assert traintuple_3.dataset.worker == session_1.node_id
 
 
