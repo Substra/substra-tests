@@ -1,3 +1,4 @@
+enable_intermediate_model_removal: False
 nodes:
   - name: 'owkin'
     msp_id: 'owkinMSP'
