@@ -74,6 +74,7 @@ def _load_skaffold(path):
     return Settings(
         path=path,
         nodes=nodes,
+        # the "options" field is not supported when parsing skaffold file
     )
 
 
