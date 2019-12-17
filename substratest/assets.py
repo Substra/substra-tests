@@ -5,15 +5,12 @@ import re
 import time
 import typing
 
-from . import errors
-
-
-FUTURE_TIMEOUT = 120  # seconds
+from . import errors, cfg
 
 
 class BaseFuture(abc.ABC):
     @abc.abstractmethod
-    def wait(self, timeout=FUTURE_TIMEOUT, raises=True):
+    def wait(self, timeout=cfg.FUTURE_TIMEOUT, raises=True):
         raise NotImplementedError
 
     @abc.abstractmethod
@@ -48,7 +45,7 @@ class Future(BaseFuture):
             assert False, 'Future not supported'
         self._getter = getattr(session, m)
 
-    def wait(self, timeout=FUTURE_TIMEOUT, raises=True):
+    def wait(self, timeout=cfg.FUTURE_TIMEOUT, raises=True):
         """Wait until completed (done or failed)."""
         tstart = time.time()
         key = self._asset.key
@@ -56,7 +53,7 @@ class Future(BaseFuture):
             if time.time() - tstart > timeout:
                 raise errors.FutureTimeoutError(f'Future timeout on {self._asset}')
 
-            time.sleep(3)
+            time.sleep(cfg.FUTURE_POLLING_PERIOD)
             self._asset = self._getter(key)
 
         if raises and self._asset.status == Status.failed:
@@ -77,7 +74,7 @@ class ComputePlanFuture(BaseFuture):
         self._compute_plan = compute_plan
         self._session = session
 
-    def wait(self, timeout=FUTURE_TIMEOUT):
+    def wait(self, timeout=cfg.FUTURE_TIMEOUT):
         """wait until all tuples are completed (done or failed)."""
         tuples = (self._compute_plan.list_traintuple() +
                   self._compute_plan.list_composite_traintuple() +
