@@ -54,7 +54,7 @@ The tests suite:
 - Must be independent from the substra network
   - Substra network must be started separately
   - Substra network can be located locally / on the cloud
-  - Substra network can be started through docker-compose or through kubenertes
+  - Substra network can be started through docker-compose or through kubernetes
 - Requires a setup with at least 2 organisations
 - Should be able to run multiple times without restarting the network
 
