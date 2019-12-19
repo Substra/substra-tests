@@ -26,6 +26,7 @@ class NodeCfg:
 
 @dataclasses.dataclass(frozen=True)
 class Options:
+    celery_task_max_retry: int
     enable_intermediate_model_removal: bool
 
 
@@ -48,9 +49,7 @@ def _load_yaml(path):
     return Settings(
         path=path,
         nodes=nodes,
-        options=Options(
-            enable_intermediate_model_removal=data['enable_intermediate_model_removal']
-        )
+        options=Options(**data['options'])
     )
 
 

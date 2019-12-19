@@ -403,7 +403,7 @@ def test_execution_retry_on_fail(fail_count, global_execution_env):
     # should be retried up to 1 time(s) (i.e. max 2 attempts in total)
     # - if it fails less than 2 times, it should be marked as "done"
     # - if it fails 2 times or more, it should be marked as "failed"
-    if fail_count < 2:
+    if fail_count < network.options.celery_task_max_retry:
         assert traintuple.status == 'done'
     else:
         assert traintuple.status == 'failed'
