@@ -49,18 +49,18 @@ SUBSTRA_TESTS_SKAFFOLD_FILEPATH=$SUBSTRA_SOURCE/substra-backend/skaffold.yaml ma
 
 When adding or modifying tests, please follow these guidelines.
 
-The tests suite:
-- Must be easy to configure through settings files to define the substra network to target
+The test suite:
 - Must be independent from the substra network
-  - Substra network must be started separately
-  - Substra network can be located locally / on the cloud
-  - Substra network can be started through docker-compose or through kubernetes
-- Requires a setup with at least 2 organisations
-- Should be able to run multiple times without restarting the network
+  - The substra network is started prior to, and independently from the tests being run
+  - The substra network can be running locally / on the cloud
+  - The substra network can be started through docker-compose or through kubernetes
+- It should be possible to run the test suite multiple times without restarting the substra network
+- Must not use hardcoded network configuration settings/values. Use settings files instead (e.g. `values.yaml`)
+- Should target a substra network with at least 2 organisations
 
 Each new test:
 - Should have a deterministic behavior (not fail randomly)
 - Must be fast to run:
-  - avoid adding latency
-  - group related long running tests
-- Should not complete before all the tuples it created have been executed: it is required to ensure that the next test will be launched with a susbtra network ready to execute new tuples
+  - Avoid tests that take a lot of time to complete
+  - Group related long running tests (when it makes sense)
+- Should not complete before all the tuples it created have been executed. This requirement ensures that the next test will be launched with a susbtra network ready to execute new tuples
