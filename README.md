@@ -20,9 +20,9 @@ You will need to install it thanks to the `pip` binary.
 
 # Run the tests
 
-The network configuration must be defined in a yaml file.
+The network configuration is described in a yaml file.
 
-Two configurations are currently available:
+Two configuration files are currently available:
 - `values.yaml` (default): for networks started with Kubernetes
 - `local-values.yaml`: for networks started with docker-compose, or started manually
 
