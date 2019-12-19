@@ -5,6 +5,7 @@ import uuid
 import pytest
 
 import substratest as sbt
+import experiments
 from . import settings
 
 
@@ -52,7 +53,7 @@ def factory(request):
     to the substra framework.
     """
     name = f"{TESTS_RUN_UUID}_{request.node.name}"
-    with sbt.AssetsFactory(name=name) as f:
+    with sbt.AssetsFactory(name, experiments.dummy) as f:
         yield f
 
 
@@ -85,7 +86,7 @@ def global_execution_env():
     """
     n = _get_network()
     factory_name = f"{TESTS_RUN_UUID}_global"
-    with sbt.AssetsFactory(name=factory_name) as f:
+    with sbt.AssetsFactory(factory_name, experiments.dummy) as f:
         for sess in n.sessions:
 
             # create dataset

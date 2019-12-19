@@ -1,6 +1,6 @@
 import pytest
+
 import substra
-import substratest as sbt
 
 from substratest import assets
 
@@ -152,7 +152,8 @@ def test_compute_plan_single_session_failure(global_execution_env):
     data_sample_1, data_sample_2, data_sample_3, _ = dataset.train_data_sample_keys
     objective = session.state.objectives[0]
 
-    spec = factory.create_algo(py_script=sbt.factory.INVALID_ALGO_SCRIPT)
+    invalid_algo_script = factory.experiment.algo_script.replace('train', 'rtain')
+    spec = factory.create_algo(py_script=invalid_algo_script)
     algo = session.add_algo(spec)
 
     cp_spec = factory.create_compute_plan()

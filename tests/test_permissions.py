@@ -2,7 +2,7 @@ import substra
 
 import pytest
 
-from substratest.factory import Permissions
+from substratest.factory.specs import Permissions
 from substratest import assets
 
 from . import settings

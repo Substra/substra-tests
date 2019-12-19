@@ -2,8 +2,6 @@ import pytest
 
 import substra
 
-import substratest as sbt
-
 from substratest import assets
 
 
@@ -132,7 +130,8 @@ def test_traintuple_execution_failure(global_execution_env):
 
     dataset = session.state.datasets[0]
 
-    spec = factory.create_algo(py_script=sbt.factory.INVALID_ALGO_SCRIPT)
+    invalid_algo_script = factory.experiment.algo_script.replace('train', 'rtain')
+    spec = factory.create_algo(py_script=invalid_algo_script)
     algo = session.add_algo(spec)
 
     spec = factory.create_traintuple(
@@ -365,7 +364,8 @@ def test_execution_retry_on_fail(fail_count, global_execution_env):
 
     dataset = session.state.datasets[0]
 
-    py_script = sbt.factory.DEFAULT_ALGO_SCRIPT.replace(retry_algo_snippet_toreplace, retry_snippet_replacement)
+    py_script = factory.experiment.algo_script.replace(
+        retry_algo_snippet_toreplace, retry_snippet_replacement)
     spec = factory.create_algo(py_script)
     algo = session.add_algo(spec)
 
