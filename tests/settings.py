@@ -4,8 +4,6 @@ import os
 import typing
 import yaml
 
-SUBSTRA_TESTS_SKAFFOLD_FILEPATH = os.getenv('SUBSTRA_TESTS_SKAFFOLD_FILEPATH')
-
 CURRENT_DIR = os.path.dirname(__file__)
 
 DEFAULT_NETWORK_CONFIGURATION_PATH = os.path.join(CURRENT_DIR, '../', 'values.yaml')
@@ -53,30 +51,6 @@ def _load_yaml(path):
     )
 
 
-def _load_skaffold(path):
-    """Load configuration from a skaffold yaml file."""
-    with open(path) as f:
-        skaffold = yaml.load(f, Loader=yaml.Loader)
-
-    services = skaffold['deploy']['helm']['releases']
-    backends = [s for s in services if s['name'].startswith('substra-backend-peer')]
-
-    nodes = [NodeCfg(
-        name=b['name'],
-        msp_id=b['overrides']['peer']['mspID'],
-        address=b['overrides']['backend']['defaultDomain'],
-        user=b['overrides']['backend']['auth']['user'],
-        password=b['overrides']['backend']['auth']['password'],
-        shared_path=b['overrides']['persistence']['hostPath'],
-    ) for b in backends]
-
-    return Settings(
-        path=path,
-        nodes=nodes,
-        # the "options" field is not supported when parsing skaffold file
-    )
-
-
 def load():
     """Loads settings static configuration.
 
@@ -88,10 +62,7 @@ def load():
     if _SETTINGS is not None:
         return _SETTINGS
 
-    if SUBSTRA_TESTS_SKAFFOLD_FILEPATH:
-        s = _load_skaffold(SUBSTRA_TESTS_SKAFFOLD_FILEPATH)
-    else:
-        s = _load_yaml(SUBSTRA_TESTS_CONFIG_FILEPATH)
+    s = _load_yaml(SUBSTRA_TESTS_CONFIG_FILEPATH)
     _SETTINGS = s
     return _SETTINGS
 

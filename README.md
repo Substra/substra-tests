@@ -20,9 +20,9 @@ You will need to install it thanks to the `pip` binary.
 
 # Run the tests
 
-## Using a network configuration file
+The network configuration is described in a yaml file.
 
-This is the mode used by default. Two files are currently available:
+Two configuration files are currently available:
 - `values.yaml` (default): for networks started with Kubernetes
 - `local-values.yaml`: for networks started with docker-compose, or started manually
 
@@ -36,13 +36,6 @@ To run the tests using the provided `local-values.yaml` (or a custom config file
 
 ```
 SUBSTRA_TESTS_CONFIG_FILEPATH=local-values.yaml make test
-```
-
-## Using a skaffold file
-
-It is possible to use a `substra-backend` skaffold file as the source for the network configuration:
-```
-SUBSTRA_TESTS_SKAFFOLD_FILEPATH=$SUBSTRA_SOURCE/substra-backend/skaffold.yaml make test
 ```
 
 # Test design guidelines
