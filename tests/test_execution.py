@@ -323,7 +323,16 @@ def test_aggregate_composite_traintuples(global_execution_env):
     if not network.options.enable_intermediate_model_removal:
         return
 
-    # Optional (if "enable_intermediate_model_removal" is True): ensure the aggregatetuple of round 1 has been deleted
+    # Optional (if "enable_intermediate_model_removal" is True): ensure the aggregatetuple of round 1 has been deleted.
+    #
+    # We do this by creating a new traintuple that depends on the deleted aggregatatuple, and ensuring that starting 
+    # the traintuple fails.
+    #
+    # Ideally it would be better to try to do a request "as a backend" to get the deleted model. This would be closer
+    # to what we want to test and would also check that this request is correctly handled when the model has been
+    # deleted. Here, we cannot know for sure the failure reason. Unfortunately this cannot be done now as the
+    # username/password are not available in the settings files.
+
     session = sessions[0]
     dataset = session.state.datasets[0]
     algo = session.add_algo(spec)
