@@ -47,7 +47,7 @@ SUBSTRA_TESTS_SKAFFOLD_FILEPATH=$SUBSTRA_SOURCE/substra-backend/skaffold.yaml ma
 
 # Test design guidelines
 
-When adding or modifying tests, please follow these guidelines.
+When adding or modifying tests, please follow these guidelines:
 
 1. The complete test suite must be independent from the substra network
    - The substra network must be started prior to (and independently from) executing the tests
