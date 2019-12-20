@@ -83,7 +83,7 @@ def test_federated_learning_workflow(global_execution_env):
         assert traintuple.status == assets.Status.done
         assert traintuple.out_model is not None
         assert traintuple.tag == 'foo'
-        assert traintuple.compute_plan_id is not None
+        assert traintuple.compute_plan_id   # check it is not None or ''
 
         rank += 1
 
