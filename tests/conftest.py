@@ -26,6 +26,7 @@ def pytest_report_header(config):
 
 @dataclasses.dataclass
 class Network:
+    options: settings.Options
     sessions: typing.List[sbt.Session] = dataclasses.field(default_factory=list)
 
 
@@ -40,6 +41,7 @@ def _get_network():
         password=n.password,
     ) for n in cfg.nodes]
     return Network(
+        options=cfg.options,
         sessions=sessions,
     )
 

@@ -255,6 +255,11 @@ def test_aggregate_composite_traintuples(global_execution_env):
     - Create a testtuple for each previous composite traintuples and aggregate tuple
       created during this round.
 
+    (optional) if the option "enable_intermediate_model_removal" is True:
+    - Since option "enable_intermediate_model_removal" is True, the aggregate model created on round 1 should
+      have been deleted from the backend after round 2 has completed.
+    - Create a traintuple that depends on the aggregate tuple created on round 1. Ensure that it fails to start.
+
     This test refers to the model composition use case.
     """
     factory, network = global_execution_env
@@ -314,6 +319,31 @@ def test_aggregate_composite_traintuples(global_execution_env):
             traintuple=traintuple,
         )
         sessions[0].add_testtuple(spec).future().wait()
+
+    if not network.options.enable_intermediate_model_removal:
+        return
+
+    # Optional (if "enable_intermediate_model_removal" is True): ensure the aggregatetuple of round 1 has been deleted.
+    #
+    # We do this by creating a new traintuple that depends on the deleted aggregatatuple, and ensuring that starting 
+    # the traintuple fails.
+    #
+    # Ideally it would be better to try to do a request "as a backend" to get the deleted model. This would be closer
+    # to what we want to test and would also check that this request is correctly handled when the model has been
+    # deleted. Here, we cannot know for sure the failure reason. Unfortunately this cannot be done now as the
+    # username/password are not available in the settings files.
+
+    session = sessions[0]
+    dataset = session.state.datasets[0]
+    algo = session.add_algo(spec)
+
+    spec = factory.create_traintuple(
+        algo=algo,
+        dataset=dataset,
+        data_samples=dataset.train_data_sample_keys,
+    )
+    traintuple = session.add_traintuple(spec).future().wait()
+    assert traintuple.status == assets.Status.failed
 
 
 @pytest.mark.parametrize('fail_count', [1, 2])
@@ -382,7 +412,7 @@ def test_execution_retry_on_fail(fail_count, global_execution_env):
     # should be retried up to 1 time(s) (i.e. max 2 attempts in total)
     # - if it fails less than 2 times, it should be marked as "done"
     # - if it fails 2 times or more, it should be marked as "failed"
-    if fail_count < 2:
+    if fail_count < network.options.celery_task_max_retry:
         assert traintuple.status == 'done'
     else:
         assert traintuple.status == 'failed'

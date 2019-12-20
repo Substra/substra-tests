@@ -1,3 +1,6 @@
+options:
+  celery_task_max_retry: 2
+  enable_intermediate_model_removal: False
 nodes:
   - name: 'node-1'
     msp_id: 'MyOrg1MSP'
