@@ -28,7 +28,7 @@ def test_load_single_node_1_branch(compute_plan_size, global_execution_env):
             algo=algo,
             dataset=dataset,
             data_samples=[dataset.train_data_sample_keys[0]],
-            in_models=[previous_tuple] if previous_tuple else None,
+            in_models=[previous_tuple] if previous_tuple else [],
         )
 
     cp = session.add_compute_plan(cp_spec)
@@ -37,10 +37,7 @@ def test_load_single_node_1_branch(compute_plan_size, global_execution_env):
     first_tuple = first_tuple.future().wait()
     assert first_tuple.status == assets.Status.done
 
-    cp = session.cancel_compute_plan(cp.compute_plan_id)
-    assert cp.status == assets.Status.canceled
-
-    cp = cp.future().wait()
+    cp = session.cancel_compute_plan(cp.compute_plan_id).future().wait()
     assert cp.status == assets.Status.canceled
 
     first_tuple = cp.list_traintuple()[0]
@@ -90,10 +87,7 @@ def test_load_multi_node_2_branches(compute_plan_size, global_execution_env):
     first_tuple = first_tuple.future().wait()
     assert first_tuple.status == assets.Status.done
 
-    cp = session_1.cancel_compute_plan(cp.compute_plan_id)
-    assert cp.status == assets.Status.canceled
-
-    cp = cp.future().wait()
+    cp = session_1.cancel_compute_plan(cp.compute_plan_id).future().wait()
     assert cp.status == assets.Status.canceled
 
     first_tuple = cp.list_traintuple()[0]
@@ -152,10 +146,7 @@ def test_load_multi_node_aggregates(compute_plan_size, global_execution_env):
     first_tuple = first_tuple.future().wait()
     assert first_tuple.status == assets.Status.done
 
-    cp = session_1.cancel_compute_plan(cp.compute_plan_id)
-    assert cp.status == assets.Status.canceled
-
-    cp = cp.future().wait()
+    cp = session_1.cancel_compute_plan(cp.compute_plan_id).future().wait()
     assert cp.status == assets.Status.canceled
 
     first_tuple = cp.list_traintuple()[0]
@@ -219,10 +210,7 @@ def test_load_multi_node_composite_aggregates(compute_plan_size, global_executio
     first_tuple = first_tuple.future().wait()
     assert first_tuple.status == assets.Status.done
 
-    cp = session_1.cancel_compute_plan(cp.compute_plan_id)
-    assert cp.status == assets.Status.canceled
-
-    cp = cp.future().wait()
+    cp = session_1.cancel_compute_plan(cp.compute_plan_id).future().wait()
     assert cp.status == assets.Status.canceled
 
     first_tuple = cp.list_composite_traintuple()[0]
