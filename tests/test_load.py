@@ -100,8 +100,8 @@ def test_load_multi_node_aggregates(compute_plan_size, global_execution_env):
     """
     Shape of the compute plan:
 
-    Node A: traintuple 0 --> traintuple --> aggregate --> traintuple --> aggregate ...
-    Node B:              \-> traintuple /             \-> traintuple /
+    Node A: traintuple --> aggregate --> traintuple --> aggregate ...
+    Node B: traintuple /             \-> traintuple /
     """
 
     factory, network = global_execution_env
@@ -118,20 +118,14 @@ def test_load_multi_node_aggregates(compute_plan_size, global_execution_env):
     aggregate_algo = session_1.add_aggregate_algo(spec)
 
     cp_spec = factory.create_compute_plan()
-    first_tuple = cp_spec.add_traintuple(
-        algo=algo,
-        dataset=dataset_1,
-        data_samples=[dataset_1.train_data_sample_keys[0]],
-    )
-
-    previous_aggregatetuple = first_tuple
+    previous_aggregatetuple = None
     for _ in range(compute_plan_size):
         tuples = [
             cp_spec.add_traintuple(
                 algo=algo,
                 dataset=dataset,
                 data_samples=[dataset.train_data_sample_keys[0]],
-                in_models=[previous_aggregatetuple],
+                in_models=[previous_aggregatetuple] if previous_aggregatetuple else [],
             ) for dataset in [dataset_1, dataset_2]
         ]
         previous_aggregatetuple = cp_spec.add_aggregatetuple(
@@ -141,17 +135,16 @@ def test_load_multi_node_aggregates(compute_plan_size, global_execution_env):
         )
 
     cp = session_1.add_compute_plan(cp_spec)
-    first_tuple = cp.list_traintuple()[0]
-    assert first_tuple.rank == 0
-    first_tuple = first_tuple.future().wait()
-    assert first_tuple.status == assets.Status.done
+    first_aggregatetuple = cp.list_aggregatetuple()[0].future().wait()
+    assert first_aggregatetuple.rank == 1
+    assert first_aggregatetuple.status == assets.Status.done
 
     cp = session_1.cancel_compute_plan(cp.compute_plan_id).future().wait()
     assert cp.status == assets.Status.canceled
 
-    first_tuple = cp.list_traintuple()[0]
-    assert first_tuple.rank == 0
-    assert first_tuple.status == assets.Status.done
+    first_aggregatetuple = cp.list_aggregatetuple()[0]
+    assert first_aggregatetuple.rank == 1
+    assert first_aggregatetuple.status == assets.Status.done
 
 
 @pytest.mark.parametrize('compute_plan_size', COMPUTE_PLAN_SIZES)
@@ -159,8 +152,8 @@ def test_load_multi_node_composite_aggregates(compute_plan_size, global_executio
     """
     Shape of the compute plan:
 
-    Node A: traintuple 0 --> traintuple --> aggregate --> traintuple --> aggregate ...
-    Node B:              \-> traintuple /             \-> traintuple /
+    Node A: composite traintuple --> aggregate --> composite traintuple --> aggregate ...
+    Node B: composite traintuple /             \-> composite traintuple /
     """
 
     factory, network = global_execution_env
@@ -177,42 +170,33 @@ def test_load_multi_node_composite_aggregates(compute_plan_size, global_executio
     aggregate_algo = session_1.add_aggregate_algo(spec)
 
     cp_spec = factory.create_compute_plan()
-    first_composite_traintuple = cp_spec.add_composite_traintuple(
-        composite_algo=composite_algo,
-        dataset=dataset_1,
-        data_samples=[dataset_1.train_data_sample_keys[0]],
-    )
 
-    aggregatetuple = first_composite_traintuple
-    composite_traintuples = [
-        first_composite_traintuple,
-        first_composite_traintuple,
-    ]
+    previous_aggregatetuple = None
+    previous_composite_traintuples = None
     for _ in range(compute_plan_size):
-        composite_traintuples = [
+        previous_composite_traintuples = [
             cp_spec.add_composite_traintuple(
                 composite_algo=composite_algo,
                 dataset=dataset,
                 data_samples=[dataset.train_data_sample_keys[0]],
-                in_head_model=composite_traintuples[i],
-                in_trunk_model=aggregatetuple,
+                in_head_model=previous_composite_traintuples[i] if previous_composite_traintuples else [],
+                in_trunk_model=previous_aggregatetuple if previous_aggregatetuple else None,
             ) for i, dataset in enumerate([dataset_1, dataset_2])
         ]
-        aggregatetuple = cp_spec.add_aggregatetuple(
+        previous_aggregatetuple = cp_spec.add_aggregatetuple(
             aggregate_algo=aggregate_algo,
             worker=session_1.node_id,
-            in_models=composite_traintuples,
+            in_models=previous_composite_traintuples,
         )
 
     cp = session_1.add_compute_plan(cp_spec)
-    first_tuple = cp.list_composite_traintuple()[0]
-    assert first_tuple.rank == 0
-    first_tuple = first_tuple.future().wait()
-    assert first_tuple.status == assets.Status.done
+    first_aggregatetuple = cp.list_aggregatetuple()[0].future().wait()
+    assert first_aggregatetuple.rank == 1
+    assert first_aggregatetuple.status == assets.Status.done
 
     cp = session_1.cancel_compute_plan(cp.compute_plan_id).future().wait()
     assert cp.status == assets.Status.canceled
 
-    first_tuple = cp.list_composite_traintuple()[0]
-    assert first_tuple.rank == 0
-    assert first_tuple.status == assets.Status.done
+    first_aggregatetuple = cp.list_aggregatetuple()[0]
+    assert first_aggregatetuple.rank == 1
+    assert first_aggregatetuple.status == assets.Status.done
