@@ -167,6 +167,58 @@ def test_load_tangled_traintuples(compute_plan_size, global_execution_env):
 
 
 @pytest.mark.parametrize('compute_plan_size', COMPUTE_PLAN_SIZES)
+def test_load_tangled_traintuples_single_node(compute_plan_size, global_execution_env):
+    """
+    Shape of the compute plan:
+
+    Node A data sample 1: traintuple \-/-> traintuple \-/-> ... \-/-> traintuple
+                                      x                x         x
+    Node A data sample 2: traintuple /-\-> traintuple /-\-> ... /-\-> traintuple
+    """
+
+    factory, network = global_execution_env
+    session = network.sessions[0].copy()
+    dataset = session.state.datasets[0]
+
+    spec = factory.create_algo()
+    algo = session.add_algo(spec)
+
+    cp_spec = factory.create_compute_plan()
+
+    previous_tuples = []
+    for _ in range(compute_plan_size):
+        previous_tuples = [
+            cp_spec.add_traintuple(
+                algo=algo,
+                dataset=dataset,
+                data_samples=[data_sample],
+                in_models=previous_tuples,
+            )
+            for data_sample in dataset.train_data_sample_keys[:2]
+        ]
+
+    cp = session.add_compute_plan(cp_spec)
+    first_tuple_1, first_tuple_2 = cp.list_traintuple()[:2]
+    assert first_tuple_1.rank == 0
+    assert first_tuple_2.rank == 0
+    first_tuple_1 = first_tuple_1.future().wait()
+    assert first_tuple_1.status == assets.Status.done
+    first_tuple_2 = first_tuple_2.future().wait()
+    assert first_tuple_2.status == assets.Status.done
+
+    cp = session.cancel_compute_plan(cp.compute_plan_id).future().wait()
+    assert cp.status == assets.Status.canceled
+
+    first_tuple_1, first_tuple_2 = cp.list_traintuple()[:2]
+    assert first_tuple_1.rank == 0
+    assert first_tuple_2.rank == 0
+    first_tuple_1 = first_tuple_1.future().wait()
+    assert first_tuple_1.status == assets.Status.done
+    first_tuple_2 = first_tuple_2.future().wait()
+    assert first_tuple_2.status == assets.Status.done
+
+
+@pytest.mark.parametrize('compute_plan_size', COMPUTE_PLAN_SIZES)
 def test_load_tangled_composite_traintuples(compute_plan_size, global_execution_env):
     """
     Shape of the compute plan:
