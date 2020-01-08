@@ -323,6 +323,9 @@ def test_execution_compute_plan_canceled(global_execution_env):
         )
 
     cp = session.add_compute_plan(cp_spec)
+
+    # wait the first traintuple to be executed to ensure that the compute plan is launched
+    # and tuples are scheduled in the celery workers
     first_traintuple = [t for t in cp.list_traintuple() if t.rank == 0][0]
     first_traintuple = first_traintuple.future().wait()
     assert first_traintuple.status == assets.Status.done
@@ -331,7 +334,16 @@ def test_execution_compute_plan_canceled(global_execution_env):
     assert cp.status == assets.Status.canceled
 
     cp = cp.future().wait()
-    assert cp.status == assets.Status.canceled
+    # XXX there is no guarantee that the compute plan status will be set as canceled.
+    #     As cancelling a compute plan does not kill the running tuples, all the tuples
+    #     might finish their executions due to timing issues.
+    #     In this case, as the compute plan status is currently computed from its tuples
+    #     statuses, the compute plan status may be done. This may change in the future.
+    #     To avoid random failure, check that the compute plan is either done or canceled.
+    #     One other solution would be to add more tuples in the compute plan to increase
+    #     our confidence or avoid to wait for the first tuple to be executed.
+    assert cp.status in [assets.Status.done, assets.Status.canceled]
 
+    # check that the status of the done tuple as not been updated
     first_traintuple = [t for t in cp.list_traintuple() if t.rank == 0][0]
     assert first_traintuple.status == assets.Status.done
