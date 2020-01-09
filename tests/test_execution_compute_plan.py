@@ -307,14 +307,22 @@ def test_execution_compute_plan_canceled(global_execution_env):
     factory, network = global_execution_env
     session = network.sessions[0].copy()
 
+    # XXX A canceled compute plan can be done if the it is canceled while it last tuples
+    #     are executing on the workers. The compute plan status will in this case change
+    #     from canceled to done.
+    #     To increase our confidence that the compute plan won't be done, we create a
+    #     compute plan with a large amount of tuples.
+    nb_traintuples = 32
+
     dataset = session.state.datasets[0]
+    data_sample_key = dataset.train_data_sample_keys[0]
 
     spec = factory.create_algo()
     algo = session.add_algo(spec)
 
     cp_spec = factory.create_compute_plan()
     previous_traintuple = None
-    for data_sample_key in dataset.train_data_sample_keys:
+    for _ in range(nb_traintuples):
         previous_traintuple = cp_spec.add_traintuple(
             algo=algo,
             dataset=dataset,
@@ -334,15 +342,7 @@ def test_execution_compute_plan_canceled(global_execution_env):
     assert cp.status == assets.Status.canceled
 
     cp = cp.future().wait()
-    # XXX there is no guarantee that the compute plan status will be set as canceled.
-    #     As cancelling a compute plan does not kill the running tuples, all the tuples
-    #     might finish their executions due to timing issues.
-    #     In this case, as the compute plan status is currently computed from its tuples
-    #     statuses, the compute plan status may be done. This may change in the future.
-    #     To avoid random failure, check that the compute plan is either done or canceled.
-    #     One other solution would be to add more tuples in the compute plan to increase
-    #     our confidence or avoid to wait for the first tuple to be executed.
-    assert cp.status in [assets.Status.done, assets.Status.canceled]
+    assert cp.status in assets.Status.canceled
 
     # check that the status of the done tuple as not been updated
     first_traintuple = [t for t in cp.list_traintuple() if t.rank == 0][0]
