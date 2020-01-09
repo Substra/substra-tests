@@ -342,7 +342,7 @@ def test_execution_compute_plan_canceled(global_execution_env):
     assert cp.status == assets.Status.canceled
 
     cp = cp.future().wait()
-    assert cp.status in assets.Status.canceled
+    assert cp.status == assets.Status.canceled
 
     # check that the status of the done tuple as not been updated
     first_traintuple = [t for t in cp.list_traintuple() if t.rank == 0][0]
