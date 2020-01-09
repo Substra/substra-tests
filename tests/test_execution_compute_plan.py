@@ -307,14 +307,22 @@ def test_execution_compute_plan_canceled(global_execution_env):
     factory, network = global_execution_env
     session = network.sessions[0].copy()
 
+    # XXX A canceled compute plan can be done if the it is canceled while it last tuples
+    #     are executing on the workers. The compute plan status will in this case change
+    #     from canceled to done.
+    #     To increase our confidence that the compute plan won't be done, we create a
+    #     compute plan with a large amount of tuples.
+    nb_traintuples = 32
+
     dataset = session.state.datasets[0]
+    data_sample_key = dataset.train_data_sample_keys[0]
 
     spec = factory.create_algo()
     algo = session.add_algo(spec)
 
     cp_spec = factory.create_compute_plan()
     previous_traintuple = None
-    for data_sample_key in dataset.train_data_sample_keys:
+    for _ in range(nb_traintuples):
         previous_traintuple = cp_spec.add_traintuple(
             algo=algo,
             dataset=dataset,
@@ -323,6 +331,9 @@ def test_execution_compute_plan_canceled(global_execution_env):
         )
 
     cp = session.add_compute_plan(cp_spec)
+
+    # wait the first traintuple to be executed to ensure that the compute plan is launched
+    # and tuples are scheduled in the celery workers
     first_traintuple = [t for t in cp.list_traintuple() if t.rank == 0][0]
     first_traintuple = first_traintuple.future().wait()
     assert first_traintuple.status == assets.Status.done
@@ -333,5 +344,6 @@ def test_execution_compute_plan_canceled(global_execution_env):
     cp = cp.future().wait()
     assert cp.status == assets.Status.canceled
 
+    # check that the status of the done tuple as not been updated
     first_traintuple = [t for t in cp.list_traintuple() if t.rank == 0][0]
     assert first_traintuple.status == assets.Status.done
