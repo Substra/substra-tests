@@ -96,26 +96,26 @@ class Session:
         self.state.datasets.append(dataset)
         return dataset
 
-    def add_objective(self, spec):
-        res = self._client.add_objective(spec.to_dict())
+    def add_objective(self, spec, *args, **kwargs):
+        res = self._client.add_objective(spec.to_dict(), *args, **kwargs)
         objective = assets.Objective.load(res)
         self.state.objectives.append(objective)
         return objective
 
-    def add_algo(self, spec):
-        res = self._client.add_algo(spec.to_dict())
+    def add_algo(self, spec, *args, **kwargs):
+        res = self._client.add_algo(spec.to_dict(), *args, **kwargs)
         algo = assets.Algo.load(res)
         self.state.algos.append(algo)
         return algo
 
-    def add_aggregate_algo(self, spec):
-        res = self._client.add_aggregate_algo(spec.to_dict())
+    def add_aggregate_algo(self, spec, *args, **kwargs):
+        res = self._client.add_aggregate_algo(spec.to_dict(), *args, **kwargs)
         aggregate_algo = assets.AggregateAlgo.load(res)
         self.state.aggregate_algos.append(aggregate_algo)
         return aggregate_algo
 
-    def add_composite_algo(self, spec):
-        res = self._client.add_composite_algo(spec.to_dict())
+    def add_composite_algo(self, spec, *args, **kwargs):
+        res = self._client.add_composite_algo(spec.to_dict(), *args, **kwargs)
         composite_algo = assets.CompositeAlgo.load(res)
         self.state.composite_algos.append(composite_algo)
         return composite_algo
@@ -138,14 +138,14 @@ class Session:
         self.state.composite_traintuples.append(composite_traintuple)
         return composite_traintuple
 
-    def add_testtuple(self, spec):
-        res = self._client.add_testtuple(spec.to_dict())
+    def add_testtuple(self, spec, *args, **kwargs):
+        res = self._client.add_testtuple(spec.to_dict(), *args, **kwargs)
         testtuple = assets.Testtuple.load(res).attach(self)
         self.state.testtuples.append(testtuple)
         return testtuple
 
-    def add_compute_plan(self, spec):
-        res = self._client.add_compute_plan(spec.to_dict())
+    def add_compute_plan(self, spec, *args, **kwargs):
+        res = self._client.add_compute_plan(spec.to_dict(), *args, **kwargs)
         compute_plan = assets.ComputePlan.load(res).attach(self)
         self.state.compute_plans.append(compute_plan)
         return compute_plan
