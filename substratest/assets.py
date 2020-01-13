@@ -406,6 +406,9 @@ class ComputePlan(_Asset, _ComputePlanFutureMixin):
     testtuple_keys: typing.List[str]
 
     def __post_init__(self):
+        if self.traintuple_keys is None:
+            self.traintuple_keys = []
+
         if self.composite_traintuple_keys is None:
             self.composite_traintuple_keys = []
 

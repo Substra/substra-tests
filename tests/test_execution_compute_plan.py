@@ -197,7 +197,7 @@ def test_compute_plan_single_session_failure(global_execution_env):
 
     # All the train/test tuples should be marked as failed
     for t in traintuples + testtuples:
-        assert t.status == assets.Status.failed
+        assert t.status in [assets.Status.failed, assets.Status.canceled]
 
 
 def test_compute_plan_aggregate_composite_traintuples(global_execution_env):
