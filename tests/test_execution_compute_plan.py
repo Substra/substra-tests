@@ -134,8 +134,8 @@ def test_compute_plan_single_session_success(global_execution_env):
 
 
 def test_compute_plan_single_session_failure(global_execution_env):
-    """In a compute plan with 3 traintuples, failing the root traintuple should also
-    fail its descendents and the associated testtuples"""
+    """In a compute plan with 3 traintuples, failing the root traintuple
+    should cancel its descendents and the associated testtuples"""
 
     # Create a compute plan with 3 steps:
     #
@@ -195,7 +195,7 @@ def test_compute_plan_single_session_failure(global_execution_env):
     traintuples = cp.list_traintuple()
     testtuples = cp.list_testtuple()
 
-    # All the train/test tuples should be marked as failed
+    # All the train/test tuples should be marked either as failed or canceled
     for t in traintuples + testtuples:
         assert t.status in [assets.Status.failed, assets.Status.canceled]
 
