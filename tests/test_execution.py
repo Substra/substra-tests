@@ -325,7 +325,7 @@ def test_aggregate_composite_traintuples(global_execution_env):
 
     # Optional (if "enable_intermediate_model_removal" is True): ensure the aggregatetuple of round 1 has been deleted.
     #
-    # We do this by creating a new traintuple that depends on the deleted aggregatatuple, and ensuring that starting 
+    # We do this by creating a new traintuple that depends on the deleted aggregatatuple, and ensuring that starting
     # the traintuple fails.
     #
     # Ideally it would be better to try to do a request "as a backend" to get the deleted model. This would be closer

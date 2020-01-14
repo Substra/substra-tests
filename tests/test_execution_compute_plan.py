@@ -22,7 +22,7 @@ def test_compute_plan(global_execution_env):
     algo_2 = session_2.add_algo(spec)
 
     # create compute plan
-    cp_spec = factory.create_compute_plan()
+    cp_spec = factory.create_compute_plan(tag='foo')
 
     # TODO add a testtuple in the compute plan
 
@@ -47,6 +47,7 @@ def test_compute_plan(global_execution_env):
 
     # submit compute plan and wait for it to complete
     cp = session_1.add_compute_plan(cp_spec).future().wait()
+    assert cp.tag == 'foo'
 
     traintuples = cp.list_traintuple()
     assert len(traintuples) == 3

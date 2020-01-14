@@ -338,6 +338,7 @@ class ComputePlanSpec(_Spec):
     composite_traintuples: typing.List[ComputePlanCompositeTraintupleSpec]
     aggregatetuples: typing.List[ComputePlanAggregatetupleSpec]
     testtuples: typing.List[ComputePlanTesttupleSpec]
+    tag: str
 
     def add_traintuple(self, algo, dataset, data_samples, in_models=None, tag=''):
         in_models = in_models or []
@@ -617,10 +618,11 @@ class AssetsFactory:
             tag=tag,
         )
 
-    def create_compute_plan(self):
+    def create_compute_plan(self, tag=''):
         return ComputePlanSpec(
             traintuples=[],
             composite_traintuples=[],
             aggregatetuples=[],
             testtuples=[],
+            tag=tag,
         )
