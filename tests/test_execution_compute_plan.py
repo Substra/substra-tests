@@ -22,7 +22,7 @@ def test_compute_plan(global_execution_env):
     algo_2 = session_2.add_algo(spec)
 
     # create compute plan
-    cp_spec = factory.create_compute_plan()
+    cp_spec = factory.create_compute_plan(tag='foo')
 
     # TODO add a testtuple in the compute plan
 
@@ -47,6 +47,7 @@ def test_compute_plan(global_execution_env):
 
     # submit compute plan and wait for it to complete
     cp = session_1.add_compute_plan(cp_spec).future().wait()
+    assert cp.tag == 'foo'
 
     traintuples = cp.list_traintuple()
     assert len(traintuples) == 3
@@ -134,8 +135,8 @@ def test_compute_plan_single_session_success(global_execution_env):
 
 
 def test_compute_plan_single_session_failure(global_execution_env):
-    """In a compute plan with 3 traintuples, failing the root traintuple should also
-    fail its descendents and the associated testtuples"""
+    """In a compute plan with 3 traintuples, failing the root traintuple
+    should cancel its descendents and the associated testtuples"""
 
     # Create a compute plan with 3 steps:
     #
@@ -195,9 +196,9 @@ def test_compute_plan_single_session_failure(global_execution_env):
     traintuples = cp.list_traintuple()
     testtuples = cp.list_testtuple()
 
-    # All the train/test tuples should be marked as failed
+    # All the train/test tuples should be marked either as failed or canceled
     for t in traintuples + testtuples:
-        assert t.status == assets.Status.failed
+        assert t.status in [assets.Status.failed, assets.Status.canceled]
 
 
 def test_compute_plan_aggregate_composite_traintuples(global_execution_env):
