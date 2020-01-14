@@ -28,6 +28,10 @@ def test_tuples_execution_on_same_node(global_execution_env):
     assert traintuple.status == assets.Status.done
     assert traintuple.out_model is not None
 
+    # check we cannot add twice the same traintuple
+    with pytest.raises(substra.exceptions.AlreadyExists):
+        session.add_traintuple(spec)
+
     # create testtuple
     # don't create it before to avoid MVCC errors
     spec = factory.create_testtuple(objective=objective, traintuple=traintuple)
@@ -47,51 +51,41 @@ def test_tuples_execution_on_same_node(global_execution_env):
 
 
 def test_federated_learning_workflow(global_execution_env):
-    """Test federated learning workflow."""
+    """Test federated learning workflow on each node."""
     factory, network = global_execution_env
     session = network.sessions[0].copy()
 
-    # get test environment
-    dataset = session.state.datasets[0]
-
+    # create test environment
     spec = factory.create_algo()
     algo = session.add_algo(spec)
 
-    # create traintuple with rank 0
-    spec = factory.create_traintuple(
-        algo=algo,
-        dataset=dataset,
-        data_samples=dataset.train_data_sample_keys,
-        tag='foo',
-        rank=0,
-    )
-    traintuple_1 = session.add_traintuple(spec).future().wait()
-    assert traintuple_1.status == assets.Status.done
-    assert traintuple_1.out_model is not None
-    assert traintuple_1.tag == 'foo'
-    assert traintuple_1.compute_plan_id is not None
+    # get first dataset of each session
+    datasets = [s.state.datasets[0] for s in network.sessions]
+    # check there is one dataset per node in the network
+    assert set([d.owner for d in datasets]) == set([s.node_id for s in network.sessions])
 
-    with pytest.raises(substra.exceptions.AlreadyExists):
-        session.add_traintuple(spec)
+    # create 1 traintuple per dataset and chain them
+    traintuple = None
+    rank = 0
+    for dataset in datasets:
+        traintuples = [traintuple] if traintuple else []
+        compute_plan_id = traintuple.compute_plan_id if traintuple else None
+        spec = factory.create_traintuple(
+            algo=algo,
+            dataset=dataset,
+            data_samples=dataset.train_data_sample_keys,
+            traintuples=traintuples,
+            tag='foo',
+            rank=rank,
+            compute_plan_id=compute_plan_id,
+        )
+        traintuple = session.add_traintuple(spec).future().wait()
+        assert traintuple.status == assets.Status.done
+        assert traintuple.out_model is not None
+        assert traintuple.tag == 'foo'
+        assert traintuple.compute_plan_id   # check it is not None or ''
 
-    # create traintuple with rank 1
-    spec = factory.create_traintuple(
-        algo=algo,
-        dataset=dataset,
-        data_samples=dataset.train_data_sample_keys,
-        traintuples=[traintuple_1],
-        tag='foo',
-        compute_plan_id=traintuple_1.compute_plan_id,
-        rank=1,
-    )
-    traintuple_2 = session.add_traintuple(spec).future().wait()
-    assert traintuple_2.status == assets.Status.done
-    assert traintuple_2.out_model is not None
-    assert traintuple_2.tag == 'foo'
-    assert traintuple_2.compute_plan_id == traintuple_1.compute_plan_id
-
-    with pytest.raises(substra.exceptions.AlreadyExists):
-        session.add_traintuple(spec)
+        rank += 1
 
 
 def test_tuples_execution_on_different_nodes(global_execution_env):
