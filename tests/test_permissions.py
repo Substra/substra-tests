@@ -143,11 +143,11 @@ def test_merge_permissions_denied_process(factory, network):
     session_3 = network.sessions[2]
 
     permissions_list = [(
-            Permissions(public=False, authorized_ids=[MSP_IDS[1], MSP_IDS[2]]),
-            Permissions(public=False, authorized_ids=[MSP_IDS[0]]),
-        ), (
-            Permissions(public=True, authorized_ids=[]),
-            Permissions(public=False, authorized_ids=[MSP_IDS[0]]),
+        Permissions(public=False, authorized_ids=[MSP_IDS[1], MSP_IDS[2]]),
+        Permissions(public=False, authorized_ids=[MSP_IDS[0]]),
+    ), (
+        Permissions(public=True, authorized_ids=[]),
+        Permissions(public=False, authorized_ids=[MSP_IDS[0]]),
     )]
     for permissions_1, permissions_2 in permissions_list:
 
@@ -180,7 +180,7 @@ def test_merge_permissions_denied_process(factory, network):
         # failed to add testtuple from node 3
         spec = factory.create_testtuple(
             objective=objective_1,
-            traintuple_spec=traintuple_2,
+            traintuple=traintuple_2,
         )
 
         with pytest.raises(substra.exceptions.AuthorizationError):
