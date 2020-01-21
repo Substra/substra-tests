@@ -158,9 +158,15 @@ def test_merge_permissions_denied_process(factory, network):
             test_only=False,
             datasets=[dataset_1],
         )
-        datasample_1 = session_1.add_data_sample(spec)
+        train_data_sample_1 = session_1.add_data_sample(spec)
+        spec = factory.create_data_sample(
+            test_only=True,
+            datasets=[dataset_1],
+        )
+        test_data_sample_1 = session_1.add_data_sample(spec)
         spec = factory.create_objective(
-            data_samples=[datasample_1],
+            dataset=dataset_1,
+            data_samples=[test_data_sample_1],
             permissions=permissions_1,
         )
         objective_1 = session_1.add_objective(spec)
@@ -173,15 +179,16 @@ def test_merge_permissions_denied_process(factory, network):
         spec = factory.create_traintuple(
             algo=algo_2,
             dataset=dataset_1,
-            data_samples=[datasample_1],
+            data_samples=[train_data_sample_1],
         )
         traintuple_2 = session_2.add_traintuple(spec).future().wait()
 
         # failed to add testtuple from node 3
         spec = factory.create_testtuple(
             objective=objective_1,
-            traintuple_spec=traintuple_2,
+            traintuple=traintuple_2,
         )
 
-        with pytest.raises(substra.exceptions.AuthorizationError):
+        with pytest.raises(substra.exceptions.InvalidRequest) as e:
             session_3.add_testtuple(spec)
+        assert 'not authorized to process traintuple' in str(e)
