@@ -485,5 +485,12 @@ class AssetType(enum.Enum):
         return [e for e in cls]
 
     @classmethod
+    def can_be_get(cls):
+        gettable = cls.all()
+        gettable.remove(cls.data_sample)
+        gettable.remove(cls.node)
+        return gettable
+
+    @classmethod
     def can_be_listed(cls):
         return cls.all()
