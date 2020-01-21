@@ -24,7 +24,7 @@ class NodeCfg:
 
 @dataclasses.dataclass(frozen=True)
 class Options:
-    celery_task_max_retry: int
+    celery_task_max_retries: int
     enable_intermediate_model_removal: bool
 
 
@@ -43,7 +43,7 @@ def _load_yaml(path):
     with open(path) as f:
         data = yaml.load(f, Loader=yaml.Loader)
     nodes = [NodeCfg(**kw) for kw in data['nodes']]
-    assert len(nodes) >= MIN_NODES, f'not enought nodes: {len(nodes)}'
+    assert len(nodes) >= MIN_NODES, f'not enough nodes: {len(nodes)}'
     return Settings(
         path=path,
         nodes=nodes,
@@ -77,3 +77,5 @@ load()
 
 
 MSP_IDS = [n.msp_id for n in _SETTINGS.nodes]
+HAS_SHARED_PATH = bool(_SETTINGS.nodes[0].shared_path)
+CELERY_TASK_MAX_RETRIES = _SETTINGS.options.celery_task_max_retries
