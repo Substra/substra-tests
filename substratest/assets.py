@@ -1,10 +1,11 @@
 import abc
 import enum
-import dataclasses
 import re
 import time
 import typing
+import pydantic
 
+from inspect import isclass
 from . import errors, cfg
 
 
@@ -93,39 +94,6 @@ class ComputePlanFuture(BaseFuture):
         return self._session.get_compute_plan(self._compute_plan.compute_plan_id)
 
 
-class _BaseFutureMixin(abc.ABC):
-    _future_cls = None
-
-    def attach(self, session):
-        """Attach session to asset."""
-        self.__session = session
-        return self
-
-    @property
-    def _session(self):
-        if not self.__session:
-            raise errors.TError(f'No session attached with {self}')
-        return self.__session
-
-    def future(self):
-        """Returns future from asset."""
-        return self._future_cls(self, self._session)
-
-
-class _FutureMixin(_BaseFutureMixin):
-    """Represents a single task that is executed on the platform."""
-    _future_cls = Future
-
-    def future(self):
-        assert hasattr(self, 'status')
-        assert hasattr(self, 'key')
-        return super().future()
-
-
-class _ComputePlanFutureMixin(_BaseFutureMixin):
-    _future_cls = ComputePlanFuture
-
-
 def _convert(name):
     """Convert camel case to snake case."""
     s = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', name)
@@ -158,7 +126,10 @@ class _DataclassLoader(abc.ABC):
             # handle nested dataclasses;
             # FIXME does not work for list of nested dataclasses
             attr_type = cls.__annotations__[attr_name]
-            if dataclasses.is_dataclass(attr_type) and isinstance(v, dict):
+            # because typing.List doesn't work the same way as the other types, we have to check
+            # if attr_type is a class before using issubclass()
+            if isclass(attr_type) and issubclass(attr_type, _DataclassLoader) \
+                    and isinstance(v, dict):
                 v = attr_type.load(v)
             kwargs[attr_name] = v
 
@@ -168,15 +139,54 @@ class _DataclassLoader(abc.ABC):
             raise errors.TError(f"cannot parse asset `{d}`") from e
 
 
-class _Asset(_DataclassLoader, abc.ABC):
+class _InternalStruct(pydantic.BaseModel, _DataclassLoader, abc.ABC):
+    """Internal nested structure"""
+
+
+class _Asset(_InternalStruct, abc.ABC):
     """Represents assets stored in the Substra framework.
 
     Convert a dict with camel case fields to a Dataclass.
     """
 
 
-@dataclasses.dataclass(frozen=True)
-class Permission(_DataclassLoader):
+class _BaseFutureAsset(_Asset):
+    __session: typing.Any = None
+    _future_cls = None
+
+    def attach(self, session):
+        """Attach session to asset."""
+        object.__setattr__(self, '__session', session)
+        return self
+
+    @property
+    def _session(self):
+        # because self.__session doesn't work properly with Pydantic, we have to use
+        # __getattribute__ and __setattr__ (https://docs.python.org/3/reference/datamodel.html)
+        if not object.__getattribute__(self, '__session'):
+            raise errors.TError(f'No session attached with {self}')
+        return object.__getattribute__(self, '__session')
+
+    def future(self):
+        """Returns future from asset."""
+        return self._future_cls(self, object.__getattribute__(self, '__session'))
+
+
+class _FutureAsset(_BaseFutureAsset):
+    """Represents a single task that is executed on the platform."""
+    _future_cls = Future
+
+    def future(self):
+        assert hasattr(self, 'status')
+        assert hasattr(self, 'key')
+        return super().future()
+
+
+class _ComputePlanFutureAsset(_BaseFutureAsset):
+    _future_cls = ComputePlanFuture
+
+
+class Permission(_InternalStruct):
     public: bool
     authorized_ids: typing.List[str]
 
@@ -186,13 +196,11 @@ class Permission(_DataclassLoader):
         }
 
 
-@dataclasses.dataclass(frozen=True)
-class Permissions(_DataclassLoader):
+class Permissions(_InternalStruct):
     """Permissions structure stored in various asset types."""
     process: Permission
 
 
-@dataclasses.dataclass(frozen=True)
 class DataSampleCreated(_Asset):
     key: str
     validated: bool
@@ -204,17 +212,15 @@ class DataSampleCreated(_Asset):
         }
 
 
-@dataclasses.dataclass(frozen=True)
 class DataSample(_Asset):
     key: str
     owner: str
     data_manager_keys: typing.List[str]
 
 
-@dataclasses.dataclass(frozen=True)
-class ObjectiveDataset(_DataclassLoader):
-    dataset_key: str
-    data_sample_keys: typing.List[str]
+class ObjectiveDataset(_InternalStruct):
+    dataset_key: str = None
+    data_sample_keys: typing.List[str] = None
 
     class Meta:
         mapper = {
@@ -222,7 +228,6 @@ class ObjectiveDataset(_DataclassLoader):
         }
 
 
-@dataclasses.dataclass(frozen=True)
 class Dataset(_Asset):
     key: str
     name: str
@@ -233,7 +238,6 @@ class Dataset(_Asset):
     test_data_sample_keys: typing.List[str] = None
 
 
-@dataclasses.dataclass(frozen=True)
 class _Algo(_Asset):
     key: str
     name: str
@@ -241,22 +245,18 @@ class _Algo(_Asset):
     permissions: Permissions
 
 
-@dataclasses.dataclass(frozen=True)
 class Algo(_Algo):
     pass
 
 
-@dataclasses.dataclass(frozen=True)
 class AggregateAlgo(_Algo):
     pass
 
 
-@dataclasses.dataclass(frozen=True)
 class CompositeAlgo(_Algo):
     pass
 
 
-@dataclasses.dataclass(frozen=True)
 class Objective(_Asset):
     key: str
     name: str
@@ -265,9 +265,8 @@ class Objective(_Asset):
     test_dataset: ObjectiveDataset
 
 
-@dataclasses.dataclass(frozen=True)
-class TesttupleDataset(_DataclassLoader):
-    key: str
+class TesttupleDataset(_InternalStruct):
+    key: str = None
     perf: float
     keys: typing.List[str]
     worker: str
@@ -278,9 +277,8 @@ class TesttupleDataset(_DataclassLoader):
         }
 
 
-@dataclasses.dataclass(frozen=True)
-class TraintupleDataset(_DataclassLoader):
-    key: str
+class TraintupleDataset(_InternalStruct):
+    key: str = None
     keys: typing.List[str]
     worker: str
 
@@ -290,10 +288,9 @@ class TraintupleDataset(_DataclassLoader):
         }
 
 
-@dataclasses.dataclass(frozen=True)
-class InModel(_DataclassLoader):
-    key: str
-    storage_address: str
+class InModel(_InternalStruct):
+    key: str = None
+    storage_address: str = None
 
     class Meta:
         mapper = {
@@ -301,10 +298,9 @@ class InModel(_DataclassLoader):
         }
 
 
-@dataclasses.dataclass(frozen=True)
-class OutModel(_DataclassLoader):
-    key: str
-    storage_address: str
+class OutModel(_InternalStruct):
+    key: str = None
+    storage_address: str = None
 
     class Meta:
         mapper = {
@@ -312,9 +308,8 @@ class OutModel(_DataclassLoader):
         }
 
 
-@dataclasses.dataclass
-class Traintuple(_Asset, _FutureMixin):
-    key: str
+class Traintuple(_FutureAsset):
+    key: str = None
     creator: str
     status: str
     dataset: TraintupleDataset
@@ -323,7 +318,7 @@ class Traintuple(_Asset, _FutureMixin):
     rank: int
     tag: str
     log: str
-    in_models: typing.List[InModel]
+    in_models: typing.List[InModel] = None
     out_model: OutModel = None
 
     class Meta:
@@ -332,9 +327,8 @@ class Traintuple(_Asset, _FutureMixin):
         }
 
 
-@dataclasses.dataclass
-class Aggregatetuple(_Asset, _FutureMixin):
-    key: str
+class Aggregatetuple(_FutureAsset):
+    key: str = None
     creator: str
     status: str
     worker: str
@@ -352,14 +346,12 @@ class Aggregatetuple(_Asset, _FutureMixin):
         }
 
 
-@dataclasses.dataclass(frozen=True)
-class OutCompositeModel(_DataclassLoader):
+class OutCompositeModel(_InternalStruct):
     permissions: Permissions
     out_model: OutModel = None
 
 
-@dataclasses.dataclass
-class CompositeTraintuple(_Asset, _FutureMixin):
+class CompositeTraintuple(_FutureAsset):
     key: str
     creator: str
     status: str
@@ -379,9 +371,8 @@ class CompositeTraintuple(_Asset, _FutureMixin):
         }
 
 
-@dataclasses.dataclass
-class Testtuple(_Asset, _FutureMixin):
-    key: str
+class Testtuple(_FutureAsset):
+    key: str = None
     creator: str
     status: str
     dataset: TesttupleDataset
@@ -396,14 +387,13 @@ class Testtuple(_Asset, _FutureMixin):
         }
 
 
-@dataclasses.dataclass
-class ComputePlan(_Asset, _ComputePlanFutureMixin):
-    compute_plan_id: str
+class ComputePlan(_ComputePlanFutureAsset):
+    compute_plan_id: str = None
     status: str
-    traintuple_keys: typing.List[str]
-    composite_traintuple_keys: typing.List[str]
-    aggregatetuple_keys: typing.List[str]
-    testtuple_keys: typing.List[str]
+    traintuple_keys: typing.List[str] = None
+    composite_traintuple_keys: typing.List[str] = None
+    aggregatetuple_keys: typing.List[str] = None
+    testtuple_keys: typing.List[str] = None
     tag: str
 
     def __post_init__(self):
@@ -420,6 +410,7 @@ class ComputePlan(_Asset, _ComputePlanFutureMixin):
             self.testtuple_keys = []
 
     def list_traintuple(self):
+        self.__post_init__()
         filters = [
             f'traintuple:computePlanID:{self.compute_plan_id}',
         ]
@@ -430,6 +421,7 @@ class ComputePlan(_Asset, _ComputePlanFutureMixin):
         return tuples
 
     def list_composite_traintuple(self):
+        self.__post_init__()
         filters = [
             f'composite_traintuple:computePlanID:{self.compute_plan_id}',
         ]
@@ -440,6 +432,7 @@ class ComputePlan(_Asset, _ComputePlanFutureMixin):
         return tuples
 
     def list_aggregatetuple(self):
+        self.__post_init__()
         filters = [
             f'aggregatetuple:computePlanID:{self.compute_plan_id}',
         ]
@@ -450,6 +443,7 @@ class ComputePlan(_Asset, _ComputePlanFutureMixin):
         return tuples
 
     def list_testtuple(self):
+        self.__post_init__()
         filters = [
             f'testtuple:computePlanID:{self.compute_plan_id}',
         ]
@@ -460,7 +454,6 @@ class ComputePlan(_Asset, _ComputePlanFutureMixin):
         return tuples
 
 
-@dataclasses.dataclass(frozen=True)
 class Node(_Asset):
     id: str
     is_current: bool
