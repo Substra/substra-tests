@@ -4,7 +4,6 @@ import pytest
 
 from substratest.factory import Permissions
 from substratest import assets
-
 from . import settings
 
 MSP_IDS = settings.MSP_IDS
@@ -128,6 +127,41 @@ def test_merge_permissions(permissions_1, permissions_2, expected_permissions,
     assert set(tuple_permissions.authorized_ids) == set(expected_permissions.authorized_ids)
 
 
+def test_permissions_denied_process(factory, network):
+    session_1 = network.sessions[0]
+    session_2 = network.sessions[1]
+
+    # setup data
+
+    spec = factory.create_dataset(permissions=Permissions(public=False, authorized_ids=[]))
+    dataset_1 = session_1.add_dataset(spec)
+
+    spec = factory.create_data_sample(
+        test_only=False,
+        datasets=[dataset_1],
+    )
+    train_data_sample_1 = session_1.add_data_sample(spec)
+
+    # setup algo
+
+    spec = factory.create_algo(permissions=Permissions(public=False, authorized_ids=[]))
+    algo_2 = session_2.add_algo(spec)
+
+    # traintuples
+
+    spec = factory.create_traintuple(
+        algo=algo_2,
+        dataset=dataset_1,
+        data_samples=[train_data_sample_1],
+    )
+
+    with pytest.raises(substra.exceptions.AuthorizationError):
+        session_2.add_traintuple(spec)
+
+    with pytest.raises(substra.exceptions.AuthorizationError):
+        session_1.add_traintuple(spec)
+
+
 @pytest.mark.skipif(len(MSP_IDS) < 3, reason='requires at least 3 nodes')
 def test_merge_permissions_denied_process(factory, network):
     """Test to process asset with merged permissions from 2 other nodes
@@ -158,9 +192,15 @@ def test_merge_permissions_denied_process(factory, network):
             test_only=False,
             datasets=[dataset_1],
         )
-        datasample_1 = session_1.add_data_sample(spec)
+        train_data_sample_1 = session_1.add_data_sample(spec)
+        spec = factory.create_data_sample(
+            test_only=True,
+            datasets=[dataset_1],
+        )
+        test_data_sample_1 = session_1.add_data_sample(spec)
         spec = factory.create_objective(
-            data_samples=[datasample_1],
+            dataset=dataset_1,
+            data_samples=[test_data_sample_1],
             permissions=permissions_1,
         )
         objective_1 = session_1.add_objective(spec)
@@ -173,7 +213,7 @@ def test_merge_permissions_denied_process(factory, network):
         spec = factory.create_traintuple(
             algo=algo_2,
             dataset=dataset_1,
-            data_samples=[datasample_1],
+            data_samples=[train_data_sample_1],
         )
         traintuple_2 = session_2.add_traintuple(spec).future().wait()
 

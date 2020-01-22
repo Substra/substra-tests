@@ -5,6 +5,7 @@ import substra
 import pytest
 
 import substratest as sbt
+from . import settings
 
 
 def test_connection_to_nodes(network):
@@ -43,6 +44,7 @@ def test_add_data_sample(factory, session):
     session.add_data_sample(spec)
 
 
+@pytest.mark.skipif(not settings.HAS_SHARED_PATH, reason='requires a shared path')
 def test_add_data_sample_located_in_shared_path(factory, session, node_cfg):
     spec = factory.create_dataset()
     dataset = session.add_dataset(spec)

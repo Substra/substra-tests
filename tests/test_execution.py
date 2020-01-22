@@ -5,6 +5,7 @@ import substra
 import substratest as sbt
 
 from substratest import assets
+from . import settings
 
 
 def test_tuples_execution_on_same_node(global_execution_env):
@@ -340,8 +341,11 @@ def test_aggregate_composite_traintuples(global_execution_env):
     assert traintuple.status == assets.Status.failed
 
 
-@pytest.mark.parametrize('fail_count', [1, 2])
-def test_execution_retry_on_fail(fail_count, global_execution_env):
+@pytest.mark.parametrize('fail_count,status', (
+    (settings.CELERY_TASK_MAX_RETRIES, 'done'),
+    (settings.CELERY_TASK_MAX_RETRIES + 1, 'failed'),
+))
+def test_execution_retry_on_fail(fail_count, status, global_execution_env):
     """Execution of a traintuple which fails on the N first tries, and suceeds on the N+1th try"""
 
     # This test ensures the compute task retry mechanism works correctly.
@@ -406,7 +410,4 @@ def test_execution_retry_on_fail(fail_count, global_execution_env):
     # should be retried up to 1 time(s) (i.e. max 2 attempts in total)
     # - if it fails less than 2 times, it should be marked as "done"
     # - if it fails 2 times or more, it should be marked as "failed"
-    if fail_count < network.options.celery_task_max_retry:
-        assert traintuple.status == 'done'
-    else:
-        assert traintuple.status == 'failed'
+    assert traintuple.status == status
