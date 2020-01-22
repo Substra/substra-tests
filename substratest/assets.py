@@ -6,6 +6,7 @@ import typing
 import pydantic
 
 from inspect import isclass
+
 from . import errors, cfg
 
 
@@ -123,8 +124,8 @@ class _DataclassLoader(abc.ABC):
             attr_name = mapper[k] if k in mapper else _convert(k)
             if attr_name not in cls.__annotations__:
                 continue
-            # handle nested dataclasses;
-            # FIXME does not work for list of nested dataclasses
+            # handle nested structures;
+            # FIXME does not work for list of nested structures
             attr_type = cls.__annotations__[attr_name]
             # because typing.List doesn't work the same way as the other types, we have to check
             # if attr_type is a class before using issubclass()
@@ -151,21 +152,21 @@ class _Asset(_InternalStruct, abc.ABC):
 
 
 class _BaseFutureAsset(_Asset):
-    __session: typing.Any = None
     _future_cls = None
 
     def attach(self, session):
         """Attach session to asset."""
+        # XXX because Pydantic doesn't support private fields, we have to use
+        # __getattribute__ and __setattr__ (https://github.com/samuelcolvin/pydantic/issues/655)
         object.__setattr__(self, '__session', session)
         return self
 
     @property
     def _session(self):
-        # because self.__session doesn't work properly with Pydantic, we have to use
-        # __getattribute__ and __setattr__ (https://docs.python.org/3/reference/datamodel.html)
-        if not object.__getattribute__(self, '__session'):
+        __session = object.__getattribute__(self, '__session')
+        if not __session:
             raise errors.TError(f'No session attached with {self}')
-        return object.__getattribute__(self, '__session')
+        return __session
 
     def future(self):
         """Returns future from asset."""
@@ -186,7 +187,26 @@ class _ComputePlanFutureAsset(_BaseFutureAsset):
     _future_cls = ComputePlanFuture
 
 
-class Permission(_InternalStruct):
+class _Frozen:
+    class Config:
+        allow_mutation = False
+
+
+class _FrozenAsset(_Asset, _Frozen):
+    """Add a Config class to an _Asset, which allows to set allow_mutation to False
+
+    Link to documentation: https://pydantic-docs.helpmanual.io/usage/models/#faux-immutability
+    """
+
+
+class _FrozenInternalStruct(_InternalStruct, _Frozen):
+    """Add a Config class to an _InternalStruct, which allows to set allow_mutation to False
+
+    Link to documentation: https://pydantic-docs.helpmanual.io/usage/models/#faux-immutability
+    """
+
+
+class Permission(_FrozenInternalStruct):
     public: bool
     authorized_ids: typing.List[str]
 
@@ -196,12 +216,12 @@ class Permission(_InternalStruct):
         }
 
 
-class Permissions(_InternalStruct):
+class Permissions(_FrozenInternalStruct):
     """Permissions structure stored in various asset types."""
     process: Permission
 
 
-class DataSampleCreated(_Asset):
+class DataSampleCreated(_FrozenAsset):
     key: str
     validated: bool
     path: str
@@ -212,15 +232,15 @@ class DataSampleCreated(_Asset):
         }
 
 
-class DataSample(_Asset):
+class DataSample(_FrozenAsset):
     key: str
     owner: str
     data_manager_keys: typing.List[str]
 
 
-class ObjectiveDataset(_InternalStruct):
-    dataset_key: str = None
-    data_sample_keys: typing.List[str] = None
+class ObjectiveDataset(_FrozenInternalStruct):
+    dataset_key: str
+    data_sample_keys: typing.List[str]
 
     class Meta:
         mapper = {
@@ -228,7 +248,7 @@ class ObjectiveDataset(_InternalStruct):
         }
 
 
-class Dataset(_Asset):
+class Dataset(_FrozenAsset):
     key: str
     name: str
     owner: str
@@ -238,7 +258,7 @@ class Dataset(_Asset):
     test_data_sample_keys: typing.List[str] = None
 
 
-class _Algo(_Asset):
+class _Algo(_FrozenAsset):
     key: str
     name: str
     owner: str
@@ -257,7 +277,7 @@ class CompositeAlgo(_Algo):
     pass
 
 
-class Objective(_Asset):
+class Objective(_FrozenAsset):
     key: str
     name: str
     owner: str
@@ -265,8 +285,8 @@ class Objective(_Asset):
     test_dataset: ObjectiveDataset
 
 
-class TesttupleDataset(_InternalStruct):
-    key: str = None
+class TesttupleDataset(_FrozenInternalStruct):
+    key: str
     perf: float
     keys: typing.List[str]
     worker: str
@@ -277,8 +297,8 @@ class TesttupleDataset(_InternalStruct):
         }
 
 
-class TraintupleDataset(_InternalStruct):
-    key: str = None
+class TraintupleDataset(_FrozenInternalStruct):
+    key: str
     keys: typing.List[str]
     worker: str
 
@@ -288,7 +308,7 @@ class TraintupleDataset(_InternalStruct):
         }
 
 
-class InModel(_InternalStruct):
+class InModel(_FrozenInternalStruct):
     key: str = None
     storage_address: str = None
 
@@ -298,9 +318,9 @@ class InModel(_InternalStruct):
         }
 
 
-class OutModel(_InternalStruct):
-    key: str = None
-    storage_address: str = None
+class OutModel(_FrozenInternalStruct):
+    key: str
+    storage_address: str
 
     class Meta:
         mapper = {
@@ -309,7 +329,7 @@ class OutModel(_InternalStruct):
 
 
 class Traintuple(_FutureAsset):
-    key: str = None
+    key: str
     creator: str
     status: str
     dataset: TraintupleDataset
@@ -328,7 +348,7 @@ class Traintuple(_FutureAsset):
 
 
 class Aggregatetuple(_FutureAsset):
-    key: str = None
+    key: str
     creator: str
     status: str
     worker: str
@@ -346,7 +366,7 @@ class Aggregatetuple(_FutureAsset):
         }
 
 
-class OutCompositeModel(_InternalStruct):
+class OutCompositeModel(_FrozenInternalStruct):
     permissions: Permissions
     out_model: OutModel = None
 
@@ -362,8 +382,8 @@ class CompositeTraintuple(_FutureAsset):
     log: str
     in_head_model: InModel = None
     in_trunk_model: InModel = None
-    out_head_model: OutCompositeModel = None
-    out_trunk_model: OutCompositeModel = None
+    out_head_model: OutCompositeModel
+    out_trunk_model: OutCompositeModel
 
     class Meta:
         mapper = {
@@ -372,7 +392,7 @@ class CompositeTraintuple(_FutureAsset):
 
 
 class Testtuple(_FutureAsset):
-    key: str = None
+    key: str
     creator: str
     status: str
     dataset: TesttupleDataset
@@ -388,7 +408,7 @@ class Testtuple(_FutureAsset):
 
 
 class ComputePlan(_ComputePlanFutureAsset):
-    compute_plan_id: str = None
+    compute_plan_id: str
     status: str
     traintuple_keys: typing.List[str] = None
     composite_traintuple_keys: typing.List[str] = None
@@ -396,21 +416,14 @@ class ComputePlan(_ComputePlanFutureAsset):
     testtuple_keys: typing.List[str] = None
     tag: str
 
-    def __post_init__(self):
-        if self.traintuple_keys is None:
-            self.traintuple_keys = []
-
-        if self.composite_traintuple_keys is None:
-            self.composite_traintuple_keys = []
-
-        if self.aggregatetuple_keys is None:
-            self.aggregatetuple_keys = []
-
-        if self.testtuple_keys is None:
-            self.testtuple_keys = []
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.traintuple_keys = self.traintuple_keys or []
+        self.composite_traintuple_keys = self.composite_traintuple_keys or []
+        self.aggregatetuple_keys = self.aggregatetuple_keys or []
+        self.testtuple_keys = self.testtuple_keys or []
 
     def list_traintuple(self):
-        self.__post_init__()
         filters = [
             f'traintuple:computePlanID:{self.compute_plan_id}',
         ]
@@ -421,7 +434,6 @@ class ComputePlan(_ComputePlanFutureAsset):
         return tuples
 
     def list_composite_traintuple(self):
-        self.__post_init__()
         filters = [
             f'composite_traintuple:computePlanID:{self.compute_plan_id}',
         ]
@@ -432,7 +444,6 @@ class ComputePlan(_ComputePlanFutureAsset):
         return tuples
 
     def list_aggregatetuple(self):
-        self.__post_init__()
         filters = [
             f'aggregatetuple:computePlanID:{self.compute_plan_id}',
         ]
@@ -443,7 +454,6 @@ class ComputePlan(_ComputePlanFutureAsset):
         return tuples
 
     def list_testtuple(self):
-        self.__post_init__()
         filters = [
             f'testtuple:computePlanID:{self.compute_plan_id}',
         ]
@@ -454,7 +464,7 @@ class ComputePlan(_ComputePlanFutureAsset):
         return tuples
 
 
-class Node(_Asset):
+class Node(_FrozenAsset):
     id: str
     is_current: bool
 
