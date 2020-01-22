@@ -68,9 +68,9 @@ def test_federated_learning_workflow(global_execution_env):
     # create 1 traintuple per dataset and chain them
     traintuple = None
     rank = 0
+    compute_plan_id = None
     for dataset in datasets:
         traintuples = [traintuple] if traintuple else []
-        compute_plan_id = traintuple.compute_plan_id if traintuple else None
         spec = factory.create_traintuple(
             algo=algo,
             dataset=dataset,
@@ -87,6 +87,11 @@ def test_federated_learning_workflow(global_execution_env):
         assert traintuple.compute_plan_id   # check it is not None or ''
 
         rank += 1
+        compute_plan_id = traintuple.compute_plan_id
+
+    # check a compute plan has been created and its status is at done
+    cp = session.get_compute_plan(compute_plan_id)
+    assert cp.status == assets.Status.done
 
 
 def test_tuples_execution_on_different_nodes(global_execution_env):
