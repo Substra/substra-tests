@@ -104,15 +104,6 @@ def test_list_nodes(network, session):
     assert set(network_node_ids).issubset(set(node_ids))
 
 
-@pytest.mark.parametrize(
-    'asset_type', sbt.assets.AssetType.can_be_listed(),
-)
-def test_list_asset(asset_type, session):
-    """Simple check that list_asset method can be called without raising errors."""
-    method = getattr(session, f'list_{asset_type.name}')
-    method()  # should not raise
-
-
 def test_query_algos(factory, session):
     spec = factory.create_algo()
     algo = session.add_algo(spec)
@@ -129,3 +120,30 @@ def test_query_algos(factory, session):
     compo_algo_keys = [a.key for a in session.list_composite_algo()]
     assert compo_algo.key in compo_algo_keys
     assert algo.key not in compo_algo_keys
+
+
+@pytest.mark.parametrize(
+    'asset_type', sbt.assets.AssetType.can_be_listed(),
+)
+def test_list_asset(asset_type, session):
+    """Simple check that list_asset method can be called without raising errors."""
+    method = getattr(session, f'list_{asset_type.name}')
+    method()  # should not raise
+
+
+@pytest.mark.parametrize(
+    'asset_type', sbt.assets.AssetType.can_be_get(),
+)
+def test_error_get_asset_invalid_request(asset_type, session):
+    method = getattr(session, f'get_{asset_type.name}')
+    with pytest.raises(substra.exceptions.InvalidRequest):
+        method('invalid-id')
+
+
+@pytest.mark.parametrize(
+    'asset_type', sbt.assets.AssetType.can_be_get(),
+)
+def test_error_get_asset_not_found(asset_type, session):
+    method = getattr(session, f'get_{asset_type.name}')
+    with pytest.raises(substra.exceptions.NotFound):
+        method('42' * 32)  # a valid key must have a 64 length
