@@ -3,9 +3,9 @@ import enum
 import re
 import time
 import typing
-import pydantic
-
 from inspect import isclass
+
+import pydantic
 
 from . import errors, cfg
 
@@ -163,10 +163,10 @@ class _BaseFutureAsset(_Asset):
 
     @property
     def _session(self):
-        __session = object.__getattribute__(self, '__session')
-        if not __session:
+        session = object.__getattribute__(self, '__session')
+        if not session:
             raise errors.TError(f'No session attached with {self}')
-        return __session
+        return session
 
     def future(self):
         """Returns future from asset."""
@@ -193,16 +193,14 @@ class _Frozen:
 
 
 class _FrozenAsset(_Asset, _Frozen):
-    """Add a Config class to an _Asset, which allows to set allow_mutation to False
-
-    Link to documentation: https://pydantic-docs.helpmanual.io/usage/models/#faux-immutability
+    """Add a Config class to an _Asset, which allows to set allow_mutation to False in order to
+    raise an error if trying to modify the object.
     """
 
 
 class _FrozenInternalStruct(_InternalStruct, _Frozen):
-    """Add a Config class to an _InternalStruct, which allows to set allow_mutation to False
-
-    Link to documentation: https://pydantic-docs.helpmanual.io/usage/models/#faux-immutability
+    """Add a Config class to an _Asset, which allows to set allow_mutation to False in order to
+    raise an error if trying to modify the object.
     """
 
 
