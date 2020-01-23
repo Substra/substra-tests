@@ -163,14 +163,14 @@ class _BaseFutureAsset(_Asset):
 
     @property
     def _session(self):
-        session = object.__getattribute__(self, '__session')
-        if not session:
+        try:
+            return object.__getattribute__(self, '__session')
+        except AttributeError:
             raise errors.TError(f'No session attached with {self}')
-        return session
 
     def future(self):
         """Returns future from asset."""
-        return self._future_cls(self, object.__getattribute__(self, '__session'))
+        return self._future_cls(self, self._session)
 
 
 class _FutureAsset(_BaseFutureAsset):
@@ -193,15 +193,11 @@ class _Frozen:
 
 
 class _FrozenAsset(_Asset, _Frozen):
-    """Add a Config class to an _Asset, which allows to set allow_mutation to False in order to
-    raise an error if trying to modify the object.
-    """
+    """Immutable asset."""
 
 
 class _FrozenInternalStruct(_InternalStruct, _Frozen):
-    """Add a Config class to an _Asset, which allows to set allow_mutation to False in order to
-    raise an error if trying to modify the object.
-    """
+    """Immutable struct."""
 
 
 class Permission(_FrozenInternalStruct):
@@ -280,7 +276,7 @@ class Objective(_FrozenAsset):
     name: str
     owner: str
     permissions: Permissions
-    test_dataset: ObjectiveDataset
+    test_dataset: ObjectiveDataset = None
 
 
 class TesttupleDataset(_FrozenInternalStruct):
