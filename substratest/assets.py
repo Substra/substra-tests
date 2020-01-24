@@ -121,18 +121,25 @@ class _DataclassLoader(abc.ABC):
         mapper = cls.Meta.mapper
         kwargs = {}
         for k, v in d.items():
-            attr_name = mapper[k] if k in mapper else _convert(k)
-            if attr_name not in cls.__annotations__:
-                continue
-            # handle nested structures;
-            # FIXME does not work for list of nested structures
-            attr_type = cls.__annotations__[attr_name]
-            # because typing.List doesn't work the same way as the other types, we have to check
-            # if attr_type is a class before using issubclass()
-            if isclass(attr_type) and issubclass(attr_type, _DataclassLoader) \
-                    and isinstance(v, dict):
-                v = attr_type.load(v)
-            kwargs[attr_name] = v
+            if v is not None:
+                attr_name = mapper[k] if k in mapper else _convert(k)
+                if attr_name not in cls.__annotations__:
+                    continue
+                # handle nested structures;
+                attr_type = cls.__annotations__[attr_name]
+                # because typing.List doesn't work the same way as the other types, we have to check
+                # if attr_type is a class before using issubclass()
+                if isclass(attr_type) and issubclass(attr_type, _DataclassLoader) \
+                        and isinstance(v, dict):
+                    v = attr_type.load(v)
+
+                elif hasattr(attr_type, '__origin__') and attr_type.__origin__ is list:
+                    attr_args = attr_type.__args__
+                    attr_first_arg = attr_args[0]
+                    if issubclass(attr_first_arg, _DataclassLoader):
+                        v = [attr_first_arg.load(e) for e in v]
+
+                kwargs[attr_name] = v
 
         try:
             return cls(**kwargs)
@@ -303,8 +310,8 @@ class TraintupleDataset(_FrozenInternalStruct):
 
 
 class InModel(_FrozenInternalStruct):
-    key: str = None
-    storage_address: str = None
+    key: str
+    storage_address: str
 
     class Meta:
         mapper = {
