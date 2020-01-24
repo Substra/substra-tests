@@ -198,7 +198,7 @@ def test_permissions_denied_model_process(factory, network):
     traintuple_1 = session_1.add_traintuple(spec).future().wait()
 
     assert not traintuple_1.permissions.process.public
-    assert traintuple_1.permissions.process.authorized_ids == [MSP_IDS[0]]
+    assert traintuple_1.permissions.process.authorized_ids == [session_1.node_id]
 
     spec = factory.create_traintuple(
         algo=algo_2,
