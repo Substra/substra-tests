@@ -162,6 +162,56 @@ def test_permissions_denied_process(factory, network):
         session_1.add_traintuple(spec)
 
 
+@pytest.mark.xfail(reason='permission check not yet implemented in the backend')
+def test_permissions_denied_model_process(factory, network):
+    session_1 = network.sessions[0]
+    session_2 = network.sessions[1]
+
+    # setup
+
+    datasets = []
+    algos = []
+    for session in network.sessions[:2]:
+        # dataset
+        spec = factory.create_dataset(permissions=Permissions(public=False, authorized_ids=[]))
+        dataset = session.add_dataset(spec)
+        spec = factory.create_data_sample(
+            test_only=False,
+            datasets=[dataset],
+        )
+        session.add_data_sample(spec)
+        datasets.append(session.get_dataset(dataset.key))
+        # algo
+        spec = factory.create_algo(permissions=Permissions(public=False, authorized_ids=[]))
+        algos.append(session.add_algo(spec))
+
+    dataset_1, dataset_2 = datasets
+    algo_1, algo_2 = algos
+
+    # traintuples
+
+    spec = factory.create_traintuple(
+        algo=algo_1,
+        dataset=dataset_1,
+        data_samples=dataset_1.train_data_sample_keys,
+        tag='foo',
+    )
+    traintuple_1 = session_1.add_traintuple(spec).future().wait()
+
+    assert not traintuple_1.permissions.process.public
+    assert traintuple_1.permissions.process.authorized_ids == [session_1.node_id]
+
+    spec = factory.create_traintuple(
+        algo=algo_2,
+        dataset=dataset_2,
+        data_samples=dataset_2.train_data_sample_keys,
+        traintuples=[traintuple_1]
+    )
+
+    with pytest.raises(substra.exceptions.AuthenticationError):
+        session_2.add_traintuple(spec)
+
+
 @pytest.mark.skipif(len(MSP_IDS) < 3, reason='requires at least 3 nodes')
 def test_merge_permissions_denied_process(factory, network):
     """Test to process asset with merged permissions from 2 other nodes
