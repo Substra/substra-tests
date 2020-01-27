@@ -5,6 +5,7 @@ import substratest as sbt
 from substratest import assets
 
 
+@pytest.mark.slow
 def test_compute_plan(global_execution_env):
     """Execution of a compute plan containing multiple traintuples:
     - 1 traintuple executed on node 1
@@ -73,6 +74,7 @@ def test_compute_plan(global_execution_env):
     assert traintuple_3.dataset.worker == session_1.node_id
 
 
+@pytest.mark.slow
 def test_compute_plan_single_session_success(global_execution_env):
     """A compute plan with 3 traintuples and 3 associated testtuples"""
 
@@ -134,6 +136,7 @@ def test_compute_plan_single_session_success(global_execution_env):
         assert t.status == assets.Status.done
 
 
+@pytest.mark.slow
 def test_compute_plan_single_session_failure(global_execution_env):
     """In a compute plan with 3 traintuples, failing the root traintuple
     should cancel its descendents and the associated testtuples"""
@@ -201,6 +204,7 @@ def test_compute_plan_single_session_failure(global_execution_env):
         assert t.status in [assets.Status.failed, assets.Status.canceled]
 
 
+@pytest.mark.slow
 def test_compute_plan_aggregate_composite_traintuples(global_execution_env):
     """
     Compute plan version of the `test_aggregate_composite_traintuples` method from `test_execution.py`
@@ -304,6 +308,7 @@ def test_compute_plan_circular_dependency_failure(global_execution_env):
     assert 'missing dependency among inModels IDs' in str(e.value)
 
 
+@pytest.mark.slow
 def test_execution_compute_plan_canceled(global_execution_env):
     factory, network = global_execution_env
     session = network.sessions[0].copy()

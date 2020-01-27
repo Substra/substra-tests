@@ -162,6 +162,7 @@ def test_permissions_denied_process(factory, network):
         session_1.add_traintuple(spec)
 
 
+@pytest.mark.slow
 @pytest.mark.xfail(reason='permission check not yet implemented in the backend')
 def test_permissions_denied_model_process(factory, network):
     session_1 = network.sessions[0]

@@ -24,6 +24,12 @@ def pytest_report_header(config):
     return messages
 
 
+def pytest_configure(config):
+    config.addinivalue_line(
+        "markers", "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    )
+
+
 @dataclasses.dataclass
 class Network:
     options: settings.Options
