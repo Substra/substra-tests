@@ -10,6 +10,7 @@ def test_compute_plan(global_execution_env):
     - 1 traintuple executed on node 1
     - 1 traintuple executed on node 2
     - 1 traintuple executed on node 1 depending on previous traintuples
+    - 1 testtuple executed on node 1 depending on the last traintuple
     """
     factory, network = global_execution_env
     session_1 = network.sessions[0].copy()
@@ -18,13 +19,13 @@ def test_compute_plan(global_execution_env):
     dataset_1 = session_1.state.datasets[0]
     dataset_2 = session_2.state.datasets[0]
 
+    objective_1 = session_1.state.objectives[0]
+
     spec = factory.create_algo()
     algo_2 = session_2.add_algo(spec)
 
     # create compute plan
     cp_spec = factory.create_compute_plan(tag='foo')
-
-    # TODO add a testtuple in the compute plan
 
     traintuple_spec_1 = cp_spec.add_traintuple(
         algo=algo_2,
@@ -38,11 +39,16 @@ def test_compute_plan(global_execution_env):
         data_samples=dataset_2.train_data_sample_keys,
     )
 
-    cp_spec.add_traintuple(
+    traintuple_spec_3 = cp_spec.add_traintuple(
         algo=algo_2,
         dataset=dataset_1,
         data_samples=dataset_1.train_data_sample_keys,
         in_models=[traintuple_spec_1, traintuple_spec_2],
+    )
+
+    cp_spec.add_testtuple(
+        objective=objective_1,
+        traintuple_spec=traintuple_spec_3,
     )
 
     # submit compute plan and wait for it to complete
@@ -52,8 +58,10 @@ def test_compute_plan(global_execution_env):
     traintuples = cp.list_traintuple()
     assert len(traintuples) == 3
 
-    # check all traintuples are done and check they have been executed on the expected
-    # node
+    testtuples = cp.list_testtuple()
+    assert len(testtuples) == 1
+
+    # check all tuples are done and check they have been executed on the expected node
     for t in traintuples:
         assert t.status == assets.Status.done
 
@@ -61,16 +69,23 @@ def test_compute_plan(global_execution_env):
 
     assert len(traintuple_3.in_models) == 2
 
+    for t in testtuples:
+        assert t.status == assets.Status.done
+
+    testtuple = testtuples[0]
+
     # check tuples rank
     assert traintuple_1.rank == 0
     assert traintuple_2.rank == 0
     assert traintuple_3.rank == 1
+    assert testtuple.rank == traintuple_3.rank
 
     # XXX as the first two tuples have the same rank, there is currently no way to know
     #     which one will be returned first
     workers_rank_0 = set([traintuple_1.dataset.worker, traintuple_2.dataset.worker])
     assert workers_rank_0 == set([session_1.node_id, session_2.node_id])
     assert traintuple_3.dataset.worker == session_1.node_id
+    assert testtuple.dataset.worker == session_1.node_id
 
 
 def test_compute_plan_single_session_success(global_execution_env):
