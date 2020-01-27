@@ -40,7 +40,7 @@ SUBSTRA_TESTS_CONFIG_FILEPATH=local-values.yaml make test
 
 # Fast mode
 
-Since tests can take a long time to run, some of them as marked as slow. You can run the "fast" ones with:
+Since tests can take a long time to run, some of them are marked as slow. You can run the "fast" ones with:
 
 ```
 make fast-test
