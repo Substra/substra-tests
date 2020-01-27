@@ -38,7 +38,7 @@ To run the tests using the provided `local-values.yaml` (or a custom config file
 SUBSTRA_TESTS_CONFIG_FILEPATH=local-values.yaml make test
 ```
 
-# Fast mode
+# Minimal mode
 
 Since tests can take a long time to run, some of them are marked as slow. You can run the "fast" ones with:
 
