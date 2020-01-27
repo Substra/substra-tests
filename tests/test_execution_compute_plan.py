@@ -5,7 +5,6 @@ import substratest as sbt
 from substratest import assets
 
 
-@pytest.mark.slow
 def test_compute_plan(global_execution_env):
     """Execution of a compute plan containing multiple traintuples:
     - 1 traintuple executed on node 1

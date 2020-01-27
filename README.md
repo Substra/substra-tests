@@ -13,7 +13,7 @@ pip3 install -r requirements.txt
 The tests suite requires a Substra network up and running. The network can be started
 either with skaffold (Kubernetes), with docker-compose, or manually.
 
-The substra project is needed for running the tests.  
+The substra project is needed for running the tests.
 It can be found [here](https://github.com/SubstraFoundation/substra)
 
 You will need to install it thanks to the `pip` binary.
@@ -37,6 +37,18 @@ To run the tests using the provided `local-values.yaml` (or a custom config file
 ```
 SUBSTRA_TESTS_CONFIG_FILEPATH=local-values.yaml make test
 ```
+
+# Fast mode
+
+Since tests can take a long time to run, some of them as marked as slow. You can run the "fast" ones with:
+
+```
+make fast-test
+```
+
+Note that `test_compute_plan` from `test_execution_compute_plan.py` is not marked as slow even though it takes several
+seconds to complete. This is because it covers a very basic use case of the platform and is needed to ensure basic
+features aren't broken.
 
 # Test design guidelines
 
