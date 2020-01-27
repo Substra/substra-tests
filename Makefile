@@ -5,7 +5,7 @@ pyclean:
 test: pyclean
 	pytest tests -rs -v --durations=0
 
-fast-test: pyclean
+test-minimal: pyclean
 	pytest tests -rs -v --durations=0 -m "not slow"
 
 install:

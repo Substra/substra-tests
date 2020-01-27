@@ -43,7 +43,7 @@ SUBSTRA_TESTS_CONFIG_FILEPATH=local-values.yaml make test
 Since tests can take a long time to run, some of them are marked as slow. You can run the "fast" ones with:
 
 ```
-make fast-test
+make test-minimal
 ```
 
 Note that `test_compute_plan` from `test_execution_compute_plan.py` is not marked as slow even though it takes several
