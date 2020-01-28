@@ -13,7 +13,7 @@ from . import utils, assets
 
 DEFAULT_DATA_SAMPLE_FILENAME = 'data.csv'
 
-DEFAULT_SUBSTRATOOLS_VERSION = '0.4.0'
+DEFAULT_SUBSTRATOOLS_VERSION = '0.5.0'
 
 # TODO improve opener get_X/get_y methods
 # TODO improve metrics score method
@@ -53,7 +53,7 @@ import json
 import substratools as tools
 class TestAlgo(tools.Algo):
     def train(self, X, y, models, rank):
-        return [0, 42], [0, 1]
+        return [0, 1]
     def predict(self, X, model):
         return [0, 99]
     def load_model(self, path):
@@ -89,7 +89,7 @@ import json
 import substratools as tools
 class TestCompositeAlgo(tools.CompositeAlgo):
     def train(self, X, y, head_model, trunk_model, rank):
-        return [0, 42], [0, 1], [0, 2]
+        return [0, 1], [0, 2]
     def predict(self, X, head_model, trunk_model):
         return [0, 99]
     def load_head_model(self, path):
