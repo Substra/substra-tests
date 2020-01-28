@@ -262,3 +262,8 @@ class Session:
         compute_plan = assets.ComputePlan.load(res).attach(self)
         self.state.update_compute_plan(compute_plan)
         return compute_plan
+
+    def link_dataset_with_objective(self, dataset, objective):
+        self._client.link_dataset_with_objective(dataset.key, objective.key)
+        # XXX do not return anything as currently the chaincode simply returns the
+        #     updated dataset key
