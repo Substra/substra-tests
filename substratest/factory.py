@@ -18,18 +18,26 @@ DEFAULT_SUBSTRATOOLS_VERSION = '0.5.0'
 # TODO improve opener get_X/get_y methods
 # TODO improve metrics score method
 
-DEFAULT_OPENER_SCRIPT = """
+DEFAULT_OPENER_SCRIPT = f"""
+import csv
 import json
+import os
 import substratools as tools
 class TestOpener(tools.Opener):
     def get_X(self, folders):
-        return folders
+        res = 0
+        for folder in folders:
+            with open(os.path.join(folder, '{DEFAULT_DATA_SAMPLE_FILENAME}'), 'r') as f:
+                reader = csv.reader(f)
+                for row in reader:
+                    res += int(row[0])
+        return res
     def get_y(self, folders):
-        return folders
+        return len(folders)
     def fake_X(self):
-        return 'fakeX'
+        return 1
     def fake_y(self):
-        return 'fakey'
+        return 1
     def get_predictions(self, path):
         with open(path) as f:
             return json.load(f)
@@ -43,7 +51,7 @@ import json
 import substratools as tools
 class TestMetrics(tools.Metrics):
     def score(self, y_true, y_pred):
-        return 101
+        return y_pred -y_true
 if __name__ == '__main__':
     tools.metrics.execute(TestMetrics())
 """
@@ -53,9 +61,9 @@ import json
 import substratools as tools
 class TestAlgo(tools.Algo):
     def train(self, X, y, models, rank):
-        return [0, 1]
+        return sum(models) + X
     def predict(self, X, model):
-        return [0, 99]
+        return model
     def load_model(self, path):
         with open(path) as f:
             return json.load(f)
@@ -71,7 +79,7 @@ import json
 import substratools as tools
 class TestAggregateAlgo(tools.AggregateAlgo):
     def aggregate(self, models, rank):
-        return [0, 66]
+        return int(sum(models) / len(models))
     def load_model(self, path):
         with open(path) as f:
             return json.load(f)
@@ -89,9 +97,11 @@ import json
 import substratools as tools
 class TestCompositeAlgo(tools.CompositeAlgo):
     def train(self, X, y, head_model, trunk_model, rank):
-        return [0, 1], [0, 2]
+        out_head_model = head_model + X if head_model else X
+        out_trunk_model = trunk_model + y if trunk_model else y
+        return out_head_model, out_trunk_model
     def predict(self, X, head_model, trunk_model):
-        return [0, 99]
+        return head_model + trunk_model
     def load_head_model(self, path):
         return self._load_model(path)
     def save_head_model(self, model, path):
@@ -432,8 +442,10 @@ class AssetsFactory:
         tmpdir.mkdir()
 
         encoding = 'utf-8'
-        content = content or f'0,{idx}'.encode(encoding)
-        content = f'# random={rdm} \n'.encode(encoding) + content
+        if content:
+            content = f'# random={rdm} \n'.encode(encoding) + content
+        else:
+            content = f'2,{idx}\n0,{rdm}'.encode(encoding)
 
         data_filepath = tmpdir / DEFAULT_DATA_SAMPLE_FILENAME
         with open(data_filepath, 'wb') as f:

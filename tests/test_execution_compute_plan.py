@@ -27,18 +27,21 @@ def test_compute_plan(global_execution_env):
     # create compute plan
     cp_spec = factory.create_compute_plan(tag='foo')
 
+    # out model value should be 8
     traintuple_spec_1 = cp_spec.add_traintuple(
         algo=algo_2,
         dataset=dataset_1,
         data_samples=dataset_1.train_data_sample_keys,
     )
 
+    # out model value should be 8
     traintuple_spec_2 = cp_spec.add_traintuple(
         algo=algo_2,
         dataset=dataset_2,
         data_samples=dataset_2.train_data_sample_keys,
     )
 
+    # out model value should be 24 (16 from 2 in models + 8 from data samples)
     traintuple_spec_3 = cp_spec.add_traintuple(
         algo=algo_2,
         dataset=dataset_1,
@@ -46,6 +49,7 @@ def test_compute_plan(global_execution_env):
         in_models=[traintuple_spec_1, traintuple_spec_2],
     )
 
+    # perf should be 23 (24 from model - 1 from y)
     cp_spec.add_testtuple(
         objective=objective_1,
         traintuple_spec=traintuple_spec_3,
@@ -79,6 +83,9 @@ def test_compute_plan(global_execution_env):
     assert traintuple_2.rank == 0
     assert traintuple_3.rank == 1
     assert testtuple.rank == traintuple_3.rank
+
+    # check testtuple perf
+    assert testtuple.dataset.perf == 23
 
     # XXX as the first two tuples have the same rank, there is currently no way to know
     #     which one will be returned first

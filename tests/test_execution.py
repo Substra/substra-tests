@@ -21,6 +21,7 @@ def test_tuples_execution_on_same_node(global_execution_env):
     algo = session.add_algo(spec)
 
     # create traintuple
+    # out model value should be 8 (4 traintuples * 2)
     spec = factory.create_traintuple(
         algo=algo,
         dataset=dataset,
@@ -36,9 +37,11 @@ def test_tuples_execution_on_same_node(global_execution_env):
 
     # create testtuple
     # don't create it before to avoid MVCC errors
+    # perf should be 7 (8 from traintuple model - 1 from y)
     spec = factory.create_testtuple(objective=objective, traintuple=traintuple)
     testtuple = session.add_testtuple(spec).future().wait()
     assert testtuple.status == assets.Status.done
+    assert testtuple.dataset.perf == 7
 
     # add a traintuple depending on first traintuple
     spec = factory.create_traintuple(
@@ -126,6 +129,7 @@ def test_tuples_execution_on_different_nodes(global_execution_env):
     testtuple = session_1.add_testtuple(spec).future().wait()
     assert testtuple.status == assets.Status.done
     assert testtuple.dataset.worker == session_1.node_id
+    assert testtuple.dataset.perf == 7
 
 
 @pytest.mark.slow
@@ -163,6 +167,8 @@ def test_composite_traintuples_execution(global_execution_env):
     algo = session.add_composite_algo(spec)
 
     # first composite traintuple
+    # head model value should be 8
+    # trunk model value should be 4
     spec = factory.create_composite_traintuple(
         algo=algo,
         dataset=dataset,
@@ -176,6 +182,8 @@ def test_composite_traintuples_execution(global_execution_env):
     assert composite_traintuple_1.out_trunk_model.out_model is not None
 
     # second composite traintuple
+    # head model value should be 16
+    # trunk model value should be 8
     spec = factory.create_composite_traintuple(
         algo=algo,
         dataset=dataset,
@@ -189,9 +197,11 @@ def test_composite_traintuples_execution(global_execution_env):
     assert composite_traintuple_2.out_trunk_model is not None
 
     # add a 'composite' testtuple
+    # perf should be 23 (16 from head + 8 from trunk - 1 from y)
     spec = factory.create_testtuple(objective=objective, traintuple=composite_traintuple_2)
     testtuple = session.add_testtuple(spec).future().wait()
     assert testtuple.status == assets.Status.done
+    assert testtuple.dataset.perf == 23
 
     # list composite traintuple
     composite_traintuples = session.list_composite_traintuple()
@@ -298,6 +308,11 @@ def test_aggregate_composite_traintuples(global_execution_env):
                     'head_traintuple': previous_composite_traintuples[index],
                     'trunk_traintuple': previous_aggregatetuple,
                 }
+            # head model value should be 2 at first round
+            # trunk model value should be 1 at first round
+
+            # head model value should be 4 at second round
+            # trunk model value should be 2 at second round
             spec = factory.create_composite_traintuple(
                 algo=composite_algo,
                 dataset=dataset,
@@ -308,6 +323,7 @@ def test_aggregate_composite_traintuples(global_execution_env):
             composite_traintuples.append(t)
 
         # create aggregate on its node
+        # model value should be 1 ( 8 composite traintuple * 1 for each trunk / 8)
         spec = factory.create_aggregatetuple(
             algo=aggregate_algo,
             worker=aggregate_worker,
@@ -321,11 +337,13 @@ def test_aggregate_composite_traintuples(global_execution_env):
 
     # last round: create associated testtuple
     for traintuple in previous_composite_traintuples:
+        # perf should be 5 (4 from head + 2 from trunk - 1 from y)
         spec = factory.create_testtuple(
             objective=objective,
             traintuple=traintuple,
         )
-        sessions[0].add_testtuple(spec).future().wait()
+        testtuple = sessions[0].add_testtuple(spec).future().wait()
+        assert testtuple.dataset.perf == 5
 
     if not network.options.enable_intermediate_model_removal:
         return
