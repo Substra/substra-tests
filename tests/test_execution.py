@@ -8,6 +8,7 @@ from substratest import assets
 from . import settings
 
 
+@pytest.mark.slow
 def test_tuples_execution_on_same_node(global_execution_env):
     """Execution of a traintuple, a following testtuple and a following traintuple."""
     factory, network = global_execution_env
@@ -51,6 +52,7 @@ def test_tuples_execution_on_same_node(global_execution_env):
     assert len(traintuple.in_models) == 1
 
 
+@pytest.mark.slow
 def test_federated_learning_workflow(global_execution_env):
     """Test federated learning workflow on each node."""
     factory, network = global_execution_env
@@ -94,6 +96,7 @@ def test_federated_learning_workflow(global_execution_env):
     assert cp.status == assets.Status.done
 
 
+@pytest.mark.slow
 def test_tuples_execution_on_different_nodes(global_execution_env):
     """Execution of a traintuple on node 1 and the following testtuple on node 2."""
     # add test data samples / dataset / objective on node 1
@@ -125,6 +128,7 @@ def test_tuples_execution_on_different_nodes(global_execution_env):
     assert testtuple.dataset.worker == session_1.node_id
 
 
+@pytest.mark.slow
 def test_traintuple_execution_failure(global_execution_env):
     """Invalid algo script is causing traintuple failure."""
     factory, network = global_execution_env
@@ -145,6 +149,7 @@ def test_traintuple_execution_failure(global_execution_env):
     assert traintuple.out_model is None
 
 
+@pytest.mark.slow
 def test_composite_traintuples_execution(global_execution_env):
     """Execution of composite traintuples."""
 
@@ -196,6 +201,7 @@ def test_composite_traintuples_execution(global_execution_env):
     )
 
 
+@pytest.mark.slow
 def test_aggregatetuple(global_execution_env):
     """Execution of aggregatetuple aggregating traintuples."""
 
@@ -234,6 +240,7 @@ def test_aggregatetuple(global_execution_env):
     assert len(aggregatetuple.in_models) == number_of_traintuples_to_aggregate
 
 
+@pytest.mark.slow
 def test_aggregate_composite_traintuples(global_execution_env):
     """Do 2 rounds of composite traintuples aggregations on multiple nodes.
 
