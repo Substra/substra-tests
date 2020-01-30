@@ -30,6 +30,14 @@ def test_download_opener(factory, session):
     assert content == spec.read_opener()
 
 
+def test_describe_dataset(factory, session):
+    spec = factory.create_dataset()
+    dataset = session.add_dataset(spec)
+
+    content = session.describe_dataset(dataset.key)
+    assert content == spec.read_description()
+
+
 def test_add_dataset_conflict(factory, session):
     spec = factory.create_dataset()
     dataset = session.add_dataset(spec)

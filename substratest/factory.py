@@ -189,6 +189,10 @@ class DatasetSpec(_Spec):
         with open(self.data_opener, 'rb') as f:
             return f.read()
 
+    def read_description(self):
+        with open(self.description, 'r') as f:
+            return f.read()
+
 
 @dataclasses.dataclass
 class ObjectiveSpec(_Spec):
