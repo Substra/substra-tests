@@ -33,6 +33,26 @@ def test_add_dataset_conflict(factory, session):
     assert dataset == dataset_copy
 
 
+def test_link_dataset_with_objective(factory, session):
+    spec = factory.create_objective()
+    objective_1 = session.add_objective(spec)
+
+    spec = factory.create_objective()
+    objective_2 = session.add_objective(spec)
+
+    spec = factory.create_dataset()
+    dataset = session.add_dataset(spec)
+
+    # link dataset with objective
+    session.link_dataset_with_objective(dataset, objective_1)
+    dataset = session.get_dataset(dataset.key)
+    assert dataset.objective_key == objective_1.key
+
+    # ensure an existing dataset cannot be linked to more than one objective
+    with pytest.raises(substra.exceptions.InvalidRequest):
+        session.link_dataset_with_objective(dataset, objective_2)
+
+
 def test_add_data_sample(factory, session):
     spec = factory.create_dataset()
     dataset = session.add_dataset(spec)
@@ -77,6 +97,15 @@ def test_add_objective(factory, session):
     objective = session.add_objective(spec)
     objective_copy = session.get_objective(objective.key)
     assert objective == objective_copy
+
+    # check dataset has been linked with the objective after objective creation
+    dataset = session.get_dataset(dataset.key)
+    assert dataset.objective_key == objective.key
+
+    # add a new dataset and ensure it is linked with the created objective
+    spec = factory.create_dataset(objective=objective)
+    dataset = session.add_dataset(spec)
+    assert dataset.objective_key == objective.key
 
 
 def test_add_algo(factory, session):

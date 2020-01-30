@@ -183,6 +183,7 @@ class DatasetSpec(_Spec):
     type: str
     description: str
     permissions: Permissions = None
+    objective_key: str = None
 
     def read_opener(self):
         with open(self.data_opener, 'rb') as f:
@@ -442,7 +443,7 @@ class AssetsFactory:
             data_manager_keys=[d.key for d in datasets],
         )
 
-    def create_dataset(self, permissions=None):
+    def create_dataset(self, objective=None, permissions=None):
         rdm = random.random()
         idx = self._dataset_counter.inc()
         tmpdir = self._workdir / f'dataset-{idx}'
@@ -464,6 +465,7 @@ class AssetsFactory:
             data_opener=str(opener_path),
             type='Test',
             description=str(description_path),
+            objective_key=objective.key if objective else None,
             permissions=permissions or DEFAULT_PERMISSIONS,
         )
 
