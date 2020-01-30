@@ -15,9 +15,6 @@ DEFAULT_DATA_SAMPLE_FILENAME = 'data.csv'
 
 DEFAULT_SUBSTRATOOLS_VERSION = '0.5.0'
 
-# TODO improve opener get_X/get_y methods
-# TODO improve metrics score method
-
 DEFAULT_OPENER_SCRIPT = f"""
 import csv
 import json
@@ -25,17 +22,17 @@ import os
 import substratools as tools
 class TestOpener(tools.Opener):
     def get_X(self, folders):
-        res = 0
+        res = []
         for folder in folders:
             with open(os.path.join(folder, '{DEFAULT_DATA_SAMPLE_FILENAME}'), 'r') as f:
                 reader = csv.reader(f)
                 for row in reader:
-                    res += int(row[0])
+                    res.append(int(row[0]))
         return res
     def get_y(self, folders):
         return len(folders)
     def fake_X(self):
-        return 1
+        return [2]
     def fake_y(self):
         return 1
     def get_predictions(self, path):
@@ -51,7 +48,7 @@ import json
 import substratools as tools
 class TestMetrics(tools.Metrics):
     def score(self, y_true, y_pred):
-        return y_pred -y_true
+        return y_pred - y_true
 if __name__ == '__main__':
     tools.metrics.execute(TestMetrics())
 """
@@ -61,7 +58,7 @@ import json
 import substratools as tools
 class TestAlgo(tools.Algo):
     def train(self, X, y, models, rank):
-        return sum(models) + X
+        return sum(models) + sum(X)
     def predict(self, X, model):
         return model
     def load_model(self, path):
@@ -97,7 +94,7 @@ import json
 import substratools as tools
 class TestCompositeAlgo(tools.CompositeAlgo):
     def train(self, X, y, head_model, trunk_model, rank):
-        out_head_model = head_model + X if head_model else X
+        out_head_model = head_model + sum(X) if head_model else sum(X)
         out_trunk_model = trunk_model + y if trunk_model else y
         return out_head_model, out_trunk_model
     def predict(self, X, head_model, trunk_model):
