@@ -312,6 +312,16 @@ class OutModel(_DataclassLoader):
         }
 
 
+@dataclasses.dataclass(frozen=True)
+class OutHeadModel(_DataclassLoader):
+    key: str
+
+    class Meta:
+        mapper = {
+            'hash': 'key',
+        }
+
+
 @dataclasses.dataclass
 class Traintuple(_Asset, _FutureMixin):
     key: str
@@ -358,6 +368,12 @@ class OutCompositeModel(_DataclassLoader):
     out_model: OutModel = None
 
 
+@dataclasses.dataclass(frozen=True)
+class OutCompositeHeadModel(_DataclassLoader):
+    permissions: Permissions
+    out_model: OutHeadModel = None
+
+
 @dataclasses.dataclass
 class CompositeTraintuple(_Asset, _FutureMixin):
     key: str
@@ -370,7 +386,7 @@ class CompositeTraintuple(_Asset, _FutureMixin):
     log: str
     in_head_model: InModel = None
     in_trunk_model: InModel = None
-    out_head_model: OutCompositeModel = None
+    out_head_model: OutCompositeHeadModel = None
     out_trunk_model: OutCompositeModel = None
 
     class Meta:
