@@ -150,6 +150,12 @@ class Session:
         self.state.compute_plans.append(compute_plan)
         return compute_plan
 
+    def update_compute_plan(self, spec, *args, **kwargs):
+        res = self._client.update_compute_plan(spec.to_dict(), *args, **kwargs)
+        compute_plan = assets.ComputePlan.load(res).attach(self)
+        self.state.compute_plans.append(compute_plan)
+        return compute_plan
+
     def list_compute_plan(self, *args, **kwargs):
         res = self._client.list_compute_plan(*args, **kwargs)
         return [assets.ComputePlan.load(x) for x in res]

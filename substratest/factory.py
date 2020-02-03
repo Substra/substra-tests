@@ -409,6 +409,16 @@ class ComputePlanSpec(_Spec):
         return spec
 
 
+@dataclasses.dataclass
+class UpdateComputePlanSpec(ComputePlanSpec):
+    compute_plan_id: str
+
+    def to_dict(self):
+        d = super().to_dict()
+        del d['tag']
+        return d
+
+
 class AssetsFactory:
 
     def __init__(self, name):
@@ -631,4 +641,13 @@ class AssetsFactory:
             aggregatetuples=[],
             testtuples=[],
             tag=tag,
+        )
+
+    def update_compute_plan(self, compute_plan):
+        return UpdateComputePlanSpec(
+            traintuples=[],
+            composite_traintuples=[],
+            aggregatetuples=[],
+            testtuples=[],
+            compute_plan_id=compute_plan.compute_plan_id,
         )

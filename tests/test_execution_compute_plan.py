@@ -151,6 +151,75 @@ def test_compute_plan_single_session_success(global_execution_env):
 
 
 @pytest.mark.slow
+def test_compute_plan_update(global_execution_env):
+    """A compute plan with 3 traintuples and 3 associated testtuples.
+
+    This is done by sending 3 requests (one create and two updates).
+    """
+
+    factory, network = global_execution_env
+    session = network.sessions[0].copy()
+
+    dataset = session.state.datasets[0]
+    data_sample_1, data_sample_2, data_sample_3, _ = dataset.train_data_sample_keys
+    objective = session.state.objectives[0]
+
+    spec = factory.create_algo()
+    algo = session.add_algo(spec)
+
+    # Create a compute plan with traintuple + testtuple
+
+    cp_spec = factory.create_compute_plan()
+    traintuple_spec_1 = cp_spec.add_traintuple(
+        algo=algo,
+        dataset=dataset,
+        data_samples=[data_sample_1]
+    )
+    cp_spec.add_testtuple(
+        objective=objective,
+        traintuple_spec=traintuple_spec_1
+    )
+    cp = session.add_compute_plan(cp_spec)
+
+    # Update compute plan with traintuple + testtuple
+
+    cp_spec = factory.update_compute_plan(cp)
+    traintuple_spec_2 = cp_spec.add_traintuple(
+        algo=algo,
+        dataset=dataset,
+        data_samples=[data_sample_2],
+        in_models=[traintuple_spec_1]
+    )
+    cp_spec.add_testtuple(
+        objective=objective,
+        traintuple_spec=traintuple_spec_2
+    )
+    cp = session.update_compute_plan(cp_spec)
+
+    # Update compute plan with traintuple + testtuple
+
+    cp_spec = factory.update_compute_plan(cp)
+    traintuple_spec_3 = cp_spec.add_traintuple(
+        algo=algo,
+        dataset=dataset,
+        data_samples=[data_sample_3],
+        in_models=[traintuple_spec_2]
+    )
+    cp_spec.add_testtuple(
+        objective=objective,
+        traintuple_spec=traintuple_spec_3
+    )
+    cp = session.update_compute_plan(cp_spec)
+
+    # All the train/test tuples should succeed
+    cp = session.get_compute_plan(cp.compute_plan_id).future().wait()
+    tuples = cp.list_traintuple() + cp.list_testtuple()
+    assert len(tuples) == 6
+    for t in tuples:
+        assert t.status == assets.Status.done
+
+
+@pytest.mark.slow
 def test_compute_plan_single_session_failure(global_execution_env):
     """In a compute plan with 3 traintuples, failing the root traintuple
     should cancel its descendents and the associated testtuples"""
