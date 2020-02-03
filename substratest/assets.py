@@ -95,6 +95,42 @@ class ComputePlanFuture(BaseFuture):
         return self._session.get_compute_plan(self._compute_plan.compute_plan_id)
 
 
+class _BaseFutureMixin(abc.ABC):
+    _future_cls = None
+
+    def attach(self, session):
+        """Attach session to asset."""
+        # XXX because Pydantic doesn't support private fields, we have to use
+        # __getattribute__ and __setattr__ (https://github.com/samuelcolvin/pydantic/issues/655)
+        object.__setattr__(self, '__session', session)
+        return self
+
+    @property
+    def _session(self):
+        try:
+            return object.__getattribute__(self, '__session')
+        except AttributeError:
+            raise errors.TError(f'No session attached with {self}')
+
+    def future(self):
+        """Returns future from asset."""
+        return self._future_cls(self, self._session)
+
+
+class _FutureMixin(_BaseFutureMixin):
+    """Represents a single task that is executed on the platform."""
+    _future_cls = Future
+
+    def future(self):
+        assert hasattr(self, 'status')
+        assert hasattr(self, 'key')
+        return super().future()
+
+
+class _ComputePlanFutureMixin(_BaseFutureMixin):
+    _future_cls = ComputePlanFuture
+
+
 def _convert(name):
     """Convert camel case to snake case."""
     s = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', name)
@@ -160,42 +196,6 @@ class _Asset(_InternalStruct, abc.ABC):
 
     Convert a dict with camel case fields to a Dataclass.
     """
-
-
-class _BaseFutureMixin(abc.ABC):
-    _future_cls = None
-
-    def attach(self, session):
-        """Attach session to asset."""
-        # XXX because Pydantic doesn't support private fields, we have to use
-        # __getattribute__ and __setattr__ (https://github.com/samuelcolvin/pydantic/issues/655)
-        object.__setattr__(self, '__session', session)
-        return self
-
-    @property
-    def _session(self):
-        try:
-            return object.__getattribute__(self, '__session')
-        except AttributeError:
-            raise errors.TError(f'No session attached with {self}')
-
-    def future(self):
-        """Returns future from asset."""
-        return self._future_cls(self, self._session)
-
-
-class _FutureMixin(_BaseFutureMixin):
-    """Represents a single task that is executed on the platform."""
-    _future_cls = Future
-
-    def future(self):
-        assert hasattr(self, 'status')
-        assert hasattr(self, 'key')
-        return super().future()
-
-
-class _ComputePlanFutureMixin(_BaseFutureMixin):
-    _future_cls = ComputePlanFuture
 
 
 class _Frozen:
