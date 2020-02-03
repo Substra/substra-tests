@@ -422,11 +422,11 @@ class ComputePlan(_ComputePlanFutureAsset):
     tag: str
 
     def __init__(self, *args, **kwargs):
+        kwargs['traintuple_keys'] = kwargs.get('traintuple_keys') or []
+        kwargs['composite_traintuple_keys'] = kwargs.get('composite_traintuple_keys') or []
+        kwargs['aggregatetuple_keys'] = kwargs.get('aggregatetuple_keys') or []
+        kwargs['testtuple_keys'] = kwargs.get('testtuple_keys') or []
         super().__init__(*args, **kwargs)
-        self.traintuple_keys = self.traintuple_keys or []
-        self.composite_traintuple_keys = self.composite_traintuple_keys or []
-        self.aggregatetuple_keys = self.aggregatetuple_keys or []
-        self.testtuple_keys = self.testtuple_keys or []
 
     def list_traintuple(self):
         filters = [
