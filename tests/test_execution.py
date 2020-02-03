@@ -3,6 +3,7 @@ import pytest
 import substra
 
 import substratest as sbt
+from substratest.factory import Permissions
 
 from substratest import assets
 from . import settings
@@ -334,7 +335,7 @@ def test_aggregate_composite_traintuples(global_execution_env):
     number_of_rounds = 2
 
     datasets = sessions[0].state.datasets + sessions[1].state.datasets
-    objective = sessions[0].state.objectives[0]
+    objectives = sessions[0].state.objectives[:0] + sessions[1].state.objectives[:0]
 
     # register algos on first node
     spec = factory.create_composite_algo()
@@ -360,6 +361,7 @@ def test_aggregate_composite_traintuples(global_execution_env):
                 algo=composite_algo,
                 dataset=dataset,
                 data_samples=[dataset.train_data_sample_keys[0 + round_]],
+                permissions=Permissions(public=False, authorized_ids=[s.node_id for s in sessions]),
                 **kwargs,
             )
             t = sessions[0].add_composite_traintuple(spec).future().wait()
@@ -378,7 +380,7 @@ def test_aggregate_composite_traintuples(global_execution_env):
         previous_composite_traintuples = composite_traintuples
 
     # last round: create associated testtuple
-    for traintuple in previous_composite_traintuples:
+    for traintuple, objective in zip(previous_composite_traintuples, objectives):
         spec = factory.create_testtuple(
             objective=objective,
             traintuple=traintuple,
