@@ -155,14 +155,7 @@ class _InternalStruct(pydantic.BaseModel, _DataclassLoader, abc.ABC):
     """Internal nested structure"""
 
 
-class _Asset(_InternalStruct, abc.ABC):
-    """Represents assets stored in the Substra framework.
-
-    Convert a dict with camel case fields to a Dataclass.
-    """
-
-
-class _BaseFutureAsset(_Asset):
+class _BaseFutureAsset(_InternalStruct):
     _future_cls = None
 
     def attach(self, session):
@@ -203,15 +196,7 @@ class _Frozen:
         allow_mutation = False
 
 
-class _FrozenAsset(_Asset, _Frozen):
-    """Immutable asset."""
-
-
-class _FrozenInternalStruct(_InternalStruct, _Frozen):
-    """Immutable struct."""
-
-
-class Permission(_FrozenInternalStruct):
+class Permission(_InternalStruct, _Frozen):
     public: bool
     authorized_ids: typing.List[str]
 
@@ -221,12 +206,12 @@ class Permission(_FrozenInternalStruct):
         }
 
 
-class Permissions(_FrozenInternalStruct):
+class Permissions(_InternalStruct, _Frozen):
     """Permissions structure stored in various asset types."""
     process: Permission
 
 
-class DataSampleCreated(_FrozenAsset):
+class DataSampleCreated(_InternalStruct, _Frozen):
     key: str
     validated: bool
     path: str
@@ -237,13 +222,13 @@ class DataSampleCreated(_FrozenAsset):
         }
 
 
-class DataSample(_FrozenAsset):
+class DataSample(_InternalStruct, _Frozen):
     key: str
     owner: str
     data_manager_keys: typing.List[str]
 
 
-class ObjectiveDataset(_FrozenInternalStruct):
+class ObjectiveDataset(_InternalStruct, _Frozen):
     dataset_key: str
     data_sample_keys: typing.List[str]
 
@@ -253,7 +238,7 @@ class ObjectiveDataset(_FrozenInternalStruct):
         }
 
 
-class Dataset(_FrozenAsset):
+class Dataset(_InternalStruct, _Frozen):
     key: str
     name: str
     owner: str
@@ -263,7 +248,7 @@ class Dataset(_FrozenAsset):
     test_data_sample_keys: typing.List[str] = None
 
 
-class _Algo(_FrozenAsset):
+class _Algo(_InternalStruct, _Frozen):
     key: str
     name: str
     owner: str
@@ -282,7 +267,7 @@ class CompositeAlgo(_Algo):
     pass
 
 
-class Objective(_FrozenAsset):
+class Objective(_InternalStruct, _Frozen):
     key: str
     name: str
     owner: str
@@ -290,7 +275,7 @@ class Objective(_FrozenAsset):
     test_dataset: ObjectiveDataset = None
 
 
-class TesttupleDataset(_FrozenInternalStruct):
+class TesttupleDataset(_InternalStruct, _Frozen):
     key: str
     perf: float
     keys: typing.List[str]
@@ -302,7 +287,7 @@ class TesttupleDataset(_FrozenInternalStruct):
         }
 
 
-class TraintupleDataset(_FrozenInternalStruct):
+class TraintupleDataset(_InternalStruct, _Frozen):
     key: str
     keys: typing.List[str]
     worker: str
@@ -313,7 +298,7 @@ class TraintupleDataset(_FrozenInternalStruct):
         }
 
 
-class InModel(_FrozenInternalStruct):
+class InModel(_InternalStruct, _Frozen):
     key: str
     storage_address: str
 
@@ -323,7 +308,7 @@ class InModel(_FrozenInternalStruct):
         }
 
 
-class OutModel(_FrozenInternalStruct):
+class OutModel(_InternalStruct, _Frozen):
     key: str
     storage_address: str
 
@@ -371,7 +356,7 @@ class Aggregatetuple(_FutureAsset):
         }
 
 
-class OutCompositeModel(_FrozenInternalStruct):
+class OutCompositeModel(_InternalStruct, _Frozen):
     permissions: Permissions
     out_model: OutModel = None
 
@@ -469,7 +454,7 @@ class ComputePlan(_ComputePlanFutureAsset):
         return tuples
 
 
-class Node(_FrozenAsset):
+class Node(_InternalStruct, _Frozen):
     id: str
     is_current: bool
 
