@@ -327,6 +327,15 @@ class OutModel(_InternalStruct):
         }
 
 
+class OutHeadModel(_InternalStruct):
+    key: str
+
+    class Meta:
+        mapper = {
+            'hash': 'key',
+        }
+
+
 class Traintuple(_Asset, _FutureMixin):
     key: str
     creator: str
@@ -370,6 +379,11 @@ class OutCompositeModel(_Asset):
     out_model: typing.Optional[OutModel]
 
 
+class OutCompositeHeadModel(_InternalStruct):
+    permissions: Permissions
+    out_model: OutHeadModel = None
+
+
 class CompositeTraintuple(_Asset, _FutureMixin):
     key: str
     creator: str
@@ -381,8 +395,8 @@ class CompositeTraintuple(_Asset, _FutureMixin):
     log: str
     in_head_model: typing.Optional[InModel]
     in_trunk_model: typing.Optional[InModel]
-    out_head_model: OutCompositeModel
-    out_trunk_model: OutCompositeModel
+    out_head_model: OutCompositeHeadModel = None
+    out_trunk_model: OutCompositeModel = None
 
     class Meta:
         mapper = {
