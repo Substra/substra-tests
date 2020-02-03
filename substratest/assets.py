@@ -155,7 +155,14 @@ class _InternalStruct(pydantic.BaseModel, _DataclassLoader, abc.ABC):
     """Internal nested structure"""
 
 
-class _BaseFutureAsset(_InternalStruct):
+class _Asset(_InternalStruct, abc.ABC):
+    """Represents assets stored in the Substra framework.
+
+    Convert a dict with camel case fields to a Dataclass.
+    """
+
+
+class _BaseFutureMixin(abc.ABC):
     _future_cls = None
 
     def attach(self, session):
@@ -177,7 +184,7 @@ class _BaseFutureAsset(_InternalStruct):
         return self._future_cls(self, self._session)
 
 
-class _FutureAsset(_BaseFutureAsset):
+class _FutureMixin(_BaseFutureMixin):
     """Represents a single task that is executed on the platform."""
     _future_cls = Future
 
@@ -187,7 +194,7 @@ class _FutureAsset(_BaseFutureAsset):
         return super().future()
 
 
-class _ComputePlanFutureAsset(_BaseFutureAsset):
+class _ComputePlanFutureMixin(_BaseFutureMixin):
     _future_cls = ComputePlanFuture
 
 
@@ -211,7 +218,7 @@ class Permissions(_InternalStruct, _Frozen):
     process: Permission
 
 
-class DataSampleCreated(_InternalStruct, _Frozen):
+class DataSampleCreated(_Asset, _Frozen):
     key: str
     validated: bool
     path: str
@@ -222,7 +229,7 @@ class DataSampleCreated(_InternalStruct, _Frozen):
         }
 
 
-class DataSample(_InternalStruct, _Frozen):
+class DataSample(_Asset, _Frozen):
     key: str
     owner: str
     data_manager_keys: typing.List[str]
@@ -238,7 +245,7 @@ class ObjectiveDataset(_InternalStruct, _Frozen):
         }
 
 
-class Dataset(_InternalStruct, _Frozen):
+class Dataset(_Asset, _Frozen):
     key: str
     name: str
     owner: str
@@ -248,7 +255,7 @@ class Dataset(_InternalStruct, _Frozen):
     test_data_sample_keys: typing.List[str] = None
 
 
-class _Algo(_InternalStruct, _Frozen):
+class _Algo(_Asset, _Frozen):
     key: str
     name: str
     owner: str
@@ -267,7 +274,7 @@ class CompositeAlgo(_Algo):
     pass
 
 
-class Objective(_InternalStruct, _Frozen):
+class Objective(_Asset, _Frozen):
     key: str
     name: str
     owner: str
@@ -318,7 +325,7 @@ class OutModel(_InternalStruct, _Frozen):
         }
 
 
-class Traintuple(_FutureAsset):
+class Traintuple(_Asset, _FutureMixin):
     key: str
     creator: str
     status: str
@@ -337,7 +344,7 @@ class Traintuple(_FutureAsset):
         }
 
 
-class Aggregatetuple(_FutureAsset):
+class Aggregatetuple(_Asset, _FutureMixin):
     key: str
     creator: str
     status: str
@@ -356,12 +363,12 @@ class Aggregatetuple(_FutureAsset):
         }
 
 
-class OutCompositeModel(_InternalStruct, _Frozen):
+class OutCompositeModel(_Asset, _Frozen):
     permissions: Permissions
     out_model: OutModel = None
 
 
-class CompositeTraintuple(_FutureAsset):
+class CompositeTraintuple(_Asset, _FutureMixin):
     key: str
     creator: str
     status: str
@@ -381,7 +388,7 @@ class CompositeTraintuple(_FutureAsset):
         }
 
 
-class Testtuple(_FutureAsset):
+class Testtuple(_Asset, _FutureMixin):
     key: str
     creator: str
     status: str
@@ -397,7 +404,7 @@ class Testtuple(_FutureAsset):
         }
 
 
-class ComputePlan(_ComputePlanFutureAsset):
+class ComputePlan(_Asset, _ComputePlanFutureMixin):
     compute_plan_id: str
     status: str
     traintuple_keys: typing.List[str] = None
@@ -454,7 +461,7 @@ class ComputePlan(_ComputePlanFutureAsset):
         return tuples
 
 
-class Node(_InternalStruct, _Frozen):
+class Node(_Asset, _Frozen):
     id: str
     is_current: bool
 
