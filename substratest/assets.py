@@ -407,10 +407,10 @@ class Testtuple(_Asset, _FutureMixin):
 class ComputePlan(_Asset, _ComputePlanFutureMixin):
     compute_plan_id: str
     status: str
-    traintuple_keys: typing.List[str] = None
-    composite_traintuple_keys: typing.List[str] = None
-    aggregatetuple_keys: typing.List[str] = None
-    testtuple_keys: typing.List[str] = None
+    traintuple_keys: typing.List[str]
+    composite_traintuple_keys: typing.List[str]
+    aggregatetuple_keys: typing.List[str]
+    testtuple_keys: typing.List[str]
     tag: str
 
     def __init__(self, *args, **kwargs):
