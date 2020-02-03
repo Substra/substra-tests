@@ -1,6 +1,7 @@
 import pytest
 import substra
 import substratest as sbt
+from substratest.factory import Permissions
 
 from substratest import assets
 
@@ -231,7 +232,7 @@ def test_compute_plan_aggregate_composite_traintuples(global_execution_env):
 
     # register objectives, datasets, and data samples
     datasets = sessions[0].state.datasets + sessions[1].state.datasets
-    objective = sessions[0].state.objectives[0]
+    objectives = sessions[0].state.objectives[:0] + sessions[1].state.objectives[:0]
 
     # register algos on first node
     spec = factory.create_composite_algo()
@@ -259,6 +260,7 @@ def test_compute_plan_aggregate_composite_traintuples(global_execution_env):
                 composite_algo=composite_algo,
                 dataset=dataset,
                 data_samples=[dataset.train_data_sample_keys[0 + round_]],
+                out_trunk_model_permissions=Permissions(public=False, authorized_ids=[s.node_id for s in sessions]),
                 **kwargs,
             )
             composite_traintuple_specs.append(spec)
@@ -275,7 +277,7 @@ def test_compute_plan_aggregate_composite_traintuples(global_execution_env):
         previous_composite_traintuple_specs = composite_traintuple_specs
 
     # last round: create associated testtuple
-    for composite_traintuple_spec in previous_composite_traintuple_specs:
+    for composite_traintuple_spec, objective in zip(previous_composite_traintuple_specs, objectives):
         cp_spec.add_testtuple(
             objective=objective,
             traintuple_spec=composite_traintuple_spec,
