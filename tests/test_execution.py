@@ -150,6 +150,64 @@ def test_traintuple_execution_failure(global_execution_env):
 
 
 @pytest.mark.slow
+def test_composite_traintuple_execution_failure(global_execution_env):
+    """Invalid composite algo script is causing traintuple failure."""
+    factory, network = global_execution_env
+    session = network.sessions[0].copy()
+
+    dataset = session.state.datasets[0]
+
+    spec = factory.create_composite_algo(py_script=sbt.factory.INVALID_COMPOSITE_ALGO_SCRIPT)
+    algo = session.add_composite_algo(spec)
+
+    spec = factory.create_composite_traintuple(
+        algo=algo,
+        dataset=dataset,
+        data_samples=dataset.train_data_sample_keys,
+    )
+    composite_traintuple = session.add_composite_traintuple(spec).future().wait(raises=False)
+    assert composite_traintuple.status == assets.Status.failed
+    assert composite_traintuple.out_head_model.out_model is None
+    assert composite_traintuple.out_trunk_model.out_model is None
+
+
+@pytest.mark.slow
+def test_aggregatetuple_execution_failure(global_execution_env):
+    """Invalid algo script is causing traintuple failure."""
+    factory, network = global_execution_env
+    session = network.sessions[0].copy()
+
+    dataset = session.state.datasets[0]
+
+    spec = factory.create_composite_algo()
+    composite_algo = session.add_composite_algo(spec)
+
+    spec = factory.create_aggregate_algo(py_script=sbt.factory.INVALID_AGGREGATE_ALGO_SCRIPT)
+    aggregate_algo = session.add_aggregate_algo(spec)
+
+    composite_traintuples = []
+    for i in [0, 1]:
+        spec = factory.create_composite_traintuple(
+            algo=composite_algo,
+            dataset=dataset,
+            data_samples=[dataset.train_data_sample_keys[i]],
+        )
+        composite_traintuples.append(session.add_composite_traintuple(spec))
+
+    spec = factory.create_aggregatetuple(
+        algo=aggregate_algo,
+        traintuples=composite_traintuples,
+        worker=session.node_id,
+    )
+    aggregatetuple = session.add_aggregatetuple(spec).future().wait(raises=False)
+    for composite_traintuple in composite_traintuples:
+        composite_traintuple = session.get_composite_traintuple(composite_traintuple.key)
+        assert composite_traintuple.status == assets.Status.done
+    assert aggregatetuple.status == assets.Status.failed
+    assert aggregatetuple.out_model is None
+
+
+@pytest.mark.slow
 def test_composite_traintuples_execution(global_execution_env):
     """Execution of composite traintuples."""
 
