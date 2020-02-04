@@ -276,3 +276,50 @@ def test_merge_permissions_denied_process(factory, network):
 
         with pytest.raises(substra.exceptions.AuthorizationError):
             session_3.add_testtuple(spec)
+
+
+def test_permissions_denied_head_model_process(network, factory):
+    session_1 = network.sessions[0]
+    session_2 = network.sessions[1]
+
+    # setup data
+
+    datasets = []
+    for session in [session_1, session_2]:
+
+        spec = factory.create_dataset(permissions=Permissions(public=False, authorized_ids=[session.node_id]))
+        dataset = session.add_dataset(spec)
+
+        spec = factory.create_data_sample(
+            test_only=False,
+            datasets=[dataset],
+        )
+        session.add_data_sample(spec)
+
+        datasets.append(session.get_dataset(dataset.key))
+
+    dataset_1, dataset_2 = datasets
+
+    # setup algo
+
+    spec = factory.create_composite_algo()
+    composite_algo = session_1.add_composite_algo(spec)
+
+    # composite traintuples
+
+    spec = factory.create_composite_traintuple(
+        algo=composite_algo,
+        dataset=dataset_1,
+        data_samples=dataset_1.train_data_sample_keys,
+    )
+    composite_traintuple_1 = session_1.add_composite_traintuple(spec)
+
+    spec = factory.create_composite_traintuple(
+        algo=composite_algo,
+        dataset=dataset_2,
+        data_samples=dataset_2.train_data_sample_keys,
+        head_traintuple=composite_traintuple_1,
+        trunk_traintuple=composite_traintuple_1,
+    )
+    with pytest.raises(substra.exceptions.InvalidRequest):
+        session_2.add_composite_traintuple(spec)
