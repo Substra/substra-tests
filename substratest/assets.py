@@ -157,14 +157,21 @@ class _DataclassLoader(abc.ABC):
         mapper = cls.Meta.mapper
         kwargs = {}
         for k, v in d.items():
-            if v is None:
-                continue
-
             attr_name = mapper[k] if k in mapper else _convert(k)
             if attr_name not in cls.__annotations__:
                 continue
             # handle nested structures;
             attr_type = cls.__annotations__[attr_name]
+
+            # handle optional arguments
+
+            if hasattr(attr_type, '__origin__') and attr_type.__origin__ is typing.Union \
+                    and len(attr_type.__args__) == 2 and type(None) in attr_type.__args__:
+                # noqa: E721
+                attr_type = [arg for arg in attr_type.__args__ if arg is not type(None)][0]
+                # attr_type =
+                # [arg for arg in attr_type.__args__ if not isinstance(arg, type(None))][0]
+
             # because typing.List doesn't work the same way as the other types, we have to check
             # if attr_type is a class before using issubclass()
             if isclass(attr_type) and issubclass(attr_type, _DataclassLoader) \
@@ -251,6 +258,8 @@ class Dataset(_Asset, _Frozen):
     owner: str
     objective_key: str
     permissions: Permissions
+    # the JSON data returned by list_dataset doesn't include the following keys at all
+    # they are only included in the result of get_dataset
     train_data_sample_keys: typing.List[str] = None
     test_data_sample_keys: typing.List[str] = None
 
@@ -279,7 +288,7 @@ class Objective(_Asset, _Frozen):
     name: str
     owner: str
     permissions: Permissions
-    test_dataset: ObjectiveDataset = None
+    test_dataset: typing.Optional[ObjectiveDataset]
 
 
 class TesttupleDataset(_InternalStruct, _Frozen):
@@ -335,8 +344,8 @@ class Traintuple(_Asset, _FutureMixin):
     rank: int
     tag: str
     log: str
-    in_models: typing.List[InModel] = None
-    out_model: OutModel = None
+    in_models: typing.Optional[typing.List[InModel]]
+    out_model: typing.Optional[OutModel]
 
     class Meta:
         mapper = {
@@ -355,7 +364,7 @@ class Aggregatetuple(_Asset, _FutureMixin):
     tag: str
     log: str
     in_models: typing.List[InModel]
-    out_model: OutModel = None
+    out_model: typing.Optional[OutModel]
 
     class Meta:
         mapper = {
@@ -365,7 +374,7 @@ class Aggregatetuple(_Asset, _FutureMixin):
 
 class OutCompositeModel(_Asset, _Frozen):
     permissions: Permissions
-    out_model: OutModel = None
+    out_model: typing.Optional[OutModel]
 
 
 class CompositeTraintuple(_Asset, _FutureMixin):
@@ -377,8 +386,8 @@ class CompositeTraintuple(_Asset, _FutureMixin):
     rank: int
     tag: str
     log: str
-    in_head_model: InModel = None
-    in_trunk_model: InModel = None
+    in_head_model: typing.Optional[InModel]
+    in_trunk_model: typing.Optional[InModel]
     out_head_model: OutCompositeModel
     out_trunk_model: OutCompositeModel
 
