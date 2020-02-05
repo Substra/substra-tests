@@ -16,46 +16,66 @@ class _State:
     """
 
     def __init__(self):
-        self.datasets = []
-        self.test_data_samples = []
-        self.train_data_samples = []
-        self.objectives = []
-        self.algos = []
         self.aggregate_algos = []
-        self.composite_algos = []
-        self.traintuples = []
         self.aggregatetuples = []
+        self.algos = []
+        self.composite_algos = []
         self.composite_traintuples = []
-        self.testtuples = []
         self.compute_plans = []
+        self.datasets = []
+        self.objectives = []
+        self.test_data_samples = []
+        self.testtuples = []
+        self.train_data_samples = []
+        self.traintuples = []
 
     def _update_assets(self, asset_list_name, asset):
+        """Replace or insert asset in self.[asset_list_name]"""
         asset_list = getattr(self, asset_list_name)
-        setattr(self, asset_list_name, [
-            asset if asset.key == a.key else a
-            for a in asset_list
-        ])
+        new_asset_list = []
+        found = False
+        for a in asset_list:
+            if asset.key == a.key:
+                found = True
+                new_asset_list.append(asset)
+            else:
+                new_asset_list.append(a)
+        if not found:
+            new_asset_list.append(asset)
+        setattr(self, asset_list_name, new_asset_list)
 
-    def update_dataset(self, dataset):
-        self._update_assets('datasets', dataset)
-
-    def update_traintuple(self, traintuple):
-        self._update_assets('traintuples', traintuple)
-
-    def update_composite_traintuple(self, composite_traintuple):
-        self._update_assets('composite_traintuples', composite_traintuple)
+    def update_aggregate_algo(self, aggregate_algo):
+        self._update_assets('aggregate_algos', aggregate_algo)
 
     def update_aggregatetuple(self, aggregatetuple):
         self._update_assets('aggregatetuples', aggregatetuple)
 
-    def update_testtuple(self, testtuple):
-        self._update_assets('testtuples', testtuple)
+    def update_algo(self, algo):
+        self._update_assets('algos', algo)
+
+    def update_composite_algo(self, composite_algo):
+        self._update_assets('composite_algos', composite_algo)
+
+    def update_composite_traintuple(self, composite_traintuple):
+        self._update_assets('composite_traintuples', composite_traintuple)
 
     def update_compute_plan(self, compute_plan):
         self.compute_plans = [
             compute_plan if cp.compute_plan_id == compute_plan.compute_plan_id else cp
             for cp in self.compute_plans
         ]
+
+    def update_dataset(self, dataset):
+        self._update_assets('datasets', dataset)
+
+    def update_objective(self, objective):
+        self._update_assets('objectives', objective)
+
+    def update_testtuple(self, testtuple):
+        self._update_assets('testtuples', testtuple)
+
+    def update_traintuple(self, traintuple):
+        self._update_assets('traintuples', traintuple)
 
 
 class Session:
@@ -166,7 +186,9 @@ class Session:
 
     def get_algo(self, *args, **kwargs):
         res = self._client.get_algo(*args, **kwargs)
-        return assets.Algo.load(res)
+        algo = assets.Algo.load(res)
+        self.state.update_algo(algo)
+        return algo
 
     def list_algo(self, *args, **kwargs):
         res = self._client.list_algo(*args, **kwargs)
@@ -174,7 +196,9 @@ class Session:
 
     def get_aggregate_algo(self, *args, **kwargs):
         res = self._client.get_aggregate_algo(*args, **kwargs)
-        return assets.AggregateAlgo.load(res)
+        aggregate_algo = assets.AggregateAlgo.load(res)
+        self.state.update_aggregate_algo(aggregate_algo)
+        return aggregate_algo
 
     def list_aggregate_algo(self, *args, **kwargs):
         res = self._client.list_aggregate_algo(*args, **kwargs)
@@ -182,7 +206,9 @@ class Session:
 
     def get_composite_algo(self, *args, **kwargs):
         res = self._client.get_composite_algo(*args, **kwargs)
-        return assets.CompositeAlgo.load(res)
+        composite_algo = assets.CompositeAlgo.load(res)
+        self.state.update_composite_algo(composite_algo)
+        return composite_algo
 
     def list_composite_algo(self, *args, **kwargs):
         res = self._client.list_composite_algo(*args, **kwargs)
@@ -200,7 +226,9 @@ class Session:
 
     def get_objective(self, *args, **kwargs):
         res = self._client.get_objective(*args, **kwargs)
-        return assets.Objective.load(res)
+        objective = assets.Objective.load(res)
+        self.state.update_objective(objective)
+        return objective
 
     def list_objective(self, *args, **kwargs):
         res = self._client.list_objective(*args, **kwargs)
