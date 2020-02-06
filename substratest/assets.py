@@ -363,7 +363,7 @@ class Aggregatetuple(_Asset, _FutureMixin):
 
 
 @dataclasses.dataclass(frozen=True)
-class OutCompositeModel(_DataclassLoader):
+class OutCompositeTrunkModel(_DataclassLoader):
     permissions: Permissions
     out_model: OutModel = None
 
@@ -387,7 +387,7 @@ class CompositeTraintuple(_Asset, _FutureMixin):
     in_head_model: InModel = None
     in_trunk_model: InModel = None
     out_head_model: OutCompositeHeadModel = None
-    out_trunk_model: OutCompositeModel = None
+    out_trunk_model: OutCompositeTrunkModel = None
 
     class Meta:
         mapper = {
