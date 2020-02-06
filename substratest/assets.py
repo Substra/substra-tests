@@ -374,7 +374,7 @@ class Aggregatetuple(_Asset, _FutureMixin):
         }
 
 
-class OutCompositeModel(_Asset):
+class OutCompositeTrunkModel(_InternalStruct):
     permissions: Permissions
     out_model: typing.Optional[OutModel]
 
@@ -396,7 +396,7 @@ class CompositeTraintuple(_Asset, _FutureMixin):
     in_head_model: typing.Optional[InModel]
     in_trunk_model: typing.Optional[InModel]
     out_head_model: OutCompositeHeadModel = None
-    out_trunk_model: OutCompositeModel = None
+    out_trunk_model: OutCompositeTrunkModel = None
 
     class Meta:
         mapper = {
