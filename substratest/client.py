@@ -151,7 +151,7 @@ class Session:
         return compute_plan
 
     def update_compute_plan(self, spec, *args, **kwargs):
-        res = self._client.update_compute_plan(spec.to_dict(), *args, **kwargs)
+        res = self._client.update_compute_plan(spec.compute_plan_id, spec.to_dict(), *args, **kwargs)
         compute_plan = assets.ComputePlan.load(res).attach(self)
         self.state.compute_plans.append(compute_plan)
         return compute_plan

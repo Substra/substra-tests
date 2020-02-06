@@ -87,6 +87,16 @@ def test_compute_plan(global_execution_env):
     assert traintuple_3.dataset.worker == session_1.node_id
     assert testtuple.dataset.worker == session_1.node_id
 
+    # check mapping
+    traintuple_id_1 = traintuple_spec_1.traintuple_id
+    traintuple_id_2 = traintuple_spec_2.traintuple_id
+    traintuple_id_3 = traintuple_spec_3.traintuple_id
+    generated_ids = [traintuple_id_1, traintuple_id_2, traintuple_id_3]
+    rank_0_traintuple_keys = [traintuple_1.key, traintuple_2.key]
+    assert set(generated_ids) == set(cp.id_to_key.keys())
+    assert set(rank_0_traintuple_keys) == set([cp.id_to_key[traintuple_id_1], cp.id_to_key[traintuple_id_2]])
+    assert traintuple_3.key == cp.id_to_key[traintuple_id_3]
+
 
 @pytest.mark.slow
 def test_compute_plan_single_session_success(global_execution_env):

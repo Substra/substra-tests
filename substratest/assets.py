@@ -404,6 +404,7 @@ class ComputePlan(_Asset, _ComputePlanFutureMixin):
     composite_traintuple_keys: typing.List[str]
     aggregatetuple_keys: typing.List[str]
     testtuple_keys: typing.List[str]
+    id_to_key: typing.Dict[str, str]
     tag: str
 
     def __post_init__(self):
