@@ -111,6 +111,8 @@ if __name__ == '__main__':
 """
 
 INVALID_ALGO_SCRIPT = DEFAULT_ALGO_SCRIPT.replace('train', 'naitr')
+INVALID_COMPOSITE_ALGO_SCRIPT = DEFAULT_COMPOSITE_ALGO_SCRIPT.replace('train', 'naitr')
+INVALID_AGGREGATE_ALGO_SCRIPT = DEFAULT_AGGREGATE_ALGO_SCRIPT.replace('aggregate', 'etagergga')
 
 DEFAULT_METRICS_DOCKERFILE = f"""
 FROM substrafoundation/substra-tools:{DEFAULT_SUBSTRATOOLS_VERSION}
