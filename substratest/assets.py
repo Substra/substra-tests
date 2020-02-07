@@ -167,10 +167,7 @@ class _DataclassLoader(abc.ABC):
 
             if hasattr(attr_type, '__origin__') and attr_type.__origin__ is typing.Union \
                     and len(attr_type.__args__) == 2 and type(None) in attr_type.__args__:
-                # noqa: E721
                 attr_type = [arg for arg in attr_type.__args__ if arg is not type(None)][0]
-                # attr_type =
-                # [arg for arg in attr_type.__args__ if not isinstance(arg, type(None))][0]
 
             # because typing.List doesn't work the same way as the other types, we have to check
             # if attr_type is a class before using issubclass()
@@ -205,12 +202,7 @@ class _Asset(_InternalStruct, abc.ABC):
     """
 
 
-class _Frozen:
-    class Config:
-        allow_mutation = False
-
-
-class Permission(_InternalStruct, _Frozen):
+class Permission(_InternalStruct):
     public: bool
     authorized_ids: typing.List[str]
 
@@ -220,12 +212,12 @@ class Permission(_InternalStruct, _Frozen):
         }
 
 
-class Permissions(_InternalStruct, _Frozen):
+class Permissions(_InternalStruct):
     """Permissions structure stored in various asset types."""
     process: Permission
 
 
-class DataSampleCreated(_Asset, _Frozen):
+class DataSampleCreated(_Asset):
     key: str
     validated: bool
     path: str
@@ -236,13 +228,13 @@ class DataSampleCreated(_Asset, _Frozen):
         }
 
 
-class DataSample(_Asset, _Frozen):
+class DataSample(_Asset):
     key: str
     owner: str
     data_manager_keys: typing.List[str]
 
 
-class ObjectiveDataset(_InternalStruct, _Frozen):
+class ObjectiveDataset(_InternalStruct):
     dataset_key: str
     data_sample_keys: typing.List[str]
 
@@ -252,7 +244,7 @@ class ObjectiveDataset(_InternalStruct, _Frozen):
         }
 
 
-class Dataset(_Asset, _Frozen):
+class Dataset(_Asset):
     key: str
     name: str
     owner: str
@@ -264,7 +256,7 @@ class Dataset(_Asset, _Frozen):
     test_data_sample_keys: typing.List[str] = None
 
 
-class _Algo(_Asset, _Frozen):
+class _Algo(_Asset):
     key: str
     name: str
     owner: str
@@ -283,7 +275,7 @@ class CompositeAlgo(_Algo):
     pass
 
 
-class Objective(_Asset, _Frozen):
+class Objective(_Asset):
     key: str
     name: str
     owner: str
@@ -291,7 +283,7 @@ class Objective(_Asset, _Frozen):
     test_dataset: typing.Optional[ObjectiveDataset]
 
 
-class TesttupleDataset(_InternalStruct, _Frozen):
+class TesttupleDataset(_InternalStruct):
     key: str
     perf: float
     keys: typing.List[str]
@@ -303,7 +295,7 @@ class TesttupleDataset(_InternalStruct, _Frozen):
         }
 
 
-class TraintupleDataset(_InternalStruct, _Frozen):
+class TraintupleDataset(_InternalStruct):
     key: str
     keys: typing.List[str]
     worker: str
@@ -314,7 +306,7 @@ class TraintupleDataset(_InternalStruct, _Frozen):
         }
 
 
-class InModel(_InternalStruct, _Frozen):
+class InModel(_InternalStruct):
     key: str
     storage_address: str
 
@@ -324,7 +316,7 @@ class InModel(_InternalStruct, _Frozen):
         }
 
 
-class OutModel(_InternalStruct, _Frozen):
+class OutModel(_InternalStruct):
     key: str
     storage_address: str
 
@@ -372,7 +364,7 @@ class Aggregatetuple(_Asset, _FutureMixin):
         }
 
 
-class OutCompositeModel(_Asset, _Frozen):
+class OutCompositeModel(_Asset):
     permissions: Permissions
     out_model: typing.Optional[OutModel]
 
@@ -470,7 +462,7 @@ class ComputePlan(_Asset, _ComputePlanFutureMixin):
         return tuples
 
 
-class Node(_Asset, _Frozen):
+class Node(_Asset):
     id: str
     is_current: bool
 
