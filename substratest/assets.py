@@ -167,8 +167,8 @@ class _DataclassLoader(abc.ABC):
 
             if hasattr(attr_type, '__origin__') and attr_type.__origin__ is typing.Union \
                     and len(attr_type.__args__) == 2 and type(None) in attr_type.__args__:
-                attr_type = [arg for arg in attr_type.__args__ if arg
-                             is not type(None)][0]  # noqa: E721
+                attr_type = [arg for arg in attr_type.__args__
+                             if arg is not type(None)][0]  # noqa: E721
 
             # because typing.List doesn't work the same way as the other types, we have to check
             # if attr_type is a class before using issubclass()
