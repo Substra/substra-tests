@@ -381,7 +381,7 @@ class OutCompositeTrunkModel(_InternalStruct):
 
 class OutCompositeHeadModel(_InternalStruct):
     permissions: Permissions
-    out_model: OutHeadModel = None
+    out_model: typing.Optional[OutHeadModel]
 
 
 class CompositeTraintuple(_Asset, _FutureMixin):
@@ -395,8 +395,8 @@ class CompositeTraintuple(_Asset, _FutureMixin):
     log: str
     in_head_model: typing.Optional[InModel]
     in_trunk_model: typing.Optional[InModel]
-    out_head_model: OutCompositeHeadModel = None
-    out_trunk_model: OutCompositeTrunkModel = None
+    out_head_model: OutCompositeHeadModel
+    out_trunk_model: OutCompositeTrunkModel
 
     class Meta:
         mapper = {
