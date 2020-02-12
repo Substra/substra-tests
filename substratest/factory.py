@@ -340,12 +340,11 @@ def _get_keys(obj, field='key'):
 
 
 @dataclasses.dataclass
-class ComputePlanSpec(_Spec):
+class _BaseComputePlanSpec(_Spec, abc.ABC):
     traintuples: typing.List[ComputePlanTraintupleSpec]
     composite_traintuples: typing.List[ComputePlanCompositeTraintupleSpec]
     aggregatetuples: typing.List[ComputePlanAggregatetupleSpec]
     testtuples: typing.List[ComputePlanTesttupleSpec]
-    tag: str
 
     def add_traintuple(self, algo, dataset, data_samples, in_models=None, tag=''):
         in_models = in_models or []
@@ -409,6 +408,16 @@ class ComputePlanSpec(_Spec):
         )
         self.testtuples.append(spec)
         return spec
+
+
+@dataclasses.dataclass
+class ComputePlanSpec(_BaseComputePlanSpec):
+    tag: str
+
+
+@dataclasses.dataclass
+class UpdateComputePlanSpec(_BaseComputePlanSpec):
+    compute_plan_id: str
 
 
 class AssetsFactory:
@@ -633,4 +642,13 @@ class AssetsFactory:
             aggregatetuples=[],
             testtuples=[],
             tag=tag,
+        )
+
+    def update_compute_plan(self, compute_plan):
+        return UpdateComputePlanSpec(
+            traintuples=[],
+            composite_traintuples=[],
+            aggregatetuples=[],
+            testtuples=[],
+            compute_plan_id=compute_plan.compute_plan_id,
         )
