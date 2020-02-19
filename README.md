@@ -4,6 +4,8 @@ Substra end-to-end (e2e) tests
 
 # Prerequisites
 
+This project requires python 3.7.
+
 Install tests dependencies:
 
 ```
