@@ -1,4 +1,5 @@
 import os
+import re
 import zipfile
 
 
@@ -21,3 +22,27 @@ def create_archive(tmpdir, *files):
         with open(tmpdir / path, 'w') as f:
             f.write(content)
     return zip_folder(str(tmpdir))
+
+
+def camel_to_snake(name):
+    """Convert camel case to snake case."""
+    s = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', name)
+    return re.sub('([a-z0-9])([A-Z])', r'\1_\2', s).lower()
+
+
+def replace_dict_keys(d, converter):
+    """Replace fields in a dict and return updated dict (recursive).
+
+    Apply converter to each dict field.
+    """
+    assert isinstance(d, dict)
+    new_d = {}
+    for key, value in d.items():
+        if isinstance(value, dict):
+            value = replace_dict_keys(value, converter)
+        elif isinstance(value, list):
+            if all([isinstance(v, dict) for v in value]):
+                value = [replace_dict_keys(v, converter) for v in value]
+
+        new_d[converter(key)] = value
+    return new_d
