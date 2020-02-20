@@ -6,14 +6,14 @@ from substratest.factory import Permissions
 from substratest import assets
 
 
-def test_compute_plan(global_execution_env_copy):
+def test_compute_plan(global_execution_env):
     """Execution of a compute plan containing multiple traintuples:
     - 1 traintuple executed on node 1
     - 1 traintuple executed on node 2
     - 1 traintuple executed on node 1 depending on previous traintuples
     - 1 testtuple executed on node 1 depending on the last traintuple
     """
-    factory, state, network = global_execution_env_copy
+    factory, state, network = global_execution_env
     session_1 = network.sessions[0].copy()
     session_2 = network.sessions[1].copy()
 
@@ -100,7 +100,7 @@ def test_compute_plan(global_execution_env_copy):
 
 
 @pytest.mark.slow
-def test_compute_plan_single_session_success(global_execution_env_copy):
+def test_compute_plan_single_session_success(global_execution_env):
     """A compute plan with 3 traintuples and 3 associated testtuples"""
 
     # Create a compute plan with 3 steps:
@@ -109,7 +109,7 @@ def test_compute_plan_single_session_success(global_execution_env_copy):
     # 2. traintuple + testtuple
     # 3. traintuple + testtuple
 
-    factory, state, network = global_execution_env_copy
+    factory, state, network = global_execution_env
     session = network.sessions[0].copy()
 
     dataset = [d for d in state.datasets if d.owner == session.node_id][0]
@@ -162,13 +162,13 @@ def test_compute_plan_single_session_success(global_execution_env_copy):
 
 
 @pytest.mark.slow
-def test_compute_plan_update(global_execution_env_copy):
+def test_compute_plan_update(global_execution_env):
     """A compute plan with 3 traintuples and 3 associated testtuples.
 
     This is done by sending 3 requests (one create and two updates).
     """
 
-    factory, state, network = global_execution_env_copy
+    factory, state, network = global_execution_env
     session = network.sessions[0].copy()
 
     dataset = [d for d in state.datasets if d.owner == session.node_id][0]
@@ -231,7 +231,7 @@ def test_compute_plan_update(global_execution_env_copy):
 
 
 @pytest.mark.slow
-def test_compute_plan_single_session_failure(global_execution_env_copy):
+def test_compute_plan_single_session_failure(global_execution_env):
     """In a compute plan with 3 traintuples, failing the root traintuple
     should cancel its descendents and the associated testtuples"""
 
@@ -243,7 +243,7 @@ def test_compute_plan_single_session_failure(global_execution_env_copy):
     #
     # Intentionally use an invalid (broken) algo.
 
-    factory, state, network = global_execution_env_copy
+    factory, state, network = global_execution_env
     session = network.sessions[0].copy()
 
     dataset = [d for d in state.datasets if d.owner == session.node_id][0]
@@ -299,11 +299,11 @@ def test_compute_plan_single_session_failure(global_execution_env_copy):
 
 
 @pytest.mark.slow
-def test_compute_plan_aggregate_composite_traintuples(global_execution_env_copy):
+def test_compute_plan_aggregate_composite_traintuples(global_execution_env):
     """
     Compute plan version of the `test_aggregate_composite_traintuples` method from `test_execution.py`
     """
-    factory, state, network = global_execution_env_copy
+    factory, state, network = global_execution_env
     sessions = [s.copy() for s in network.sessions]
 
     aggregate_worker = sessions[0].node_id
@@ -373,8 +373,8 @@ def test_compute_plan_aggregate_composite_traintuples(global_execution_env_copy)
         assert t.status == assets.Status.done
 
 
-def test_compute_plan_circular_dependency_failure(global_execution_env_copy):
-    factory, state, network = global_execution_env_copy
+def test_compute_plan_circular_dependency_failure(global_execution_env):
+    factory, state, network = global_execution_env
     session = network.sessions[0].copy()
 
     dataset = [d for d in state.datasets if d.owner == session.node_id][0]
@@ -406,8 +406,8 @@ def test_compute_plan_circular_dependency_failure(global_execution_env_copy):
 
 
 @pytest.mark.slow
-def test_execution_compute_plan_canceled(global_execution_env_copy):
-    factory, state, network = global_execution_env_copy
+def test_execution_compute_plan_canceled(global_execution_env):
+    factory, state, network = global_execution_env
     session = network.sessions[0].copy()
 
     # XXX A canceled compute plan can be done if the it is canceled while it last tuples
