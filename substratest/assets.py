@@ -133,7 +133,6 @@ _MANUAL_CONVERTION_FIELDS = {
     'authorizedIDs': 'authorized_ids',
     'dataManagerKey': 'dataset_key',
     'hash': 'key',  # TODO is it really needed?
-    'openerHash': 'key',  # TODO is it really needed?
     'pkhash': 'key',
 }
 
@@ -238,16 +237,24 @@ class Objective(_Asset):
 
 
 class TesttupleDataset(_InternalStruct):
-    key: str
+    opener_hash: str
     perf: float
     keys: typing.List[str]
     worker: str
 
+    @property
+    def key(self):
+        return self.opener_hash
+
 
 class TraintupleDataset(_InternalStruct):
-    key: str
+    opener_hash: str
     keys: typing.List[str]
     worker: str
+
+    @property
+    def key(self):
+        return self.opener_hash
 
 
 class InModel(_InternalStruct):
