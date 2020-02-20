@@ -16,7 +16,7 @@ def test_tuples_execution_on_same_node(global_execution_env):
     session = network.sessions[0].copy()
 
     dataset = [d for d in state.datasets if d.owner == session.node_id][0]
-    objective = [d for d in state.objectives if d.owner == session.node_id][0]
+    objective = [o for o in state.objectives if o.owner == session.node_id][0]
 
     spec = factory.create_algo()
     algo = session.add_algo(spec)
@@ -105,7 +105,7 @@ def test_tuples_execution_on_different_nodes(global_execution_env):
     session_1 = network.sessions[0].copy()
     session_2 = network.sessions[1].copy()
 
-    objective_1 = [d for d in state.objectives if d.owner == session_1.node_id][0]
+    objective_1 = [o for o in state.objectives if o.owner == session_1.node_id][0]
     dataset_2 = [d for d in state.datasets if d.owner == session_2.node_id][0]
 
     spec = factory.create_algo()
@@ -216,7 +216,7 @@ def test_composite_traintuples_execution(global_execution_env):
     session = network.sessions[0].copy()
 
     dataset = [d for d in state.datasets if d.owner == session.node_id][0]
-    objective = [d for d in state.objectives if d.owner == session.node_id][0]
+    objective = [o for o in state.objectives if o.owner == session.node_id][0]
 
     spec = factory.create_composite_algo()
     algo = session.add_composite_algo(spec)
@@ -336,8 +336,8 @@ def test_aggregate_composite_traintuples(global_execution_env):
 
     datasets = [d for d in state.datasets if d.owner == sessions[0].node_id] + \
                [d for d in state.datasets if d.owner == sessions[1].node_id]
-    objectives = [d for d in state.objectives if d.owner == sessions[0].node_id][:0] + \
-                 [d for d in state.objectives if d.owner == sessions[1].node_id][:0]
+    objectives = [o for o in state.objectives if o.owner == sessions[0].node_id][:0] + \
+                 [o for o in state.objectives if o.owner == sessions[1].node_id][:0]
 
     # register algos on first node
     spec = factory.create_composite_algo()

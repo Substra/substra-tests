@@ -312,8 +312,8 @@ def test_compute_plan_aggregate_composite_traintuples(global_execution_env):
     # register objectives, datasets, and data samples
     datasets = [d for d in state.datasets if d.owner == sessions[0].node_id] + \
                [d for d in state.datasets if d.owner == sessions[1].node_id]
-    objectives = [d for d in state.objectives if d.owner == sessions[0].node_id][:0] + \
-               [d for d in state.objectives if d.owner == sessions[1].node_id][:0]
+    objectives = [o for o in state.objectives if o.owner == sessions[0].node_id][:0] + \
+                 [o for o in state.objectives if o.owner == sessions[1].node_id][:0]
 
     # register algos on first node
     spec = factory.create_composite_algo()
