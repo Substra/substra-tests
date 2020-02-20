@@ -6,21 +6,22 @@ from substratest.factory import Permissions
 from substratest import assets
 
 
-def test_compute_plan(global_execution_env):
+def test_compute_plan(global_execution_env_copy):
     """Execution of a compute plan containing multiple traintuples:
     - 1 traintuple executed on node 1
     - 1 traintuple executed on node 2
     - 1 traintuple executed on node 1 depending on previous traintuples
     - 1 testtuple executed on node 1 depending on the last traintuple
     """
-    factory, network = global_execution_env
+    factory, state, network = global_execution_env_copy
     session_1 = network.sessions[0].copy()
     session_2 = network.sessions[1].copy()
 
-    dataset_1 = session_1.state.datasets[0]
-    dataset_2 = session_2.state.datasets[0]
+    dataset_1 = [d for d in state.datasets if d.owner == session_1.node_id][0]
 
-    objective_1 = session_1.state.objectives[0]
+    dataset_2 = [d for d in state.datasets if d.owner == session_2.node_id][0]
+
+    objective_1 = [o for o in state.objectives if o.owner == session_1.node_id][0]
 
     spec = factory.create_algo()
     algo_2 = session_2.add_algo(spec)

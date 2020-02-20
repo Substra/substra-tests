@@ -9,7 +9,7 @@ from . import assets
 DATASET_DOWNLOAD_FILENAME = 'opener.py'
 
 
-class _State:
+class State:
     """Session state.
 
     Represents all the assets that have been added during the life of the session.
@@ -68,7 +68,7 @@ class Session:
     def __init__(self, node_name, node_id, address, user, password):
         super().__init__()
         # session added/modified assets during the session lifetime
-        self.state = _State()
+        self.state = State()
 
         # node / client
         self.node_id = node_id
