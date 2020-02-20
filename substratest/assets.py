@@ -132,7 +132,6 @@ class _ComputePlanFutureMixin(_BaseFutureMixin):
 _MANUAL_CONVERTION_FIELDS = {
     'authorizedIDs': 'authorized_ids',
     'dataManagerKey': 'dataset_key',
-    'hash': 'key',  # TODO is it really needed?
     'pkhash': 'key',
 }
 
@@ -258,17 +257,17 @@ class TraintupleDataset(_InternalStruct):
 
 
 class InModel(_InternalStruct):
-    key: str
+    hash_: str = pydantic.Field(..., alias='hash')
     storage_address: str
 
 
 class OutModel(_InternalStruct):
-    key: str
+    hash_: str = pydantic.Field(..., alias='hash')
     storage_address: str
 
 
 class OutHeadModel(_InternalStruct):
-    key: str
+    hash_: str = pydantic.Field(..., alias='hash')
 
 
 class Traintuple(_Asset, _FutureMixin):
