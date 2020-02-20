@@ -18,7 +18,6 @@ def test_compute_plan(global_execution_env_copy):
     session_2 = network.sessions[1].copy()
 
     dataset_1 = [d for d in state.datasets if d.owner == session_1.node_id][0]
-
     dataset_2 = [d for d in state.datasets if d.owner == session_2.node_id][0]
 
     objective_1 = [o for o in state.objectives if o.owner == session_1.node_id][0]
@@ -101,7 +100,7 @@ def test_compute_plan(global_execution_env_copy):
 
 
 @pytest.mark.slow
-def test_compute_plan_single_session_success(global_execution_env):
+def test_compute_plan_single_session_success(global_execution_env_copy):
     """A compute plan with 3 traintuples and 3 associated testtuples"""
 
     # Create a compute plan with 3 steps:
@@ -110,12 +109,12 @@ def test_compute_plan_single_session_success(global_execution_env):
     # 2. traintuple + testtuple
     # 3. traintuple + testtuple
 
-    factory, network = global_execution_env
+    factory, state, network = global_execution_env_copy
     session = network.sessions[0].copy()
 
-    dataset = session.state.datasets[0]
+    dataset = [d for d in state.datasets if d.owner == session.node_id][0]
     data_sample_1, data_sample_2, data_sample_3, _ = dataset.train_data_sample_keys
-    objective = session.state.objectives[0]
+    objective = [o for o in state.objectives if o.owner == session.node_id][0]
 
     spec = factory.create_algo()
     algo = session.add_algo(spec)
@@ -163,18 +162,18 @@ def test_compute_plan_single_session_success(global_execution_env):
 
 
 @pytest.mark.slow
-def test_compute_plan_update(global_execution_env):
+def test_compute_plan_update(global_execution_env_copy):
     """A compute plan with 3 traintuples and 3 associated testtuples.
 
     This is done by sending 3 requests (one create and two updates).
     """
 
-    factory, network = global_execution_env
+    factory, state, network = global_execution_env_copy
     session = network.sessions[0].copy()
 
-    dataset = session.state.datasets[0]
+    dataset = [d for d in state.datasets if d.owner == session.node_id][0]
     data_sample_1, data_sample_2, data_sample_3, _ = dataset.train_data_sample_keys
-    objective = session.state.objectives[0]
+    objective = [o for o in state.objectives if o.owner == session.node_id][0]
 
     spec = factory.create_algo()
     algo = session.add_algo(spec)
@@ -232,7 +231,7 @@ def test_compute_plan_update(global_execution_env):
 
 
 @pytest.mark.slow
-def test_compute_plan_single_session_failure(global_execution_env):
+def test_compute_plan_single_session_failure(global_execution_env_copy):
     """In a compute plan with 3 traintuples, failing the root traintuple
     should cancel its descendents and the associated testtuples"""
 
@@ -244,12 +243,12 @@ def test_compute_plan_single_session_failure(global_execution_env):
     #
     # Intentionally use an invalid (broken) algo.
 
-    factory, network = global_execution_env
+    factory, state, network = global_execution_env_copy
     session = network.sessions[0].copy()
 
-    dataset = session.state.datasets[0]
+    dataset = [d for d in state.datasets if d.owner == session.node_id][0]
     data_sample_1, data_sample_2, data_sample_3, _ = dataset.train_data_sample_keys
-    objective = session.state.objectives[0]
+    objective = [o for o in state.objectives if o.owner == session.node_id][0]
 
     spec = factory.create_algo(py_script=sbt.factory.INVALID_ALGO_SCRIPT)
     algo = session.add_algo(spec)
@@ -300,19 +299,21 @@ def test_compute_plan_single_session_failure(global_execution_env):
 
 
 @pytest.mark.slow
-def test_compute_plan_aggregate_composite_traintuples(global_execution_env):
+def test_compute_plan_aggregate_composite_traintuples(global_execution_env_copy):
     """
     Compute plan version of the `test_aggregate_composite_traintuples` method from `test_execution.py`
     """
-    factory, network = global_execution_env
+    factory, state, network = global_execution_env_copy
     sessions = [s.copy() for s in network.sessions]
 
     aggregate_worker = sessions[0].node_id
     number_of_rounds = 2
 
     # register objectives, datasets, and data samples
-    datasets = sessions[0].state.datasets + sessions[1].state.datasets
-    objectives = sessions[0].state.objectives[:0] + sessions[1].state.objectives[:0]
+    datasets = [d for d in state.datasets if d.owner == sessions[0].node_id] + \
+               [d for d in state.datasets if d.owner == sessions[1].node_id]
+    objectives = [d for d in state.objectives if d.owner == sessions[0].node_id][:0] + \
+               [d for d in state.objectives if d.owner == sessions[1].node_id][:0]
 
     # register algos on first node
     spec = factory.create_composite_algo()
@@ -372,11 +373,11 @@ def test_compute_plan_aggregate_composite_traintuples(global_execution_env):
         assert t.status == assets.Status.done
 
 
-def test_compute_plan_circular_dependency_failure(global_execution_env):
-    factory, network = global_execution_env
+def test_compute_plan_circular_dependency_failure(global_execution_env_copy):
+    factory, state, network = global_execution_env_copy
     session = network.sessions[0].copy()
 
-    dataset = session.state.datasets[0]
+    dataset = [d for d in state.datasets if d.owner == session.node_id][0]
 
     spec = factory.create_algo()
     algo = session.add_algo(spec)
@@ -405,8 +406,8 @@ def test_compute_plan_circular_dependency_failure(global_execution_env):
 
 
 @pytest.mark.slow
-def test_execution_compute_plan_canceled(global_execution_env):
-    factory, network = global_execution_env
+def test_execution_compute_plan_canceled(global_execution_env_copy):
+    factory, state, network = global_execution_env_copy
     session = network.sessions[0].copy()
 
     # XXX A canceled compute plan can be done if the it is canceled while it last tuples
@@ -416,7 +417,7 @@ def test_execution_compute_plan_canceled(global_execution_env):
     #     compute plan with a large amount of tuples.
     nb_traintuples = 32
 
-    dataset = session.state.datasets[0]
+    dataset = [d for d in state.datasets if d.owner == session.node_id][0]
     data_sample_key = dataset.train_data_sample_keys[0]
 
     spec = factory.create_algo()
