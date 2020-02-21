@@ -1,13 +1,11 @@
 import abc
 import enum
-import re
 import time
 import typing
-from inspect import isclass
 
 import pydantic
 
-from . import errors, cfg
+from . import errors, cfg, utils
 
 
 class BaseFuture(abc.ABC):
@@ -131,69 +129,26 @@ class _ComputePlanFutureMixin(_BaseFutureMixin):
     _future_cls = ComputePlanFuture
 
 
-def _convert(name):
-    """Convert camel case to snake case."""
-    s = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', name)
-    return re.sub('([a-z0-9])([A-Z])', r'\1_\2', s).lower()
+_MANUAL_CONVERTION_FIELDS = {
+    'authorizedIDs': 'authorized_ids',
+    'dataManagerKey': 'dataset_key',
+    'pkhash': 'key',
+}
 
 
-class _DataclassLoader(abc.ABC):
-    """Base model structure defining assets.
+def convert_asset_field_names(name):
+    """Converts asset camel case fields to snake case fields.
 
-    Provides a load method to create the object from a dictionary.
-    Converts automatically camel case fields to snake case fields and provides a mapper
-    to define custom fields mapping.
+    Special cases are handled through a global dict variable.
     """
-
-    class Meta:
-        mapper = {}
-
-    @classmethod
-    def load(cls, d):
-        """Create asset from dictionary."""
-        if isinstance(d, cls):
-            return d
-
-        mapper = cls.Meta.mapper
-        kwargs = {}
-        for k, v in d.items():
-            attr_name = mapper[k] if k in mapper else _convert(k)
-            if attr_name not in cls.__annotations__:
-                continue
-            # handle nested structures;
-            attr_type = cls.__annotations__[attr_name]
-
-            # handle optional arguments
-
-            if hasattr(attr_type, '__origin__') and attr_type.__origin__ is typing.Union \
-                    and len(attr_type.__args__) == 2 and type(None) in attr_type.__args__:
-                attr_type = [arg for arg in attr_type.__args__
-                             if arg is not type(None)][0]  # noqa: E721
-
-            # because typing.List doesn't work the same way as the other types, we have to check
-            # if attr_type is a class before using issubclass()
-            if isclass(attr_type) and issubclass(attr_type, _DataclassLoader) \
-                    and isinstance(v, dict):
-                v = attr_type.load(v)
-
-            # handle list of internal structures;
-            elif hasattr(attr_type, '__origin__') and attr_type.__origin__ is list \
-                    and isinstance(v, list):
-                list_value_type = attr_type.__args__
-                first_value_type = list_value_type[0]
-                if issubclass(first_value_type, _DataclassLoader):
-                    v = [first_value_type.load(e) for e in v]
-
-            kwargs[attr_name] = v
-
-        try:
-            return cls(**kwargs)
-        except TypeError as e:
-            raise errors.TError(f"cannot parse asset `{d}`") from e
+    # XXX using a mapper for converting specific is not very flexible as it will be
+    #     applied to all fields from all assets.
+    mapper = _MANUAL_CONVERTION_FIELDS
+    return mapper[name] if name in mapper else utils.camel_to_snake(name)
 
 
-class _InternalStruct(pydantic.BaseModel, _DataclassLoader, abc.ABC):
-    """Internal nested structure"""
+class _InternalStruct(pydantic.BaseModel, abc.ABC):
+    """Internal nested structure."""
 
 
 class _Asset(_InternalStruct, abc.ABC):
@@ -202,15 +157,21 @@ class _Asset(_InternalStruct, abc.ABC):
     Convert a dict with camel case fields to a Dataclass.
     """
 
+    @classmethod
+    def load(cls, d):
+        """Create asset from dictionary."""
+        # TODO we could use the pydantic alias generator feature to handle the case
+        # https://pydantic-docs.helpmanual.io/usage/model_config/#alias-generator
+        kwargs = utils.replace_dict_keys(d, convert_asset_field_names)
+        try:
+            return cls(**kwargs)
+        except TypeError as e:
+            raise errors.TError(f"cannot parse asset `{d}`") from e
+
 
 class Permission(_InternalStruct):
     public: bool
     authorized_ids: typing.List[str]
-
-    class Meta:
-        mapper = {
-            'authorizedIDs': 'authorized_ids',
-        }
 
 
 class Permissions(_InternalStruct):
@@ -223,11 +184,6 @@ class DataSampleCreated(_Asset):
     validated: bool
     path: str
 
-    class Meta:
-        mapper = {
-            'pkhash': 'key',
-        }
-
 
 class DataSample(_Asset):
     key: str
@@ -238,11 +194,6 @@ class DataSample(_Asset):
 class ObjectiveDataset(_InternalStruct):
     dataset_key: str
     data_sample_keys: typing.List[str]
-
-    class Meta:
-        mapper = {
-            'dataManagerKey': 'dataset_key',
-        }
 
 
 class Dataset(_Asset):
@@ -285,55 +236,38 @@ class Objective(_Asset):
 
 
 class TesttupleDataset(_InternalStruct):
-    key: str
+    opener_hash: str
     perf: float
     keys: typing.List[str]
     worker: str
 
-    class Meta:
-        mapper = {
-            'openerHash': 'key',
-        }
+    @property
+    def key(self):
+        return self.opener_hash
 
 
 class TraintupleDataset(_InternalStruct):
-    key: str
+    opener_hash: str
     keys: typing.List[str]
     worker: str
 
-    class Meta:
-        mapper = {
-            'openerHash': 'key',
-        }
+    @property
+    def key(self):
+        return self.opener_hash
 
 
 class InModel(_InternalStruct):
-    key: str
+    hash_: str = pydantic.Field(..., alias='hash')
     storage_address: str
-
-    class Meta:
-        mapper = {
-            'hash': 'key',
-        }
 
 
 class OutModel(_InternalStruct):
-    key: str
+    hash_: str = pydantic.Field(..., alias='hash')
     storage_address: str
-
-    class Meta:
-        mapper = {
-            'hash': 'key',
-        }
 
 
 class OutHeadModel(_InternalStruct):
-    key: str
-
-    class Meta:
-        mapper = {
-            'hash': 'key',
-        }
+    hash_: str = pydantic.Field(..., alias='hash')
 
 
 class Traintuple(_Asset, _FutureMixin):
@@ -349,11 +283,6 @@ class Traintuple(_Asset, _FutureMixin):
     in_models: typing.Optional[typing.List[InModel]]
     out_model: typing.Optional[OutModel]
 
-    class Meta:
-        mapper = {
-            'pkhash': 'key',
-        }
-
 
 class Aggregatetuple(_Asset, _FutureMixin):
     key: str
@@ -367,11 +296,6 @@ class Aggregatetuple(_Asset, _FutureMixin):
     log: str
     in_models: typing.List[InModel]
     out_model: typing.Optional[OutModel]
-
-    class Meta:
-        mapper = {
-            'pkhash': 'key',
-        }
 
 
 class OutCompositeTrunkModel(_InternalStruct):
@@ -398,11 +322,6 @@ class CompositeTraintuple(_Asset, _FutureMixin):
     out_head_model: OutCompositeHeadModel
     out_trunk_model: OutCompositeTrunkModel
 
-    class Meta:
-        mapper = {
-            'pkhash': 'key',
-        }
-
 
 class Testtuple(_Asset, _FutureMixin):
     key: str
@@ -413,11 +332,6 @@ class Testtuple(_Asset, _FutureMixin):
     rank: int
     tag: str
     log: str
-
-    class Meta:
-        mapper = {
-            'pkhash': 'key',
-        }
 
 
 class ComputePlan(_Asset, _ComputePlanFutureMixin):
