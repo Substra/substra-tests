@@ -14,8 +14,8 @@ def test_compute_plan(global_execution_env):
     - 1 testtuple executed on node 1 depending on the last traintuple
     """
     factory, state, network = global_execution_env
-    session_1 = network.sessions[0].copy()
-    session_2 = network.sessions[1].copy()
+    session_1 = network.sessions[0]
+    session_2 = network.sessions[1]
 
     dataset_1 = [d for d in state.datasets if d.owner == session_1.node_id][0]
     dataset_2 = [d for d in state.datasets if d.owner == session_2.node_id][0]
@@ -110,7 +110,7 @@ def test_compute_plan_single_session_success(global_execution_env):
     # 3. traintuple + testtuple
 
     factory, state, network = global_execution_env
-    session = network.sessions[0].copy()
+    session = network.sessions[0]
 
     dataset = [d for d in state.datasets if d.owner == session.node_id][0]
     data_sample_1, data_sample_2, data_sample_3, _ = dataset.train_data_sample_keys
@@ -169,7 +169,7 @@ def test_compute_plan_update(global_execution_env):
     """
 
     factory, state, network = global_execution_env
-    session = network.sessions[0].copy()
+    session = network.sessions[0]
 
     dataset = [d for d in state.datasets if d.owner == session.node_id][0]
     data_sample_1, data_sample_2, data_sample_3, _ = dataset.train_data_sample_keys
@@ -244,7 +244,7 @@ def test_compute_plan_single_session_failure(global_execution_env):
     # Intentionally use an invalid (broken) algo.
 
     factory, state, network = global_execution_env
-    session = network.sessions[0].copy()
+    session = network.sessions[0]
 
     dataset = [d for d in state.datasets if d.owner == session.node_id][0]
     data_sample_1, data_sample_2, data_sample_3, _ = dataset.train_data_sample_keys
@@ -304,16 +304,14 @@ def test_compute_plan_aggregate_composite_traintuples(global_execution_env):
     Compute plan version of the `test_aggregate_composite_traintuples` method from `test_execution.py`
     """
     factory, state, network = global_execution_env
-    sessions = [s.copy() for s in network.sessions]
+    sessions = network.sessions
 
     aggregate_worker = sessions[0].node_id
     number_of_rounds = 2
 
     # register objectives, datasets, and data samples
-    datasets = [d for d in state.datasets if d.owner == sessions[0].node_id] + \
-               [d for d in state.datasets if d.owner == sessions[1].node_id]
-    objectives = [o for o in state.objectives if o.owner == sessions[0].node_id][:0] + \
-                 [o for o in state.objectives if o.owner == sessions[1].node_id][:0]
+    datasets = state.datasets
+    objectives = state.objectives
 
     # register algos on first node
     spec = factory.create_composite_algo()
@@ -375,7 +373,7 @@ def test_compute_plan_aggregate_composite_traintuples(global_execution_env):
 
 def test_compute_plan_circular_dependency_failure(global_execution_env):
     factory, state, network = global_execution_env
-    session = network.sessions[0].copy()
+    session = network.sessions[0]
 
     dataset = [d for d in state.datasets if d.owner == session.node_id][0]
 
@@ -408,7 +406,7 @@ def test_compute_plan_circular_dependency_failure(global_execution_env):
 @pytest.mark.slow
 def test_execution_compute_plan_canceled(global_execution_env):
     factory, state, network = global_execution_env
-    session = network.sessions[0].copy()
+    session = network.sessions[0]
 
     # XXX A canceled compute plan can be done if the it is canceled while it last tuples
     #     are executing on the workers. The compute plan status will in this case change

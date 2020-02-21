@@ -1,61 +1,11 @@
 import os
 import tempfile
-import copy
 
 import substra
 
 from . import assets
 
 DATASET_DOWNLOAD_FILENAME = 'opener.py'
-
-
-class State:
-    """Session state.
-
-    Represents all the assets that have been added during the life of the session.
-    """
-
-    def __init__(self):
-        self.datasets = []
-        self.test_data_samples = []
-        self.train_data_samples = []
-        self.objectives = []
-        self.algos = []
-        self.aggregate_algos = []
-        self.composite_algos = []
-        self.traintuples = []
-        self.aggregatetuples = []
-        self.composite_traintuples = []
-        self.testtuples = []
-        self.compute_plans = []
-
-    def _update_assets(self, asset_list_name, asset):
-        asset_list = getattr(self, asset_list_name)
-        setattr(self, asset_list_name, [
-            asset if asset.key == a.key else a
-            for a in asset_list
-        ])
-
-    def update_dataset(self, dataset):
-        self._update_assets('datasets', dataset)
-
-    def update_traintuple(self, traintuple):
-        self._update_assets('traintuples', traintuple)
-
-    def update_composite_traintuple(self, composite_traintuple):
-        self._update_assets('composite_traintuples', composite_traintuple)
-
-    def update_aggregatetuple(self, aggregatetuple):
-        self._update_assets('aggregatetuples', aggregatetuple)
-
-    def update_testtuple(self, testtuple):
-        self._update_assets('testtuples', testtuple)
-
-    def update_compute_plan(self, compute_plan):
-        self.compute_plans = [
-            compute_plan if cp.compute_plan_id == compute_plan.compute_plan_id else cp
-            for cp in self.compute_plans
-        ]
 
 
 class Session:
@@ -65,95 +15,78 @@ class Session:
     Parses responses from server to return Asset instances.
     """
 
+    # The Session object still uses the self.state attribute. But it is still required for the
+    # add_asset methods. Question is: how to replace it in these methods?
+    # Ideas:
+    # Move these methods to the State object?
+    # Add directly self.assets in the __init__? Absolutely not what we want.
+
     def __init__(self, node_name, node_id, address, user, password):
         super().__init__()
-        # session added/modified assets during the session lifetime
-        self.state = State()
 
-        # node / client
         self.node_id = node_id
         self._client = substra.Client()
         self._client.add_profile(node_name, user, password, address, '0.0')
         self._client.login()
 
-    def copy(self):
-        return copy.deepcopy(self)
-
     def add_data_sample(self, spec, *args, **kwargs):
         res = self._client.add_data_sample(spec.to_dict(), *args, **kwargs)
         data_sample = assets.DataSampleCreated.load(res)
-
-        if spec.test_only:
-            self.state.test_data_samples.append(data_sample)
-        else:
-            self.state.train_data_samples.append(data_sample)
-
         return data_sample
 
     def add_dataset(self, spec, *args, **kwargs):
         res = self._client.add_dataset(spec.to_dict(), *args, **kwargs)
         dataset = assets.Dataset.load(res)
-        self.state.datasets.append(dataset)
         return dataset
 
     def add_objective(self, spec, *args, **kwargs):
         res = self._client.add_objective(spec.to_dict(), *args, **kwargs)
         objective = assets.Objective.load(res)
-        self.state.objectives.append(objective)
         return objective
 
     def add_algo(self, spec, *args, **kwargs):
         res = self._client.add_algo(spec.to_dict(), *args, **kwargs)
         algo = assets.Algo.load(res)
-        self.state.algos.append(algo)
         return algo
 
     def add_aggregate_algo(self, spec, *args, **kwargs):
         res = self._client.add_aggregate_algo(spec.to_dict(), *args, **kwargs)
         aggregate_algo = assets.AggregateAlgo.load(res)
-        self.state.aggregate_algos.append(aggregate_algo)
         return aggregate_algo
 
     def add_composite_algo(self, spec, *args, **kwargs):
         res = self._client.add_composite_algo(spec.to_dict(), *args, **kwargs)
         composite_algo = assets.CompositeAlgo.load(res)
-        self.state.composite_algos.append(composite_algo)
         return composite_algo
 
     def add_traintuple(self, spec, *args, **kwargs):
         res = self._client.add_traintuple(spec.to_dict(), *args, **kwargs)
         traintuple = assets.Traintuple.load(res).attach(self)
-        self.state.traintuples.append(traintuple)
         return traintuple
 
     def add_aggregatetuple(self, spec, *args, **kwargs):
         res = self._client.add_aggregatetuple(spec.to_dict(), *args, **kwargs)
         aggregatetuple = assets.Aggregatetuple.load(res).attach(self)
-        self.state.aggregatetuples.append(aggregatetuple)
         return aggregatetuple
 
     def add_composite_traintuple(self, spec, *args, **kwargs):
         res = self._client.add_composite_traintuple(spec.to_dict(), *args, **kwargs)
         composite_traintuple = assets.CompositeTraintuple.load(res).attach(self)
-        self.state.composite_traintuples.append(composite_traintuple)
         return composite_traintuple
 
     def add_testtuple(self, spec, *args, **kwargs):
         res = self._client.add_testtuple(spec.to_dict(), *args, **kwargs)
         testtuple = assets.Testtuple.load(res).attach(self)
-        self.state.testtuples.append(testtuple)
         return testtuple
 
     def add_compute_plan(self, spec, *args, **kwargs):
         res = self._client.add_compute_plan(spec.to_dict(), *args, **kwargs)
         compute_plan = assets.ComputePlan.load(res).attach(self)
-        self.state.compute_plans.append(compute_plan)
         return compute_plan
 
     def update_compute_plan(self, spec, *args, **kwargs):
         res = self._client.update_compute_plan(spec.compute_plan_id, spec.to_dict(), *args, **kwargs)
         compute_plan = assets.ComputePlan.load(res).attach(self)
-        self.state.update_compute_plan(compute_plan)
         return compute_plan
 
     def list_compute_plan(self, *args, **kwargs):
@@ -163,7 +96,6 @@ class Session:
     def get_compute_plan(self, *args, **kwargs):
         res = self._client.get_compute_plan(*args, **kwargs)
         compute_plan = assets.ComputePlan.load(res).attach(self)
-        self.state.update_compute_plan(compute_plan)
         return compute_plan
 
     def list_data_sample(self, *args, **kwargs):
@@ -197,7 +129,6 @@ class Session:
     def get_dataset(self, *args, **kwargs):
         res = self._client.get_dataset(*args, **kwargs)
         dataset = assets.Dataset.load(res)
-        self.state.update_dataset(dataset)
         return dataset
 
     def list_dataset(self, *args, **kwargs):
@@ -215,7 +146,6 @@ class Session:
     def get_traintuple(self, *args, **kwargs):
         res = self._client.get_traintuple(*args, **kwargs)
         traintuple = assets.Traintuple.load(res).attach(self)
-        self.state.update_traintuple(traintuple)
         return traintuple
 
     def list_traintuple(self, *args, **kwargs):
@@ -225,7 +155,6 @@ class Session:
     def get_aggregatetuple(self, *args, **kwargs):
         res = self._client.get_aggregatetuple(*args, **kwargs)
         aggregatetuple = assets.Aggregatetuple.load(res).attach(self)
-        self.state.update_aggregatetuple(aggregatetuple)
         return aggregatetuple
 
     def list_aggregatetuple(self, *args, **kwargs):
@@ -235,7 +164,6 @@ class Session:
     def get_composite_traintuple(self, *args, **kwargs):
         res = self._client.get_composite_traintuple(*args, **kwargs)
         composite_traintuple = assets.CompositeTraintuple.load(res).attach(self)
-        self.state.update_composite_traintuple(composite_traintuple)
         return composite_traintuple
 
     def list_composite_traintuple(self, *args, **kwargs):
@@ -245,7 +173,6 @@ class Session:
     def get_testtuple(self, *args, **kwargs):
         res = self._client.get_testtuple(*args, **kwargs)
         testtuple = assets.Testtuple.load(res).attach(self)
-        self.state.update_testtuple(testtuple)
         return testtuple
 
     def list_testtuple(self, *args, **kwargs):
@@ -269,7 +196,6 @@ class Session:
     def cancel_compute_plan(self, *args, **kwargs):
         res = self._client.cancel_compute_plan(*args, **kwargs)
         compute_plan = assets.ComputePlan.load(res).attach(self)
-        self.state.update_compute_plan(compute_plan)
         return compute_plan
 
     def link_dataset_with_objective(self, dataset, objective):

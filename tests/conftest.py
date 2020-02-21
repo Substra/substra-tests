@@ -5,7 +5,6 @@ import uuid
 import pytest
 
 import substratest as sbt
-from substratest.client import State
 from . import settings
 
 
@@ -29,6 +28,28 @@ def pytest_configure(config):
     config.addinivalue_line(
         "markers", "slow: marks tests as slow (deselect with '-m \"not slow\"')",
     )
+
+
+# TODO replace by dataclass? // object Pydantic?
+class _State:
+    """Session state.
+    # TODO edit description
+    Represents all the assets that have been added during the life of the session.
+    """
+
+    def __init__(self):  # TODO remove unused attributes
+        self.datasets = []
+        self.test_data_samples = []
+        self.train_data_samples = []
+        self.objectives = []
+        # self.algos = []
+        # self.aggregate_algos = []
+        # self.composite_algos = []
+        # self.traintuples = []
+        # self.aggregatetuples = []
+        # self.composite_traintuples = []
+        # self.testtuples = []
+        # self.compute_plans = []
 
 
 @dataclasses.dataclass
@@ -93,7 +114,7 @@ def global_execution_env():
     Returns a tuple (factory, state, Network)
     """
     n = _get_network()
-    s = State()
+    s = _State()
     factory_name = f"{TESTS_RUN_UUID}_global"
 
     with sbt.AssetsFactory(name=factory_name) as f:
