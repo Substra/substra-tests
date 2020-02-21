@@ -3,6 +3,7 @@ import typing
 import uuid
 
 import pytest
+import pydantic
 
 import substratest as sbt
 from . import settings
@@ -28,6 +29,17 @@ def pytest_configure(config):
     config.addinivalue_line(
         "markers", "slow: marks tests as slow (deselect with '-m \"not slow\"')",
     )
+
+
+class _Assets(pydantic.BaseModel):
+    """Assets.
+
+    Represents all the assets that have been added before the tests.
+    """
+    datasets: typing.List[sbt.client.assets.Dataset] = []
+    test_data_samples: typing.List[sbt.client.assets.DataSampleCreated] = []
+    train_data_samples: typing.List[sbt.client.assets.DataSampleCreated] = []
+    objectives: typing.List[sbt.client.assets.Objective] = []
 
 
 @dataclasses.dataclass
@@ -89,10 +101,12 @@ def global_execution_env():
     Network must started outside of the tests environment and the network is kept
     alive while running all tests.
 
-    Returns a tuple (factory, Network)
+    Returns a tuple (factory, assets, Network).
     """
     n = _get_network()
+    assets = _Assets()
     factory_name = f"{TESTS_RUN_UUID}_global"
+
     with sbt.AssetsFactory(name=factory_name) as f:
         for sess in n.sessions:
 
@@ -103,20 +117,24 @@ def global_execution_env():
             # create train data samples
             for i in range(4):
                 spec = f.create_data_sample(datasets=[dataset], test_only=False)
-                sess.add_data_sample(spec)
+                data_sample = sess.add_data_sample(spec)
+                assets.train_data_samples.append(data_sample)
 
             # create test data sample
             spec = f.create_data_sample(datasets=[dataset], test_only=True)
             test_data_sample = sess.add_data_sample(spec)
+            assets.test_data_samples.append(test_data_sample)
 
             # reload datasets (to ensure they are properly linked with the created data samples)
             dataset = sess.get_dataset(dataset.key)
+            assets.datasets.append(dataset)
 
             # create objective
             spec = f.create_objective(dataset=dataset, data_samples=[test_data_sample])
-            sess.add_objective(spec)
+            objective = sess.add_objective(spec)
+            assets.objectives.append(objective)
 
-        yield f, n
+        yield f, assets, n
 
 
 @pytest.fixture

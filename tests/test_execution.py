@@ -12,11 +12,11 @@ from . import settings
 @pytest.mark.slow
 def test_tuples_execution_on_same_node(global_execution_env):
     """Execution of a traintuple, a following testtuple and a following traintuple."""
-    factory, network = global_execution_env
-    session = network.sessions[0].copy()
+    factory, initial_assets, network = global_execution_env
+    session = network.sessions[0]
 
-    dataset = session.state.datasets[0]
-    objective = session.state.objectives[0]
+    dataset = [d for d in initial_assets.datasets if d.owner == session.node_id][0]
+    objective = [o for o in initial_assets.objectives if o.owner == session.node_id][0]
 
     spec = factory.create_algo()
     algo = session.add_algo(spec)
@@ -56,15 +56,17 @@ def test_tuples_execution_on_same_node(global_execution_env):
 @pytest.mark.slow
 def test_federated_learning_workflow(global_execution_env):
     """Test federated learning workflow on each node."""
-    factory, network = global_execution_env
-    session = network.sessions[0].copy()
+    factory, initial_assets, network = global_execution_env
+    session = network.sessions[0]
 
     # create test environment
     spec = factory.create_algo()
     algo = session.add_algo(spec)
 
     # get first dataset of each session
-    datasets = [s.state.datasets[0] for s in network.sessions]
+    # because there is only one dataset created by session, we can get all the datasets
+    datasets = initial_assets.datasets
+
     # check there is one dataset per node in the network
     assert set([d.owner for d in datasets]) == set([s.node_id for s in network.sessions])
 
@@ -101,12 +103,12 @@ def test_federated_learning_workflow(global_execution_env):
 def test_tuples_execution_on_different_nodes(global_execution_env):
     """Execution of a traintuple on node 1 and the following testtuple on node 2."""
     # add test data samples / dataset / objective on node 1
-    factory, network = global_execution_env
-    session_1 = network.sessions[0].copy()
-    session_2 = network.sessions[1].copy()
+    factory, initial_assets, network = global_execution_env
+    session_1 = network.sessions[0]
+    session_2 = network.sessions[1]
 
-    objective_1 = session_1.state.objectives[0]
-    dataset_2 = session_2.state.datasets[0]
+    objective_1 = [o for o in initial_assets.objectives if o.owner == session_1.node_id][0]
+    dataset_2 = [d for d in initial_assets.datasets if d.owner == session_2.node_id][0]
 
     spec = factory.create_algo()
     algo_2 = session_2.add_algo(spec)
@@ -132,10 +134,10 @@ def test_tuples_execution_on_different_nodes(global_execution_env):
 @pytest.mark.slow
 def test_traintuple_execution_failure(global_execution_env):
     """Invalid algo script is causing traintuple failure."""
-    factory, network = global_execution_env
-    session = network.sessions[0].copy()
+    factory, initial_assets, network = global_execution_env
+    session = network.sessions[0]
 
-    dataset = session.state.datasets[0]
+    dataset = [d for d in initial_assets.datasets if d.owner == session.node_id][0]
 
     spec = factory.create_algo(py_script=sbt.factory.INVALID_ALGO_SCRIPT)
     algo = session.add_algo(spec)
@@ -153,10 +155,10 @@ def test_traintuple_execution_failure(global_execution_env):
 @pytest.mark.slow
 def test_composite_traintuple_execution_failure(global_execution_env):
     """Invalid composite algo script is causing traintuple failure."""
-    factory, network = global_execution_env
-    session = network.sessions[0].copy()
+    factory, initial_assets, network = global_execution_env
+    session = network.sessions[0]
 
-    dataset = session.state.datasets[0]
+    dataset = [d for d in initial_assets.datasets if d.owner == session.node_id][0]
 
     spec = factory.create_composite_algo(py_script=sbt.factory.INVALID_COMPOSITE_ALGO_SCRIPT)
     algo = session.add_composite_algo(spec)
@@ -175,10 +177,10 @@ def test_composite_traintuple_execution_failure(global_execution_env):
 @pytest.mark.slow
 def test_aggregatetuple_execution_failure(global_execution_env):
     """Invalid algo script is causing traintuple failure."""
-    factory, network = global_execution_env
-    session = network.sessions[0].copy()
+    factory, initial_assets, network = global_execution_env
+    session = network.sessions[0]
 
-    dataset = session.state.datasets[0]
+    dataset = [d for d in initial_assets.datasets if d.owner == session.node_id][0]
 
     spec = factory.create_composite_algo()
     composite_algo = session.add_composite_algo(spec)
@@ -212,11 +214,11 @@ def test_aggregatetuple_execution_failure(global_execution_env):
 def test_composite_traintuples_execution(global_execution_env):
     """Execution of composite traintuples."""
 
-    factory, network = global_execution_env
-    session = network.sessions[0].copy()
+    factory, initial_assets, network = global_execution_env
+    session = network.sessions[0]
 
-    dataset = session.state.datasets[0]
-    objective = session.state.objectives[0]
+    dataset = [d for d in initial_assets.datasets if d.owner == session.node_id][0]
+    objective = [o for o in initial_assets.objectives if o.owner == session.node_id][0]
 
     spec = factory.create_composite_algo()
     algo = session.add_composite_algo(spec)
@@ -266,10 +268,10 @@ def test_aggregatetuple(global_execution_env):
 
     number_of_traintuples_to_aggregate = 3
 
-    factory, network = global_execution_env
-    session = network.sessions[0].copy()
+    factory, initial_assets, network = global_execution_env
+    session = network.sessions[0]
 
-    dataset = session.state.datasets[0]
+    dataset = [d for d in initial_assets.datasets if d.owner == session.node_id][0]
     train_data_sample_keys = dataset.train_data_sample_keys[:number_of_traintuples_to_aggregate]
 
     spec = factory.create_algo()
@@ -328,14 +330,14 @@ def test_aggregate_composite_traintuples(global_execution_env):
 
     This test refers to the model composition use case.
     """
-    factory, network = global_execution_env
-    sessions = [s.copy() for s in network.sessions]
+    factory, initial_assets, network = global_execution_env
+    sessions = network.sessions
 
     aggregate_worker = sessions[0].node_id
     number_of_rounds = 2
 
-    datasets = sessions[0].state.datasets + sessions[1].state.datasets
-    objectives = sessions[0].state.objectives[:0] + sessions[1].state.objectives[:0]
+    datasets = initial_assets.datasets
+    objectives = initial_assets.objectives
 
     # register algos on first node
     spec = factory.create_composite_algo()
@@ -401,7 +403,7 @@ def test_aggregate_composite_traintuples(global_execution_env):
     # username/password are not available in the settings files.
 
     session = sessions[0]
-    dataset = session.state.datasets[0]
+    dataset = [d for d in initial_assets.datasets if d.owner == session.node_id][0]
     algo = session.add_algo(spec)
 
     spec = factory.create_traintuple(
@@ -460,10 +462,10 @@ def test_execution_retry_on_fail(fail_count, status, global_execution_env):
     # The counter is greater than the retry count
     tools.algo.execute(TestAlgo())"""
 
-    factory, network = global_execution_env
-    session = network.sessions[0].copy()
+    factory, initial_assets, network = global_execution_env
+    session = network.sessions[0]
 
-    dataset = session.state.datasets[0]
+    dataset = [d for d in initial_assets.datasets if d.owner == session.node_id][0]
 
     py_script = sbt.factory.DEFAULT_ALGO_SCRIPT.replace(retry_algo_snippet_toreplace, retry_snippet_replacement)
     spec = factory.create_algo(py_script)
