@@ -31,10 +31,10 @@ def pytest_configure(config):
     )
 
 
-class _State(pydantic.BaseModel):
-    """Current state.
+class _Assets(pydantic.BaseModel):
+    """Assets.
 
-    Represents all the assets that have been added during the tests.
+    Represents all the assets that have been added before the tests.
     """
     datasets: typing.List[sbt.client.assets.Dataset] = []
     test_data_samples: typing.List[sbt.client.assets.DataSampleCreated] = []
@@ -101,10 +101,10 @@ def global_execution_env():
     Network must started outside of the tests environment and the network is kept
     alive while running all tests.
 
-    Returns a tuple (factory, state, Network)
+    Returns a tuple (factory, assets, Network).
     """
     n = _get_network()
-    s = _State()
+    assets = _Assets()
     factory_name = f"{TESTS_RUN_UUID}_global"
 
     with sbt.AssetsFactory(name=factory_name) as f:
@@ -118,23 +118,23 @@ def global_execution_env():
             for i in range(4):
                 spec = f.create_data_sample(datasets=[dataset], test_only=False)
                 data_sample = sess.add_data_sample(spec)
-                s.train_data_samples.append(data_sample)
+                assets.train_data_samples.append(data_sample)
 
             # create test data sample
             spec = f.create_data_sample(datasets=[dataset], test_only=True)
             test_data_sample = sess.add_data_sample(spec)
-            s.test_data_samples.append(test_data_sample)
+            assets.test_data_samples.append(test_data_sample)
 
             # reload datasets (to ensure they are properly linked with the created data samples)
             dataset = sess.get_dataset(dataset.key)
-            s.datasets.append(dataset)
+            assets.datasets.append(dataset)
 
             # create objective
             spec = f.create_objective(dataset=dataset, data_samples=[test_data_sample])
             objective = sess.add_objective(spec)
-            s.objectives.append(objective)
+            assets.objectives.append(objective)
 
-        yield f, s, n
+        yield f, assets, n
 
 
 @pytest.fixture

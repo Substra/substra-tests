@@ -11,7 +11,6 @@ DATASET_DOWNLOAD_FILENAME = 'opener.py'
 class Session:
     """Client to interact with a Node of Substra.
 
-    Stores asset(s) added during the session.
     Parses responses from server to return Asset instances.
     """
 
