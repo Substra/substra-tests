@@ -15,12 +15,6 @@ class Session:
     Parses responses from server to return Asset instances.
     """
 
-    # The Session object still uses the self.state attribute. But it is still required for the
-    # add_asset methods. Question is: how to replace it in these methods?
-    # Ideas:
-    # Move these methods to the State object?
-    # Add directly self.assets in the __init__? Absolutely not what we want.
-
     def __init__(self, node_name, node_id, address, user, password):
         super().__init__()
 
