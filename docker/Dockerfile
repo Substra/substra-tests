@@ -1,7 +1,12 @@
-ARG SUBSTRA_VERSION=latest
-FROM substra:$SUBSTRA_VERSION
+FROM python:3.7
 
-WORKDIR /usr/src/app/substra-tests
+WORKDIR /usr/src/app
+
+RUN pip install keyrings.alt
+
+ARG SUBSTRA_GIT_REPO
+ARG SUBSTRA_GIT_REF
+RUN pip install --no-cache-dir "git+${SUBSTRA_GIT_REPO}@${SUBSTRA_GIT_REF}"
 
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
