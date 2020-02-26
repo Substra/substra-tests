@@ -53,7 +53,10 @@ def test_compute_plan(global_execution_env):
     )
 
     # submit compute plan and wait for it to complete
-    cp = session_1.add_compute_plan(cp_spec).future().wait()
+    cp_added = session_1.add_compute_plan(cp_spec)
+    id_to_key = cp_added.id_to_key
+
+    cp = cp_added.future().wait()
     assert cp.tag == 'foo'
 
     traintuples = cp.list_traintuple()
@@ -94,9 +97,9 @@ def test_compute_plan(global_execution_env):
     traintuple_id_3 = traintuple_spec_3.traintuple_id
     generated_ids = [traintuple_id_1, traintuple_id_2, traintuple_id_3]
     rank_0_traintuple_keys = [traintuple_1.key, traintuple_2.key]
-    assert set(generated_ids) == set(cp.id_to_key.keys())
-    assert set(rank_0_traintuple_keys) == set([cp.id_to_key[traintuple_id_1], cp.id_to_key[traintuple_id_2]])
-    assert traintuple_3.key == cp.id_to_key[traintuple_id_3]
+    assert set(generated_ids) == set(id_to_key.keys())
+    assert set(rank_0_traintuple_keys) == set([id_to_key[traintuple_id_1], id_to_key[traintuple_id_2]])
+    assert traintuple_3.key == id_to_key[traintuple_id_3]
 
 
 @pytest.mark.slow
