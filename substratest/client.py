@@ -8,7 +8,7 @@ from . import assets
 DATASET_DOWNLOAD_FILENAME = 'opener.py'
 
 
-class Session:
+class Client:
     """Client to interact with a Node of Substra.
 
     Parses responses from server to return Asset instances.

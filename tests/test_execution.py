@@ -15,8 +15,9 @@ def test_tuples_execution_on_same_node(global_execution_env):
     factory, initial_assets, network = global_execution_env
     session = network.sessions[0]
 
-    dataset = [d for d in initial_assets.datasets if d.owner == session.node_id][0]
-    objective = [o for o in initial_assets.objectives if o.owner == session.node_id][0]
+    initial_assets = initial_assets.filter_by(session.node_id)
+    dataset = initial_assets.datasets[0]
+    objective = initial_assets.objectives[0]
 
     spec = factory.create_algo()
     algo = session.add_algo(spec)
@@ -107,8 +108,11 @@ def test_tuples_execution_on_different_nodes(global_execution_env):
     session_1 = network.sessions[0]
     session_2 = network.sessions[1]
 
-    objective_1 = [o for o in initial_assets.objectives if o.owner == session_1.node_id][0]
-    dataset_2 = [d for d in initial_assets.datasets if d.owner == session_2.node_id][0]
+    initial_assets_1 = initial_assets.filter_by(session_1.node_id)
+    initial_assets_2 = initial_assets.filter_by(session_2.node_id)
+
+    objective_1 = initial_assets_1.objectives[0]
+    dataset_2 = initial_assets_2.datasets[0]
 
     spec = factory.create_algo()
     algo_2 = session_2.add_algo(spec)
@@ -137,7 +141,8 @@ def test_traintuple_execution_failure(global_execution_env):
     factory, initial_assets, network = global_execution_env
     session = network.sessions[0]
 
-    dataset = [d for d in initial_assets.datasets if d.owner == session.node_id][0]
+    initial_assets = initial_assets.filter_by(session.node_id)
+    dataset = initial_assets.datasets[0]
 
     spec = factory.create_algo(py_script=sbt.factory.INVALID_ALGO_SCRIPT)
     algo = session.add_algo(spec)
@@ -158,7 +163,8 @@ def test_composite_traintuple_execution_failure(global_execution_env):
     factory, initial_assets, network = global_execution_env
     session = network.sessions[0]
 
-    dataset = [d for d in initial_assets.datasets if d.owner == session.node_id][0]
+    initial_assets = initial_assets.filter_by(session.node_id)
+    dataset = initial_assets.datasets[0]
 
     spec = factory.create_composite_algo(py_script=sbt.factory.INVALID_COMPOSITE_ALGO_SCRIPT)
     algo = session.add_composite_algo(spec)
@@ -180,7 +186,8 @@ def test_aggregatetuple_execution_failure(global_execution_env):
     factory, initial_assets, network = global_execution_env
     session = network.sessions[0]
 
-    dataset = [d for d in initial_assets.datasets if d.owner == session.node_id][0]
+    initial_assets = initial_assets.filter_by(session.node_id)
+    dataset = initial_assets.datasets[0]
 
     spec = factory.create_composite_algo()
     composite_algo = session.add_composite_algo(spec)
@@ -217,8 +224,9 @@ def test_composite_traintuples_execution(global_execution_env):
     factory, initial_assets, network = global_execution_env
     session = network.sessions[0]
 
-    dataset = [d for d in initial_assets.datasets if d.owner == session.node_id][0]
-    objective = [o for o in initial_assets.objectives if o.owner == session.node_id][0]
+    initial_assets = initial_assets.filter_by(session.node_id)
+    dataset = initial_assets.datasets[0]
+    objective = initial_assets.objectives[0]
 
     spec = factory.create_composite_algo()
     algo = session.add_composite_algo(spec)
@@ -271,7 +279,8 @@ def test_aggregatetuple(global_execution_env):
     factory, initial_assets, network = global_execution_env
     session = network.sessions[0]
 
-    dataset = [d for d in initial_assets.datasets if d.owner == session.node_id][0]
+    initial_assets = initial_assets.filter_by(session.node_id)
+    dataset = initial_assets.datasets[0]
     train_data_sample_keys = dataset.train_data_sample_keys[:number_of_traintuples_to_aggregate]
 
     spec = factory.create_algo()
@@ -403,7 +412,8 @@ def test_aggregate_composite_traintuples(global_execution_env):
     # username/password are not available in the settings files.
 
     session = sessions[0]
-    dataset = [d for d in initial_assets.datasets if d.owner == session.node_id][0]
+    initial_assets = initial_assets.filter_by(session.node_id)
+    dataset = initial_assets.datasets[0]
     algo = session.add_algo(spec)
 
     spec = factory.create_traintuple(
@@ -465,7 +475,8 @@ def test_execution_retry_on_fail(fail_count, status, global_execution_env):
     factory, initial_assets, network = global_execution_env
     session = network.sessions[0]
 
-    dataset = [d for d in initial_assets.datasets if d.owner == session.node_id][0]
+    initial_assets = initial_assets.filter_by(session.node_id)
+    dataset = initial_assets.datasets[0]
 
     py_script = sbt.factory.DEFAULT_ALGO_SCRIPT.replace(retry_algo_snippet_toreplace, retry_snippet_replacement)
     spec = factory.create_algo(py_script)

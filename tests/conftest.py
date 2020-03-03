@@ -3,7 +3,6 @@ import typing
 import uuid
 
 import pytest
-import pydantic
 
 import substratest as sbt
 from . import settings
@@ -31,27 +30,40 @@ def pytest_configure(config):
     )
 
 
-class _Assets(pydantic.BaseModel):
-    """Assets.
+class _TestAssets:
+    """Test assets.
 
     Represents all the assets that have been added before the tests.
     """
-    datasets: typing.List[sbt.client.assets.Dataset] = []
-    test_data_samples: typing.List[sbt.client.assets.DataSampleCreated] = []
-    train_data_samples: typing.List[sbt.client.assets.DataSampleCreated] = []
-    objectives: typing.List[sbt.client.assets.Objective] = []
+    def __init__(self, datasets=None, objectives=None):
+        self._datasets = datasets or []
+        self._objectives = objectives or []
+
+    @property
+    def datasets(self):
+        return self._datasets
+
+    @property
+    def objectives(self):
+        return self._objectives
+
+    def filter_by(self, node_id):
+        datasets = [d for d in self._datasets if d.owner == node_id]
+        objectives = [o for o in self._objectives if o.owner == node_id]
+
+        return _TestAssets(objectives=objectives, datasets=datasets)
 
 
 @dataclasses.dataclass
 class Network:
     options: settings.Options
-    sessions: typing.List[sbt.Session] = dataclasses.field(default_factory=list)
+    sessions: typing.List[sbt.Client] = dataclasses.field(default_factory=list)
 
 
 def _get_network():
     """Create network instance from settings."""
     cfg = settings.load()
-    sessions = [sbt.Session(
+    sessions = [sbt.Client(
         node_name=n.name,
         node_id=n.msp_id,
         address=n.address,
@@ -104,7 +116,7 @@ def global_execution_env():
     Returns a tuple (factory, assets, Network).
     """
     n = _get_network()
-    assets = _Assets()
+    assets = _TestAssets()
     factory_name = f"{TESTS_RUN_UUID}_global"
 
     with sbt.AssetsFactory(name=factory_name) as f:
@@ -117,22 +129,20 @@ def global_execution_env():
             # create train data samples
             for i in range(4):
                 spec = f.create_data_sample(datasets=[dataset], test_only=False)
-                data_sample = sess.add_data_sample(spec)
-                assets.train_data_samples.append(data_sample)
+                sess.add_data_sample(spec)
 
             # create test data sample
             spec = f.create_data_sample(datasets=[dataset], test_only=True)
             test_data_sample = sess.add_data_sample(spec)
-            assets.test_data_samples.append(test_data_sample)
 
             # reload datasets (to ensure they are properly linked with the created data samples)
             dataset = sess.get_dataset(dataset.key)
-            assets.datasets.append(dataset)
+            assets._datasets.append(dataset)
 
             # create objective
             spec = f.create_objective(dataset=dataset, data_samples=[test_data_sample])
             objective = sess.add_objective(spec)
-            assets.objectives.append(objective)
+            assets._objectives.append(objective)
 
         yield f, assets, n
 
