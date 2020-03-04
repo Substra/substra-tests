@@ -116,10 +116,11 @@ def global_execution_env():
     Returns a tuple (factory, assets, Network).
     """
     n = _get_network()
-    assets = _TestAssets()
     factory_name = f"{TESTS_RUN_UUID}_global"
 
     with sbt.AssetsFactory(name=factory_name) as f:
+        datasets = []
+        objectives = []
         for client in n.clients:
 
             # create dataset
@@ -137,13 +138,14 @@ def global_execution_env():
 
             # reload datasets (to ensure they are properly linked with the created data samples)
             dataset = client.get_dataset(dataset.key)
-            assets._datasets.append(dataset)
+            datasets.append(dataset)
 
             # create objective
             spec = f.create_objective(dataset=dataset, data_samples=[test_data_sample])
             objective = client.add_objective(spec)
-            assets._objectives.append(objective)
+            objectives.append(objective)
 
+        assets = _TestAssets(datasets=datasets, objectives=objectives)
         yield f, assets, n
 
 
