@@ -3,7 +3,6 @@ import typing
 import uuid
 
 import pytest
-import pydantic
 
 import substratest as sbt
 from . import settings
@@ -31,27 +30,40 @@ def pytest_configure(config):
     )
 
 
-class _Assets(pydantic.BaseModel):
-    """Assets.
+class _TestAssets:
+    """Test assets.
 
     Represents all the assets that have been added before the tests.
     """
-    datasets: typing.List[sbt.client.assets.Dataset] = []
-    test_data_samples: typing.List[sbt.client.assets.DataSampleCreated] = []
-    train_data_samples: typing.List[sbt.client.assets.DataSampleCreated] = []
-    objectives: typing.List[sbt.client.assets.Objective] = []
+    def __init__(self, datasets=None, objectives=None):
+        self._datasets = datasets or []
+        self._objectives = objectives or []
+
+    @property
+    def datasets(self):
+        return self._datasets
+
+    @property
+    def objectives(self):
+        return self._objectives
+
+    def filter_by(self, node_id):
+        datasets = [d for d in self._datasets if d.owner == node_id]
+        objectives = [o for o in self._objectives if o.owner == node_id]
+
+        return _TestAssets(objectives=objectives, datasets=datasets)
 
 
 @dataclasses.dataclass
 class Network:
     options: settings.Options
-    sessions: typing.List[sbt.Session] = dataclasses.field(default_factory=list)
+    clients: typing.List[sbt.Client] = dataclasses.field(default_factory=list)
 
 
 def _get_network():
     """Create network instance from settings."""
     cfg = settings.load()
-    sessions = [sbt.Session(
+    clients = [sbt.Client(
         node_name=n.name,
         node_id=n.msp_id,
         address=n.address,
@@ -60,7 +72,7 @@ def _get_network():
     ) for n in cfg.nodes]
     return Network(
         options=cfg.options,
-        sessions=sessions,
+        clients=clients,
     )
 
 
@@ -104,49 +116,49 @@ def global_execution_env():
     Returns a tuple (factory, assets, Network).
     """
     n = _get_network()
-    assets = _Assets()
     factory_name = f"{TESTS_RUN_UUID}_global"
 
     with sbt.AssetsFactory(name=factory_name) as f:
-        for sess in n.sessions:
+        datasets = []
+        objectives = []
+        for client in n.clients:
 
             # create dataset
             spec = f.create_dataset()
-            dataset = sess.add_dataset(spec)
+            dataset = client.add_dataset(spec)
 
             # create train data samples
             for i in range(4):
                 spec = f.create_data_sample(datasets=[dataset], test_only=False)
-                data_sample = sess.add_data_sample(spec)
-                assets.train_data_samples.append(data_sample)
+                client.add_data_sample(spec)
 
             # create test data sample
             spec = f.create_data_sample(datasets=[dataset], test_only=True)
-            test_data_sample = sess.add_data_sample(spec)
-            assets.test_data_samples.append(test_data_sample)
+            test_data_sample = client.add_data_sample(spec)
 
             # reload datasets (to ensure they are properly linked with the created data samples)
-            dataset = sess.get_dataset(dataset.key)
-            assets.datasets.append(dataset)
+            dataset = client.get_dataset(dataset.key)
+            datasets.append(dataset)
 
             # create objective
             spec = f.create_objective(dataset=dataset, data_samples=[test_data_sample])
-            objective = sess.add_objective(spec)
-            assets.objectives.append(objective)
+            objective = client.add_objective(spec)
+            objectives.append(objective)
 
+        assets = _TestAssets(datasets=datasets, objectives=objectives)
         yield f, assets, n
 
 
 @pytest.fixture
-def session_1(network):
+def client_1(network):
     """Client fixture (first node)."""
-    return network.sessions[0]
+    return network.clients[0]
 
 
 @pytest.fixture
-def session_2(network):
+def client_2(network):
     """Client fixture (second node)."""
-    return network.sessions[1]
+    return network.clients[1]
 
 
 @pytest.fixture
@@ -157,6 +169,6 @@ def node_cfg():
 
 
 @pytest.fixture
-def session(network):
+def client(network):
     """Client fixture (first node)."""
-    return network.sessions[0]
+    return network.clients[0]

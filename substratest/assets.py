@@ -37,13 +37,13 @@ class Future(BaseFuture):
         'CompositeTraintuple': 'get_composite_traintuple',
     }
 
-    def __init__(self, asset, session):
+    def __init__(self, asset, client):
         self._asset = asset
         try:
             m = self._methods[asset.__class__.__name__]
         except KeyError:
             assert False, 'Future not supported'
-        self._getter = getattr(session, m)
+        self._getter = getattr(client, m)
 
     def wait(self, timeout=cfg.FUTURE_TIMEOUT, raises=True):
         """Wait until completed (done or failed)."""
@@ -70,9 +70,9 @@ class Future(BaseFuture):
 
 
 class ComputePlanFuture(BaseFuture):
-    def __init__(self, compute_plan, session):
+    def __init__(self, compute_plan, client):
         self._compute_plan = compute_plan
-        self._session = session
+        self._client = client
 
     def wait(self, timeout=cfg.FUTURE_TIMEOUT):
         """wait until all tuples are completed (done or failed)."""
@@ -90,29 +90,29 @@ class ComputePlanFuture(BaseFuture):
         return self.get()
 
     def get(self):
-        return self._session.get_compute_plan(self._compute_plan.compute_plan_id)
+        return self._client.get_compute_plan(self._compute_plan.compute_plan_id)
 
 
 class _BaseFutureMixin(abc.ABC):
     _future_cls = None
 
-    def attach(self, session):
-        """Attach session to asset."""
+    def attach(self, client):
+        """Attach client to asset."""
         # XXX because Pydantic doesn't support private fields, we have to use
         # __getattribute__ and __setattr__ (https://github.com/samuelcolvin/pydantic/issues/655)
-        object.__setattr__(self, '__session', session)
+        object.__setattr__(self, '__client', client)
         return self
 
     @property
-    def _session(self):
+    def _client(self):
         try:
-            return object.__getattribute__(self, '__session')
+            return object.__getattribute__(self, '__client')
         except AttributeError:
-            raise errors.TError(f'No session attached with {self}')
+            raise errors.TError(f'No client attached with {self}')
 
     def future(self):
         """Returns future from asset."""
-        return self._future_cls(self, self._session)
+        return self._future_cls(self, self._client)
 
 
 class _FutureMixin(_BaseFutureMixin):
@@ -355,7 +355,7 @@ class ComputePlan(_Asset, _ComputePlanFutureMixin):
         filters = [
             f'traintuple:computePlanID:{self.compute_plan_id}',
         ]
-        tuples = self._session.list_traintuple(filters=filters)
+        tuples = self._client.list_traintuple(filters=filters)
         assert len(tuples) == len(self.traintuple_keys)
         assert set(self.traintuple_keys) == set([t.key for t in tuples])
         tuples = sorted(tuples, key=lambda t: t.rank)
@@ -365,7 +365,7 @@ class ComputePlan(_Asset, _ComputePlanFutureMixin):
         filters = [
             f'composite_traintuple:computePlanID:{self.compute_plan_id}',
         ]
-        tuples = self._session.list_composite_traintuple(filters=filters)
+        tuples = self._client.list_composite_traintuple(filters=filters)
         assert len(tuples) == len(self.composite_traintuple_keys)
         assert set(self.composite_traintuple_keys) == set([t.key for t in tuples])
         tuples = sorted(tuples, key=lambda t: t.rank)
@@ -375,7 +375,7 @@ class ComputePlan(_Asset, _ComputePlanFutureMixin):
         filters = [
             f'aggregatetuple:computePlanID:{self.compute_plan_id}',
         ]
-        tuples = self._session.list_aggregatetuple(filters=filters)
+        tuples = self._client.list_aggregatetuple(filters=filters)
         assert len(tuples) == len(self.aggregatetuple_keys)
         assert set(self.aggregatetuple_keys) == set([t.key for t in tuples])
         tuples = sorted(tuples, key=lambda t: t.rank)
@@ -385,7 +385,7 @@ class ComputePlan(_Asset, _ComputePlanFutureMixin):
         filters = [
             f'testtuple:computePlanID:{self.compute_plan_id}',
         ]
-        tuples = self._session.list_testtuple(filters=filters)
+        tuples = self._client.list_testtuple(filters=filters)
         assert len(tuples) == len(self.testtuple_keys)
         assert set(self.testtuple_keys) == set([t.key for t in tuples])
         tuples = sorted(tuples, key=lambda t: t.rank)

@@ -14,16 +14,18 @@ def test_compute_plan(global_execution_env):
     - 1 testtuple executed on node 1 depending on the last traintuple
     """
     factory, initial_assets, network = global_execution_env
-    session_1 = network.sessions[0]
-    session_2 = network.sessions[1]
+    client_1 = network.clients[0]
+    client_2 = network.clients[1]
 
-    dataset_1 = [d for d in initial_assets.datasets if d.owner == session_1.node_id][0]
-    dataset_2 = [d for d in initial_assets.datasets if d.owner == session_2.node_id][0]
+    initial_assets_1 = initial_assets.filter_by(client_1.node_id)
+    initial_assets_2 = initial_assets.filter_by(client_2.node_id)
 
-    objective_1 = [o for o in initial_assets.objectives if o.owner == session_1.node_id][0]
+    dataset_1 = initial_assets_1.datasets[0]
+    dataset_2 = initial_assets_2.datasets[0]
+    objective_1 = initial_assets_1.objectives[0]
 
     spec = factory.create_algo()
-    algo_2 = session_2.add_algo(spec)
+    algo_2 = client_2.add_algo(spec)
 
     # create compute plan
     cp_spec = factory.create_compute_plan(tag='foo')
@@ -53,7 +55,7 @@ def test_compute_plan(global_execution_env):
     )
 
     # submit compute plan and wait for it to complete
-    cp_added = session_1.add_compute_plan(cp_spec)
+    cp_added = client_1.add_compute_plan(cp_spec)
     id_to_key = cp_added.id_to_key
 
     cp = cp_added.future().wait()
@@ -87,9 +89,9 @@ def test_compute_plan(global_execution_env):
     # XXX as the first two tuples have the same rank, there is currently no way to know
     #     which one will be returned first
     workers_rank_0 = set([traintuple_1.dataset.worker, traintuple_2.dataset.worker])
-    assert workers_rank_0 == set([session_1.node_id, session_2.node_id])
-    assert traintuple_3.dataset.worker == session_1.node_id
-    assert testtuple.dataset.worker == session_1.node_id
+    assert workers_rank_0 == set([client_1.node_id, client_2.node_id])
+    assert traintuple_3.dataset.worker == client_1.node_id
+    assert testtuple.dataset.worker == client_1.node_id
 
     # check mapping
     traintuple_id_1 = traintuple_spec_1.traintuple_id
@@ -103,7 +105,7 @@ def test_compute_plan(global_execution_env):
 
 
 @pytest.mark.slow
-def test_compute_plan_single_session_success(global_execution_env):
+def test_compute_plan_single_client_success(global_execution_env):
     """A compute plan with 3 traintuples and 3 associated testtuples"""
 
     # Create a compute plan with 3 steps:
@@ -113,14 +115,15 @@ def test_compute_plan_single_session_success(global_execution_env):
     # 3. traintuple + testtuple
 
     factory, initial_assets, network = global_execution_env
-    session = network.sessions[0]
+    client = network.clients[0]
 
-    dataset = [d for d in initial_assets.datasets if d.owner == session.node_id][0]
+    initial_assets = initial_assets.filter_by(client.node_id)
+    dataset = initial_assets.datasets[0]
     data_sample_1, data_sample_2, data_sample_3, _ = dataset.train_data_sample_keys
-    objective = [o for o in initial_assets.objectives if o.owner == session.node_id][0]
+    objective = initial_assets.objectives[0]
 
     spec = factory.create_algo()
-    algo = session.add_algo(spec)
+    algo = client.add_algo(spec)
 
     cp_spec = factory.create_compute_plan()
 
@@ -157,7 +160,7 @@ def test_compute_plan_single_session_success(global_execution_env):
     )
 
     # Submit compute plan and wait for it to complete
-    cp = session.add_compute_plan(cp_spec).future().wait()
+    cp = client.add_compute_plan(cp_spec).future().wait()
 
     # All the train/test tuples should succeed
     for t in cp.list_traintuple() + cp.list_testtuple():
@@ -172,14 +175,15 @@ def test_compute_plan_update(global_execution_env):
     """
 
     factory, initial_assets, network = global_execution_env
-    session = network.sessions[0]
+    client = network.clients[0]
 
-    dataset = [d for d in initial_assets.datasets if d.owner == session.node_id][0]
+    initial_assets = initial_assets.filter_by(client.node_id)
+    dataset = initial_assets.datasets[0]
     data_sample_1, data_sample_2, data_sample_3, _ = dataset.train_data_sample_keys
-    objective = [o for o in initial_assets.objectives if o.owner == session.node_id][0]
+    objective = initial_assets.objectives[0]
 
     spec = factory.create_algo()
-    algo = session.add_algo(spec)
+    algo = client.add_algo(spec)
 
     # Create a compute plan with traintuple + testtuple
 
@@ -193,7 +197,7 @@ def test_compute_plan_update(global_execution_env):
         objective=objective,
         traintuple_spec=traintuple_spec_1
     )
-    cp = session.add_compute_plan(cp_spec)
+    cp = client.add_compute_plan(cp_spec)
 
     # Update compute plan with traintuple + testtuple
 
@@ -208,7 +212,7 @@ def test_compute_plan_update(global_execution_env):
         objective=objective,
         traintuple_spec=traintuple_spec_2
     )
-    cp = session.update_compute_plan(cp_spec)
+    cp = client.update_compute_plan(cp_spec)
 
     # Update compute plan with traintuple + testtuple
 
@@ -223,10 +227,10 @@ def test_compute_plan_update(global_execution_env):
         objective=objective,
         traintuple_spec=traintuple_spec_3
     )
-    cp = session.update_compute_plan(cp_spec)
+    cp = client.update_compute_plan(cp_spec)
 
     # All the train/test tuples should succeed
-    cp = session.get_compute_plan(cp.compute_plan_id).future().wait()
+    cp = client.get_compute_plan(cp.compute_plan_id).future().wait()
     tuples = cp.list_traintuple() + cp.list_testtuple()
     assert len(tuples) == 6
     for t in tuples:
@@ -234,7 +238,7 @@ def test_compute_plan_update(global_execution_env):
 
 
 @pytest.mark.slow
-def test_compute_plan_single_session_failure(global_execution_env):
+def test_compute_plan_single_client_failure(global_execution_env):
     """In a compute plan with 3 traintuples, failing the root traintuple
     should cancel its descendents and the associated testtuples"""
 
@@ -247,14 +251,15 @@ def test_compute_plan_single_session_failure(global_execution_env):
     # Intentionally use an invalid (broken) algo.
 
     factory, initial_assets, network = global_execution_env
-    session = network.sessions[0]
+    client = network.clients[0]
 
-    dataset = [d for d in initial_assets.datasets if d.owner == session.node_id][0]
+    initial_assets = initial_assets.filter_by(client.node_id)
+    dataset = initial_assets.datasets[0]
     data_sample_1, data_sample_2, data_sample_3, _ = dataset.train_data_sample_keys
-    objective = [o for o in initial_assets.objectives if o.owner == session.node_id][0]
+    objective = initial_assets.objectives[0]
 
     spec = factory.create_algo(py_script=sbt.factory.INVALID_ALGO_SCRIPT)
-    algo = session.add_algo(spec)
+    algo = client.add_algo(spec)
 
     cp_spec = factory.create_compute_plan()
 
@@ -291,7 +296,7 @@ def test_compute_plan_single_session_failure(global_execution_env):
     )
 
     # Submit compute plan and wait for it to complete
-    cp = session.add_compute_plan(cp_spec).future().wait()
+    cp = client.add_compute_plan(cp_spec).future().wait()
 
     traintuples = cp.list_traintuple()
     testtuples = cp.list_testtuple()
@@ -307,9 +312,9 @@ def test_compute_plan_aggregate_composite_traintuples(global_execution_env):
     Compute plan version of the `test_aggregate_composite_traintuples` method from `test_execution.py`
     """
     factory, initial_assets, network = global_execution_env
-    sessions = network.sessions
+    clients = network.clients
 
-    aggregate_worker = sessions[0].node_id
+    aggregate_worker = clients[0].node_id
     number_of_rounds = 2
 
     # register objectives, datasets, and data samples
@@ -318,9 +323,9 @@ def test_compute_plan_aggregate_composite_traintuples(global_execution_env):
 
     # register algos on first node
     spec = factory.create_composite_algo()
-    composite_algo = sessions[0].add_composite_algo(spec)
+    composite_algo = clients[0].add_composite_algo(spec)
     spec = factory.create_aggregate_algo()
-    aggregate_algo = sessions[0].add_aggregate_algo(spec)
+    aggregate_algo = clients[0].add_aggregate_algo(spec)
 
     # launch execution
     previous_aggregatetuple_spec = None
@@ -342,7 +347,7 @@ def test_compute_plan_aggregate_composite_traintuples(global_execution_env):
                 composite_algo=composite_algo,
                 dataset=dataset,
                 data_samples=[dataset.train_data_sample_keys[0 + round_]],
-                out_trunk_model_permissions=Permissions(public=False, authorized_ids=[s.node_id for s in sessions]),
+                out_trunk_model_permissions=Permissions(public=False, authorized_ids=[c.node_id for c in clients]),
                 **kwargs,
             )
             composite_traintuple_specs.append(spec)
@@ -365,7 +370,7 @@ def test_compute_plan_aggregate_composite_traintuples(global_execution_env):
             traintuple_spec=composite_traintuple_spec,
         )
 
-    cp = sessions[0].add_compute_plan(cp_spec).future().wait()
+    cp = clients[0].add_compute_plan(cp_spec).future().wait()
     tuples = (cp.list_traintuple() +
               cp.list_composite_traintuple() +
               cp.list_aggregatetuple() +
@@ -376,12 +381,13 @@ def test_compute_plan_aggregate_composite_traintuples(global_execution_env):
 
 def test_compute_plan_circular_dependency_failure(global_execution_env):
     factory, initial_assets, network = global_execution_env
-    session = network.sessions[0]
+    client = network.clients[0]
 
-    dataset = [d for d in initial_assets.datasets if d.owner == session.node_id][0]
+    initial_assets = initial_assets.filter_by(client.node_id)
+    dataset = initial_assets.datasets[0]
 
     spec = factory.create_algo()
-    algo = session.add_algo(spec)
+    algo = client.add_algo(spec)
 
     cp_spec = factory.create_compute_plan()
 
@@ -401,7 +407,7 @@ def test_compute_plan_circular_dependency_failure(global_execution_env):
     traintuple_spec_2.in_models_ids.append(traintuple_spec_1.id)
 
     with pytest.raises(substra.exceptions.InvalidRequest) as e:
-        session.add_compute_plan(cp_spec)
+        client.add_compute_plan(cp_spec)
 
     assert 'missing dependency among inModels IDs' in str(e.value)
 
@@ -409,7 +415,7 @@ def test_compute_plan_circular_dependency_failure(global_execution_env):
 @pytest.mark.slow
 def test_execution_compute_plan_canceled(global_execution_env):
     factory, initial_assets, network = global_execution_env
-    session = network.sessions[0]
+    client = network.clients[0]
 
     # XXX A canceled compute plan can be done if the it is canceled while it last tuples
     #     are executing on the workers. The compute plan status will in this case change
@@ -418,11 +424,12 @@ def test_execution_compute_plan_canceled(global_execution_env):
     #     compute plan with a large amount of tuples.
     nb_traintuples = 32
 
-    dataset = [d for d in initial_assets.datasets if d.owner == session.node_id][0]
+    initial_assets = initial_assets.filter_by(client.node_id)
+    dataset = initial_assets.datasets[0]
     data_sample_key = dataset.train_data_sample_keys[0]
 
     spec = factory.create_algo()
-    algo = session.add_algo(spec)
+    algo = client.add_algo(spec)
 
     cp_spec = factory.create_compute_plan()
     previous_traintuple = None
@@ -434,7 +441,7 @@ def test_execution_compute_plan_canceled(global_execution_env):
             in_models=[previous_traintuple] if previous_traintuple else None
         )
 
-    cp = session.add_compute_plan(cp_spec)
+    cp = client.add_compute_plan(cp_spec)
 
     # wait the first traintuple to be executed to ensure that the compute plan is launched
     # and tuples are scheduled in the celery workers
@@ -442,7 +449,7 @@ def test_execution_compute_plan_canceled(global_execution_env):
     first_traintuple = first_traintuple.future().wait()
     assert first_traintuple.status == assets.Status.done
 
-    cp = session.cancel_compute_plan(cp.compute_plan_id)
+    cp = client.cancel_compute_plan(cp.compute_plan_id)
     assert cp.status == assets.Status.canceled
 
     cp = cp.future().wait()

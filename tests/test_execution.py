@@ -13,13 +13,14 @@ from . import settings
 def test_tuples_execution_on_same_node(global_execution_env):
     """Execution of a traintuple, a following testtuple and a following traintuple."""
     factory, initial_assets, network = global_execution_env
-    session = network.sessions[0]
+    client = network.clients[0]
 
-    dataset = [d for d in initial_assets.datasets if d.owner == session.node_id][0]
-    objective = [o for o in initial_assets.objectives if o.owner == session.node_id][0]
+    initial_assets = initial_assets.filter_by(client.node_id)
+    dataset = initial_assets.datasets[0]
+    objective = initial_assets.objectives[0]
 
     spec = factory.create_algo()
-    algo = session.add_algo(spec)
+    algo = client.add_algo(spec)
 
     # create traintuple
     spec = factory.create_traintuple(
@@ -27,18 +28,18 @@ def test_tuples_execution_on_same_node(global_execution_env):
         dataset=dataset,
         data_samples=dataset.train_data_sample_keys,
     )
-    traintuple = session.add_traintuple(spec).future().wait()
+    traintuple = client.add_traintuple(spec).future().wait()
     assert traintuple.status == assets.Status.done
     assert traintuple.out_model is not None
 
     # check we cannot add twice the same traintuple
     with pytest.raises(substra.exceptions.AlreadyExists):
-        session.add_traintuple(spec)
+        client.add_traintuple(spec)
 
     # create testtuple
     # don't create it before to avoid MVCC errors
     spec = factory.create_testtuple(objective=objective, traintuple=traintuple)
-    testtuple = session.add_testtuple(spec).future().wait()
+    testtuple = client.add_testtuple(spec).future().wait()
     assert testtuple.status == assets.Status.done
 
     # add a traintuple depending on first traintuple
@@ -48,7 +49,7 @@ def test_tuples_execution_on_same_node(global_execution_env):
         data_samples=dataset.train_data_sample_keys,
         traintuples=[traintuple],
     )
-    traintuple = session.add_traintuple(spec).future().wait()
+    traintuple = client.add_traintuple(spec).future().wait()
     assert traintuple.status == assets.Status.done
     assert len(traintuple.in_models) == 1
 
@@ -57,18 +58,18 @@ def test_tuples_execution_on_same_node(global_execution_env):
 def test_federated_learning_workflow(global_execution_env):
     """Test federated learning workflow on each node."""
     factory, initial_assets, network = global_execution_env
-    session = network.sessions[0]
+    client = network.clients[0]
 
     # create test environment
     spec = factory.create_algo()
-    algo = session.add_algo(spec)
+    algo = client.add_algo(spec)
 
-    # get first dataset of each session
-    # because there is only one dataset created by session, we can get all the datasets
+    # get first dataset of each client
+    # because there is only one dataset created by client, we can get all the datasets
     datasets = initial_assets.datasets
 
     # check there is one dataset per node in the network
-    assert set([d.owner for d in datasets]) == set([s.node_id for s in network.sessions])
+    assert set([d.owner for d in datasets]) == set([c.node_id for c in network.clients])
 
     # create 1 traintuple per dataset and chain them
     traintuple = None
@@ -85,7 +86,7 @@ def test_federated_learning_workflow(global_execution_env):
             rank=rank,
             compute_plan_id=compute_plan_id,
         )
-        traintuple = session.add_traintuple(spec).future().wait()
+        traintuple = client.add_traintuple(spec).future().wait()
         assert traintuple.status == assets.Status.done
         assert traintuple.out_model is not None
         assert traintuple.tag == 'foo'
@@ -95,7 +96,7 @@ def test_federated_learning_workflow(global_execution_env):
         compute_plan_id = traintuple.compute_plan_id
 
     # check a compute plan has been created and its status is at done
-    cp = session.get_compute_plan(compute_plan_id)
+    cp = client.get_compute_plan(compute_plan_id)
     assert cp.status == assets.Status.done
 
 
@@ -104,14 +105,17 @@ def test_tuples_execution_on_different_nodes(global_execution_env):
     """Execution of a traintuple on node 1 and the following testtuple on node 2."""
     # add test data samples / dataset / objective on node 1
     factory, initial_assets, network = global_execution_env
-    session_1 = network.sessions[0]
-    session_2 = network.sessions[1]
+    client_1 = network.clients[0]
+    client_2 = network.clients[1]
 
-    objective_1 = [o for o in initial_assets.objectives if o.owner == session_1.node_id][0]
-    dataset_2 = [d for d in initial_assets.datasets if d.owner == session_2.node_id][0]
+    initial_assets_1 = initial_assets.filter_by(client_1.node_id)
+    initial_assets_2 = initial_assets.filter_by(client_2.node_id)
+
+    objective_1 = initial_assets_1.objectives[0]
+    dataset_2 = initial_assets_2.datasets[0]
 
     spec = factory.create_algo()
-    algo_2 = session_2.add_algo(spec)
+    algo_2 = client_2.add_algo(spec)
 
     # add traintuple on node 2; should execute on node 2 (dataset located on node 2)
     spec = factory.create_traintuple(
@@ -119,35 +123,36 @@ def test_tuples_execution_on_different_nodes(global_execution_env):
         dataset=dataset_2,
         data_samples=dataset_2.train_data_sample_keys,
     )
-    traintuple = session_1.add_traintuple(spec).future().wait()
+    traintuple = client_1.add_traintuple(spec).future().wait()
     assert traintuple.status == assets.Status.done
     assert traintuple.out_model is not None
-    assert traintuple.dataset.worker == session_2.node_id
+    assert traintuple.dataset.worker == client_2.node_id
 
     # add testtuple; should execute on node 1 (objective dataset is located on node 1)
     spec = factory.create_testtuple(objective=objective_1, traintuple=traintuple)
-    testtuple = session_1.add_testtuple(spec).future().wait()
+    testtuple = client_1.add_testtuple(spec).future().wait()
     assert testtuple.status == assets.Status.done
-    assert testtuple.dataset.worker == session_1.node_id
+    assert testtuple.dataset.worker == client_1.node_id
 
 
 @pytest.mark.slow
 def test_traintuple_execution_failure(global_execution_env):
     """Invalid algo script is causing traintuple failure."""
     factory, initial_assets, network = global_execution_env
-    session = network.sessions[0]
+    client = network.clients[0]
 
-    dataset = [d for d in initial_assets.datasets if d.owner == session.node_id][0]
+    initial_assets = initial_assets.filter_by(client.node_id)
+    dataset = initial_assets.datasets[0]
 
     spec = factory.create_algo(py_script=sbt.factory.INVALID_ALGO_SCRIPT)
-    algo = session.add_algo(spec)
+    algo = client.add_algo(spec)
 
     spec = factory.create_traintuple(
         algo=algo,
         dataset=dataset,
         data_samples=dataset.train_data_sample_keys,
     )
-    traintuple = session.add_traintuple(spec).future().wait(raises=False)
+    traintuple = client.add_traintuple(spec).future().wait(raises=False)
     assert traintuple.status == assets.Status.failed
     assert traintuple.out_model is None
 
@@ -156,19 +161,20 @@ def test_traintuple_execution_failure(global_execution_env):
 def test_composite_traintuple_execution_failure(global_execution_env):
     """Invalid composite algo script is causing traintuple failure."""
     factory, initial_assets, network = global_execution_env
-    session = network.sessions[0]
+    client = network.clients[0]
 
-    dataset = [d for d in initial_assets.datasets if d.owner == session.node_id][0]
+    initial_assets = initial_assets.filter_by(client.node_id)
+    dataset = initial_assets.datasets[0]
 
     spec = factory.create_composite_algo(py_script=sbt.factory.INVALID_COMPOSITE_ALGO_SCRIPT)
-    algo = session.add_composite_algo(spec)
+    algo = client.add_composite_algo(spec)
 
     spec = factory.create_composite_traintuple(
         algo=algo,
         dataset=dataset,
         data_samples=dataset.train_data_sample_keys,
     )
-    composite_traintuple = session.add_composite_traintuple(spec).future().wait(raises=False)
+    composite_traintuple = client.add_composite_traintuple(spec).future().wait(raises=False)
     assert composite_traintuple.status == assets.Status.failed
     assert composite_traintuple.out_head_model.out_model is None
     assert composite_traintuple.out_trunk_model.out_model is None
@@ -178,15 +184,16 @@ def test_composite_traintuple_execution_failure(global_execution_env):
 def test_aggregatetuple_execution_failure(global_execution_env):
     """Invalid algo script is causing traintuple failure."""
     factory, initial_assets, network = global_execution_env
-    session = network.sessions[0]
+    client = network.clients[0]
 
-    dataset = [d for d in initial_assets.datasets if d.owner == session.node_id][0]
+    initial_assets = initial_assets.filter_by(client.node_id)
+    dataset = initial_assets.datasets[0]
 
     spec = factory.create_composite_algo()
-    composite_algo = session.add_composite_algo(spec)
+    composite_algo = client.add_composite_algo(spec)
 
     spec = factory.create_aggregate_algo(py_script=sbt.factory.INVALID_AGGREGATE_ALGO_SCRIPT)
-    aggregate_algo = session.add_aggregate_algo(spec)
+    aggregate_algo = client.add_aggregate_algo(spec)
 
     composite_traintuples = []
     for i in [0, 1]:
@@ -195,16 +202,16 @@ def test_aggregatetuple_execution_failure(global_execution_env):
             dataset=dataset,
             data_samples=[dataset.train_data_sample_keys[i]],
         )
-        composite_traintuples.append(session.add_composite_traintuple(spec))
+        composite_traintuples.append(client.add_composite_traintuple(spec))
 
     spec = factory.create_aggregatetuple(
         algo=aggregate_algo,
         traintuples=composite_traintuples,
-        worker=session.node_id,
+        worker=client.node_id,
     )
-    aggregatetuple = session.add_aggregatetuple(spec).future().wait(raises=False)
+    aggregatetuple = client.add_aggregatetuple(spec).future().wait(raises=False)
     for composite_traintuple in composite_traintuples:
-        composite_traintuple = session.get_composite_traintuple(composite_traintuple.key)
+        composite_traintuple = client.get_composite_traintuple(composite_traintuple.key)
         assert composite_traintuple.status == assets.Status.done
     assert aggregatetuple.status == assets.Status.failed
     assert aggregatetuple.out_model is None
@@ -215,13 +222,14 @@ def test_composite_traintuples_execution(global_execution_env):
     """Execution of composite traintuples."""
 
     factory, initial_assets, network = global_execution_env
-    session = network.sessions[0]
+    client = network.clients[0]
 
-    dataset = [d for d in initial_assets.datasets if d.owner == session.node_id][0]
-    objective = [o for o in initial_assets.objectives if o.owner == session.node_id][0]
+    initial_assets = initial_assets.filter_by(client.node_id)
+    dataset = initial_assets.datasets[0]
+    objective = initial_assets.objectives[0]
 
     spec = factory.create_composite_algo()
-    algo = session.add_composite_algo(spec)
+    algo = client.add_composite_algo(spec)
 
     # first composite traintuple
     spec = factory.create_composite_traintuple(
@@ -229,7 +237,7 @@ def test_composite_traintuples_execution(global_execution_env):
         dataset=dataset,
         data_samples=dataset.train_data_sample_keys,
     )
-    composite_traintuple_1 = session.add_composite_traintuple(spec).future().wait()
+    composite_traintuple_1 = client.add_composite_traintuple(spec).future().wait()
     assert composite_traintuple_1.status == assets.Status.done
     assert composite_traintuple_1.out_head_model is not None
     assert composite_traintuple_1.out_head_model.out_model is not None
@@ -244,18 +252,18 @@ def test_composite_traintuples_execution(global_execution_env):
         head_traintuple=composite_traintuple_1,
         trunk_traintuple=composite_traintuple_1,
     )
-    composite_traintuple_2 = session.add_composite_traintuple(spec).future().wait()
+    composite_traintuple_2 = client.add_composite_traintuple(spec).future().wait()
     assert composite_traintuple_2.status == assets.Status.done
     assert composite_traintuple_2.out_head_model is not None
     assert composite_traintuple_2.out_trunk_model is not None
 
     # add a 'composite' testtuple
     spec = factory.create_testtuple(objective=objective, traintuple=composite_traintuple_2)
-    testtuple = session.add_testtuple(spec).future().wait()
+    testtuple = client.add_testtuple(spec).future().wait()
     assert testtuple.status == assets.Status.done
 
     # list composite traintuple
-    composite_traintuples = session.list_composite_traintuple()
+    composite_traintuples = client.list_composite_traintuple()
     composite_traintuple_keys = set([t.key for t in composite_traintuples])
     assert set([composite_traintuple_1.key, composite_traintuple_2.key]).issubset(
         composite_traintuple_keys
@@ -269,13 +277,14 @@ def test_aggregatetuple(global_execution_env):
     number_of_traintuples_to_aggregate = 3
 
     factory, initial_assets, network = global_execution_env
-    session = network.sessions[0]
+    client = network.clients[0]
 
-    dataset = [d for d in initial_assets.datasets if d.owner == session.node_id][0]
+    initial_assets = initial_assets.filter_by(client.node_id)
+    dataset = initial_assets.datasets[0]
     train_data_sample_keys = dataset.train_data_sample_keys[:number_of_traintuples_to_aggregate]
 
     spec = factory.create_algo()
-    algo = session.add_algo(spec)
+    algo = client.add_algo(spec)
 
     # add traintuples
     traintuples = []
@@ -285,18 +294,18 @@ def test_aggregatetuple(global_execution_env):
             dataset=dataset,
             data_samples=[data_sample_key],
         )
-        traintuple = session.add_traintuple(spec).future().wait()
+        traintuple = client.add_traintuple(spec).future().wait()
         traintuples.append(traintuple)
 
     spec = factory.create_aggregate_algo()
-    aggregate_algo = session.add_aggregate_algo(spec)
+    aggregate_algo = client.add_aggregate_algo(spec)
 
     spec = factory.create_aggregatetuple(
         algo=aggregate_algo,
-        worker=session.node_id,
+        worker=client.node_id,
         traintuples=traintuples,
     )
-    aggregatetuple = session.add_aggregatetuple(spec).future().wait()
+    aggregatetuple = client.add_aggregatetuple(spec).future().wait()
     assert aggregatetuple.status == assets.Status.done
     assert len(aggregatetuple.in_models) == number_of_traintuples_to_aggregate
 
@@ -331,9 +340,9 @@ def test_aggregate_composite_traintuples(global_execution_env):
     This test refers to the model composition use case.
     """
     factory, initial_assets, network = global_execution_env
-    sessions = network.sessions
+    clients = network.clients
 
-    aggregate_worker = sessions[0].node_id
+    aggregate_worker = clients[0].node_id
     number_of_rounds = 2
 
     datasets = initial_assets.datasets
@@ -341,9 +350,9 @@ def test_aggregate_composite_traintuples(global_execution_env):
 
     # register algos on first node
     spec = factory.create_composite_algo()
-    composite_algo = sessions[0].add_composite_algo(spec)
+    composite_algo = clients[0].add_composite_algo(spec)
     spec = factory.create_aggregate_algo()
-    aggregate_algo = sessions[0].add_aggregate_algo(spec)
+    aggregate_algo = clients[0].add_aggregate_algo(spec)
 
     # launch execution
     previous_aggregatetuple = None
@@ -363,10 +372,10 @@ def test_aggregate_composite_traintuples(global_execution_env):
                 algo=composite_algo,
                 dataset=dataset,
                 data_samples=[dataset.train_data_sample_keys[0 + round_]],
-                permissions=Permissions(public=False, authorized_ids=[s.node_id for s in sessions]),
+                permissions=Permissions(public=False, authorized_ids=[c.node_id for c in clients]),
                 **kwargs,
             )
-            t = sessions[0].add_composite_traintuple(spec).future().wait()
+            t = clients[0].add_composite_traintuple(spec).future().wait()
             composite_traintuples.append(t)
 
         # create aggregate on its node
@@ -375,7 +384,7 @@ def test_aggregate_composite_traintuples(global_execution_env):
             worker=aggregate_worker,
             traintuples=composite_traintuples,
         )
-        aggregatetuple = sessions[0].add_aggregatetuple(spec).future().wait()
+        aggregatetuple = clients[0].add_aggregatetuple(spec).future().wait()
 
         # save state of round
         previous_aggregatetuple = aggregatetuple
@@ -387,7 +396,7 @@ def test_aggregate_composite_traintuples(global_execution_env):
             objective=objective,
             traintuple=traintuple,
         )
-        sessions[0].add_testtuple(spec).future().wait()
+        clients[0].add_testtuple(spec).future().wait()
 
     if not network.options.enable_intermediate_model_removal:
         return
@@ -402,16 +411,17 @@ def test_aggregate_composite_traintuples(global_execution_env):
     # deleted. Here, we cannot know for sure the failure reason. Unfortunately this cannot be done now as the
     # username/password are not available in the settings files.
 
-    session = sessions[0]
-    dataset = [d for d in initial_assets.datasets if d.owner == session.node_id][0]
-    algo = session.add_algo(spec)
+    client = clients[0]
+    initial_assets = initial_assets.filter_by(client.node_id)
+    dataset = initial_assets.datasets[0]
+    algo = client.add_algo(spec)
 
     spec = factory.create_traintuple(
         algo=algo,
         dataset=dataset,
         data_samples=dataset.train_data_sample_keys,
     )
-    traintuple = session.add_traintuple(spec).future().wait()
+    traintuple = client.add_traintuple(spec).future().wait()
     assert traintuple.status == assets.Status.failed
 
 
@@ -463,13 +473,14 @@ def test_execution_retry_on_fail(fail_count, status, global_execution_env):
     tools.algo.execute(TestAlgo())"""
 
     factory, initial_assets, network = global_execution_env
-    session = network.sessions[0]
+    client = network.clients[0]
 
-    dataset = [d for d in initial_assets.datasets if d.owner == session.node_id][0]
+    initial_assets = initial_assets.filter_by(client.node_id)
+    dataset = initial_assets.datasets[0]
 
     py_script = sbt.factory.DEFAULT_ALGO_SCRIPT.replace(retry_algo_snippet_toreplace, retry_snippet_replacement)
     spec = factory.create_algo(py_script)
-    algo = session.add_algo(spec)
+    algo = client.add_algo(spec)
 
     spec = factory.create_traintuple(
         algo=algo,
@@ -478,7 +489,7 @@ def test_execution_retry_on_fail(fail_count, status, global_execution_env):
         rank=0,  # make sure it's part of a compute plan, so we have access to the /sandbox/local
                  # folder (that's where we store the counter)
     )
-    traintuple = session.add_traintuple(spec).future().wait(raises=False)
+    traintuple = client.add_traintuple(spec).future().wait(raises=False)
 
     # Assuming that, on the backend, CELERY_TASK_MAX_RETRIES is set to 1, the algo
     # should be retried up to 1 time(s) (i.e. max 2 attempts in total)
