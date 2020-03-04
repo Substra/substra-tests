@@ -347,7 +347,7 @@ def test_compute_plan_aggregate_composite_traintuples(global_execution_env):
                 composite_algo=composite_algo,
                 dataset=dataset,
                 data_samples=[dataset.train_data_sample_keys[0 + round_]],
-                out_trunk_model_permissions=Permissions(public=False, authorized_ids=[s.node_id for s in clients]),
+                out_trunk_model_permissions=Permissions(public=False, authorized_ids=[c.node_id for c in clients]),
                 **kwargs,
             )
             composite_traintuple_specs.append(spec)

@@ -69,7 +69,7 @@ def test_federated_learning_workflow(global_execution_env):
     datasets = initial_assets.datasets
 
     # check there is one dataset per node in the network
-    assert set([d.owner for d in datasets]) == set([s.node_id for s in network.clients])
+    assert set([d.owner for d in datasets]) == set([c.node_id for c in network.clients])
 
     # create 1 traintuple per dataset and chain them
     traintuple = None
@@ -372,7 +372,7 @@ def test_aggregate_composite_traintuples(global_execution_env):
                 algo=composite_algo,
                 dataset=dataset,
                 data_samples=[dataset.train_data_sample_keys[0 + round_]],
-                permissions=Permissions(public=False, authorized_ids=[s.node_id for s in clients]),
+                permissions=Permissions(public=False, authorized_ids=[c.node_id for c in clients]),
                 **kwargs,
             )
             t = clients[0].add_composite_traintuple(spec).future().wait()
