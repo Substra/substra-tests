@@ -57,13 +57,13 @@ class _TestAssets:
 @dataclasses.dataclass
 class Network:
     options: settings.Options
-    sessions: typing.List[sbt.Client] = dataclasses.field(default_factory=list)
+    clients: typing.List[sbt.Client] = dataclasses.field(default_factory=list)
 
 
 def _get_network():
     """Create network instance from settings."""
     cfg = settings.load()
-    sessions = [sbt.Client(
+    clients = [sbt.Client(
         node_name=n.name,
         node_id=n.msp_id,
         address=n.address,
@@ -72,7 +72,7 @@ def _get_network():
     ) for n in cfg.nodes]
     return Network(
         options=cfg.options,
-        sessions=sessions,
+        clients=clients,
     )
 
 
@@ -120,43 +120,43 @@ def global_execution_env():
     factory_name = f"{TESTS_RUN_UUID}_global"
 
     with sbt.AssetsFactory(name=factory_name) as f:
-        for sess in n.sessions:
+        for client in n.clients:
 
             # create dataset
             spec = f.create_dataset()
-            dataset = sess.add_dataset(spec)
+            dataset = client.add_dataset(spec)
 
             # create train data samples
             for i in range(4):
                 spec = f.create_data_sample(datasets=[dataset], test_only=False)
-                sess.add_data_sample(spec)
+                client.add_data_sample(spec)
 
             # create test data sample
             spec = f.create_data_sample(datasets=[dataset], test_only=True)
-            test_data_sample = sess.add_data_sample(spec)
+            test_data_sample = client.add_data_sample(spec)
 
             # reload datasets (to ensure they are properly linked with the created data samples)
-            dataset = sess.get_dataset(dataset.key)
+            dataset = client.get_dataset(dataset.key)
             assets._datasets.append(dataset)
 
             # create objective
             spec = f.create_objective(dataset=dataset, data_samples=[test_data_sample])
-            objective = sess.add_objective(spec)
+            objective = client.add_objective(spec)
             assets._objectives.append(objective)
 
         yield f, assets, n
 
 
 @pytest.fixture
-def session_1(network):
+def client_1(network):
     """Client fixture (first node)."""
-    return network.sessions[0]
+    return network.clients[0]
 
 
 @pytest.fixture
-def session_2(network):
+def client_2(network):
     """Client fixture (second node)."""
-    return network.sessions[1]
+    return network.clients[1]
 
 
 @pytest.fixture
@@ -167,6 +167,6 @@ def node_cfg():
 
 
 @pytest.fixture
-def session(network):
+def client(network):
     """Client fixture (first node)."""
-    return network.sessions[0]
+    return network.clients[0]

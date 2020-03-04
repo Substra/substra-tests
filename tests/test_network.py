@@ -9,160 +9,160 @@ from . import settings
 
 
 def test_connection_to_nodes(network):
-    """Connect to each substra nodes using the session."""
-    for session in network.sessions:
-        session.list_algo()
+    """Connect to each substra nodes using the client."""
+    for client in network.clients:
+        client.list_algo()
 
 
-def test_add_dataset(factory, session):
+def test_add_dataset(factory, client):
     spec = factory.create_dataset()
-    dataset = session.add_dataset(spec)
+    dataset = client.add_dataset(spec)
 
-    dataset_copy = session.get_dataset(dataset.key)
+    dataset_copy = client.get_dataset(dataset.key)
     assert dataset == dataset_copy
 
 
-def test_download_opener(factory, session):
+def test_download_opener(factory, client):
     spec = factory.create_dataset()
-    dataset = session.add_dataset(spec)
+    dataset = client.add_dataset(spec)
 
-    content = session.download_opener(dataset.key)
+    content = client.download_opener(dataset.key)
     assert content == spec.read_opener()
 
 
-def test_describe_dataset(factory, session):
+def test_describe_dataset(factory, client):
     spec = factory.create_dataset()
-    dataset = session.add_dataset(spec)
+    dataset = client.add_dataset(spec)
 
-    content = session.describe_dataset(dataset.key)
+    content = client.describe_dataset(dataset.key)
     assert content == spec.read_description()
 
 
-def test_add_dataset_conflict(factory, session):
+def test_add_dataset_conflict(factory, client):
     spec = factory.create_dataset()
-    dataset = session.add_dataset(spec)
+    dataset = client.add_dataset(spec)
 
     with pytest.raises(substra.exceptions.AlreadyExists):
-        session.add_dataset(spec)
+        client.add_dataset(spec)
 
-    dataset_copy = session.add_dataset(spec, exist_ok=True)
+    dataset_copy = client.add_dataset(spec, exist_ok=True)
     assert dataset == dataset_copy
 
 
-def test_link_dataset_with_objective(factory, session):
+def test_link_dataset_with_objective(factory, client):
     spec = factory.create_objective()
-    objective_1 = session.add_objective(spec)
+    objective_1 = client.add_objective(spec)
 
     spec = factory.create_objective()
-    objective_2 = session.add_objective(spec)
+    objective_2 = client.add_objective(spec)
 
     spec = factory.create_dataset()
-    dataset = session.add_dataset(spec)
+    dataset = client.add_dataset(spec)
 
     # link dataset with objective
-    session.link_dataset_with_objective(dataset, objective_1)
-    dataset = session.get_dataset(dataset.key)
+    client.link_dataset_with_objective(dataset, objective_1)
+    dataset = client.get_dataset(dataset.key)
     assert dataset.objective_key == objective_1.key
 
     # ensure an existing dataset cannot be linked to more than one objective
     with pytest.raises(substra.exceptions.InvalidRequest):
-        session.link_dataset_with_objective(dataset, objective_2)
+        client.link_dataset_with_objective(dataset, objective_2)
 
 
-def test_add_data_sample(factory, session):
+def test_add_data_sample(factory, client):
     spec = factory.create_dataset()
-    dataset = session.add_dataset(spec)
+    dataset = client.add_dataset(spec)
 
     spec = factory.create_data_sample(test_only=True, datasets=[dataset])
-    session.add_data_sample(spec)
+    client.add_data_sample(spec)
 
     spec = factory.create_data_sample(test_only=False, datasets=[dataset])
-    session.add_data_sample(spec)
+    client.add_data_sample(spec)
 
 
 @pytest.mark.skipif(not settings.HAS_SHARED_PATH, reason='requires a shared path')
-def test_add_data_sample_located_in_shared_path(factory, session, node_cfg):
+def test_add_data_sample_located_in_shared_path(factory, client, node_cfg):
     spec = factory.create_dataset()
-    dataset = session.add_dataset(spec)
+    dataset = client.add_dataset(spec)
 
     spec = factory.create_data_sample(test_only=True, datasets=[dataset])
     spec.move_data_to(node_cfg.shared_path)
-    session.add_data_sample(spec, local=False)  # should not raise
+    client.add_data_sample(spec, local=False)  # should not raise
 
 
 @pytest.mark.skip(reason='may fill up disk as shared folder is not cleanup')
 @pytest.mark.parametrize('filesize', [1, 10, 100, 1000])  # in mega
-def test_add_data_sample_path_big_files(filesize, factory, session, node_cfg):
+def test_add_data_sample_path_big_files(filesize, factory, client, node_cfg):
     spec = factory.create_dataset()
-    dataset = session.add_dataset(spec)
+    dataset = client.add_dataset(spec)
 
     content = os.urandom(filesize * 1000 * 1000)
     spec = factory.create_data_sample(content=content, datasets=[dataset])
     spec.move_data_to(node_cfg.shared_path)
-    session.add_data_sample(spec, local=False)  # should not raise
+    client.add_data_sample(spec, local=False)  # should not raise
 
 
-def test_add_objective(factory, session):
+def test_add_objective(factory, client):
     spec = factory.create_dataset()
-    dataset = session.add_dataset(spec)
+    dataset = client.add_dataset(spec)
 
     spec = factory.create_data_sample(test_only=True, datasets=[dataset])
-    data_sample = session.add_data_sample(spec)
+    data_sample = client.add_data_sample(spec)
 
     spec = factory.create_objective(dataset=dataset, data_samples=[data_sample])
-    objective = session.add_objective(spec)
-    objective_copy = session.get_objective(objective.key)
+    objective = client.add_objective(spec)
+    objective_copy = client.get_objective(objective.key)
     assert objective == objective_copy
 
     # check dataset has been linked with the objective after objective creation
-    dataset = session.get_dataset(dataset.key)
+    dataset = client.get_dataset(dataset.key)
     assert dataset.objective_key == objective.key
 
     # add a new dataset and ensure it is linked with the created objective
     spec = factory.create_dataset(objective=objective)
-    dataset = session.add_dataset(spec)
+    dataset = client.add_dataset(spec)
     assert dataset.objective_key == objective.key
 
 
-def test_add_algo(factory, session):
+def test_add_algo(factory, client):
     spec = factory.create_algo()
-    algo = session.add_algo(spec)
+    algo = client.add_algo(spec)
 
-    algo_copy = session.get_algo(algo.key)
+    algo_copy = client.get_algo(algo.key)
     assert algo == algo_copy
 
 
-def test_add_composite_algo(factory, session):
+def test_add_composite_algo(factory, client):
     spec = factory.create_composite_algo()
-    algo = session.add_composite_algo(spec)
+    algo = client.add_composite_algo(spec)
 
-    algo_copy = session.get_composite_algo(algo.key)
+    algo_copy = client.get_composite_algo(algo.key)
     assert algo == algo_copy
 
 
-def test_list_nodes(network, session):
+def test_list_nodes(network, client):
     """Nodes are properly registered and list nodes returns expected nodes."""
-    nodes = session.list_node()
+    nodes = client.list_node()
     node_ids = [n.id for n in nodes]
-    network_node_ids = [s.node_id for s in network.sessions]
+    network_node_ids = [s.node_id for s in network.clients]
     # check all nodes configured are correctly registered
     assert set(network_node_ids).issubset(set(node_ids))
 
 
-def test_query_algos(factory, session):
+def test_query_algos(factory, client):
     spec = factory.create_algo()
-    algo = session.add_algo(spec)
+    algo = client.add_algo(spec)
 
     spec = factory.create_composite_algo()
-    compo_algo = session.add_composite_algo(spec)
+    compo_algo = client.add_composite_algo(spec)
 
     # check the created composite algo is not returned when listing algos
-    algo_keys = [a.key for a in session.list_algo()]
+    algo_keys = [a.key for a in client.list_algo()]
     assert algo.key in algo_keys
     assert compo_algo.key not in algo_keys
 
     # check the created algo is not returned when listing composite algos
-    compo_algo_keys = [a.key for a in session.list_composite_algo()]
+    compo_algo_keys = [a.key for a in client.list_composite_algo()]
     assert compo_algo.key in compo_algo_keys
     assert algo.key not in compo_algo_keys
 
@@ -170,17 +170,17 @@ def test_query_algos(factory, session):
 @pytest.mark.parametrize(
     'asset_type', sbt.assets.AssetType.can_be_listed(),
 )
-def test_list_asset(asset_type, session):
+def test_list_asset(asset_type, client):
     """Simple check that list_asset method can be called without raising errors."""
-    method = getattr(session, f'list_{asset_type.name}')
+    method = getattr(client, f'list_{asset_type.name}')
     method()  # should not raise
 
 
 @pytest.mark.parametrize(
     'asset_type', sbt.assets.AssetType.can_be_get(),
 )
-def test_error_get_asset_invalid_request(asset_type, session):
-    method = getattr(session, f'get_{asset_type.name}')
+def test_error_get_asset_invalid_request(asset_type, client):
+    method = getattr(client, f'get_{asset_type.name}')
     with pytest.raises(substra.exceptions.InvalidRequest):
         method('invalid-id')
 
@@ -188,7 +188,7 @@ def test_error_get_asset_invalid_request(asset_type, session):
 @pytest.mark.parametrize(
     'asset_type', sbt.assets.AssetType.can_be_get(),
 )
-def test_error_get_asset_not_found(asset_type, session):
-    method = getattr(session, f'get_{asset_type.name}')
+def test_error_get_asset_not_found(asset_type, client):
+    method = getattr(client, f'get_{asset_type.name}')
     with pytest.raises(substra.exceptions.NotFound):
         method('42' * 32)  # a valid key must have a 64 length
