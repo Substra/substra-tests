@@ -101,15 +101,10 @@ def test_federated_learning_workflow(global_execution_env):
 
 
 @pytest.mark.slow
-def test_tuples_execution_on_different_nodes(global_execution_env):
+def test_tuples_execution_on_different_nodes(factory, client_1, client_2,
+                                             initial_assets_1, initial_assets_2):
     """Execution of a traintuple on node 1 and the following testtuple on node 2."""
     # add test data samples / dataset / objective on node 1
-    factory, initial_assets, network = global_execution_env
-    client_1 = network.clients[0]
-    client_2 = network.clients[1]
-
-    initial_assets_1 = initial_assets.filter_by(client_1.node_id)
-    initial_assets_2 = initial_assets.filter_by(client_2.node_id)
 
     objective_1 = initial_assets_1.objectives[0]
     dataset_2 = initial_assets_2.datasets[0]
