@@ -25,9 +25,9 @@ def test_permission_creation(is_public, factory, client):
     Permissions(public=False, authorized_ids=[MSP_IDS[0]]),
     Permissions(public=False, authorized_ids=[MSP_IDS[1]]),
 ])
-def test_get_metadata(permissions, factory, network):
+def test_get_metadata(permissions, factory, clients):
     """Test get metadata assets with various permissions."""
-    clients = network.clients[:2]
+    clients = clients[:2]
 
     # add 1 dataset per node
     datasets = []
@@ -127,10 +127,7 @@ def test_merge_permissions(permissions_1, permissions_2, expected_permissions,
     assert set(tuple_permissions.authorized_ids) == set(expected_permissions.authorized_ids)
 
 
-def test_permissions_denied_process(factory, network):
-    client_1 = network.clients[0]
-    client_2 = network.clients[1]
-
+def test_permissions_denied_process(factory, client_1, client_2):
     # setup data
 
     spec = factory.create_dataset(permissions=Permissions(public=False, authorized_ids=[]))
@@ -164,15 +161,12 @@ def test_permissions_denied_process(factory, network):
 
 @pytest.mark.slow
 @pytest.mark.xfail(reason='permission check not yet implemented in the backend')
-def test_permissions_denied_model_process(factory, network):
-    client_1 = network.clients[0]
-    client_2 = network.clients[1]
-
+def test_permissions_denied_model_process(factory, clients, client_1, client_2):
     # setup
 
     datasets = []
     algos = []
-    for client in network.clients[:2]:
+    for client in clients[:2]:
         # dataset
         spec = factory.create_dataset(permissions=Permissions(public=False, authorized_ids=[]))
         dataset = client.add_dataset(spec)
@@ -214,7 +208,7 @@ def test_permissions_denied_model_process(factory, network):
 
 
 @pytest.mark.skipif(len(MSP_IDS) < 3, reason='requires at least 3 nodes')
-def test_merge_permissions_denied_process(factory, network):
+def test_merge_permissions_denied_process(factory, clients):
     """Test to process asset with merged permissions from 2 other nodes
 
     - dataset and objectives located on node 1
@@ -223,9 +217,9 @@ def test_merge_permissions_denied_process(factory, network):
     - failed attempt to create testtuple using this traintuple from node 3
     """
     # define clients one and for all
-    client_1 = network.clients[0]
-    client_2 = network.clients[1]
-    client_3 = network.clients[2]
+    client_1 = clients[0]
+    client_2 = clients[1]
+    client_3 = clients[2]
 
     permissions_list = [(
         Permissions(public=False, authorized_ids=[MSP_IDS[1], MSP_IDS[2]]),
@@ -278,10 +272,7 @@ def test_merge_permissions_denied_process(factory, network):
             client_3.add_testtuple(spec)
 
 
-def test_permissions_denied_head_model_process(network, factory):
-    client_1 = network.clients[0]
-    client_2 = network.clients[1]
-
+def test_permissions_denied_head_model_process(factory, client_1, client_2):
     # setup data
 
     datasets = []

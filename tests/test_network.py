@@ -8,9 +8,9 @@ import substratest as sbt
 from . import settings
 
 
-def test_connection_to_nodes(network):
+def test_connection_to_nodes(clients):
     """Connect to each substra nodes using the client."""
-    for client in network.clients:
+    for client in clients:
         client.list_algo()
 
 
@@ -140,11 +140,11 @@ def test_add_composite_algo(factory, client):
     assert algo == algo_copy
 
 
-def test_list_nodes(network, client):
+def test_list_nodes(clients, client):
     """Nodes are properly registered and list nodes returns expected nodes."""
     nodes = client.list_node()
     node_ids = [n.id for n in nodes]
-    network_node_ids = [c.node_id for c in network.clients]
+    network_node_ids = [c.node_id for c in clients]
     # check all nodes configured are correctly registered
     assert set(network_node_ids).issubset(set(node_ids))
 

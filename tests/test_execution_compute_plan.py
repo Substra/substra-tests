@@ -6,23 +6,17 @@ from substratest.factory import Permissions
 from substratest import assets
 
 
-def test_compute_plan(global_execution_env):
+def test_compute_plan(factory, client_1, client_2, data_envs_1, data_envs_2):
     """Execution of a compute plan containing multiple traintuples:
     - 1 traintuple executed on node 1
     - 1 traintuple executed on node 2
     - 1 traintuple executed on node 1 depending on previous traintuples
     - 1 testtuple executed on node 1 depending on the last traintuple
     """
-    factory, initial_assets, network = global_execution_env
-    client_1 = network.clients[0]
-    client_2 = network.clients[1]
 
-    initial_assets_1 = initial_assets.filter_by(client_1.node_id)
-    initial_assets_2 = initial_assets.filter_by(client_2.node_id)
-
-    dataset_1 = initial_assets_1.datasets[0]
-    dataset_2 = initial_assets_2.datasets[0]
-    objective_1 = initial_assets_1.objectives[0]
+    dataset_1 = data_envs_1.datasets[0]
+    dataset_2 = data_envs_2.datasets[0]
+    objective_1 = data_envs_1.objectives[0]
 
     spec = factory.create_algo()
     algo_2 = client_2.add_algo(spec)
@@ -105,7 +99,7 @@ def test_compute_plan(global_execution_env):
 
 
 @pytest.mark.slow
-def test_compute_plan_single_client_success(global_execution_env):
+def test_compute_plan_single_client_success(factory, client, data_envs_1):
     """A compute plan with 3 traintuples and 3 associated testtuples"""
 
     # Create a compute plan with 3 steps:
@@ -114,13 +108,9 @@ def test_compute_plan_single_client_success(global_execution_env):
     # 2. traintuple + testtuple
     # 3. traintuple + testtuple
 
-    factory, initial_assets, network = global_execution_env
-    client = network.clients[0]
-
-    initial_assets = initial_assets.filter_by(client.node_id)
-    dataset = initial_assets.datasets[0]
+    dataset = data_envs_1.datasets[0]
     data_sample_1, data_sample_2, data_sample_3, _ = dataset.train_data_sample_keys
-    objective = initial_assets.objectives[0]
+    objective = data_envs_1.objectives[0]
 
     spec = factory.create_algo()
     algo = client.add_algo(spec)
@@ -168,19 +158,15 @@ def test_compute_plan_single_client_success(global_execution_env):
 
 
 @pytest.mark.slow
-def test_compute_plan_update(global_execution_env):
+def test_compute_plan_update(factory, client, data_envs_1):
     """A compute plan with 3 traintuples and 3 associated testtuples.
 
     This is done by sending 3 requests (one create and two updates).
     """
 
-    factory, initial_assets, network = global_execution_env
-    client = network.clients[0]
-
-    initial_assets = initial_assets.filter_by(client.node_id)
-    dataset = initial_assets.datasets[0]
+    dataset = data_envs_1.datasets[0]
     data_sample_1, data_sample_2, data_sample_3, _ = dataset.train_data_sample_keys
-    objective = initial_assets.objectives[0]
+    objective = data_envs_1.objectives[0]
 
     spec = factory.create_algo()
     algo = client.add_algo(spec)
@@ -238,7 +224,7 @@ def test_compute_plan_update(global_execution_env):
 
 
 @pytest.mark.slow
-def test_compute_plan_single_client_failure(global_execution_env):
+def test_compute_plan_single_client_failure(factory, client, data_envs_1):
     """In a compute plan with 3 traintuples, failing the root traintuple
     should cancel its descendents and the associated testtuples"""
 
@@ -250,13 +236,9 @@ def test_compute_plan_single_client_failure(global_execution_env):
     #
     # Intentionally use an invalid (broken) algo.
 
-    factory, initial_assets, network = global_execution_env
-    client = network.clients[0]
-
-    initial_assets = initial_assets.filter_by(client.node_id)
-    dataset = initial_assets.datasets[0]
+    dataset = data_envs_1.datasets[0]
     data_sample_1, data_sample_2, data_sample_3, _ = dataset.train_data_sample_keys
-    objective = initial_assets.objectives[0]
+    objective = data_envs_1.objectives[0]
 
     spec = factory.create_algo(py_script=sbt.factory.INVALID_ALGO_SCRIPT)
     algo = client.add_algo(spec)
@@ -307,19 +289,16 @@ def test_compute_plan_single_client_failure(global_execution_env):
 
 
 @pytest.mark.slow
-def test_compute_plan_aggregate_composite_traintuples(global_execution_env):
+def test_compute_plan_aggregate_composite_traintuples(factory, clients, data_envs):
     """
     Compute plan version of the `test_aggregate_composite_traintuples` method from `test_execution.py`
     """
-    factory, initial_assets, network = global_execution_env
-    clients = network.clients
-
     aggregate_worker = clients[0].node_id
     number_of_rounds = 2
 
     # register objectives, datasets, and data samples
-    datasets = initial_assets.datasets
-    objectives = initial_assets.objectives
+    datasets = data_envs.datasets
+    objectives = data_envs.objectives
 
     # register algos on first node
     spec = factory.create_composite_algo()
@@ -379,12 +358,8 @@ def test_compute_plan_aggregate_composite_traintuples(global_execution_env):
         assert t.status == assets.Status.done
 
 
-def test_compute_plan_circular_dependency_failure(global_execution_env):
-    factory, initial_assets, network = global_execution_env
-    client = network.clients[0]
-
-    initial_assets = initial_assets.filter_by(client.node_id)
-    dataset = initial_assets.datasets[0]
+def test_compute_plan_circular_dependency_failure(factory, client, data_envs_1):
+    dataset = data_envs_1.datasets[0]
 
     spec = factory.create_algo()
     algo = client.add_algo(spec)
@@ -413,10 +388,7 @@ def test_compute_plan_circular_dependency_failure(global_execution_env):
 
 
 @pytest.mark.slow
-def test_execution_compute_plan_canceled(global_execution_env):
-    factory, initial_assets, network = global_execution_env
-    client = network.clients[0]
-
+def test_execution_compute_plan_canceled(factory, client, data_envs_1):
     # XXX A canceled compute plan can be done if the it is canceled while it last tuples
     #     are executing on the workers. The compute plan status will in this case change
     #     from canceled to done.
@@ -424,8 +396,7 @@ def test_execution_compute_plan_canceled(global_execution_env):
     #     compute plan with a large amount of tuples.
     nb_traintuples = 32
 
-    initial_assets = initial_assets.filter_by(client.node_id)
-    dataset = initial_assets.datasets[0]
+    dataset = data_envs_1.datasets[0]
     data_sample_key = dataset.train_data_sample_keys[0]
 
     spec = factory.create_algo()
