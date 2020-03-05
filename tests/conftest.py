@@ -100,55 +100,6 @@ def network():
     return _get_network()
 
 
-# @pytest.fixture(scope='session')
-# def global_execution_env():
-#     """Network fixture with pre-existing assets in all nodes.
-#
-#     The following asssets will be created for each node:
-#     - 4 train data samples
-#     - 1 test data sample
-#     - 1 dataset
-#     - 1 objective
-#
-#     Network must started outside of the tests environment and the network is kept
-#     alive while running all tests.
-#
-#     Returns a tuple (factory, assets, Network).
-#     """
-#     n = _get_network()
-#     factory_name = f"{TESTS_RUN_UUID}_global"
-#
-#     with sbt.AssetsFactory(name=factory_name) as f:
-#         datasets = []
-#         objectives = []
-#         for client in n.clients:
-#
-#             # create dataset
-#             spec = f.create_dataset()
-#             dataset = client.add_dataset(spec)
-#
-#             # create train data samples
-#             for i in range(4):
-#                 spec = f.create_data_sample(datasets=[dataset], test_only=False)
-#                 client.add_data_sample(spec)
-#
-#             # create test data sample
-#             spec = f.create_data_sample(datasets=[dataset], test_only=True)
-#             test_data_sample = client.add_data_sample(spec)
-#
-#             # reload datasets (to ensure they are properly linked with the created data samples)
-#             dataset = client.get_dataset(dataset.key)
-#             datasets.append(dataset)
-#
-#             # create objective
-#             spec = f.create_objective(dataset=dataset, data_samples=[test_data_sample])
-#             objective = client.add_objective(spec)
-#             objectives.append(objective)
-#
-#         assets = _TestAssets(datasets=datasets, objectives=objectives)
-#         yield f, assets, n
-
-
 @pytest.fixture(scope="session")
 def data_envs():
     """Fixture with pre-existing assets in all nodes.
