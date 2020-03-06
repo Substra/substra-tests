@@ -260,8 +260,7 @@ def test_aggregatetuple(factory, client, default_dataset):
 
 
 @pytest.mark.slow
-def test_aggregate_composite_traintuples(factory, clients, default_datasets, default_objectives,
-                                         default_dataset_1, network):
+def test_aggregate_composite_traintuples(factory, network, clients, default_datasets, default_objectives):
     """Do 2 rounds of composite traintuples aggregations on multiple nodes.
 
     Compute plan details:
@@ -357,12 +356,13 @@ def test_aggregate_composite_traintuples(factory, clients, default_datasets, def
     # username/password are not available in the settings files.
 
     client = clients[0]
+    dataset = default_datasets.sort_by(client.node_id)
     algo = client.add_algo(spec)
 
     spec = factory.create_traintuple(
         algo=algo,
-        dataset=default_dataset_1,
-        data_samples=default_dataset_1.train_data_sample_keys,
+        dataset=dataset,
+        data_samples=dataset.train_data_sample_keys,
     )
     traintuple = client.add_traintuple(spec).future().wait()
     assert traintuple.status == assets.Status.failed
