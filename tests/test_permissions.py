@@ -161,12 +161,12 @@ def test_permissions_denied_process(factory, client_1, client_2):
 
 @pytest.mark.slow
 @pytest.mark.xfail(reason='permission check not yet implemented in the backend')
-def test_permissions_denied_model_process(factory, clients, client_1, client_2):
+def test_permissions_denied_model_process(factory, client_1, client_2, network):
     # setup
 
     datasets = []
     algos = []
-    for client in clients[:2]:
+    for client in network.clients[:2]:
         # dataset
         spec = factory.create_dataset(permissions=Permissions(public=False, authorized_ids=[]))
         dataset = client.add_dataset(spec)

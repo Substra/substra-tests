@@ -140,11 +140,11 @@ def test_add_composite_algo(factory, client):
     assert algo == algo_copy
 
 
-def test_list_nodes(clients, client):
+def test_list_nodes(client, network):
     """Nodes are properly registered and list nodes returns expected nodes."""
     nodes = client.list_node()
     node_ids = [n.id for n in nodes]
-    network_node_ids = [c.node_id for c in clients]
+    network_node_ids = [c.node_id for c in network.clients]
     # check all nodes configured are correctly registered
     assert set(network_node_ids).issubset(set(node_ids))
 
