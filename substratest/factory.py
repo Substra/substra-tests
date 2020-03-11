@@ -413,7 +413,7 @@ class _BaseComputePlanSpec(_Spec, abc.ABC):
 @dataclasses.dataclass
 class ComputePlanSpec(_BaseComputePlanSpec):
     tag: str
-    cleanModels: bool
+    clean_models: bool
 
 
 @dataclasses.dataclass
@@ -636,14 +636,14 @@ class AssetsFactory:
             tag=tag,
         )
 
-    def create_compute_plan(self, tag='', cleanModels=False):
+    def create_compute_plan(self, tag='', clean_models=False):
         return ComputePlanSpec(
             traintuples=[],
             composite_traintuples=[],
             aggregatetuples=[],
             testtuples=[],
             tag=tag,
-            cleanModels=cleanModels
+            clean_models=clean_models
         )
 
     def update_compute_plan(self, compute_plan):
