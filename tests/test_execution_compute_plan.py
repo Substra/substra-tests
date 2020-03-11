@@ -296,7 +296,9 @@ def test_compute_plan_aggregate_composite_traintuples(factory, clients, default_
     previous_aggregatetuple_spec = None
     previous_composite_traintuple_specs = []
 
-    cp_spec = factory.create_compute_plan()
+    cp_spec = factory.create_compute_plan(
+        cleanModels=True
+    )
 
     for round_ in range(number_of_rounds):
         # create composite traintuple on each node
