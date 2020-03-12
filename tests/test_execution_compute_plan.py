@@ -394,9 +394,8 @@ def test_compute_plan_remove_intermediary_model(factory, client, default_dataset
         traintuples=cp.list_traintuple()
     )
 
-    traintuple_3 = client.add_traintuple(traintuple_spec_3).future().wait(raises=False)
-
-    assert traintuple_3.status == assets.Status.failed
+    with pytest.raises(sbt.errors.FutureFailureError):
+        client.add_traintuple(traintuple_spec_3).future().wait()
 
 
 def test_compute_plan_circular_dependency_failure(factory, client, default_dataset):
