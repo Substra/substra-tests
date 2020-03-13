@@ -383,10 +383,6 @@ def test_compute_plan_remove_intermediary_model(factory, client, default_dataset
 
     cp = client.add_compute_plan(cp_spec).future().wait()
 
-    # All the train/test tuples should succeed
-    for t in cp.list_traintuple() + cp.list_testtuple():
-        assert t.status == assets.Status.done
-
     traintuple_spec_3 = factory.create_traintuple(
         algo=algo,
         dataset=default_dataset,
