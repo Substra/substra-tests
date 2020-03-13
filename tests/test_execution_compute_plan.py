@@ -348,7 +348,7 @@ def test_compute_plan_aggregate_composite_traintuples(factory, clients, default_
 def test_compute_plan_remove_intermediary_model(factory, client, default_dataset, default_objective):
     """
     Create a simple compute plan with clean_models at true, see it done and
-    create a test tuple on a intermediary model. Expect it to fail at the
+    create a traintuple on a intermediary model. Expect it to fail at the
     execution.
     """
     data_sample_1, data_sample_2, data_sample_3, _ = default_dataset.train_data_sample_keys
