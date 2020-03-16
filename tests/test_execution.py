@@ -356,7 +356,7 @@ def test_aggregate_composite_traintuples(factory, network, clients, default_data
     # username/password are not available in the settings files.
 
     client = clients[0]
-    dataset = default_datasets.sort_by(client.node_id)
+    dataset = default_datasets[0]
     algo = client.add_algo(spec)
 
     spec = factory.create_traintuple(
