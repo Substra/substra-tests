@@ -6,23 +6,13 @@ from substratest.factory import Permissions
 from substratest import assets
 
 
-def test_compute_plan(global_execution_env):
+def test_compute_plan(factory, client_1, client_2, default_dataset_1, default_dataset_2, default_objective_1):
     """Execution of a compute plan containing multiple traintuples:
     - 1 traintuple executed on node 1
     - 1 traintuple executed on node 2
     - 1 traintuple executed on node 1 depending on previous traintuples
     - 1 testtuple executed on node 1 depending on the last traintuple
     """
-    factory, initial_assets, network = global_execution_env
-    client_1 = network.clients[0]
-    client_2 = network.clients[1]
-
-    initial_assets_1 = initial_assets.filter_by(client_1.node_id)
-    initial_assets_2 = initial_assets.filter_by(client_2.node_id)
-
-    dataset_1 = initial_assets_1.datasets[0]
-    dataset_2 = initial_assets_2.datasets[0]
-    objective_1 = initial_assets_1.objectives[0]
 
     spec = factory.create_algo()
     algo_2 = client_2.add_algo(spec)
@@ -32,25 +22,25 @@ def test_compute_plan(global_execution_env):
 
     traintuple_spec_1 = cp_spec.add_traintuple(
         algo=algo_2,
-        dataset=dataset_1,
-        data_samples=dataset_1.train_data_sample_keys,
+        dataset=default_dataset_1,
+        data_samples=default_dataset_1.train_data_sample_keys,
     )
 
     traintuple_spec_2 = cp_spec.add_traintuple(
         algo=algo_2,
-        dataset=dataset_2,
-        data_samples=dataset_2.train_data_sample_keys,
+        dataset=default_dataset_2,
+        data_samples=default_dataset_2.train_data_sample_keys,
     )
 
     traintuple_spec_3 = cp_spec.add_traintuple(
         algo=algo_2,
-        dataset=dataset_1,
-        data_samples=dataset_1.train_data_sample_keys,
+        dataset=default_dataset_1,
+        data_samples=default_dataset_1.train_data_sample_keys,
         in_models=[traintuple_spec_1, traintuple_spec_2],
     )
 
     cp_spec.add_testtuple(
-        objective=objective_1,
+        objective=default_objective_1,
         traintuple_spec=traintuple_spec_3,
     )
 
@@ -105,7 +95,7 @@ def test_compute_plan(global_execution_env):
 
 
 @pytest.mark.slow
-def test_compute_plan_single_client_success(global_execution_env):
+def test_compute_plan_single_client_success(factory, client, default_dataset, default_objective):
     """A compute plan with 3 traintuples and 3 associated testtuples"""
 
     # Create a compute plan with 3 steps:
@@ -114,13 +104,7 @@ def test_compute_plan_single_client_success(global_execution_env):
     # 2. traintuple + testtuple
     # 3. traintuple + testtuple
 
-    factory, initial_assets, network = global_execution_env
-    client = network.clients[0]
-
-    initial_assets = initial_assets.filter_by(client.node_id)
-    dataset = initial_assets.datasets[0]
-    data_sample_1, data_sample_2, data_sample_3, _ = dataset.train_data_sample_keys
-    objective = initial_assets.objectives[0]
+    data_sample_1, data_sample_2, data_sample_3, _ = default_dataset.train_data_sample_keys
 
     spec = factory.create_algo()
     algo = client.add_algo(spec)
@@ -129,33 +113,33 @@ def test_compute_plan_single_client_success(global_execution_env):
 
     traintuple_spec_1 = cp_spec.add_traintuple(
         algo=algo,
-        dataset=dataset,
+        dataset=default_dataset,
         data_samples=[data_sample_1]
     )
     cp_spec.add_testtuple(
-        objective=objective,
+        objective=default_objective,
         traintuple_spec=traintuple_spec_1
     )
 
     traintuple_spec_2 = cp_spec.add_traintuple(
         algo=algo,
-        dataset=dataset,
+        dataset=default_dataset,
         data_samples=[data_sample_2],
         in_models=[traintuple_spec_1]
     )
     cp_spec.add_testtuple(
-        objective=objective,
+        objective=default_objective,
         traintuple_spec=traintuple_spec_2
     )
 
     traintuple_spec_3 = cp_spec.add_traintuple(
         algo=algo,
-        dataset=dataset,
+        dataset=default_dataset,
         data_samples=[data_sample_3],
         in_models=[traintuple_spec_2]
     )
     cp_spec.add_testtuple(
-        objective=objective,
+        objective=default_objective,
         traintuple_spec=traintuple_spec_3
     )
 
@@ -168,19 +152,13 @@ def test_compute_plan_single_client_success(global_execution_env):
 
 
 @pytest.mark.slow
-def test_compute_plan_update(global_execution_env):
+def test_compute_plan_update(factory, client, default_dataset, default_objective):
     """A compute plan with 3 traintuples and 3 associated testtuples.
 
     This is done by sending 3 requests (one create and two updates).
     """
 
-    factory, initial_assets, network = global_execution_env
-    client = network.clients[0]
-
-    initial_assets = initial_assets.filter_by(client.node_id)
-    dataset = initial_assets.datasets[0]
-    data_sample_1, data_sample_2, data_sample_3, _ = dataset.train_data_sample_keys
-    objective = initial_assets.objectives[0]
+    data_sample_1, data_sample_2, data_sample_3, _ = default_dataset.train_data_sample_keys
 
     spec = factory.create_algo()
     algo = client.add_algo(spec)
@@ -190,11 +168,11 @@ def test_compute_plan_update(global_execution_env):
     cp_spec = factory.create_compute_plan()
     traintuple_spec_1 = cp_spec.add_traintuple(
         algo=algo,
-        dataset=dataset,
+        dataset=default_dataset,
         data_samples=[data_sample_1]
     )
     cp_spec.add_testtuple(
-        objective=objective,
+        objective=default_objective,
         traintuple_spec=traintuple_spec_1
     )
     cp = client.add_compute_plan(cp_spec)
@@ -204,12 +182,12 @@ def test_compute_plan_update(global_execution_env):
     cp_spec = factory.update_compute_plan(cp)
     traintuple_spec_2 = cp_spec.add_traintuple(
         algo=algo,
-        dataset=dataset,
+        dataset=default_dataset,
         data_samples=[data_sample_2],
         in_models=[traintuple_spec_1]
     )
     cp_spec.add_testtuple(
-        objective=objective,
+        objective=default_objective,
         traintuple_spec=traintuple_spec_2
     )
     cp = client.update_compute_plan(cp_spec)
@@ -219,12 +197,12 @@ def test_compute_plan_update(global_execution_env):
     cp_spec = factory.update_compute_plan(cp)
     traintuple_spec_3 = cp_spec.add_traintuple(
         algo=algo,
-        dataset=dataset,
+        dataset=default_dataset,
         data_samples=[data_sample_3],
         in_models=[traintuple_spec_2]
     )
     cp_spec.add_testtuple(
-        objective=objective,
+        objective=default_objective,
         traintuple_spec=traintuple_spec_3
     )
     cp = client.update_compute_plan(cp_spec)
@@ -238,7 +216,7 @@ def test_compute_plan_update(global_execution_env):
 
 
 @pytest.mark.slow
-def test_compute_plan_single_client_failure(global_execution_env):
+def test_compute_plan_single_client_failure(factory, client, default_dataset, default_objective):
     """In a compute plan with 3 traintuples, failing the root traintuple
     should cancel its descendents and the associated testtuples"""
 
@@ -250,13 +228,7 @@ def test_compute_plan_single_client_failure(global_execution_env):
     #
     # Intentionally use an invalid (broken) algo.
 
-    factory, initial_assets, network = global_execution_env
-    client = network.clients[0]
-
-    initial_assets = initial_assets.filter_by(client.node_id)
-    dataset = initial_assets.datasets[0]
-    data_sample_1, data_sample_2, data_sample_3, _ = dataset.train_data_sample_keys
-    objective = initial_assets.objectives[0]
+    data_sample_1, data_sample_2, data_sample_3, _ = default_dataset.train_data_sample_keys
 
     spec = factory.create_algo(py_script=sbt.factory.INVALID_ALGO_SCRIPT)
     algo = client.add_algo(spec)
@@ -265,33 +237,33 @@ def test_compute_plan_single_client_failure(global_execution_env):
 
     traintuple_spec_1 = cp_spec.add_traintuple(
         algo=algo,
-        dataset=dataset,
+        dataset=default_dataset,
         data_samples=[data_sample_1]
     )
     cp_spec.add_testtuple(
-        objective=objective,
+        objective=default_objective,
         traintuple_spec=traintuple_spec_1,
     )
 
     traintuple_spec_2 = cp_spec.add_traintuple(
         algo=algo,
-        dataset=dataset,
+        dataset=default_dataset,
         data_samples=[data_sample_2],
         in_models=[traintuple_spec_1]
     )
     cp_spec.add_testtuple(
-        objective=objective,
+        objective=default_objective,
         traintuple_spec=traintuple_spec_2,
     )
 
     traintuple_spec_3 = cp_spec.add_traintuple(
         algo=algo,
-        dataset=dataset,
+        dataset=default_dataset,
         data_samples=[data_sample_3],
         in_models=[traintuple_spec_2]
     )
     cp_spec.add_testtuple(
-        objective=objective,
+        objective=default_objective,
         traintuple_spec=traintuple_spec_3,
     )
 
@@ -307,19 +279,12 @@ def test_compute_plan_single_client_failure(global_execution_env):
 
 
 @pytest.mark.slow
-def test_compute_plan_aggregate_composite_traintuples(global_execution_env):
+def test_compute_plan_aggregate_composite_traintuples(factory, clients, default_datasets, default_objectives):
     """
     Compute plan version of the `test_aggregate_composite_traintuples` method from `test_execution.py`
     """
-    factory, initial_assets, network = global_execution_env
-    clients = network.clients
-
     aggregate_worker = clients[0].node_id
     number_of_rounds = 2
-
-    # register objectives, datasets, and data samples
-    datasets = initial_assets.datasets
-    objectives = initial_assets.objectives
 
     # register algos on first node
     spec = factory.create_composite_algo()
@@ -336,7 +301,7 @@ def test_compute_plan_aggregate_composite_traintuples(global_execution_env):
     for round_ in range(number_of_rounds):
         # create composite traintuple on each node
         composite_traintuple_specs = []
-        for index, dataset in enumerate(datasets):
+        for index, dataset in enumerate(default_datasets):
             kwargs = {}
             if previous_aggregatetuple_spec:
                 kwargs = {
@@ -364,7 +329,7 @@ def test_compute_plan_aggregate_composite_traintuples(global_execution_env):
         previous_composite_traintuple_specs = composite_traintuple_specs
 
     # last round: create associated testtuple
-    for composite_traintuple_spec, objective in zip(previous_composite_traintuple_specs, objectives):
+    for composite_traintuple_spec, objective in zip(previous_composite_traintuple_specs, default_objectives):
         cp_spec.add_testtuple(
             objective=objective,
             traintuple_spec=composite_traintuple_spec,
@@ -379,28 +344,22 @@ def test_compute_plan_aggregate_composite_traintuples(global_execution_env):
         assert t.status == assets.Status.done
 
 
-def test_compute_plan_circular_dependency_failure(global_execution_env):
-    factory, initial_assets, network = global_execution_env
-    client = network.clients[0]
-
-    initial_assets = initial_assets.filter_by(client.node_id)
-    dataset = initial_assets.datasets[0]
-
+def test_compute_plan_circular_dependency_failure(factory, client, default_dataset):
     spec = factory.create_algo()
     algo = client.add_algo(spec)
 
     cp_spec = factory.create_compute_plan()
 
     traintuple_spec_1 = cp_spec.add_traintuple(
-        dataset=dataset,
+        dataset=default_dataset,
         algo=algo,
-        data_samples=dataset.train_data_sample_keys
+        data_samples=default_dataset.train_data_sample_keys
     )
 
     traintuple_spec_2 = cp_spec.add_traintuple(
-        dataset=dataset,
+        dataset=default_dataset,
         algo=algo,
-        data_samples=dataset.train_data_sample_keys
+        data_samples=default_dataset.train_data_sample_keys
     )
 
     traintuple_spec_1.in_models_ids.append(traintuple_spec_2.id)
@@ -413,10 +372,7 @@ def test_compute_plan_circular_dependency_failure(global_execution_env):
 
 
 @pytest.mark.slow
-def test_execution_compute_plan_canceled(global_execution_env):
-    factory, initial_assets, network = global_execution_env
-    client = network.clients[0]
-
+def test_execution_compute_plan_canceled(factory, client, default_dataset):
     # XXX A canceled compute plan can be done if the it is canceled while it last tuples
     #     are executing on the workers. The compute plan status will in this case change
     #     from canceled to done.
@@ -424,9 +380,7 @@ def test_execution_compute_plan_canceled(global_execution_env):
     #     compute plan with a large amount of tuples.
     nb_traintuples = 32
 
-    initial_assets = initial_assets.filter_by(client.node_id)
-    dataset = initial_assets.datasets[0]
-    data_sample_key = dataset.train_data_sample_keys[0]
+    data_sample_key = default_dataset.train_data_sample_keys[0]
 
     spec = factory.create_algo()
     algo = client.add_algo(spec)
@@ -436,7 +390,7 @@ def test_execution_compute_plan_canceled(global_execution_env):
     for _ in range(nb_traintuples):
         previous_traintuple = cp_spec.add_traintuple(
             algo=algo,
-            dataset=dataset,
+            dataset=default_dataset,
             data_samples=[data_sample_key],
             in_models=[previous_traintuple] if previous_traintuple else None
         )

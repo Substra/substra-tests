@@ -10,14 +10,8 @@ from . import settings
 
 
 @pytest.mark.slow
-def test_tuples_execution_on_same_node(global_execution_env):
+def test_tuples_execution_on_same_node(factory, client, default_dataset, default_objective):
     """Execution of a traintuple, a following testtuple and a following traintuple."""
-    factory, initial_assets, network = global_execution_env
-    client = network.clients[0]
-
-    initial_assets = initial_assets.filter_by(client.node_id)
-    dataset = initial_assets.datasets[0]
-    objective = initial_assets.objectives[0]
 
     spec = factory.create_algo()
     algo = client.add_algo(spec)
@@ -25,8 +19,8 @@ def test_tuples_execution_on_same_node(global_execution_env):
     # create traintuple
     spec = factory.create_traintuple(
         algo=algo,
-        dataset=dataset,
-        data_samples=dataset.train_data_sample_keys,
+        dataset=default_dataset,
+        data_samples=default_dataset.train_data_sample_keys,
     )
     traintuple = client.add_traintuple(spec).future().wait()
     assert traintuple.status == assets.Status.done
@@ -38,15 +32,15 @@ def test_tuples_execution_on_same_node(global_execution_env):
 
     # create testtuple
     # don't create it before to avoid MVCC errors
-    spec = factory.create_testtuple(objective=objective, traintuple=traintuple)
+    spec = factory.create_testtuple(objective=default_objective, traintuple=traintuple)
     testtuple = client.add_testtuple(spec).future().wait()
     assert testtuple.status == assets.Status.done
 
     # add a traintuple depending on first traintuple
     spec = factory.create_traintuple(
         algo=algo,
-        dataset=dataset,
-        data_samples=dataset.train_data_sample_keys,
+        dataset=default_dataset,
+        data_samples=default_dataset.train_data_sample_keys,
         traintuples=[traintuple],
     )
     traintuple = client.add_traintuple(spec).future().wait()
@@ -55,27 +49,21 @@ def test_tuples_execution_on_same_node(global_execution_env):
 
 
 @pytest.mark.slow
-def test_federated_learning_workflow(global_execution_env):
+def test_federated_learning_workflow(factory, client, default_datasets):
     """Test federated learning workflow on each node."""
-    factory, initial_assets, network = global_execution_env
-    client = network.clients[0]
 
     # create test environment
     spec = factory.create_algo()
     algo = client.add_algo(spec)
 
-    # get first dataset of each client
-    # because there is only one dataset created by client, we can get all the datasets
-    datasets = initial_assets.datasets
-
-    # check there is one dataset per node in the network
-    assert set([d.owner for d in datasets]) == set([c.node_id for c in network.clients])
-
     # create 1 traintuple per dataset and chain them
     traintuple = None
     rank = 0
     compute_plan_id = None
-    for dataset in datasets:
+
+    # default_datasets contains datasets on each node and
+    # that has a result we can use for federated learning
+    for dataset in default_datasets:
         traintuples = [traintuple] if traintuple else []
         spec = factory.create_traintuple(
             algo=algo,
@@ -101,18 +89,9 @@ def test_federated_learning_workflow(global_execution_env):
 
 
 @pytest.mark.slow
-def test_tuples_execution_on_different_nodes(global_execution_env):
+def test_tuples_execution_on_different_nodes(factory, client_1, client_2, default_objective_1, default_dataset_2):
     """Execution of a traintuple on node 1 and the following testtuple on node 2."""
     # add test data samples / dataset / objective on node 1
-    factory, initial_assets, network = global_execution_env
-    client_1 = network.clients[0]
-    client_2 = network.clients[1]
-
-    initial_assets_1 = initial_assets.filter_by(client_1.node_id)
-    initial_assets_2 = initial_assets.filter_by(client_2.node_id)
-
-    objective_1 = initial_assets_1.objectives[0]
-    dataset_2 = initial_assets_2.datasets[0]
 
     spec = factory.create_algo()
     algo_2 = client_2.add_algo(spec)
@@ -120,8 +99,8 @@ def test_tuples_execution_on_different_nodes(global_execution_env):
     # add traintuple on node 2; should execute on node 2 (dataset located on node 2)
     spec = factory.create_traintuple(
         algo=algo_2,
-        dataset=dataset_2,
-        data_samples=dataset_2.train_data_sample_keys,
+        dataset=default_dataset_2,
+        data_samples=default_dataset_2.train_data_sample_keys,
     )
     traintuple = client_1.add_traintuple(spec).future().wait()
     assert traintuple.status == assets.Status.done
@@ -129,28 +108,23 @@ def test_tuples_execution_on_different_nodes(global_execution_env):
     assert traintuple.dataset.worker == client_2.node_id
 
     # add testtuple; should execute on node 1 (objective dataset is located on node 1)
-    spec = factory.create_testtuple(objective=objective_1, traintuple=traintuple)
+    spec = factory.create_testtuple(objective=default_objective_1, traintuple=traintuple)
     testtuple = client_1.add_testtuple(spec).future().wait()
     assert testtuple.status == assets.Status.done
     assert testtuple.dataset.worker == client_1.node_id
 
 
 @pytest.mark.slow
-def test_traintuple_execution_failure(global_execution_env):
+def test_traintuple_execution_failure(factory, client, default_dataset_1):
     """Invalid algo script is causing traintuple failure."""
-    factory, initial_assets, network = global_execution_env
-    client = network.clients[0]
-
-    initial_assets = initial_assets.filter_by(client.node_id)
-    dataset = initial_assets.datasets[0]
 
     spec = factory.create_algo(py_script=sbt.factory.INVALID_ALGO_SCRIPT)
     algo = client.add_algo(spec)
 
     spec = factory.create_traintuple(
         algo=algo,
-        dataset=dataset,
-        data_samples=dataset.train_data_sample_keys,
+        dataset=default_dataset_1,
+        data_samples=default_dataset_1.train_data_sample_keys,
     )
     traintuple = client.add_traintuple(spec).future().wait(raises=False)
     assert traintuple.status == assets.Status.failed
@@ -158,21 +132,16 @@ def test_traintuple_execution_failure(global_execution_env):
 
 
 @pytest.mark.slow
-def test_composite_traintuple_execution_failure(global_execution_env):
+def test_composite_traintuple_execution_failure(factory, client, default_dataset):
     """Invalid composite algo script is causing traintuple failure."""
-    factory, initial_assets, network = global_execution_env
-    client = network.clients[0]
-
-    initial_assets = initial_assets.filter_by(client.node_id)
-    dataset = initial_assets.datasets[0]
 
     spec = factory.create_composite_algo(py_script=sbt.factory.INVALID_COMPOSITE_ALGO_SCRIPT)
     algo = client.add_composite_algo(spec)
 
     spec = factory.create_composite_traintuple(
         algo=algo,
-        dataset=dataset,
-        data_samples=dataset.train_data_sample_keys,
+        dataset=default_dataset,
+        data_samples=default_dataset.train_data_sample_keys,
     )
     composite_traintuple = client.add_composite_traintuple(spec).future().wait(raises=False)
     assert composite_traintuple.status == assets.Status.failed
@@ -181,13 +150,8 @@ def test_composite_traintuple_execution_failure(global_execution_env):
 
 
 @pytest.mark.slow
-def test_aggregatetuple_execution_failure(global_execution_env):
+def test_aggregatetuple_execution_failure(factory, client, default_dataset):
     """Invalid algo script is causing traintuple failure."""
-    factory, initial_assets, network = global_execution_env
-    client = network.clients[0]
-
-    initial_assets = initial_assets.filter_by(client.node_id)
-    dataset = initial_assets.datasets[0]
 
     spec = factory.create_composite_algo()
     composite_algo = client.add_composite_algo(spec)
@@ -199,8 +163,8 @@ def test_aggregatetuple_execution_failure(global_execution_env):
     for i in [0, 1]:
         spec = factory.create_composite_traintuple(
             algo=composite_algo,
-            dataset=dataset,
-            data_samples=[dataset.train_data_sample_keys[i]],
+            dataset=default_dataset,
+            data_samples=[default_dataset.train_data_sample_keys[i]],
         )
         composite_traintuples.append(client.add_composite_traintuple(spec))
 
@@ -218,15 +182,8 @@ def test_aggregatetuple_execution_failure(global_execution_env):
 
 
 @pytest.mark.slow
-def test_composite_traintuples_execution(global_execution_env):
+def test_composite_traintuples_execution(factory, client, default_dataset, default_objective):
     """Execution of composite traintuples."""
-
-    factory, initial_assets, network = global_execution_env
-    client = network.clients[0]
-
-    initial_assets = initial_assets.filter_by(client.node_id)
-    dataset = initial_assets.datasets[0]
-    objective = initial_assets.objectives[0]
 
     spec = factory.create_composite_algo()
     algo = client.add_composite_algo(spec)
@@ -234,8 +191,8 @@ def test_composite_traintuples_execution(global_execution_env):
     # first composite traintuple
     spec = factory.create_composite_traintuple(
         algo=algo,
-        dataset=dataset,
-        data_samples=dataset.train_data_sample_keys,
+        dataset=default_dataset,
+        data_samples=default_dataset.train_data_sample_keys,
     )
     composite_traintuple_1 = client.add_composite_traintuple(spec).future().wait()
     assert composite_traintuple_1.status == assets.Status.done
@@ -247,8 +204,8 @@ def test_composite_traintuples_execution(global_execution_env):
     # second composite traintuple
     spec = factory.create_composite_traintuple(
         algo=algo,
-        dataset=dataset,
-        data_samples=dataset.train_data_sample_keys,
+        dataset=default_dataset,
+        data_samples=default_dataset.train_data_sample_keys,
         head_traintuple=composite_traintuple_1,
         trunk_traintuple=composite_traintuple_1,
     )
@@ -258,7 +215,7 @@ def test_composite_traintuples_execution(global_execution_env):
     assert composite_traintuple_2.out_trunk_model is not None
 
     # add a 'composite' testtuple
-    spec = factory.create_testtuple(objective=objective, traintuple=composite_traintuple_2)
+    spec = factory.create_testtuple(objective=default_objective, traintuple=composite_traintuple_2)
     testtuple = client.add_testtuple(spec).future().wait()
     assert testtuple.status == assets.Status.done
 
@@ -271,17 +228,12 @@ def test_composite_traintuples_execution(global_execution_env):
 
 
 @pytest.mark.slow
-def test_aggregatetuple(global_execution_env):
+def test_aggregatetuple(factory, client, default_dataset):
     """Execution of aggregatetuple aggregating traintuples."""
 
     number_of_traintuples_to_aggregate = 3
 
-    factory, initial_assets, network = global_execution_env
-    client = network.clients[0]
-
-    initial_assets = initial_assets.filter_by(client.node_id)
-    dataset = initial_assets.datasets[0]
-    train_data_sample_keys = dataset.train_data_sample_keys[:number_of_traintuples_to_aggregate]
+    train_data_sample_keys = default_dataset.train_data_sample_keys[:number_of_traintuples_to_aggregate]
 
     spec = factory.create_algo()
     algo = client.add_algo(spec)
@@ -291,7 +243,7 @@ def test_aggregatetuple(global_execution_env):
     for data_sample_key in train_data_sample_keys:
         spec = factory.create_traintuple(
             algo=algo,
-            dataset=dataset,
+            dataset=default_dataset,
             data_samples=[data_sample_key],
         )
         traintuple = client.add_traintuple(spec).future().wait()
@@ -311,7 +263,7 @@ def test_aggregatetuple(global_execution_env):
 
 
 @pytest.mark.slow
-def test_aggregate_composite_traintuples(global_execution_env):
+def test_aggregate_composite_traintuples(factory, network, clients, default_datasets, default_objectives):
     """Do 2 rounds of composite traintuples aggregations on multiple nodes.
 
     Compute plan details:
@@ -339,14 +291,9 @@ def test_aggregate_composite_traintuples(global_execution_env):
 
     This test refers to the model composition use case.
     """
-    factory, initial_assets, network = global_execution_env
-    clients = network.clients
 
     aggregate_worker = clients[0].node_id
     number_of_rounds = 2
-
-    datasets = initial_assets.datasets
-    objectives = initial_assets.objectives
 
     # register algos on first node
     spec = factory.create_composite_algo()
@@ -361,7 +308,7 @@ def test_aggregate_composite_traintuples(global_execution_env):
     for round_ in range(number_of_rounds):
         # create composite traintuple on each node
         composite_traintuples = []
-        for index, dataset in enumerate(datasets):
+        for index, dataset in enumerate(default_datasets):
             kwargs = {}
             if previous_aggregatetuple:
                 kwargs = {
@@ -391,7 +338,7 @@ def test_aggregate_composite_traintuples(global_execution_env):
         previous_composite_traintuples = composite_traintuples
 
     # last round: create associated testtuple
-    for traintuple, objective in zip(previous_composite_traintuples, objectives):
+    for traintuple, objective in zip(previous_composite_traintuples, default_objectives):
         spec = factory.create_testtuple(
             objective=objective,
             traintuple=traintuple,
@@ -412,8 +359,7 @@ def test_aggregate_composite_traintuples(global_execution_env):
     # username/password are not available in the settings files.
 
     client = clients[0]
-    initial_assets = initial_assets.filter_by(client.node_id)
-    dataset = initial_assets.datasets[0]
+    dataset = default_datasets[0]
     algo = client.add_algo(spec)
 
     spec = factory.create_traintuple(
@@ -429,7 +375,7 @@ def test_aggregate_composite_traintuples(global_execution_env):
     (settings.CELERY_TASK_MAX_RETRIES, 'done'),
     (settings.CELERY_TASK_MAX_RETRIES + 1, 'failed'),
 ))
-def test_execution_retry_on_fail(fail_count, status, global_execution_env):
+def test_execution_retry_on_fail(fail_count, status, factory, client, default_dataset):
     """Execution of a traintuple which fails on the N first tries, and suceeds on the N+1th try"""
 
     # This test ensures the compute task retry mechanism works correctly.
@@ -472,20 +418,14 @@ def test_execution_retry_on_fail(fail_count, status, global_execution_env):
     # The counter is greater than the retry count
     tools.algo.execute(TestAlgo())"""
 
-    factory, initial_assets, network = global_execution_env
-    client = network.clients[0]
-
-    initial_assets = initial_assets.filter_by(client.node_id)
-    dataset = initial_assets.datasets[0]
-
     py_script = sbt.factory.DEFAULT_ALGO_SCRIPT.replace(retry_algo_snippet_toreplace, retry_snippet_replacement)
     spec = factory.create_algo(py_script)
     algo = client.add_algo(spec)
 
     spec = factory.create_traintuple(
         algo=algo,
-        dataset=dataset,
-        data_samples=dataset.train_data_sample_keys,
+        dataset=default_dataset,
+        data_samples=default_dataset.train_data_sample_keys,
         rank=0,  # make sure it's part of a compute plan, so we have access to the /sandbox/local
                  # folder (that's where we store the counter)
     )
