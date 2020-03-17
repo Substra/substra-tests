@@ -162,18 +162,6 @@ def data_env_2(default_data_env, client_2):
 
 
 @pytest.fixture
-def default_dataset(data_env_1):
-    """Fixture with pre-existing dataset in first node."""
-    return data_env_1.datasets[0]
-
-
-@pytest.fixture
-def default_objective(data_env_1):
-    """Fixture with pre-existing objective in first node."""
-    return data_env_1.objectives[0]
-
-
-@pytest.fixture
 def default_dataset_1(data_env_1):
     """Fixture with pre-existing dataset in first node."""
     return data_env_1.datasets[0]
@@ -195,6 +183,18 @@ def default_dataset_2(data_env_2):
 def default_objective_2(data_env_2):
     """Fixture with pre-existing objective in second node."""
     return data_env_2.objectives[0]
+
+
+@pytest.fixture
+def default_dataset(default_dataset_1):
+    """Fixture with pre-existing dataset in first node."""
+    return default_dataset_1
+
+
+@pytest.fixture
+def default_objective(default_objective_1):
+    """Fixture with pre-existing objective in first node."""
+    return default_objective_1
 
 
 @pytest.fixture

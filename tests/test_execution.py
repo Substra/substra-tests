@@ -60,6 +60,9 @@ def test_federated_learning_workflow(factory, client, default_datasets):
     traintuple = None
     rank = 0
     compute_plan_id = None
+
+    # default_datasets contains datasets on each node and
+    # that has a result we can use for federated learning
     for dataset in default_datasets:
         traintuples = [traintuple] if traintuple else []
         spec = factory.create_traintuple(
