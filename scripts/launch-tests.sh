@@ -4,10 +4,14 @@ SERVICE_ACCOUNT=substra-tests@substra-208412.iam.gserviceaccount.com
 SERVICE_ACCOUNT_KEY="${HOME}/.local/substra-208412-3be0df12d87a.json"
 KANIKO_SERVICE_ACCOUNT_KEY="${HOME}/.local/kaniko-secret.json"
 CLUSTER_NAME=substra-tests
-HLF_K8S_IMAGE="substrafoundation/hlf-k8s:latest"
-SUBSTRA_BACKEND_IMAGES="substrafoundation/substra-backend:latest,substrafoundation/celeryworker:latest,substrafoundation/celerybeat:latest"
+IMAGE_HLF_K8S="substrafoundation/hlf-k8s:latest"
+IMAGE_SUBSTRA_BACKEND="substrafoundation/substra-backend:latest"
+IMAGE_CELERYWORKER="substrafoundation/celeryworker:latest"
+IMAGE_CELERYBEAT="substrafoundation/celerybeat:latest"
+IMAGE_FLOWER="substrafoundation/flower:latest"
 
 set -e
+set -v
 
 # sed command for linux and macos
 SED_COMMAND="sed -i '' "
@@ -20,7 +24,7 @@ gcloud auth activate-service-account ${SERVICE_ACCOUNT} \
     --key-file="${SERVICE_ACCOUNT_KEY}"
 
 # Create cluster
-gcloud container clusters create --num-nodes=1 ${CLUSTER_NAME}
+gcloud container clusters create --num-nodes=1 ${CLUSTER_NAME} --service-account ${SERVICE_ACCOUNT}
 gcloud container clusters get-credentials ${CLUSTER_NAME}
 #gcloud container clusters describe ${CLUSTER_NAME}
 KUBE_CONTEXT=$(kubectl config get-contexts -o name | grep ${CLUSTER_NAME})
@@ -44,8 +48,8 @@ git clone --depth 1 git@github.com:SubstraFoundation/substra-backend.git
 git clone --depth 1 git@github.com:SubstraFoundation/substra-chaincode.git
 
 # Deploy
-cd hlf-k8s; skaffold deploy --kube-context=$KUBE_CONTEXT --images=${HLF_K8S_IMAGE} ; cd -
-cd substra-backend; skaffold deploy --kube-context=$KUBE_CONTEXT --images=${SUBSTRA_BACKEND_IMAGES} ; cd -
+cd hlf-k8s; skaffold deploy --kube-context=$KUBE_CONTEXT --images=${IMAGE_HLF_K8S} ; cd -
+cd substra-backend; skaffold deploy --kube-context=$KUBE_CONTEXT --images=${IMAGE_SUBSTRA_BACKEND} --images=${IMAGE_CELERYWORKER} --images${IMAGE_CELERYBEAT} --images=${IMAGE_FLOWER}; cd -
 
 # Delete cluster
-gcloud container clusters delete ${CLUSTER_NAME}
+# yes | gcloud container clusters delete ${CLUSTER_NAME}
