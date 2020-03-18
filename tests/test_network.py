@@ -17,9 +17,19 @@ def test_connection_to_nodes(clients):
 def test_add_dataset(factory, client):
     spec = factory.create_dataset()
     dataset = client.add_dataset(spec)
+    # assert dataset.metadata == {}
 
     dataset_copy = client.get_dataset(dataset.key)
     assert dataset == dataset_copy
+
+#
+# def test_add_dataset_with_metadata(factory, client):
+#     spec = factory.create_dataset(metadata={'foo': 'bar'})
+#     dataset = client.add_dataset(spec)
+#     assert dataset.metadata == {'foo': 'bar'}
+#
+#     dataset_copy = client.get_dataset(dataset.key)
+#     assert dataset == dataset_copy
 
 
 def test_download_opener(factory, client):
@@ -143,6 +153,159 @@ def test_add_objective(factory, client):
     spec = factory.create_dataset(objective=objective)
     dataset = client.add_dataset(spec)
     assert dataset.objective_key == objective.key
+
+
+@pytest.mark.parametrize('asset_name', [
+    'objective',
+    'algo',
+    'aggregate_algo',
+    'composite_algo',
+])
+def test_metadata(factory, client, asset_name):
+    method_create = getattr(factory, f"create_{asset_name}")
+    method_add = getattr(client, f"add_{asset_name}")
+
+    # add an asset with metadata
+    spec = method_create(metadata={"foo": "bar"})
+    asset = method_add(spec)
+
+    assert asset.metadata == {"foo": "bar"}
+
+    # add asset with metadata set to None
+    spec = method_create(metadata=None)
+    asset = method_add(spec)
+
+    assert asset.metadata == {}
+
+    # add asset with metadata set to an empty dict
+    spec = method_create(metadata={})
+    asset = method_add(spec)
+
+    assert asset.metadata == {}
+
+    spec = method_create(metadata='foo')
+    asset = method_add(spec)
+
+    assert asset.metadata == {}
+
+    spec = method_create(metadata={'foo': {"bar": "foo"}})
+    with pytest.raises(ValueError):
+        method_add(spec)
+
+    too_long = 'foo' * 40
+    # raise an error if the key is too long (more than 50 chars)
+    spec = method_create(metadata={too_long: "bar"})
+    with pytest.raises(substra.exceptions.InvalidRequest):
+        method_add(spec)
+
+    # raise an error if the value is too long (more than 100 chars)
+    spec = method_create(metadata={"foo": too_long})
+    with pytest.raises(substra.exceptions.InvalidRequest):
+        method_add(spec)
+
+
+@pytest.mark.parametrize('asset_name, algo_type', [
+    ('traintuple', 'algo'),
+    ('composite_traintuple', 'composite_algo'),
+])
+def test_metadata_traintuple(factory, client, asset_name, algo_type, default_dataset):
+    method_create = getattr(factory, f"create_{asset_name}")
+    method_add = getattr(client, f"add_{asset_name}")
+
+    algo_create = getattr(factory, f"create_{algo_type}")
+    algo_add = getattr(client, f"add_{algo_type}")
+
+    algo_spec = algo_create()
+    algo = algo_add(algo_spec)
+    spec = method_create(
+        algo=algo,
+        dataset=default_dataset,
+        data_samples=default_dataset.train_data_sample_keys,
+        metadata={"foo": "bar"}
+    )
+    asset = method_add(spec)
+
+    assert asset.metadata == {"foo": "bar"}
+
+    algo_spec = algo_create()
+    algo = algo_add(algo_spec)
+    spec = method_create(
+        algo=algo,
+        dataset=default_dataset,
+        data_samples=default_dataset.train_data_sample_keys,
+        metadata={}
+    )
+    asset = method_add(spec)
+
+    assert asset.metadata == {}
+
+    algo_spec = algo_create()
+    algo = algo_add(algo_spec)
+    spec = method_create(
+        algo=algo,
+        dataset=default_dataset,
+        data_samples=default_dataset.train_data_sample_keys,
+        metadata=None
+    )
+    asset = method_add(spec)
+
+    assert asset.metadata == {}
+
+    spec = method_create(
+        algo=algo,
+        dataset=default_dataset,
+        data_samples=default_dataset.train_data_sample_keys,
+        metadata={'foo': {"bar": "foo"}}
+    )
+    with pytest.raises(ValueError):
+        method_add(spec)
+
+    too_long = 'foo' * 40
+    # raise an error if the key is too long (more than 50 chars)
+    spec = method_create(
+        algo=algo,
+        dataset=default_dataset,
+        data_samples=default_dataset.train_data_sample_keys,
+        metadata={too_long: "bar"}
+    )
+    with pytest.raises(substra.exceptions.InvalidRequest):
+        method_add(spec)
+
+    # raise an error if the value is too long (more than 100 chars)
+    spec = method_create(
+        algo=algo,
+        dataset=default_dataset,
+        data_samples=default_dataset.train_data_sample_keys,
+        metadata={"foo": too_long}
+    )
+    with pytest.raises(substra.exceptions.InvalidRequest):
+        method_add(spec)
+
+
+def test_metadata_aggregatetuple(factory, client, default_dataset):
+    composite_algo_spec = factory.create_composite_algo()
+    composite_algo = client.add_composite_algo(composite_algo_spec)
+    composite_traintuple_spec = factory.create_composite_traintuple(
+        algo=composite_algo,
+        dataset=default_dataset,
+        data_samples=default_dataset.train_data_sample_keys,
+    )
+    composite_traintuple = client.add_composite_traintuple(composite_traintuple_spec)
+
+    aggregate_algo_spec = factory.create_aggregate_algo()
+    aggregate_algo = client.add_aggregate_algo(aggregate_algo_spec)
+    spec = factory.create_aggregatetuple(
+        algo=aggregate_algo,
+        worker='MyOrg1MSP',
+        traintuples=[composite_traintuple],
+        metadata={"foo": "bar"}
+    )
+    asset = client.add_aggregatetuple(spec)
+
+    print(asset)
+    print(composite_traintuple)
+
+    assert asset.metadata == {"foo": "bar"}
 
 
 def test_add_algo(factory, client):
