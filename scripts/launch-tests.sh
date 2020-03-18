@@ -24,7 +24,7 @@ gcloud auth activate-service-account ${SERVICE_ACCOUNT} \
     --key-file="${SERVICE_ACCOUNT_KEY}"
 
 # Create cluster
-gcloud container clusters create --num-nodes=1 ${CLUSTER_NAME} --service-account ${SERVICE_ACCOUNT}
+gcloud container clusters create --num-nodes=1 ${CLUSTER_NAME} --service-account ${SERVICE_ACCOUNT} --machine-type=n1-highcpu-8
 gcloud container clusters get-credentials ${CLUSTER_NAME}
 #gcloud container clusters describe ${CLUSTER_NAME}
 KUBE_CONTEXT=$(kubectl config get-contexts -o name | grep ${CLUSTER_NAME})
