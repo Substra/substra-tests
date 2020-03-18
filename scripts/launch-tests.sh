@@ -49,7 +49,7 @@ git clone --depth 1 git@github.com:SubstraFoundation/substra-chaincode.git
 
 # Deploy
 cd hlf-k8s; skaffold deploy --kube-context=$KUBE_CONTEXT --images=${IMAGE_HLF_K8S} ; cd -
-cd substra-backend; skaffold deploy --kube-context=$KUBE_CONTEXT --images=${IMAGE_SUBSTRA_BACKEND} --images=${IMAGE_CELERYWORKER} --images${IMAGE_CELERYBEAT} --images=${IMAGE_FLOWER}; cd -
+cd substra-backend; skaffold deploy --kube-context=$KUBE_CONTEXT --images=${IMAGE_SUBSTRA_BACKEND} --images=${IMAGE_CELERYWORKER} --images=${IMAGE_CELERYBEAT} --images=${IMAGE_FLOWER}; cd -
 
 # Delete cluster
 # yes | gcloud container clusters delete ${CLUSTER_NAME}
