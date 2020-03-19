@@ -48,7 +48,7 @@ kubectl --context $KUBE_CONTEXT apply -f kaniko.yaml
 
 # Fetch substra ressources
 
-mkdir substra-resources
+mkdir -p substra-resources
 cd substra-resources
 
 # Clone substra
