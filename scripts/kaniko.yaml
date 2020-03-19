@@ -1,28 +1,31 @@
-apiVersion: v1
-kind: Pod
+apiVersion: batch/v1
+kind: Job
 metadata:
   name: kaniko
 spec:
-  containers:
-  - name: kaniko
-    image: gcr.io/kaniko-project/executor:latest
-    args: [
-        "--dockerfile",
-        "docker/substra-backend/Dockerfile",
-        "--context",
-        "git://github.com/SubstraFoundation/substra-backend.git",
-        "--no-push"
-        # "--destination",
-        # "<gcr.io/$PROJECT/$IMAGE:$TAG>"
-    ]
-    # volumeMounts:
-    #   - name: kaniko-secret
-    #     mountPath: /secret
-    # env:
-    #   - name: GOOGLE_APPLICATION_CREDENTIALS
-    #     value: /secret/kaniko-secret.json
-  restartPolicy: Never
-  # volumes:
-  #   - name: kaniko-secret
-  #     secret:
-  #       secretName: kaniko-secret
+  ttlSecondsAfterFinished: 10
+  template:
+    spec:
+      containers:
+      - name: kaniko
+        image: gcr.io/kaniko-project/executor:latest
+        args: [
+            "--dockerfile",
+            "docker/substra-backend/Dockerfile",
+            "--context",
+            "git://github.com/SubstraFoundation/substra-backend.git",
+            # "--no-push"
+            "--destination",
+            "docker-registry.default.svc.cluster.local:5000/substrafoundation/local/substra-backend:1.0"
+        ]
+        # volumeMounts:
+        #   - name: kaniko-secret
+        #     mountPath: /secret
+        # env:
+        #   - name: GOOGLE_APPLICATION_CREDENTIALS
+        #     value: /secret/kaniko-secret.json
+      restartPolicy: Never
+      # volumes:
+      #   - name: kaniko-secret
+      #     secret:
+      #       secretName: kaniko-secret
