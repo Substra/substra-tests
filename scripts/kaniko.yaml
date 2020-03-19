@@ -33,7 +33,6 @@ spec:
         image: gcr.io/kaniko-project/executor:latest
         args: [
             "--dockerfile", "images/hlf-k8s/Dockerfile",
-             "--build-arg", "images/hlf-k8s/",
             "--context", "git://github.com/SubstraFoundation/hlf-k8s.git",
             "--destination", "docker-registry.default.svc.cluster.local:5000/substrafoundation/hlf-k8s:local",
             "--single-snapshot", "--cache=false"
