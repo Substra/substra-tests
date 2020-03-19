@@ -1,7 +1,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: kaniko
+  name: kaniko-substra-tests
 spec:
   ttlSecondsAfterFinished: 10
   template:
@@ -10,22 +10,108 @@ spec:
       - name: kaniko
         image: gcr.io/kaniko-project/executor:latest
         args: [
-            "--dockerfile",
-            "docker/substra-backend/Dockerfile",
-            "--context",
-            "git://github.com/SubstraFoundation/substra-backend.git",
-            # "--no-push"
-            "--destination",
-            "docker-registry.default.svc.cluster.local:5000/substrafoundation/local/substra-backend:1.0"
-        ]
-        # volumeMounts:
-        #   - name: kaniko-secret
-        #     mountPath: /secret
-        # env:
-        #   - name: GOOGLE_APPLICATION_CREDENTIALS
-        #     value: /secret/kaniko-secret.json
+            "--dockerfile", "docker/Dockerfile",
+            "--build-arg", "SUBSTRA_GIT_REPO=https://github.com/SubstraFoundation/substra.git",
+            "--build-arg", "SUBSTRA_GIT_REF=master",
+            "--context", "git://github.com/SubstraFoundation/substra-tests.git",
+            "--destination", "docker-registry.default.svc.cluster.local:5000/substrafoundation/substra-tests:local",
+            "--single-snapshot", "--cache=false"
+          ]
       restartPolicy: Never
-      # volumes:
-      #   - name: kaniko-secret
-      #     secret:
-      #       secretName: kaniko-secret
+
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: kaniko-substra-hlf-k8s
+spec:
+  ttlSecondsAfterFinished: 10
+  template:
+    spec:
+      containers:
+      - name: kaniko
+        image: gcr.io/kaniko-project/executor:latest
+        args: [
+            "--dockerfile", "images/hlf-k8s/Dockerfile",
+             "--build-arg", "images/hlf-k8s/",
+            "--context", "git://github.com/SubstraFoundation/hlf-k8s.git",
+            "--destination", "docker-registry.default.svc.cluster.local:5000/substrafoundation/hlf-k8s:local",
+            "--single-snapshot", "--cache=false"
+          ]
+      restartPolicy: Never
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: kaniko-substra-substra-backend
+spec:
+  ttlSecondsAfterFinished: 10
+  template:
+    spec:
+      containers:
+      - name: kaniko
+        image: gcr.io/kaniko-project/executor:latest
+        args: [
+            "--dockerfile", "docker/substra-backend/Dockerfile",
+            "--context", "git://github.com/SubstraFoundation/substra-backend.git",
+            "--destination", "docker-registry.default.svc.cluster.local:5000/substrafoundation/substra-backend:local",
+            "--single-snapshot", "--cache=false"
+          ]
+      restartPolicy: Never
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: kaniko-substra-celerybeat
+spec:
+  ttlSecondsAfterFinished: 10
+  template:
+    spec:
+      containers:
+      - name: kaniko
+        image: gcr.io/kaniko-project/executor:latest
+        args: [
+            "--dockerfile", "docker/celerybeat/Dockerfile",
+            "--context", "git://github.com/SubstraFoundation/substra-backend.git",
+            "--destination", "docker-registry.default.svc.cluster.local:5000/substrafoundation/celerybeat:local",
+            "--single-snapshot", "--cache=false"
+          ]
+      restartPolicy: Never
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: kaniko-substra-celeryworker
+spec:
+  ttlSecondsAfterFinished: 10
+  template:
+    spec:
+      containers:
+      - name: kaniko
+        image: gcr.io/kaniko-project/executor:latest
+        args: [
+            "--dockerfile", "docker/celeryworker/Dockerfile",
+            "--context", "git://github.com/SubstraFoundation/substra-backend.git",
+            "--destination", "docker-registry.default.svc.cluster.local:5000/substrafoundation/celeryworker:local",
+            "--single-snapshot", "--cache=false"
+          ]
+      restartPolicy: Never
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: kaniko-substra-flower
+spec:
+  ttlSecondsAfterFinished: 10
+  template:
+    spec:
+      containers:
+      - name: kaniko
+        image: gcr.io/kaniko-project/executor:latest
+        args: [
+            "--dockerfile", "docker/flower/Dockerfile",
+            "--context", "git://github.com/SubstraFoundation/substra-backend.git",
+            "--destination", "docker-registry.default.svc.cluster.local:5000/substrafoundation/flower:local",
+            "--single-snapshot", "--cache=false"
+          ]
+      restartPolicy: Never
