@@ -32,18 +32,18 @@ gcloud container clusters describe ${CLUSTER_NAME} --zone europe-west4-a --proje
 KUBE_CONTEXT=$(kubectl config get-contexts -o name | grep ${CLUSTER_NAME})
 
 # Configure kaniko
-kubectl --context $KUBE_CONTEXT create secret generic kaniko-secret --from-file=$KANIKO_SERVICE_ACCOUNT_KEY
+kubectl --context ${KUBE_CONTEXT} create secret generic kaniko-secret --from-file=$KANIKO_SERVICE_ACCOUNT_KEY
 
 # Configure Tiller
-kubectl --context $KUBE_CONTEXT create serviceaccount --namespace kube-system tiller
-kubectl --context $KUBE_CONTEXT create clusterrolebinding tiller-cluster-rule --clusterrole=cluster-admin --serviceaccount=kube-system:tiller
-helm --kube-context $KUBE_CONTEXT init --service-account tiller --upgrade --wait
+kubectl --context ${KUBE_CONTEXT} create serviceaccount --namespace kube-system tiller
+kubectl --context ${KUBE_CONTEXT} create clusterrolebinding tiller-cluster-rule --clusterrole=cluster-admin --serviceaccount=kube-system:tiller
+helm --kube-context ${KUBE_CONTEXT} init --service-account tiller --upgrade --wait
 
 # Install registry
-helm --kube-context $KUBE_CONTEXT install stable/docker-registry --name docker-registry --wait
+helm --kube-context ${KUBE_CONTEXT} install stable/docker-registry --name docker-registry --wait
 
 # Build substra-tests docker image
-kubectl --context $KUBE_CONTEXT apply -f kaniko.yaml
+kubectl --context ${KUBE_CONTEXT} apply -f kaniko.yaml
 
 
 # Fetch substra ressources
@@ -59,8 +59,8 @@ git clone --depth 1 git@github.com:SubstraFoundation/substra-chaincode.git
 
 # Deploy
 
-cd hlf-k8s; skaffold deploy --kube-context=$KUBE_CONTEXT --images=${IMAGE_HLF_K8S} --default-repo docker-registry.default.svc.cluster.local:5000; cd -
-cd substra-backend; skaffold deploy --kube-context=$KUBE_CONTEXT --images=${IMAGE_SUBSTRA_BACKEND} --images=${IMAGE_CELERYWORKER} --images=${IMAGE_CELERYBEAT} --images=${IMAGE_FLOWER} --default-repo docker-registry.default.svc.cluster.local:5000; cd -
+cd hlf-k8s; skaffold deploy --kube-context=${KUBE_CONTEXT} --images=${IMAGE_HLF_K8S} --default-repo docker-registry.default.svc.cluster.local:5000; cd -
+cd substra-backend; skaffold deploy --kube-context=${KUBE_CONTEXT} --images=${IMAGE_SUBSTRA_BACKEND} --images=${IMAGE_CELERYWORKER} --images=${IMAGE_CELERYBEAT} --images=${IMAGE_FLOWER} --default-repo docker-registry.default.svc.cluster.local:5000; cd -
 
 cd $WORKDIR
 
