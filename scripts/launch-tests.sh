@@ -5,6 +5,7 @@ SERVICE_ACCOUNT_KEY="${HOME}/.local/substra-208412-3be0df12d87a.json"
 KANIKO_SERVICE_ACCOUNT_KEY="${HOME}/.local/kaniko-secret.json"
 CLUSTER_NAME=substra-tests
 WORKDIR=$(pwd)
+REGISTRY="docker-registry.default.svc.cluster.local:5000"
 IMAGE_HLF_K8S="substrafoundation/hlf-k8s:local"
 IMAGE_SUBSTRA_BACKEND="substrafoundation/substra-backend:local"
 IMAGE_CELERYWORKER="substrafoundation/celeryworker:local"
@@ -59,8 +60,8 @@ git clone --depth 1 git@github.com:SubstraFoundation/substra-chaincode.git
 
 # Deploy
 
-cd hlf-k8s; skaffold deploy --kube-context=${KUBE_CONTEXT} --images=${IMAGE_HLF_K8S} --default-repo docker-registry.default.svc.cluster.local:5000; cd -
-cd substra-backend; skaffold deploy --kube-context=${KUBE_CONTEXT} --images=${IMAGE_SUBSTRA_BACKEND} --images=${IMAGE_CELERYWORKER} --images=${IMAGE_CELERYBEAT} --images=${IMAGE_FLOWER} --default-repo docker-registry.default.svc.cluster.local:5000; cd -
+cd hlf-k8s; skaffold deploy --kube-context=${KUBE_CONTEXT} --images=${IMAGE_HLF_K8S} --default-repo ${REGISTRY} -v debug; cd -
+cd substra-backend; skaffold deploy --kube-context=${KUBE_CONTEXT} --images=${IMAGE_SUBSTRA_BACKEND} --images=${IMAGE_CELERYWORKER} --images=${IMAGE_CELERYBEAT} --images=${IMAGE_FLOWER} --default-repo ${REGISTRY}; cd -
 
 cd $WORKDIR
 
