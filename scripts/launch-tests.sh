@@ -5,7 +5,8 @@ SERVICE_ACCOUNT_KEY="${HOME}/.local/substra-208412-3be0df12d87a.json"
 KANIKO_SERVICE_ACCOUNT_KEY="${HOME}/.local/kaniko-secret.json"
 CLUSTER_NAME=substra-tests
 WORKDIR=$(pwd)
-REGISTRY="docker-registry.default.svc.cluster.local:5000"
+REGISTRY_RELEASE_NAME="docker-registry"
+REGISTRY_PORT=5000
 IMAGE_HLF_K8S="substrafoundation/hlf-k8s:local"
 IMAGE_SUBSTRA_BACKEND="substrafoundation/substra-backend:local"
 IMAGE_CELERYWORKER="substrafoundation/celeryworker:local"
@@ -41,7 +42,9 @@ kubectl --context ${KUBE_CONTEXT} create clusterrolebinding tiller-cluster-rule 
 helm --kube-context ${KUBE_CONTEXT} init --service-account tiller --upgrade --wait
 
 # Install registry
-helm --kube-context ${KUBE_CONTEXT} install stable/docker-registry --name docker-registry --wait
+helm --kube-context ${KUBE_CONTEXT} install stable/docker-registry --name ${REGISTRY_RELEASE_NAME} --set service.type=NodePort,service.port=${REGISTRY_PORT} --wait
+REGISTRY_POD_NAME=$(kubectl get pods -o name | grep ${REGISTRY_RELEASE_NAME})
+REGISTRY=$(kubectl get ${REGISTRY_POD_NAME} --template={{.status.podIP}}):${REGISTRY_PORT}
 
 # Build substra-tests docker image
 kubectl --context ${KUBE_CONTEXT} apply -f kaniko.yaml
