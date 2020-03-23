@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: skaffold
+  namespace: kube-system
+spec:
+  selector:
+    matchLabels:
+      app: skaffold
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: skaffold
+    spec:
+      serviceAccountName: tiller
+      containers:
+      - name: skaffold
+        image: python:3.6
+        command: ["bash", "-c"]
+        args:
+          - |
+            sleep infinity

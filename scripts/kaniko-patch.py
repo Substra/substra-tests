@@ -10,7 +10,7 @@ except ImportError:
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
 skaffold_files = glob.glob(os.path.join(dir_path,
-                                        'substra-resources/*/skaffold.yaml'))
+                                        './src/*/skaffold.yaml'))
 
 print(skaffold_files)
 
@@ -32,7 +32,13 @@ for skaffold_file in skaffold_files:
             artifact['kaniko'] = artifact['docker']
             del artifact['docker']
 
-        artifact['kaniko']['cache'] = {}
+        # Disable cache: https://github.com/GoogleContainerTools/kaniko/issues/1039#issuecomment-588015578
+        # artifact['kaniko']['cache'] = {}
+
+        # Use debug version
+        # Bug 1: https://github.com/GoogleContainerTools/kaniko/issues/793#issuecomment-582989625
+        # Bug 2: https://github.com/GoogleContainerTools/kaniko/issues/1039#issuecomment-590974549
+        artifact['kaniko']['image'] = 'gcr.io/kaniko-project/executor:debug-a1af057f997316bfb1c4d2d82719d78481a02a79'
 
     with open(skaffold_file, 'w') as f:
         f.write(yaml.dump(skaffold,
