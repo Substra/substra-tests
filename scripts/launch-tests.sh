@@ -43,7 +43,7 @@ kubectl --context ${KUBE_CONTEXT} create clusterrolebinding tiller-cluster-rule 
 helm --kube-context ${KUBE_CONTEXT} init --service-account tiller --upgrade --wait
 
 # Install registry
-helm --kube-context ${KUBE_CONTEXT} install stable/docker-registry --name ${REGISTRY_RELEASE_NAME} --set service.type=NodePort,service.port=${REGISTRY_PORT} --wait
+helm --kube-context ${KUBE_CONTEXT} install stable/docker-registry --name ${REGISTRY_RELEASE_NAME} --wait
 REGISTRY_POD_NAME=$(kubectl get pods -o name | grep ${REGISTRY_RELEASE_NAME})
 REGISTRY=$(kubectl get ${REGISTRY_POD_NAME} --template={{.status.podIP}}):${REGISTRY_PORT}
 
