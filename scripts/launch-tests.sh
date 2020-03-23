@@ -15,6 +15,7 @@ IMAGE_FLOWER="substrafoundation/flower:local"
 
 set -e
 set -v
+set -x
 
 # sed command for linux and macos
 SED_COMMAND="sed -i '' "
@@ -48,6 +49,9 @@ REGISTRY=$(kubectl get ${REGISTRY_POD_NAME} --template={{.status.podIP}}):${REGI
 
 # Build substra-tests docker image
 kubectl --context ${KUBE_CONTEXT} apply -f kaniko.yaml
+
+# Wait for all jobs
+kubectl --context ${KUBE_CONTEXT} wait --for=condition=complete --timeout=-1s job/kaniko-substra-celerybeat job/kaniko-substra-celeryworker job/kaniko-substra-flower job/kaniko-substra-hlf-k8s job/kaniko-substra-substra-backend job/kaniko-substra-tests
 
 
 # Fetch substra ressources
