@@ -10,20 +10,11 @@ curl -LO https://storage.googleapis.com/kubernetes-release/release/`curl -s http
 chmod +x ./kubectl
 mv ./kubectl /usr/local/bin/kubectl
 
-# Install helm (latest 2.x)
-#bash <(curl -s https://raw.githubusercontent.com/helm/helm/master/scripts/get)
-#helm init --upgrade
-
 # Install helm (v2.14.2)
 curl https://get.helm.sh/helm-v2.14.2-linux-amd64.tar.gz -o helm-v2.14.2-linux-amd64.tar.gz
 tar xzf helm-v2.14.2-linux-amd64.tar.gz
 mv linux-amd64/helm linux-amd64/tiller /usr/local/bin/
 helm init --upgrade
-
-# Install skaffold (latest)
-# curl -Lo skaffold https://storage.googleapis.com/skaffold/releases/latest/skaffold-linux-amd64
-# chmod +x skaffold
-# mv skaffold /usr/local/bin
 
 # Install skaffold (v1.0.1)
 curl -Lo skaffold https://storage.googleapis.com/skaffold/releases/v1.0.1/skaffold-linux-amd64 && chmod +x skaffold && mv skaffold /usr/local/bin
