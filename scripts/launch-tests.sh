@@ -64,6 +64,10 @@ git clone --depth 1 git@github.com:SubstraFoundation/hlf-k8s.git
 git clone --depth 1 git@github.com:SubstraFoundation/substra-backend.git
 git clone --depth 1 git@github.com:SubstraFoundation/substra-chaincode.git
 
+python3 -m venv .venv
+source .venv/bin/activate
+pip install pyyaml
+python ../update-skaffold.py
 
 # Deploy
 
