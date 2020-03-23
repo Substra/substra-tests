@@ -36,8 +36,8 @@ for skaffold_file in skaffold_files:
         # artifact['kaniko']['cache'] = {}
 
         # Use debug version
-        # Bug 1: https://github.com/GoogleContainerTools/kaniko/issues/793#issuecomment-582989625
-        # Bug 2: https://github.com/GoogleContainerTools/kaniko/issues/1039#issuecomment-590974549
+        # Bug 1 (apt-get): https://github.com/GoogleContainerTools/kaniko/issues/793#issuecomment-582989625
+        # Bug 2 (failed to get filesystem): https://github.com/GoogleContainerTools/kaniko/issues/1039#issuecomment-590974549
         artifact['kaniko']['image'] = 'gcr.io/kaniko-project/executor:debug-a1af057f997316bfb1c4d2d82719d78481a02a79'
 
     with open(skaffold_file, 'w') as f:
