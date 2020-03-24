@@ -20,7 +20,8 @@ helm init --upgrade --force-upgrade --wait
 curl -Lo skaffold https://storage.googleapis.com/skaffold/releases/v1.0.1/skaffold-linux-amd64 && chmod +x skaffold && mv skaffold /usr/local/bin
 
 # Clone repos
-mkdir src
+rm -rf src
+mkdir -p src
 cd src
 git clone --depth 1 https://github.com/SubstraFoundation/substra-backend.git
 git clone --depth 1 https://github.com/SubstraFoundation/hlf-k8s.git
@@ -38,4 +39,8 @@ skaffold run --default-repo ${REGISTRY}
 
 # Deploy backend
 cd ../substra-backend
-skaffold run --default-repo ${REGISTRY}
+
+sed "s@defaultDomain: http://substra-backend.node-1.com@defaultDomain: http://backend-org-1-substra-backend-server.org-1.svc.cluster.local:8000@g" ./skaffold.yaml > skaffold-updated-tmp.yaml
+sed "s@defaultDomain: http://substra-backend.node-2.com@defaultDomain: http://backend-org-2-substra-backend-server.org-2.svc.cluster.local:8000@g" ./skaffold-updated-tmp.yaml > skaffold-updated.yaml
+
+skaffold run --default-repo ${REGISTRY} -f skaffold-updated.yaml

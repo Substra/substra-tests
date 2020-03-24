@@ -84,7 +84,5 @@ kubectl wait pod/${SUBSTRA_TESTS_POD} --for=condition=ready --context ${KUBE_CON
 kubectl cp ./substra-tests-values.yaml ${SUBSTRA_TESTS_POD}:/usr/src/app/values.yaml --context ${KUBE_CONTEXT}
 kubectl --context ${KUBE_CONTEXT} exec ${SUBSTRA_TESTS_POD} -- make test
 
-
-
 # Delete cluster
 yes | gcloud container clusters delete ${CLUSTER_NAME} --zone ${CLUSTER_ZONE} --project ${CLUSTER_PROJECT}
