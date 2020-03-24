@@ -1,0 +1,20 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: kaniko-substra
+spec:
+  ttlSecondsAfterFinished: 10
+  template:
+    spec:
+      containers:
+      - name: kaniko
+        image: gcr.io/kaniko-project/executor:latest
+        args: [
+            "--dockerfile", "docker/Dockerfile",
+            "--build-arg", "SUBSTRA_GIT_REPO=https://github.com/SubstraFoundation/substra.git",
+            "--build-arg", "SUBSTRA_GIT_REF=master",
+            "--context", "git://github.com/SubstraFoundation/substra-tests.git",
+            "--destination", "docker-registry.default.svc.cluster.local:5000/substrafoundation/substra-tests:local",
+            "--single-snapshot", "--cache=false"
+          ]
+      restartPolicy: Never

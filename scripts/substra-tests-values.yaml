@@ -1,0 +1,16 @@
+options:
+  celery_task_max_retries: 1
+  enable_intermediate_model_removal: False
+nodes:
+  - name: 'node-1'
+    msp_id: 'MyOrg1MSP'
+    address: 'http://backend-org-1-substra-backend-server.org-1.svc.cluster.local:8000'
+    user: 'node-1'
+    password: 'p@$swr0d44'
+    shared_path: '/tmp/org-1'
+  - name: 'node-2'
+    msp_id: 'MyOrg2MSP'
+    address: 'http://backend-org-2-substra-backend-server.org-2.svc.cluster.local:8000'
+    user: 'node-2'
+    password: 'p@$swr0d45'
+    shared_path: '/tmp/org-2'

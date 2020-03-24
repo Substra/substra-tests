@@ -14,7 +14,7 @@ mv ./kubectl /usr/local/bin/kubectl
 curl https://get.helm.sh/helm-v2.14.2-linux-amd64.tar.gz -o helm-v2.14.2-linux-amd64.tar.gz
 tar xzf helm-v2.14.2-linux-amd64.tar.gz
 mv linux-amd64/helm linux-amd64/tiller /usr/local/bin/
-helm init --upgrade
+helm init --upgrade --force-upgrade --wait
 
 # Install skaffold (v1.0.1)
 curl -Lo skaffold https://storage.googleapis.com/skaffold/releases/v1.0.1/skaffold-linux-amd64 && chmod +x skaffold && mv skaffold /usr/local/bin
