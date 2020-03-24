@@ -8,6 +8,8 @@ CLUSTER_PROJECT="substra-208412"
 SERVICE_ACCOUNT=substra-tests@substra-208412.iam.gserviceaccount.com
 SERVICE_ACCOUNT_KEY="${HOME}/.local/substra-208412-3be0df12d87a.json"
 KANIKO_SERVICE_ACCOUNT_KEY="${HOME}/.local/kaniko-secret.json"
+IMAGE_SUBSTRA_DEPLOY_REPO="aureliengasser/substra-deploy"
+IMAGE_SUBSTRA_DEPLOY_TAG="latest"
 
 set -e
 set -v
@@ -49,25 +51,29 @@ helm --kube-context ${KUBE_CONTEXT} install stable/docker-registry --name docker
 REGISTRY_POD_NAME=$(kubectl get pods -o name --context ${KUBE_CONTEXT}| grep docker-registry)
 REGISTRY=$(kubectl get ${REGISTRY_POD_NAME} --template={{.status.podIP}} --context ${KUBE_CONTEXT}):5000
 
-# Deploy
-mkdir -p tmp/
-
-sed "s/<<<REGISTRY>>>/${REGISTRY}/g" ./deploy.template.sh > ./tmp/deploy.sh
-
-chmod +x ./tmp/deploy.sh
-kubectl apply -f deployment-skaffold.yaml
-SKAFFOLD_POD=$(kubectl get pods -n kube-system | grep skaffold | awk '{print $1}')
-kubectl wait pod/${SKAFFOLD_POD} --for=condition=ready --context ${KUBE_CONTEXT} --timeout=-1s -n kube-system
-kubectl cp ./tmp/deploy.sh ${SKAFFOLD_POD}:/ -n kube-system --context ${KUBE_CONTEXT}
-kubectl cp ./kaniko-patch.py ${SKAFFOLD_POD}:/ -n kube-system --context ${KUBE_CONTEXT}
-
-kubectl --context ${KUBE_CONTEXT} -n kube-system exec ${SKAFFOLD_POD} -- bash ./deploy.sh
-rm -r tmp/
+# Deploy substra
+# TODO: Create git repo substrafoundation/substra-deploy
+#   - [] Based on aureliengasser/substra-deploy
+#   - [] Connect this new repo to Docker Hub so that the substrafoundation/substra-deploy image is built/pushed on every git push
+#   - [] Move charts/substra-deploy from here to the new repo
+#   - [] Add a .travis.yaml in the new repo that pushes to our helm public repo on every chart update
+helm install ./charts/substra-deploy \
+    --namespace kube-system \
+    --kube-context ${KUBE_CONTEXT} \
+    --name substra-deploy \
+    --set image.repository=${IMAGE_SUBSTRA_DEPLOY_REPO} \
+    --set image.tag=${IMAGE_SUBSTRA_DEPLOY_TAG} \
+    --set deploy.defaultRepo=${REGISTRY} \
+    --set serviceAccount=tiller
 
 # Wait for backends to be up
+set +xv
+echo -n "Waiting for backends to be up"
+while [ -z "$(kubectl get pods -n org-1 --ignore-not-found | grep 'backend-server')" ]; do echo -n '.'; sleep 1; done
+while [ -z "$(kubectl get pods -n org-2 --ignore-not-found | grep 'backend-server')" ]; do echo -n '.'; sleep 1; done
 BACKEND_POD_ORG1=$(kubectl get pods -n org-1 | grep "backend-server" | awk '{print $1}')
 BACKEND_POD_ORG2=$(kubectl get pods -n org-2 | grep "backend-server" | awk '{print $1}')
-
+set -xv
 kubectl wait pod/${BACKEND_POD_ORG1} --for=condition=ready --context ${KUBE_CONTEXT} --timeout=-1s -n org-1
 kubectl wait pod/${BACKEND_POD_ORG2} --for=condition=ready --context ${KUBE_CONTEXT} --timeout=-1s -n org-2
 
