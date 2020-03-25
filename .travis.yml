@@ -7,6 +7,7 @@ branches:
   only:
     - master
     - nightly-tests
+    - nightly-tests2
 
 env:
   global:
