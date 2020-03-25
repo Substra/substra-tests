@@ -1,0 +1,18 @@
+language: python
+
+python:
+  - '3.7'
+
+branches:
+  only:
+    - master
+    - nightly-tests
+
+addons:
+  snaps:
+    - name: helm
+      confinement: classic
+      channel: 2.16/stable
+
+script:
+  - ci/run-tests.sh
