@@ -42,7 +42,7 @@ set -evx
 # Always delete the cluster, even if the bash script fails
 delete-cluster() {
     echo "Deleting cluster"
-    yes | gcloud container clusters delete ${CLUSTER_NAME} --zone ${CLUSTER_ZONE} --project ${CLUSTER_PROJECT}
+    # yes | gcloud container clusters delete ${CLUSTER_NAME} --zone ${CLUSTER_ZONE} --project ${CLUSTER_PROJECT}
 }
 trap 'delete-cluster' EXIT
 
@@ -72,6 +72,7 @@ KUBE_CONTEXT=$(kubectl config get-contexts -o name | grep ${CLUSTER_NAME})
 # helm --kube-context ${KUBE_CONTEXT} init --service-account tiller --upgrade --wait
 
 # Install docker registry
+gcloud components list --show-versions --filter kubectl
 kubectl version
 helm version
 helm --kube-context ${KUBE_CONTEXT} install stable/docker-registry --name docker-registry --wait
