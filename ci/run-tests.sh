@@ -15,12 +15,6 @@ set -e
 set -v
 set -x
 
-# sed command for linux and macos
-SED_COMMAND="sed -i '' "
-if [[ "$OSTYPE" == "darwin"* ]]; then
-    SED_COMMAND="sed -i'' "
-fi
-
 # Log in
 gcloud auth activate-service-account ${SERVICE_ACCOUNT} \
     --key-file="${SERVICE_ACCOUNT_KEY}"
