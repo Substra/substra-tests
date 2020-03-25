@@ -14,7 +14,7 @@ spec:
             "--build-arg", "SUBSTRA_GIT_REPO=https://github.com/SubstraFoundation/substra.git",
             "--build-arg", "SUBSTRA_GIT_REF=master",
             "--context", "git://github.com/SubstraFoundation/substra-tests.git",
-            "--destination", "docker-registry.default.svc.cluster.local:5000/substrafoundation/substra-tests:local",
+            "--destination", "{{ .Values.image.repository }}:{{ .Values.image.tag }}",
             "--single-snapshot", "--cache=false"
           ]
       restartPolicy: Never

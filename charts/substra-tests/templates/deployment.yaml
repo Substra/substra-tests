@@ -24,9 +24,9 @@ spec:
       - name: wait-backend-1
         image: jwilder/dockerize
         command: ['dockerize',
-                  '-wait', 'http://backend-org-1-substra-backend-server.org-1.svc.cluster.local:8000',
-                  '-wait', 'http://backend-org-2-substra-backend-server.org-2.svc.cluster.local:8000',
-                  '-timeout', '600s']
+                  '-wait', 'http://backend-org-1-substra-backend-server.org-1.svc.cluster.local:8000/readiness',
+                  '-wait', 'http://backend-org-2-substra-backend-server.org-2.svc.cluster.local:8000/readiness',
+                  '-timeout', '1200s']
       containers:
         - name: {{ .Chart.Name }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
@@ -34,8 +34,11 @@ spec:
           command: ["sleep", "infinity"]
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
+          env:
+            - name: SUBSTRA_TESTS_CONFIG_FILEPATH
+              value: /etc/substra/values.yaml
           volumeMounts:
-            - mountPath: /usr/src/app/
+            - mountPath: /etc/substra/
               name: values
               readOnly: true
       {{- with .Values.nodeSelector }}
