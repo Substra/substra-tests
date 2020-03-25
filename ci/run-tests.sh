@@ -74,6 +74,8 @@ KUBE_CONTEXT=$(kubectl config get-contexts -o name | grep ${CLUSTER_NAME})
 # Install docker registry
 gcloud components list --show-versions --filter kubectl
 kubectl version
+echo $PATH
+ls -la $HOME/bin/
 helm version
 helm --kube-context ${KUBE_CONTEXT} install stable/docker-registry --name docker-registry --wait
 REGISTRY_POD_NAME=$(kubectl get pods -o name --context ${KUBE_CONTEXT}| grep docker-registry)
