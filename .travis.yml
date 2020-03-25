@@ -8,11 +8,15 @@ branches:
     - master
     - nightly-tests
 
+env:
+  global:
+    - CLOUDSDK_CORE_DISABLE_PROMPTS=1
+
 addons:
   snaps:
     - name: helm
       confinement: classic
-      channel: 2.16/stable
+      channel: 2.14/stable
 
 before_install:
   - openssl aes-256-cbc -K $encrypted_36785d287aa1_key -iv $encrypted_36785d287aa1_iv
@@ -20,7 +24,20 @@ before_install:
     -d
   - openssl aes-256-cbc -K $encrypted_3657ea9362f7_key -iv $encrypted_3657ea9362f7_iv
     -in ci/keys/kaniko-secret.json.enc -out ci/keys/kaniko-secret.json -d
-  - gcloud components install kubectl
+  - |
+    if [ ! -d $HOME/google-cloud-sdk/bin ]; then
+        # The install script errors if this directory already exists,
+        # but Travis already creates it when we mark it as cached.
+        rm -rf $HOME/google-cloud-sdk;
+        # The install script is overly verbose, which sometimes causes
+        # problems on Travis, so ignore stdout.
+        curl https://sdk.cloud.google.com | bash > /dev/null;
+      fi
+  # This line is critical. We setup the SDK to take precedence in our
+  # environment over the old SDK that is already on the machine.
+  - source $HOME/google-cloud-sdk/path.bash.inc
+  - gcloud components update kubectl --version=285.0.1
+  - gcloud version
 
 script:
   - cd ci/
