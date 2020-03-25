@@ -69,7 +69,7 @@ KUBE_CONTEXT=$(kubectl config get-contexts -o name | grep ${CLUSTER_NAME})
 # Configure Tiller
 # kubectl --context ${KUBE_CONTEXT} create serviceaccount --namespace kube-system tiller
 # kubectl --context ${KUBE_CONTEXT} create clusterrolebinding tiller-cluster-rule --clusterrole=cluster-admin --serviceaccount=kube-system:tiller
-# helm --kube-context ${KUBE_CONTEXT} init --service-account tiller --upgrade --wait
+helm --kube-context ${KUBE_CONTEXT} init --service-account tiller --upgrade --wait
 
 # Install docker registry
 gcloud components list --show-versions --filter kubectl
