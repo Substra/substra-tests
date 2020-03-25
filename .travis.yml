@@ -17,7 +17,7 @@ addons:
   snaps:
     - name: helm
       confinement: classic
-      channel: 2.14/stable
+      channel: 2.15/stable
 
 before_install:
   - openssl aes-256-cbc -K $encrypted_36785d287aa1_key -iv $encrypted_36785d287aa1_iv
