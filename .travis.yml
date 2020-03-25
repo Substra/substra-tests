@@ -20,8 +20,7 @@ before_install:
     -d
   - openssl aes-256-cbc -K $encrypted_3657ea9362f7_key -iv $encrypted_3657ea9362f7_iv
     -in ci/keys/kaniko-secret.json.enc -out ci/keys/kaniko-secret.json -d
-  - curl -Lo kubectl https://storage.googleapis.com/kubernetes-release/release/v1.7.0/bin/linux/amd64/kubectl && \
-      chmod +x kubectl && sudo mv kubectl /usr/local/bin/
+  - gcloud components install kubectl
 
 script:
   - cd ci/
