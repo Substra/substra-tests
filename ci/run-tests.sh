@@ -8,12 +8,11 @@ CLUSTER_PROJECT="substra-208412"
 SERVICE_ACCOUNT=substra-tests@substra-208412.iam.gserviceaccount.com
 SERVICE_ACCOUNT_KEY="${HOME}/.local/substra-208412-3be0df12d87a.json"
 KANIKO_SERVICE_ACCOUNT_KEY="${HOME}/.local/kaniko-secret.json"
-IMAGE_SUBSTRA_DEPLOY_REPO="aureliengasser/substra-deploy"
-IMAGE_SUBSTRA_DEPLOY_TAG="latest"
+IMAGE_SUBSTRA_TESTS_DEPLOY_REPO="substrafoundation/substra-tests-deploy"
+IMAGE_SUBSTRA_TESTS_DEPLOY_TAG="latest"
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
-set -e
-set -v
-set -x
+set -evx
 
 # Log in
 gcloud auth activate-service-account ${SERVICE_ACCOUNT} \
@@ -46,17 +45,12 @@ REGISTRY_POD_NAME=$(kubectl get pods -o name --context ${KUBE_CONTEXT}| grep doc
 REGISTRY=$(kubectl get ${REGISTRY_POD_NAME} --template={{.status.podIP}} --context ${KUBE_CONTEXT}):5000
 
 # Deploy substra
-# TODO: Create git repo substrafoundation/substra-deploy
-#   - [] Based on aureliengasser/substra-deploy
-#   - [] Connect this new repo to Docker Hub so that the substrafoundation/substra-deploy image is built/pushed on every git push
-#   - [] Move charts/substra-deploy from here to the new repo
-#   - [] Add a .travis.yaml in the new repo that pushes to our helm public repo on every chart update
-helm install ./charts/substra-deploy \
+helm install ${DIR}/../charts/substra-tests/deploy \
     --namespace kube-system \
     --kube-context ${KUBE_CONTEXT} \
     --name substra-deploy \
-    --set image.repository=${IMAGE_SUBSTRA_DEPLOY_REPO} \
-    --set image.tag=${IMAGE_SUBSTRA_DEPLOY_TAG} \
+    --set image.repository=${IMAGE_SUBSTRA_TESTS_DEPLOY_REPO} \
+    --set image.tag=${IMAGE_SUBSTRA_TESTS_DEPLOY_TAG} \
     --set deploy.defaultRepo=${REGISTRY} \
     --set serviceAccount=tiller
 
