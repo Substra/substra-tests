@@ -51,27 +51,29 @@ gcloud auth activate-service-account ${SERVICE_ACCOUNT} \
     --key-file="${KEYS_DIR}/${KEY_SERVICE_ACCOUNT}"
 
 # Create cluster
-gcloud container clusters create ${CLUSTER_NAME} \
-    --cluster-version ${CLUSTER_VERSION} \
-    --machine-type ${CLUSTER_MACHINE_TYPE} \
-    --zone ${CLUSTER_ZONE} \
-    --project ${CLUSTER_PROJECT} \
-    --service-account ${SERVICE_ACCOUNT} \
-    --num-nodes=1
+# gcloud container clusters create ${CLUSTER_NAME} \
+#     --cluster-version ${CLUSTER_VERSION} \
+#     --machine-type ${CLUSTER_MACHINE_TYPE} \
+#     --zone ${CLUSTER_ZONE} \
+#     --project ${CLUSTER_PROJECT} \
+#     --service-account ${SERVICE_ACCOUNT} \
+#     --num-nodes=1
 
 # Configure kubectl
 gcloud container clusters get-credentials ${CLUSTER_NAME} --zone ${CLUSTER_ZONE} --project ${CLUSTER_PROJECT}
 KUBE_CONTEXT=$(kubectl config get-contexts -o name | grep ${CLUSTER_NAME})
 
 # Configure kaniko
-kubectl --context ${KUBE_CONTEXT} create secret generic kaniko-secret --from-file="${KEYS_DIR}/${KEY_KANIKO_SERVICE_ACCOUNT}"
+# kubectl --context ${KUBE_CONTEXT} create secret generic kaniko-secret --from-file="${KEYS_DIR}/${KEY_KANIKO_SERVICE_ACCOUNT}"
 
 # Configure Tiller
-kubectl --context ${KUBE_CONTEXT} create serviceaccount --namespace kube-system tiller
-kubectl --context ${KUBE_CONTEXT} create clusterrolebinding tiller-cluster-rule --clusterrole=cluster-admin --serviceaccount=kube-system:tiller
-helm --kube-context ${KUBE_CONTEXT} init --service-account tiller --upgrade --wait
+# kubectl --context ${KUBE_CONTEXT} create serviceaccount --namespace kube-system tiller
+# kubectl --context ${KUBE_CONTEXT} create clusterrolebinding tiller-cluster-rule --clusterrole=cluster-admin --serviceaccount=kube-system:tiller
+# helm --kube-context ${KUBE_CONTEXT} init --service-account tiller --upgrade --wait
 
 # Install docker registry
+kubectl version
+helm version
 helm --kube-context ${KUBE_CONTEXT} install stable/docker-registry --name docker-registry --wait
 REGISTRY_POD_NAME=$(kubectl get pods -o name --context ${KUBE_CONTEXT}| grep docker-registry)
 REGISTRY=$(kubectl get ${REGISTRY_POD_NAME} --template={{.status.podIP}} --context ${KUBE_CONTEXT}):5000
