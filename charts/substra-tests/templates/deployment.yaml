@@ -1,43 +1,51 @@
-
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "substra-deploy.fullname" . }}
+  name: {{ include "substra-tests.fullname" . }}
   labels:
-{{ include "substra-deploy.labels" . | indent 4 }}
+{{ include "substra-tests.labels" . | indent 4 }}
 spec:
-  replicas: 1
+  replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      app.kubernetes.io/name: {{ include "substra-deploy.name" . }}
+      app.kubernetes.io/name: {{ include "substra-tests.name" . }}
       app.kubernetes.io/instance: {{ .Release.Name }}
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: {{ include "substra-deploy.name" . }}
+        app.kubernetes.io/name: {{ include "substra-tests.name" . }}
         app.kubernetes.io/instance: {{ .Release.Name }}
     spec:
     {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
     {{- end }}
-      {{- if .Values.serviceAccount}}
-      serviceAccountName: {{ .Values.serviceAccount }}
-      {{- end }}
+      initContainers:
+      - name: wait-backend-1
+        image: jwilder/dockerize
+        command: ['dockerize',
+                  '-wait', 'http://backend-org-1-substra-backend-server.org-1.svc.cluster.local:8000',
+                  '-wait', 'http://backend-org-2-substra-backend-server.org-2.svc.cluster.local:8000',
+                  '-timeout', '600s']
       containers:
         - name: {{ .Chart.Name }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
-          command: ["bash", "-c"]
-          args:
-            - |
-              ./deploy.sh {{ .Values.deploy.defaultRepo }}
+          command: ["sleep", "infinity"]
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            - mountPath: /usr/src/app/
+              name: values
+              readOnly: true
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+      volumes:
+        - name: values
+          configMap:
+            name: {{ template "substra-tests.fullname" . }}-configmap
     {{- with .Values.affinity }}
       affinity:
         {{- toYaml . | nindent 8 }}

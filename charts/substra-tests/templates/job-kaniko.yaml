@@ -1,7 +1,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: kaniko-substra
+  name: kaniko-substra-tests
 spec:
   ttlSecondsAfterFinished: 10
   template:

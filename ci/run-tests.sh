@@ -11,8 +11,17 @@ KANIKO_SERVICE_ACCOUNT_KEY="${HOME}/.local/kaniko-secret.json"
 IMAGE_SUBSTRA_TESTS_DEPLOY_REPO="substrafoundation/substra-tests-deploy"
 IMAGE_SUBSTRA_TESTS_DEPLOY_TAG="latest"
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+CHARTS_DIR="${DIR}/../charts"
 
 set -evx
+
+
+# Always delete the cluster, even if the bash script fails
+delete-cluster() {
+    echo "Deleting cluster"
+    yes | gcloud container clusters delete ${CLUSTER_NAME} --zone ${CLUSTER_ZONE} --project ${CLUSTER_PROJECT}
+}
+trap 'delete-cluster' EXIT
 
 # Log in
 gcloud auth activate-service-account ${SERVICE_ACCOUNT} \
@@ -45,38 +54,25 @@ REGISTRY_POD_NAME=$(kubectl get pods -o name --context ${KUBE_CONTEXT}| grep doc
 REGISTRY=$(kubectl get ${REGISTRY_POD_NAME} --template={{.status.podIP}} --context ${KUBE_CONTEXT}):5000
 
 # Deploy substra
-helm install ${DIR}/../charts/substra-tests/deploy \
+helm install ${CHARTS_DIR}/substra-tests-deploy \
     --namespace kube-system \
     --kube-context ${KUBE_CONTEXT} \
-    --name substra-deploy \
+    --name substra-tests-deploy \
     --set image.repository=${IMAGE_SUBSTRA_TESTS_DEPLOY_REPO} \
     --set image.tag=${IMAGE_SUBSTRA_TESTS_DEPLOY_TAG} \
     --set deploy.defaultRepo=${REGISTRY} \
     --set serviceAccount=tiller
 
-# Wait for backends to be up
-set +xv
-echo -n "Waiting for backends to be up"
-while [ -z "$(kubectl get pods -n org-1 --ignore-not-found | grep 'backend-server')" ]; do echo -n '.'; sleep 1; done
-while [ -z "$(kubectl get pods -n org-2 --ignore-not-found | grep 'backend-server')" ]; do echo -n '.'; sleep 1; done
-BACKEND_POD_ORG1=$(kubectl get pods -n org-1 | grep "backend-server" | awk '{print $1}')
-BACKEND_POD_ORG2=$(kubectl get pods -n org-2 | grep "backend-server" | awk '{print $1}')
-set -xv
-kubectl wait pod/${BACKEND_POD_ORG1} --for=condition=ready --context ${KUBE_CONTEXT} --timeout=-1s -n org-1
-kubectl wait pod/${BACKEND_POD_ORG2} --for=condition=ready --context ${KUBE_CONTEXT} --timeout=-1s -n org-2
+# Deploy substra-tests
+helm install ${CHARTS_DIR}/substra-tests \
+    --kube-context ${KUBE_CONTEXT} \
+    --name substra-tests \
+    --set image.tag=local \
+    --set deploy.defaultRepo=${REGISTRY}
 
-kubectl apply -f substra-tests-kaniko.yaml
-kubectl --context ${KUBE_CONTEXT} wait --for=condition=complete --timeout=-1s job/kaniko-substra
+# Wait for the pod
+SUBSTRA_TESTS_POD=$(kubectl get pods --context ${KUBE_CONTEXT} | grep substra-tests | grep -v kaniko | awk '{print $1}')
+time kubectl wait pod/${SUBSTRA_TESTS_POD} --for=condition=ready --context ${KUBE_CONTEXT} --timeout=900s
 
-
-sed "s/<<<REGISTRY>>>/${REGISTRY}/g" ./deployment-substra-tests.template > deployment-substra-tests.yaml
-kubectl apply -f deployment-substra-tests.yaml
-rm deployment-substra-tests.yaml
-
-SUBSTRA_TESTS_POD=$(kubectl get pods --context ${KUBE_CONTEXT} | grep -v kaniko |grep substra-tests | awk '{print $1}')
-kubectl wait pod/${SUBSTRA_TESTS_POD} --for=condition=ready --context ${KUBE_CONTEXT} --timeout=-1s
-kubectl cp ./substra-tests-values.yaml ${SUBSTRA_TESTS_POD}:/usr/src/app/values.yaml --context ${KUBE_CONTEXT}
+# Run the tests
 kubectl --context ${KUBE_CONTEXT} exec ${SUBSTRA_TESTS_POD} -- make test
-
-# Delete cluster
-yes | gcloud container clusters delete ${CLUSTER_NAME} --zone ${CLUSTER_ZONE} --project ${CLUSTER_PROJECT}

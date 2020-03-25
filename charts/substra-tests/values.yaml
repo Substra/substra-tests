@@ -1,16 +1,11 @@
 image:
-  repository: substrafoundation/substra-tests-deploy
+  repository: substrafoundation/substra-tests
   tag: stable
   pullPolicy: IfNotPresent
 
 imagePullSecrets: []
 nameOverride: ""
 fullnameOverride: ""
-
-deploy:
-  defaultRepo: ""
-
-serviceAccount: ""
 
 resources: {}
   # We usually recommend not to specify default resources and to leave this as a conscious
