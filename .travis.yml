@@ -33,7 +33,7 @@ before_install:
   - chmod +x a
   - curl https://get.helm.sh/helm-v2.14.2-linux-amd64.tar.gz -o helm-v2.14.2-linux-amd64.tar.gz
   - tar xzf helm-v2.14.2-linux-amd64.tar.gz
-  - mv linux-amd64/helm linux-amd64/tiller /usr/local/bin/
+  - mv linux-amd64/helm linux-amd64/tiller $HOME/bin/
 
 script:
   - cd ci/
