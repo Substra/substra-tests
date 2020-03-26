@@ -1,27 +1,35 @@
-language: python
-
-python:
-  - '3.7'
+language: minimal
 
 branches:
   only:
     - master
     - nightly-tests
 
-addons:
-  snaps:
-    - name: helm
-      confinement: classic
-      channel: 2.16/stable
-
 before_install:
+  # Decrypt secrets
   - openssl aes-256-cbc -K $encrypted_36785d287aa1_key -iv $encrypted_36785d287aa1_iv
     -in ci/keys/substra-208412-3be0df12d87a.json.enc -out ci/keys/substra-208412-3be0df12d87a.json
     -d
   - openssl aes-256-cbc -K $encrypted_3657ea9362f7_key -iv $encrypted_3657ea9362f7_iv
     -in ci/keys/kaniko-secret.json.enc -out ci/keys/kaniko-secret.json -d
-  - gcloud components install kubectl
+  # Install helm (v2.14.2)
+  - curl https://get.helm.sh/helm-v2.14.2-linux-amd64.tar.gz -o helm-v2.14.2-linux-amd64.tar.gz
+  - tar xzf helm-v2.14.2-linux-amd64.tar.gz
+  - mv linux-amd64/helm linux-amd64/tiller $HOME/bin/
+  # Install kubectl
+  - curl -LO https://storage.googleapis.com/kubernetes-release/release/`curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt`/bin/linux/amd64/kubectl
+  - chmod +x ./kubectl
+  - mv ./kubectl $HOME/bin/
 
 script:
+  - CLUSTER_NAME="substra-tests-$(date -u +'%Y-%m-%d-%Hh%M')-$(cat /dev/urandom | tr -dc 'a-z0-9' | fold -w 8 | head -n 1)"
+  - CLUSTER_ZONE="europe-west4-a"
   - cd ci/
-  - ./run-tests.sh --keys-directory=./keys/
+  - ./run-tests.sh --keys-directory=./keys/ --cluster-name=${CLUSTER_NAME} --cluster-zone=${CLUSTER_ZONE}
+
+after_script:
+  # run-tests.sh should delete the cluster, but make sure the cluster really gets deleted
+  # in case travis kills the script.
+  # Todo: I'm not sure this actually is always called (script timeout, build canceled, etc)
+  # Todo: this doesn't work at all: we're not logged into google at this point
+  yes | gcloud container clusters delete ${CLUSTER_NAME} --zone ${CLUSTER_ZONE}

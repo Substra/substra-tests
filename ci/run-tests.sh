@@ -1,9 +1,7 @@
 #/bin/bash
 
-CLUSTER_NAME=substra-tests
 CLUSTER_MACHINE_TYPE="n1-standard-8"
 CLUSTER_VERSION="1.15.8-gke.3"
-CLUSTER_ZONE="europe-west4-a"
 CLUSTER_PROJECT="substra-208412"
 SERVICE_ACCOUNT=substra-tests@substra-208412.iam.gserviceaccount.com
 IMAGE_SUBSTRA_TESTS_DEPLOY_REPO="substrafoundation/substra-tests-deploy"
@@ -13,7 +11,10 @@ CHARTS_DIR="${DIR}/../charts"
 KEY_SERVICE_ACCOUNT="substra-208412-3be0df12d87a.json"
 KEY_KANIKO_SERVICE_ACCOUNT="kaniko-secret.json"
 
+# defaults
 KEYS_DIR="${HOME}/.local/"
+CLUSTER_NAME="substra-tests"
+CLUSTER_ZONE="europe-west4-a"
 
 # Parse command-line arguments
 for i in "$@"
@@ -21,7 +22,15 @@ do
     case $i in
         -K=*|--keys-directory=*)
         KEYS_DIR="${i#*=}"
-        shift # past argument=value
+        shift
+        ;;
+        -N=*|--cluster-name=*)
+        CLUSTER_NAME="${i#*=}"
+        shift
+        ;;
+        -Z=*|--cluster-zone=*)
+        CLUSTER_ZONE="${i#*=}"
+        shift
         ;;
         --default)
         DEFAULT=YES
@@ -32,16 +41,17 @@ do
         ;;
     esac
 done
-echo "KEYS_DIR  = ${KEYS_DIR}"
+echo "KEYS_DIR      = ${KEYS_DIR}"
+echo "CLUSTER_NAME  = ${CLUSTER_NAME}"
+echo "CLUSTER_ZONE  = ${CLUSTER_ZONE}"
 if [[ -n $1 ]]; then
     echo "Last line of file specified as non-opt/last argument:"
 fi
 
 set -evx
 
-# Always delete the cluster, even if the bash script fails
+# Always delete the cluster, even if the script fails
 delete-cluster() {
-    echo "Deleting cluster"
     yes | gcloud container clusters delete ${CLUSTER_NAME} --zone ${CLUSTER_ZONE} --project ${CLUSTER_PROJECT}
 }
 trap 'delete-cluster' EXIT
@@ -96,7 +106,14 @@ helm install ${CHARTS_DIR}/substra-tests \
 
 # Wait for the pod
 SUBSTRA_TESTS_POD=$(kubectl get pods --context ${KUBE_CONTEXT} | grep substra-tests | grep -v kaniko | awk '{print $1}')
-time kubectl wait pod/${SUBSTRA_TESTS_POD} --for=condition=ready --context ${KUBE_CONTEXT} --timeout=1200s
+wait-for-pod() {
+    while [ -n "$(kubectl wait pod/${SUBSTRA_TESTS_POD} --for=condition=ready --context ${KUBE_CONTEXT} --timeout=300s)" ]; do
+        # Sending some output else travis eventually kills the build. So mean.
+        # TODO: add time limit
+        echo 'Waiting for the substra-tests pod...'
+    done
+}
+time wait-for-pod
 
 # Run the tests
 kubectl --context ${KUBE_CONTEXT} exec ${SUBSTRA_TESTS_POD} -- make test
