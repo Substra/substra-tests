@@ -107,7 +107,7 @@ helm install ${CHARTS_DIR}/substra-tests \
 # Wait for the pod
 SUBSTRA_TESTS_POD=$(kubectl get pods --context ${KUBE_CONTEXT} | grep substra-tests | grep -v kaniko | awk '{print $1}')
 wait-for-pod() {
-    while [ -n "$(kubectl wait pod/${SUBSTRA_TESTS_POD} --for=condition=ready --context ${KUBE_CONTEXT} --timeout=300s)" ]; do
+    while [ -n "$(kubectl wait pod/${SUBSTRA_TESTS_POD} --for=condition=ready --context ${KUBE_CONTEXT} --timeout=300s) 2>&1" ]; do
         # Sending some output else travis eventually kills the build. So mean.
         # TODO: add time limit
         echo 'Waiting for the substra-tests pod...'
