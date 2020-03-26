@@ -23,7 +23,7 @@ before_install:
   - mv ./kubectl $HOME/bin/
 
 script:
-  - CLUSTER_NAME="substra-tests-$(date -u +'%Y-%m-%d-%Hh%M')-$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 8 | head -n 1)"
+  - CLUSTER_NAME="substra-tests-$(date -u +'%Y-%m-%d-%Hh%M')-$(cat /dev/urandom | tr -dc 'a-z0-9' | fold -w 8 | head -n 1)"
   - CLUSTER_ZONE="europe-west4-a"
   - cd ci/
   - ./run-tests.sh --keys-directory=./keys/ --cluster-name=${CLUSTER_NAME} --cluster-zone=${CLUSTER_ZONE}
