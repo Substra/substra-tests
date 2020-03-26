@@ -31,4 +31,5 @@ after_script:
   # run-tests.sh should delete the cluster, but make sure the cluster really gets deleted
   # in case travis kills the script.
   # Todo: I'm not sure this actually is always called (script timeout, build canceled, etc)
+  # Todo: this doesn't work at all: we're not logged into google at this point
   yes | gcloud container clusters delete ${CLUSTER_NAME} --zone ${CLUSTER_ZONE}
