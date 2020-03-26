@@ -9,23 +9,18 @@ branches:
     - nightly-tests
     - nightly-tests2
 
-env:
-  global:
-    - CLOUDSDK_CORE_DISABLE_PROMPTS=1
-
 before_install:
+  # Decrypt secrets
   - openssl aes-256-cbc -K $encrypted_36785d287aa1_key -iv $encrypted_36785d287aa1_iv
     -in ci/keys/substra-208412-3be0df12d87a.json.enc -out ci/keys/substra-208412-3be0df12d87a.json
     -d
   - openssl aes-256-cbc -K $encrypted_3657ea9362f7_key -iv $encrypted_3657ea9362f7_iv
     -in ci/keys/kaniko-secret.json.enc -out ci/keys/kaniko-secret.json -d
-  - echo $HOME/
-  - echo $PATH
-  - touch a
-  - chmod +x a
+  # Install helm (v2.14.2)
   - curl https://get.helm.sh/helm-v2.14.2-linux-amd64.tar.gz -o helm-v2.14.2-linux-amd64.tar.gz
   - tar xzf helm-v2.14.2-linux-amd64.tar.gz
   - mv linux-amd64/helm linux-amd64/tiller $HOME/bin/
+  # Install kubectl
   - curl -LO https://storage.googleapis.com/kubernetes-release/release/`curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt`/bin/linux/amd64/kubectl
   - chmod +x ./kubectl
   - mv ./kubectl $HOME/bin/
