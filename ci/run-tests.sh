@@ -1,6 +1,5 @@
 #/bin/bash
 
-CLUSTER_NAME=substra-tests
 CLUSTER_MACHINE_TYPE="n1-standard-8"
 CLUSTER_VERSION="1.15.8-gke.3"
 CLUSTER_ZONE="europe-west4-a"
@@ -14,6 +13,7 @@ KEY_SERVICE_ACCOUNT="substra-208412-3be0df12d87a.json"
 KEY_KANIKO_SERVICE_ACCOUNT="kaniko-secret.json"
 
 KEYS_DIR="${HOME}/.local/"
+CLUSTER_NAME=substra-tests
 
 # Parse command-line arguments
 for i in "$@"
@@ -23,7 +23,10 @@ do
         KEYS_DIR="${i#*=}"
         shift # past argument=value
         ;;
-        --default)
+        -N=*|--cluster-name=*)
+        CLUSTER_NAME="${i#*=}"
+        shift # past argument=value
+        ;;        --default)
         DEFAULT=YES
         shift # past argument with no value
         ;;
@@ -32,7 +35,8 @@ do
         ;;
     esac
 done
-echo "KEYS_DIR  = ${KEYS_DIR}"
+echo "KEYS_DIR      = ${KEYS_DIR}"
+echo "CLUSTER_NAME  = ${CLUSTER_NAME}"
 if [[ -n $1 ]]; then
     echo "Last line of file specified as non-opt/last argument:"
 fi
@@ -72,11 +76,6 @@ kubectl --context ${KUBE_CONTEXT} create clusterrolebinding tiller-cluster-rule 
 helm --kube-context ${KUBE_CONTEXT} init --service-account tiller --upgrade --wait
 
 # Install docker registry
-gcloud components list --show-versions --filter kubectl
-kubectl version
-echo $PATH
-ls -la $HOME/bin/
-# helm version
 helm --kube-context ${KUBE_CONTEXT} install stable/docker-registry --name docker-registry --wait
 REGISTRY_POD_NAME=$(kubectl get pods -o name --context ${KUBE_CONTEXT}| grep docker-registry)
 REGISTRY=$(kubectl get ${REGISTRY_POD_NAME} --template={{.status.podIP}} --context ${KUBE_CONTEXT}):5000

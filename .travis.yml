@@ -1,7 +1,4 @@
-language: python
-
-python:
-  - '3.7'
+language: minimal
 
 branches:
   only:
@@ -26,5 +23,10 @@ before_install:
   - mv ./kubectl $HOME/bin/
 
 script:
+  - CLUSTER_NAME="substra-tests_$(date -u +'%Y-%m-%d-%Hh%M')_$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 8 | head -n 1)"
   - cd ci/
-  - ./run-tests.sh --keys-directory=./keys/
+  - travis_wait 30 ./run-tests.sh --keys-directory=./keys/ --cluster-name $CLUSTER_NAME
+
+after_script:
+  # run-tests.sh should delete the cluster, but double check
+  yes | gcloud container clusters delete ${CLUSTER_NAME}
