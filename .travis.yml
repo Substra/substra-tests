@@ -23,10 +23,12 @@ before_install:
   - mv ./kubectl $HOME/bin/
 
 script:
-  - CLUSTER_NAME="substra-tests_$(date -u +'%Y-%m-%d-%Hh%M')_$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 8 | head -n 1)"
+  - CLUSTER_NAME="substra-tests-$(date -u +'%Y-%m-%d-%Hh%M')-$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 8 | head -n 1)"
+  - CLUSTER_ZONE="europe-west4-a"
   - cd ci/
-  - travis_wait 30 ./run-tests.sh --keys-directory=./keys/ --cluster-name=$CLUSTER_NAME
+  - ./run-tests.sh --keys-directory=./keys/ --cluster-name=${CLUSTER_NAME} --cluster-zone=${CLUSTER_ZONE}
 
 after_script:
-  # run-tests.sh should delete the cluster, but double check
-  yes | gcloud container clusters delete ${CLUSTER_NAME}
+  # run-tests.sh should delete the cluster.
+  # But in case travis kills the script, make sure the cluster is deleted.
+  yes | gcloud container clusters delete ${CLUSTER_NAME} --zone ${CLUSTER_ZONE}

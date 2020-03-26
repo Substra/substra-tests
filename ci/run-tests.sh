@@ -2,7 +2,6 @@
 
 CLUSTER_MACHINE_TYPE="n1-standard-8"
 CLUSTER_VERSION="1.15.8-gke.3"
-CLUSTER_ZONE="europe-west4-a"
 CLUSTER_PROJECT="substra-208412"
 SERVICE_ACCOUNT=substra-tests@substra-208412.iam.gserviceaccount.com
 IMAGE_SUBSTRA_TESTS_DEPLOY_REPO="substrafoundation/substra-tests-deploy"
@@ -12,8 +11,10 @@ CHARTS_DIR="${DIR}/../charts"
 KEY_SERVICE_ACCOUNT="substra-208412-3be0df12d87a.json"
 KEY_KANIKO_SERVICE_ACCOUNT="kaniko-secret.json"
 
+# defaults
 KEYS_DIR="${HOME}/.local/"
-CLUSTER_NAME=substra-tests
+CLUSTER_NAME="substra-tests"
+CLUSTER_ZONE="europe-west4-a"
 
 # Parse command-line arguments
 for i in "$@"
@@ -21,12 +22,17 @@ do
     case $i in
         -K=*|--keys-directory=*)
         KEYS_DIR="${i#*=}"
-        shift # past argument=value
+        shift
         ;;
         -N=*|--cluster-name=*)
         CLUSTER_NAME="${i#*=}"
-        shift # past argument=value
-        ;;        --default)
+        shift
+        ;;
+        -Z=*|--cluster-zone=*)
+        CLUSTER_ZONE="${i#*=}"
+        shift
+        ;;
+        --default)
         DEFAULT=YES
         shift # past argument with no value
         ;;
@@ -37,6 +43,7 @@ do
 done
 echo "KEYS_DIR      = ${KEYS_DIR}"
 echo "CLUSTER_NAME  = ${CLUSTER_NAME}"
+echo "CLUSTER_ZONE  = ${CLUSTER_ZONE}"
 if [[ -n $1 ]]; then
     echo "Last line of file specified as non-opt/last argument:"
 fi
@@ -100,7 +107,18 @@ helm install ${CHARTS_DIR}/substra-tests \
 
 # Wait for the pod
 SUBSTRA_TESTS_POD=$(kubectl get pods --context ${KUBE_CONTEXT} | grep substra-tests | grep -v kaniko | awk '{print $1}')
-time kubectl wait pod/${SUBSTRA_TESTS_POD} --for=condition=ready --context ${KUBE_CONTEXT} --timeout=1200s
+
+
+wait-for-pod() {
+    while [ -n $(kubectl wait pod/${SUBSTRA_TESTS_POD} --for=condition=ready --context ${KUBE_CONTEXT} --timeout=10s) ]; do
+        # Make travis happy by sending some output.
+        # Else it eventually kills the build.
+        # TODO: add time limit
+        echo -n '.'
+    done
+}
+
+time wait-for-pod
 
 # Run the tests
 kubectl --context ${KUBE_CONTEXT} exec ${SUBSTRA_TESTS_POD} -- make test
