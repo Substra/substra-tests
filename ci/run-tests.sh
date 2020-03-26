@@ -50,9 +50,8 @@ fi
 
 set -evx
 
-# Always delete the cluster, even if the bash script fails
+# Always delete the cluster, even if the script fails
 delete-cluster() {
-    echo "Deleting cluster"
     yes | gcloud container clusters delete ${CLUSTER_NAME} --zone ${CLUSTER_ZONE} --project ${CLUSTER_PROJECT}
 }
 trap 'delete-cluster' EXIT
@@ -107,17 +106,13 @@ helm install ${CHARTS_DIR}/substra-tests \
 
 # Wait for the pod
 SUBSTRA_TESTS_POD=$(kubectl get pods --context ${KUBE_CONTEXT} | grep substra-tests | grep -v kaniko | awk '{print $1}')
-
-
 wait-for-pod() {
-    while [ -n $(kubectl wait pod/${SUBSTRA_TESTS_POD} --for=condition=ready --context ${KUBE_CONTEXT} --timeout=10s) ]; do
-        # Make travis happy by sending some output.
-        # Else it eventually kills the build.
+    while [ -n "$(kubectl wait pod/${SUBSTRA_TESTS_POD} --for=condition=ready --context ${KUBE_CONTEXT} --timeout=300s)" ]; do
+        # Sending some output else travis eventually kills the build. So mean.
         # TODO: add time limit
-        echo -n '.'
+        echo 'Waiting for the substra-tests pod...'
     done
 }
-
 time wait-for-pod
 
 # Run the tests

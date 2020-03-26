@@ -4,7 +4,6 @@ branches:
   only:
     - master
     - nightly-tests
-    - nightly-tests2
 
 before_install:
   # Decrypt secrets
@@ -29,6 +28,7 @@ script:
   - ./run-tests.sh --keys-directory=./keys/ --cluster-name=${CLUSTER_NAME} --cluster-zone=${CLUSTER_ZONE}
 
 after_script:
-  # run-tests.sh should delete the cluster.
-  # But in case travis kills the script, make sure the cluster is deleted.
+  # run-tests.sh should delete the cluster, but make sure the cluster really gets deleted
+  # in case travis kills the script.
+  # Todo: I'm not sure this actually is always called (script timeout, build canceled, etc)
   yes | gcloud container clusters delete ${CLUSTER_NAME} --zone ${CLUSTER_ZONE}
