@@ -107,9 +107,15 @@ helm install ${CHARTS_DIR}/substra-tests \
 # Wait for the pod
 SUBSTRA_TESTS_POD=$(kubectl get pods --context ${KUBE_CONTEXT} | grep substra-tests | grep -v kaniko | awk '{print $1}')
 wait-for-pod() {
+    # Travis kills the build if we don't send output for more than 10 min.
+    # Send some output every 5 min.
+    TS_START=$(date +%s)
     until kubectl wait pod/${SUBSTRA_TESTS_POD} --for=condition=ready --context ${KUBE_CONTEXT} --timeout=300s; do
-        # Sending some output else travis eventually kills the build. So mean.
-        # TODO: add time limit
+        ELAPSED_SEC=$(($(date +%s) - ${TS_START}))
+        if [ ${ELAPSED_SEC} -gt 1200 ]; then
+            echo 'Timed out waiting for the substra-tests pod.'
+            return
+        fi
         echo 'Waiting for the substra-tests pod...'
     done
 }
