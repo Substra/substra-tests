@@ -1,7 +1,7 @@
 #/bin/bash
 
 CLUSTER_MACHINE_TYPE="n1-standard-8"
-CLUSTER_VERSION="1.15.8-gke.3"
+CLUSTER_VERSION="1.15.11-gke.1"
 CLUSTER_PROJECT="substra-208412"
 SERVICE_ACCOUNT=substra-tests@substra-208412.iam.gserviceaccount.com
 IMAGE_SUBSTRA_TESTS_DEPLOY_REPO="substrafoundation/substra-tests-deploy"
