@@ -38,9 +38,8 @@ do
         ;;
     esac
 done
-echo "KEYS_DIR      = ${KEYS_DIR}"
-echo "CLUSTER_NAME  = ${CLUSTER_NAME}"
-echo "CLUSTER_ZONE  = ${CLUSTER_ZONE}"
+echo "KEYS_DIR     = ${KEYS_DIR}"
+echo "CLUSTER_NAME = ${CLUSTER_NAME}"
 if [[ -n $1 ]]; then
     echo "Last line of file specified as non-opt/last argument:"
 fi
@@ -105,15 +104,21 @@ helm install ${CHARTS_DIR}/substra-tests \
 SUBSTRA_TESTS_POD=$(kubectl get pods --context ${KUBE_CONTEXT} | grep substra-tests | grep -v kaniko | awk '{print $1}')
 
 timed-out() {
-    echo 'ERROR: Timeout while waiting for the substra-tests pod.'
-    echo 'This typically means an error ocurred during one of the following steps:'
-    echo '  - `subtra-tests-deploy` deployment on the cluster (check status of deployment `subtra-test-deploy` using k9s) '
-    echo '  - `deploy.sh` script execution within the `substra-test-deploy` pod (check logs of `substra-tests-deploy` pod)'
-    echo '  - deployment of the substra stack, i.e. hlf-k8s and substra-backend (usual substra stack troubleshooting methods apply)'
-    echo 'It would be impractical to dump the statuses and logs of all the kubernetes resources here, '
-    echo 'so you might have to instantiate a new kubernetes cluster in order to reproduce and investigate the error. '
-    echo 'To do so, you can run this script (or run commands from it) on your local machine, and use k9s to investigate where '
-    echo 'the error occurs.'
+    cat <<EOF
+ERROR: Timeout while waiting for the substra-tests pod.
+This typically means an error ocurred during one of the following steps:
+  - `subtra-tests-deploy` deployment on the cluster (check status of deployment
+    `subtra-test-deploy` using k9s)
+  - `deploy.sh` script execution within the `substra-test-deploy` pod (check
+     logs of `substra-tests-deploy` pod)
+  - deployment of the substra stack, i.e. hlf-k8s and substra-backend (usual
+    substra stack troubleshooting methods apply)
+It would be impractical to dump the statuses and logs of all the kubernetes
+resources here, so you might have to instantiate a new kubernetes cluster in
+order to reproduce and investigate the error. To do so, you can run this script
+(or run commands from it) on your local machine, and use k9s to investigate
+where the error occurs.
+EOF
 }
 
 wait-for-pod() {
