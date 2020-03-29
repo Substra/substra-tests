@@ -1,20 +1,21 @@
 #/bin/bash
 
+# Please use a cluster name that starts with 'substra-tests' so that it gets
+# picked up by the automatic stale cluster deletion script.
+# See https://console.cloud.google.com/functions/details/us-central1/clean-substra-tests-ci-deployment
+CLUSTER_NAME="substra-tests" # overridden with --cluster-name=xyz
 CLUSTER_MACHINE_TYPE="n1-standard-8"
 CLUSTER_VERSION="1.15.11-gke.1"
 CLUSTER_PROJECT="substra-208412"
+CLUSTER_ZONE="europe-west4-a"
 SERVICE_ACCOUNT=substra-tests@substra-208412.iam.gserviceaccount.com
 IMAGE_SUBSTRA_TESTS_DEPLOY_REPO="substrafoundation/substra-tests-deploy"
 IMAGE_SUBSTRA_TESTS_DEPLOY_TAG="latest"
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 CHARTS_DIR="${DIR}/../charts"
+KEYS_DIR="${HOME}/.local/" # overridden with --keys-directory=xyz
 KEY_SERVICE_ACCOUNT="substra-208412-3be0df12d87a.json"
 KEY_KANIKO_SERVICE_ACCOUNT="kaniko-secret.json"
-
-# defaults
-KEYS_DIR="${HOME}/.local/"
-CLUSTER_NAME="substra-tests"
-CLUSTER_ZONE="europe-west4-a"
 
 # Parse command-line arguments
 for i in "$@"
@@ -28,13 +29,9 @@ do
         CLUSTER_NAME="${i#*=}"
         shift
         ;;
-        -Z=*|--cluster-zone=*)
-        CLUSTER_ZONE="${i#*=}"
-        shift
-        ;;
         --default)
         DEFAULT=YES
-        shift # past argument with no value
+        shift
         ;;
         *)
             # unknown option
@@ -106,6 +103,19 @@ helm install ${CHARTS_DIR}/substra-tests \
 
 # Wait for the pod
 SUBSTRA_TESTS_POD=$(kubectl get pods --context ${KUBE_CONTEXT} | grep substra-tests | grep -v kaniko | awk '{print $1}')
+
+timed-out() {
+    echo 'ERROR: Timeout while waiting for the substra-tests pod.'
+    echo 'This typically means an error ocurred during one of the following steps:'
+    echo '  - `subtra-tests-deploy` deployment on the cluster (check status of deployment `subtra-test-deploy` using k9s) '
+    echo '  - `deploy.sh` script execution within the `substra-test-deploy` pod (check logs of `substra-tests-deploy` pod)'
+    echo '  - deployment of the substra stack, i.e. hlf-k8s and substra-backend (usual substra stack troubleshooting methods apply)'
+    echo 'It would be impractical to dump the statuses and logs of all the kubernetes resources here, '
+    echo 'so you might have to instantiate a new kubernetes cluster in order to reproduce and investigate the error. '
+    echo 'To do so, you can run this script (or run commands from it) on your local machine, and use k9s to investigate where '
+    echo 'the error occurs.'
+}
+
 wait-for-pod() {
     # Travis kills the build if we don't send output for more than 10 min.
     # Send some output every 5 min.
@@ -113,12 +123,13 @@ wait-for-pod() {
     until kubectl wait pod/${SUBSTRA_TESTS_POD} --for=condition=ready --context ${KUBE_CONTEXT} --timeout=300s; do
         ELAPSED_SEC=$(($(date +%s) - ${TS_START}))
         if [ ${ELAPSED_SEC} -gt 1200 ]; then
-            echo 'Timed out waiting for the substra-tests pod.'
+            timed-out
             return
         fi
         echo 'Waiting for the substra-tests pod...'
     done
 }
+
 time wait-for-pod
 
 # Run the tests
