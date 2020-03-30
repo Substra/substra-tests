@@ -9,7 +9,7 @@ CLUSTER_VERSION="1.15.11-gke.1"
 CLUSTER_PROJECT="substra-208412"
 CLUSTER_ZONE="europe-west4-a"
 SERVICE_ACCOUNT=substra-tests@substra-208412.iam.gserviceaccount.com
-IMAGE_SUBSTRA_TESTS_DEPLOY_REPO="substrafoundation/substra-tests-stack"
+IMAGE_SUBSTRA_TESTS_DEPLOY_REPO="substrafoundation/substra-tests-deploy"
 IMAGE_SUBSTRA_TESTS_DEPLOY_TAG="latest"
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 CHARTS_DIR="${DIR}/../charts"
@@ -83,10 +83,10 @@ REGISTRY_POD_NAME=$(kubectl get pods -o name --context ${KUBE_CONTEXT}| grep doc
 REGISTRY=$(kubectl get ${REGISTRY_POD_NAME} --template={{.status.podIP}} --context ${KUBE_CONTEXT}):5000
 
 # Deploy substra
-helm install ${CHARTS_DIR}/substra-tests-stack \
+helm install ${CHARTS_DIR}/substra-tests-deploy \
     --namespace kube-system \
     --kube-context ${KUBE_CONTEXT} \
-    --name substra-tests-stack \
+    --name substra-tests-deploy \
     --set image.repository=${IMAGE_SUBSTRA_TESTS_DEPLOY_REPO} \
     --set image.tag=${IMAGE_SUBSTRA_TESTS_DEPLOY_TAG} \
     --set deploy.defaultRepo=${REGISTRY} \
@@ -110,7 +110,7 @@ This typically means an error ocurred during one of the following steps:
   - `subtra-tests-deploy` deployment on the cluster (check status of deployment
     `subtra-test-deploy` using k9s)
   - `deploy.sh` script execution within the `substra-test-deploy` pod (check
-     logs of `substra-tests-stack` pod)
+     logs of `substra-tests-deploy` pod)
   - deployment of the substra stack, i.e. hlf-k8s and substra-backend (usual
     substra stack troubleshooting methods apply)
 It would be impractical to dump the statuses and logs of all the kubernetes
