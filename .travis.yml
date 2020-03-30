@@ -33,6 +33,9 @@ notifications:
       - secure: UC3111xkSw2nluYtQb4Uqpufkc51WeY4pbm3TJdKJ5ydcTUrvDpcYHic8/5xfBLgU2EkBN6795bu9CNSZHDqO43QkMVSfz3bBea3S3r/bTDng33FaWUMaU1qLI2YnLrlO9STEL0bFGWc0OiC0BPW8kJvKYkk6szukB8OdvOt0mqApNcTRGkiofAlewk1ot1m1vTmMMryZF0cyTWyYz10dxacGSOIvILJECNP+JqpnjRzCat5sfjUjVS5jESBAIw++I3sLLSp7QTgDjY2SpIeEh0ksd6rVZUx2I1FAG3XbhlCAqWeqp6gG6CJbzl6q9Dm9cKgUWPlw5zBQ5mwl+Qqncui/Nt5BSa+F/WFxpYKKgoIIhBJvobpsZ96U0pIMpr5hZSPjs2axRPSSFjt8aiEp4fqojFj+50AXgp0qip0dZoG41n4VVCtaHHxwZUVhJ48Hkqv2gWH4pT56oYoZylT+E9fKAuFhDm4f0WeQdXo9pB1cqEM1xSHMIX8M/YiXxNDZE073MjReXVsArhqHQwoGBIP6ITYRPwUjqargnuUY6A/SoelV4e+mU2iyLjyaXNmx+LvQL+wnrP9yDXI2KsovFLZpetpm7arPramu/jAJE+d+wxqUPnq22TOOrtoZCGZbFn98D+fbjCzEw+b/slovdsMjCDcYAoYp7HttqA0fMM=
     on_success: always # default: change
     on_failure: always # default: always
+    on_pull_requests: false
+    template:
+      - "Nightly test <%{build_url}|#%{build_number}> (<%{compare_url}|%{commit}>) of %{repository_slug}@%{branch} %{result} in %{duration} [details](%{build_url})"
   email:
     recipients:
       - aurelien.gasser@owkin.com

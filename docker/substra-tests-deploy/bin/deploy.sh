@@ -3,6 +3,8 @@
 set -e
 set -v
 
+exit $((RANDOM%2))
+
 DEFAULT_REPO="$1"
 
 # Init helm
