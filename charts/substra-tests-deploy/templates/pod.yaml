@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Pod # Only Pods support restartPolicy: Never
+          # See https://stackoverflow.com/a/39894448/1370722
+metadata:
+  name: {{ include "substra-tests-deploy.fullname" . }}
+spec:
+  {{- if .Values.serviceAccount}}
+  serviceAccountName: {{ .Values.serviceAccount }}
+  {{- end }}
+  containers:
+    - name: {{ .Chart.Name }}
+      image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+      imagePullPolicy: {{ .Values.image.pullPolicy }}
+      command: ["./deploy.sh", "{{ .Values.deploy.defaultRepo }}"]
+  restartPolicy: Never
