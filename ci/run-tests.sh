@@ -79,10 +79,10 @@ helm --kube-context ${KUBE_CONTEXT} init --service-account tiller --upgrade --wa
 
 # Install docker registry
 helm --kube-context ${KUBE_CONTEXT} install stable/docker-registry --name docker-registry --wait
-REGISTRY_POD_NAME=$(kubectl get pods -o name --context ${KUBE_CONTEXT}| grep docker-registry)
+REGISTRY_POD_NAME=$(kubectl get pods -o name --context ${KUBE_CONTEXT} | grep docker-registry)
 REGISTRY=$(kubectl get ${REGISTRY_POD_NAME} --template={{.status.podIP}} --context ${KUBE_CONTEXT}):5000
 
-# Deploy substra
+# Deploy
 helm install ${CHARTS_DIR}/substra-tests-deploy \
     --namespace kube-system \
     --kube-context ${KUBE_CONTEXT} \
@@ -90,52 +90,25 @@ helm install ${CHARTS_DIR}/substra-tests-deploy \
     --set image.repository=${IMAGE_SUBSTRA_TESTS_DEPLOY_REPO} \
     --set image.tag=${IMAGE_SUBSTRA_TESTS_DEPLOY_TAG} \
     --set deploy.defaultRepo=${REGISTRY} \
-    --set serviceAccount=tiller
+    --set serviceAccount=tiller \
+    --wait
 
-# Deploy substra-tests
-helm install ${CHARTS_DIR}/substra-tests \
-    --kube-context ${KUBE_CONTEXT} \
-    --name substra-tests \
-    --set image.repository=${REGISTRY}/substrafoundation/substra-tests \
-    --set image.tag=local \
-    --set deploy.defaultRepo=${REGISTRY}
+# Wait for the substra stack to be deployed
+SUBSTRA_TESTS_DEPLOY_POD=$(kubectl --context ${KUBE_CONTEXT} get pods -n kube-system | grep substra-tests-deploy | awk '{print $1}')
+kubectl --context ${KUBE_CONTEXT} wait pod/${SUBSTRA_TESTS_DEPLOY_POD} -n kube-system --for=condition=ready --timeout=60s
+kubectl --context ${KUBE_CONTEXT} logs -f ${SUBSTRA_TESTS_DEPLOY_POD} -n kube-system
+if [ "Succeeded" != "$(kubectl --context ${KUBE_CONTEXT} get pod ${SUBSTRA_TESTS_DEPLOY_POD} -n kube-system -o jsonpath='{.status.phase}')" ]; then
+    exit 1
+fi
+echo "Success! ${SUBSTRA_TESTS_DEPLOY_POD} completed with no error."
 
-# Wait for the pod
-SUBSTRA_TESTS_POD=$(kubectl get pods --context ${KUBE_CONTEXT} | grep substra-tests | grep -v kaniko | awk '{print $1}')
-
-timed-out() {
-    cat <<EOF
-ERROR: Timeout while waiting for the substra-tests pod.
-This typically means an error ocurred during one of the following steps:
-  - `subtra-tests-deploy` deployment on the cluster (check status of deployment
-    `subtra-test-deploy` using k9s)
-  - `deploy.sh` script execution within the `substra-test-deploy` pod (check
-     logs of `substra-tests-deploy` pod)
-  - deployment of the substra stack, i.e. hlf-k8s and substra-backend (usual
-    substra stack troubleshooting methods apply)
-It would be impractical to dump the statuses and logs of all the kubernetes
-resources here, so you might have to instantiate a new kubernetes cluster in
-order to reproduce and investigate the error. To do so, you can run this script
-(or run commands from it) on your local machine, and use k9s to investigate
-where the error occurs.
-EOF
-}
-
-wait-for-pod() {
-    # Travis kills the build if we don't send output for more than 10 min.
-    # Send some output every 5 min.
-    TS_START=$(date +%s)
-    until kubectl wait pod/${SUBSTRA_TESTS_POD} --for=condition=ready --context ${KUBE_CONTEXT} --timeout=300s; do
-        ELAPSED_SEC=$(($(date +%s) - ${TS_START}))
-        if [ ${ELAPSED_SEC} -gt 1200 ]; then
-            timed-out
-            return
-        fi
-        echo 'Waiting for the substra-tests pod...'
-    done
-}
-
-time wait-for-pod
+# Wait for the `substra-tests` pod to be ready
+SUBSTRA_TESTS_POD=$(kubectl --context ${KUBE_CONTEXT} get pods -n substra-tests | grep substra-tests | awk '{print $1}')
+if ! kubectl --context ${KUBE_CONTEXT} wait pod/${SUBSTRA_TESTS_POD} -n substra-tests --for=condition=ready --timeout=600s; then
+    echo 'ERROR: Timeout while waiting for the substra-tests pod. This means the `substra-backend-server` pods never reached the "ready" state.'
+    exit 1
+fi
+echo "Success! ${SUBSTRA_TESTS_POD} is ready."
 
 # Run the tests
-kubectl --context ${KUBE_CONTEXT} exec ${SUBSTRA_TESTS_POD} -- make test
+kubectl --context ${KUBE_CONTEXT} exec ${SUBSTRA_TESTS_POD} -n substra-tests -- make test
