@@ -37,7 +37,7 @@ notifications:
     on_error: always
     on_pull_requests: false
     template:
-      - "Nightly test <%{build_url}|#%{build_number}> (<%{compare_url}|%{commit}>) of %{repository_slug}@%{branch} %{result} in %{duration} (<details|%{build_url}>)"
+      - "Nightly test <%{build_url}|#%{build_number}> of %{repository_slug}@%{branch} %{result} in %{duration}"
   email:
     recipients:
       - aurelien.gasser@owkin.com
