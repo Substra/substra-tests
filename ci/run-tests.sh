@@ -91,8 +91,7 @@ helm install ${CHARTS_DIR}/substra-tests-deploy \
     --set image.tag=${IMAGE_SUBSTRA_TESTS_DEPLOY_TAG} \
     --set deploy.defaultRepo=${REGISTRY} \
     --set serviceAccount=tiller \
-    # TODO: set branch to master (necessary for now because skaffold.yaml doesn't exist in master)
-    --set git.substraTests.branch=nightly-tests \
+    --set git.substraTests.branch=nightly-tests `# TODO: set branch to master (necessary for now because skaffold.yaml doesn't exist in master)` \
     --wait
 
 # Wait for the substra stack to be deployed
