@@ -1,5 +1,6 @@
 #/bin/bash
 
+sleep 15
 
 exit $((RANDOM%2))
 
