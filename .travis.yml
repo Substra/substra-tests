@@ -35,7 +35,7 @@ notifications:
     on_failure: change
     template:
       - "Nightly test <%{build_url}|#%{build_number}> of %{repository_name}@%{branch} %{result} in %{duration}"
-    if: (branch = master OR branch = nightly-tests) AND fork = false
+    if: type = cron AND (branch = master OR branch = nightly-tests) AND fork = false
 
   email:
     recipients: # TODO: create mailing list
@@ -43,5 +43,5 @@ notifications:
       - kelvin.moutet@owkin.com
     on_success: change
     on_failure: change
-    if: (branch = master OR branch = nightly-tests) AND fork = false
+    if: type = cron AND (branch = master OR branch = nightly-tests) AND fork = false
 
