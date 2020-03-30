@@ -11,5 +11,5 @@ spec:
     - name: {{ .Chart.Name }}
       image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
       imagePullPolicy: {{ .Values.image.pullPolicy }}
-      command: ["./deploy.sh", "{{ .Values.deploy.defaultRepo }}"]
+      command: ["./deploy.sh", "{{ .Values.deploy.defaultRepo }}", "{{ .Values.git.substraTests.branch }}"]
   restartPolicy: Never

@@ -4,6 +4,7 @@ set -e
 set -v
 
 DEFAULT_REPO="$1"
+SUBSTRA_TESTS_BRANCH="$2"
 
 # Init helm
 helm init --upgrade --force-upgrade --wait
@@ -14,7 +15,7 @@ mkdir -p src
 cd src
 git clone --depth 1 https://github.com/SubstraFoundation/substra-backend.git
 git clone --depth 1 https://github.com/SubstraFoundation/hlf-k8s.git
-git clone --depth 1 https://github.com/SubstraFoundation/substra-tests.git
+git clone --depth 1 https://github.com/SubstraFoundation/substra-tests.git --branch "${SUBSTRA_TESTS_BRANCH}"
 cd ..
 
 # Patch skaffold files for kaniko
