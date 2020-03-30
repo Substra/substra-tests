@@ -1,7 +1,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: {{ include "substra-tests-deploy.fullname" . }}
+  name: {{ include "substra-tests-stack.fullname" . }}
 spec:
   ttlSecondsAfterFinished: 120
   template:

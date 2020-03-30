@@ -2,7 +2,7 @@
 {{/*
 Expand the name of the chart.
 */}}
-{{- define "substra-tests-deploy.name" -}}
+{{- define "substra-tests-stack.name" -}}
 {{- default .Chart.Name .Values.nameOverride | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
 
@@ -11,7 +11,7 @@ Create a default fully qualified app name.
 We truncate at 63 chars because some Kubernetes name fields are limited to this (by the DNS naming spec).
 If release name contains chart name it will be used as a full name.
 */}}
-{{- define "substra-tests-deploy.fullname" -}}
+{{- define "substra-tests-stack.fullname" -}}
 {{- if .Values.fullnameOverride -}}
 {{- .Values.fullnameOverride | trunc 63 | trimSuffix "-" -}}
 {{- else -}}
@@ -27,16 +27,16 @@ If release name contains chart name it will be used as a full name.
 {{/*
 Create chart name and version as used by the chart label.
 */}}
-{{- define "substra-tests-deploy.chart" -}}
+{{- define "substra-tests-stack.chart" -}}
 {{- printf "%s-%s" .Chart.Name .Chart.Version | replace "+" "_" | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
 
 {{/*
 Common labels
 */}}
-{{- define "substra-tests-deploy.labels" -}}
-app.kubernetes.io/name: {{ include "substra-tests-deploy.name" . }}
-helm.sh/chart: {{ include "substra-tests-deploy.chart" . }}
+{{- define "substra-tests-stack.labels" -}}
+app.kubernetes.io/name: {{ include "substra-tests-stack.name" . }}
+helm.sh/chart: {{ include "substra-tests-stack.chart" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 {{- if .Chart.AppVersion }}
 app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
