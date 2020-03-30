@@ -1,9 +1,5 @@
 #/bin/bash
 
-sleep 15
-
-exit $((RANDOM%2))
-
 # Please use a cluster name that starts with 'substra-tests' so that it gets
 # picked up by the automatic stale cluster deletion script.
 # See https://console.cloud.google.com/functions/details/us-central1/clean-substra-tests-ci-deployment
