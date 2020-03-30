@@ -5,6 +5,9 @@ branches:
     - master
     - nightly-tests
 
+git:
+  depth: 1
+
 before_install:
   # Decrypt secrets
   # Secrets generated using the CLI: `travis encrypt-file --add [...]`
