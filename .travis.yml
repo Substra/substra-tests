@@ -35,16 +35,15 @@ notifications:
     on_failure: always # default: always
     on_cancel: always
     on_error: always
-    on_pull_requests: false
     template:
       - "Nightly test <%{build_url}|#%{build_number}> of %{repository_slug}@%{branch} %{result} in %{duration}"
-    if: branch = nightly-tests AND fork = false AND pull_request = false # TODO: change branch to master
+    if: (branch = master OR branch = nightly-tests) AND fork = false
 
   email:
     recipients: # TODO: create mailing list
       - aurelien.gasser@owkin.com
       - kelvin.moutet@owkin.com
-    on_success: always # TODO: change to 'change'
-    on_failure: always # TODO: change to 'change'
-    if: branch = nightly-tests AND fork = false AND pull_request = false # TODO: change branch to master
+    on_success: change
+    on_failure: change
+    if: (branch = master OR branch = nightly-tests) AND fork = false
 
