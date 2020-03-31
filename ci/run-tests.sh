@@ -1,8 +1,29 @@
 #/bin/bash
 
+# This script runs the full substra CI pipeline.
+# "Gotta test them all!" ™
+#
+# It runs the following operations:
+#   - Create a new GKE cluster
+#   - Install a private docker registry on the cluster
+#   - Deploy 'substra-tests-stack', which perfoms the following operations *from within the cluster*:
+#        * Clone the repos:
+#           ~ hlf-k8s
+#           ~ substa-backend
+#           ~ substra-tests
+#           ~ substra
+#        * Build the images to the private registry (kaniko)
+#        * Deploy (helm)
+#   - Wait for the substra application stack to be up and ready (i.e. wait for the substra-backend servers readiness probe)
+#   - Run the full 'substra-tests' test suite
+#   - Destroy the cluster
+#
+# Useful links:
+# - Travis build logs: https://travis-ci.org/github/SubstraFoundation/substra-tests
+# - Stale cluster deletion script: https://console.cloud.google.com/functions/details/us-central1/clean-substra-tests-ci-deployment
+
 # Please use a cluster name that starts with 'substra-tests' so that it gets
 # picked up by the automatic stale cluster deletion script.
-# See https://console.cloud.google.com/functions/details/us-central1/clean-substra-tests-ci-deployment
 CLUSTER_NAME="substra-tests" # overridden with --cluster-name=xyz
 CLUSTER_MACHINE_TYPE="n1-standard-8"
 CLUSTER_VERSION="1.15.11-gke.1"
