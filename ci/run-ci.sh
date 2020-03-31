@@ -88,7 +88,7 @@ gcloud container clusters create ${CLUSTER_NAME} \
 
 # Configure kubectl
 gcloud container clusters get-credentials ${CLUSTER_NAME} --zone ${CLUSTER_ZONE} --project ${CLUSTER_PROJECT}
-KUBE_CONTEXT=$(kubectl config get-contexts -o name | grep ${CLUSTER_NAME})
+KUBE_CONTEXT="gke_${CLUSTER_PROJECT}_${CLUSTER_ZONE}_${CLUSTER_NAME}"
 
 # Configure kaniko
 kubectl --context ${KUBE_CONTEXT} create secret generic kaniko-secret --from-file="${KEYS_DIR}/${KEY_KANIKO_SERVICE_ACCOUNT}"
@@ -106,21 +106,19 @@ REGISTRY=$(kubectl get ${REGISTRY_POD_NAME} --template={{.status.podIP}} --conte
 # Deploy
 # TODO: change git.substraTests.branch to master (necessary for now because skaffold.yaml doesn't exist in master)`
 helm install ${CHARTS_DIR}/substra-tests-stack \
-    --namespace kube-system \
     --kube-context ${KUBE_CONTEXT} \
     --name substra-tests-stack \
     --set image.repository=${IMAGE_SUBSTRA_TESTS_DEPLOY_REPO} \
     --set image.tag=${IMAGE_SUBSTRA_TESTS_DEPLOY_TAG} \
     --set deploy.defaultRepo=${REGISTRY} \
-    --set serviceAccount=tiller \
     --set git.substraTests.branch=nightly-tests \
     --wait
 
 # Wait for the substra stack to be deployed
-SUBSTRA_TESTS_DEPLOY_POD=$(kubectl --context ${KUBE_CONTEXT} get pods -n kube-system | grep substra-tests-stack | awk '{print $1}')
-kubectl --context ${KUBE_CONTEXT} wait pod/${SUBSTRA_TESTS_DEPLOY_POD} -n kube-system --for=condition=ready --timeout=60s
-kubectl --context ${KUBE_CONTEXT} logs -f ${SUBSTRA_TESTS_DEPLOY_POD} -n kube-system
-if [ "Succeeded" != "$(kubectl --context ${KUBE_CONTEXT} get pod ${SUBSTRA_TESTS_DEPLOY_POD} -n kube-system -o jsonpath='{.status.phase}')" ]; then
+SUBSTRA_TESTS_DEPLOY_POD=$(kubectl --context ${KUBE_CONTEXT} get pods | grep substra-tests-stack | awk '{print $1}')
+kubectl --context ${KUBE_CONTEXT} wait pod/${SUBSTRA_TESTS_DEPLOY_POD} --for=condition=ready --timeout=60s
+kubectl --context ${KUBE_CONTEXT} logs -f ${SUBSTRA_TESTS_DEPLOY_POD}
+if [ "Succeeded" != "$(kubectl --context ${KUBE_CONTEXT} get pod ${SUBSTRA_TESTS_DEPLOY_POD} -o jsonpath='{.status.phase}')" ]; then
     exit 1
 fi
 echo "Success! ${SUBSTRA_TESTS_DEPLOY_POD} completed with no error."

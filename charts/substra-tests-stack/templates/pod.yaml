@@ -4,9 +4,7 @@ kind: Pod # Only Pods support restartPolicy: Never
 metadata:
   name: {{ include "substra-tests-stack.fullname" . }}
 spec:
-  {{- if .Values.serviceAccount}}
-  serviceAccountName: {{ .Values.serviceAccount }}
-  {{- end }}
+  serviceAccountName: {{ template "substra-tests-stack.fullname" . }}
   containers:
     - name: {{ .Chart.Name }}
       image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
