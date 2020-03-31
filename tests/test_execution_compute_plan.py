@@ -344,6 +344,56 @@ def test_compute_plan_aggregate_composite_traintuples(factory, clients, default_
         assert t.status == assets.Status.done
 
 
+@pytest.mark.slow
+def test_compute_plan_remove_intermediary_model(factory, client, default_dataset, default_objective):
+    """
+    Create a simple compute plan with clean_models at true, see it done and
+    create a traintuple on a intermediary model. Expect it to fail at the
+    execution.
+    """
+    data_sample_1, data_sample_2, data_sample_3, _ = default_dataset.train_data_sample_keys
+
+    # register algo
+    spec = factory.create_algo()
+    algo = client.add_algo(spec)
+
+    # create a compute plan with clean_model activate
+    cp_spec = factory.create_compute_plan(clean_models=True)
+
+    traintuple_spec_1 = cp_spec.add_traintuple(
+        algo=algo,
+        dataset=default_dataset,
+        data_samples=[data_sample_1]
+    )
+    cp_spec.add_testtuple(
+        objective=default_objective,
+        traintuple_spec=traintuple_spec_1,
+    )
+
+    traintuple_spec_2 = cp_spec.add_traintuple(
+        algo=algo,
+        dataset=default_dataset,
+        data_samples=[data_sample_2],
+        in_models=[traintuple_spec_1]
+    )
+    cp_spec.add_testtuple(
+        objective=default_objective,
+        traintuple_spec=traintuple_spec_2,
+    )
+
+    cp = client.add_compute_plan(cp_spec).future().wait()
+
+    traintuple_spec_3 = factory.create_traintuple(
+        algo=algo,
+        dataset=default_dataset,
+        data_samples=[data_sample_3],
+        traintuples=cp.list_traintuple()
+    )
+
+    with pytest.raises(sbt.errors.FutureFailureError):
+        client.add_traintuple(traintuple_spec_3).future().wait()
+
+
 def test_compute_plan_circular_dependency_failure(factory, client, default_dataset):
     spec = factory.create_algo()
     algo = client.add_algo(spec)
