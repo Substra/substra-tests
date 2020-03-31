@@ -83,6 +83,7 @@ REGISTRY_POD_NAME=$(kubectl get pods -o name --context ${KUBE_CONTEXT} | grep do
 REGISTRY=$(kubectl get ${REGISTRY_POD_NAME} --template={{.status.podIP}} --context ${KUBE_CONTEXT}):5000
 
 # Deploy
+# TODO: change git.substraTests.branch to master (necessary for now because skaffold.yaml doesn't exist in master)`
 helm install ${CHARTS_DIR}/substra-tests-stack \
     --namespace kube-system \
     --kube-context ${KUBE_CONTEXT} \
@@ -91,7 +92,7 @@ helm install ${CHARTS_DIR}/substra-tests-stack \
     --set image.tag=${IMAGE_SUBSTRA_TESTS_DEPLOY_TAG} \
     --set deploy.defaultRepo=${REGISTRY} \
     --set serviceAccount=tiller \
-    --set git.substraTests.branch=nightly-tests `# TODO: set branch to master (necessary for now because skaffold.yaml doesn't exist in master)` \
+    --set git.substraTests.branch=nightly-tests \
     --wait
 
 # Wait for the substra stack to be deployed
