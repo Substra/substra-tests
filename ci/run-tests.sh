@@ -9,7 +9,7 @@ CLUSTER_VERSION="1.15.11-gke.1"
 CLUSTER_PROJECT="substra-208412"
 CLUSTER_ZONE="europe-west4-a"
 SERVICE_ACCOUNT=substra-tests@substra-208412.iam.gserviceaccount.com
-IMAGE_SUBSTRA_TESTS_DEPLOY_REPO="substrafoundation/substra-tests-deploy"
+IMAGE_SUBSTRA_TESTS_DEPLOY_REPO="substrafoundation/substra-tests-stack"
 IMAGE_SUBSTRA_TESTS_DEPLOY_TAG="latest"
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 CHARTS_DIR="${DIR}/../charts"
@@ -83,10 +83,10 @@ REGISTRY_POD_NAME=$(kubectl get pods -o name --context ${KUBE_CONTEXT} | grep do
 REGISTRY=$(kubectl get ${REGISTRY_POD_NAME} --template={{.status.podIP}} --context ${KUBE_CONTEXT}):5000
 
 # Deploy
-helm install ${CHARTS_DIR}/substra-tests-deploy \
+helm install ${CHARTS_DIR}/substra-tests-stack \
     --namespace kube-system \
     --kube-context ${KUBE_CONTEXT} \
-    --name substra-tests-deploy \
+    --name substra-tests-stack \
     --set image.repository=${IMAGE_SUBSTRA_TESTS_DEPLOY_REPO} \
     --set image.tag=${IMAGE_SUBSTRA_TESTS_DEPLOY_TAG} \
     --set deploy.defaultRepo=${REGISTRY} \
@@ -95,7 +95,7 @@ helm install ${CHARTS_DIR}/substra-tests-deploy \
     --wait
 
 # Wait for the substra stack to be deployed
-SUBSTRA_TESTS_DEPLOY_POD=$(kubectl --context ${KUBE_CONTEXT} get pods -n kube-system | grep substra-tests-deploy | awk '{print $1}')
+SUBSTRA_TESTS_DEPLOY_POD=$(kubectl --context ${KUBE_CONTEXT} get pods -n kube-system | grep substra-tests-stack | awk '{print $1}')
 kubectl --context ${KUBE_CONTEXT} wait pod/${SUBSTRA_TESTS_DEPLOY_POD} -n kube-system --for=condition=ready --timeout=60s
 kubectl --context ${KUBE_CONTEXT} logs -f ${SUBSTRA_TESTS_DEPLOY_POD} -n kube-system
 if [ "Succeeded" != "$(kubectl --context ${KUBE_CONTEXT} get pod ${SUBSTRA_TESTS_DEPLOY_POD} -n kube-system -o jsonpath='{.status.phase}')" ]; then

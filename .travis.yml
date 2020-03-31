@@ -28,7 +28,7 @@ before_install:
 script:
   - CLUSTER_NAME="substra-tests-$(date -u +'%Y-%m-%d-%Hh%M')-$(cat /dev/urandom | tr -dc 'a-z0-9' | fold -w 8 | head -n 1)"
   - cd ci/
-  # Retry on failure. This is to account for the occasional hiccups in substra-tests-deploy's deployment (some pods occasionally fail to start, maybe 1 time out of 10-20).
+  # Retry on failure. This is to account for the occasional hiccups in substra-tests-stack's deployment (some pods occasionally fail to start, maybe 1 time out of 10-20).
   - travis_retry ./run-tests.sh --keys-directory=./keys/ --cluster-name=${CLUSTER_NAME}
 
 notifications:

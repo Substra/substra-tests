@@ -1,5 +1,5 @@
 image:
-  repository: substrafoundation/substra-tests-deploy
+  repository: substrafoundation/substra-tests-stack
   tag: stable
   pullPolicy: IfNotPresent
 
