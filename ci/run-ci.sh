@@ -26,14 +26,13 @@
 #   We ensure the GKE cluster always gets destroyed at the end of the execution
 #   of this script.
 #
-#   We use 3 mechanisms:
-#   - If no error occurs, we destroy the cluster as the final step
-#   - If an error occurs, or if the script gets interrupted (e.g. Ctrl+C), we
-#     destroy the cluster too (see `trap` command)
+#   We use 2 mechanisms:
+#   - When the script exits, we destroy the cluster as the final step. That's
+#     the case even if the script exits with an error or with an interruption
+#     (Ctrl+C). See `trap` command.
 #   - In any other "abrupt shutdown" case (system shutdown, Travis build
-#     canceled, etc), we use a daily scheduled task
-#     to destroy stale clusters after 24h.
-#     See https://console.cloud.google.com/functions/details/us-central1/clean-substra-tests-ci-deployment
+#     canceled, etc), we use a daily scheduled task to destroy stale clusters
+#     after 24h. See https://console.cloud.google.com/functions/details/us-central1/clean-substra-tests-ci-deployment
 #
 # USEFUL LINKS
 #   Travis build logs: https://travis-ci.org/github/SubstraFoundation/substra-tests
