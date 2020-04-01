@@ -1,4 +1,4 @@
-#/bin/bash
+#!/bin/bash
 
 # This script runs the full substra CI pipeline.
 # "Gotta test them all!" ™
