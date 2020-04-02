@@ -1,5 +1,4 @@
 import abc
-import dataclasses
 import os
 import pathlib
 import random
@@ -7,6 +6,8 @@ import shutil
 import tempfile
 import typing
 import uuid
+
+import pydantic
 
 from . import utils, assets
 
@@ -147,16 +148,12 @@ class Counter:
         return self._idx
 
 
-@dataclasses.dataclass
-class _Spec(abc.ABC):
+class _Spec(pydantic.BaseModel, abc.ABC):
     """Asset specification base class."""
-
-    def to_dict(self):
-        return dataclasses.asdict(self)
+    pass
 
 
-@dataclasses.dataclass
-class Permissions:
+class Permissions(pydantic.BaseModel):
     public: bool
     authorized_ids: typing.List[str]
 
@@ -165,7 +162,6 @@ DEFAULT_PERMISSIONS = Permissions(public=True, authorized_ids=[])
 DEFAULT_OUT_MODEL_PERMISSIONS = Permissions(public=False, authorized_ids=[])
 
 
-@dataclasses.dataclass
 class DataSampleSpec(_Spec):
     path: str
     test_only: bool
@@ -178,7 +174,6 @@ class DataSampleSpec(_Spec):
         self.path = os.path.join(destination, os.path.basename(self.path))
 
 
-@dataclasses.dataclass
 class DatasetSpec(_Spec):
     name: str
     data_opener: str
@@ -196,18 +191,16 @@ class DatasetSpec(_Spec):
             return f.read()
 
 
-@dataclasses.dataclass
 class ObjectiveSpec(_Spec):
     name: str
     description: str
     metrics_name: str
     metrics: str
     test_data_sample_keys: typing.List[str]
-    test_data_manager_key: str
+    test_data_manager_key: str = None
     permissions: Permissions = None
 
 
-@dataclasses.dataclass
 class _AlgoSpec(_Spec):
     name: str
     description: str
@@ -215,109 +208,98 @@ class _AlgoSpec(_Spec):
     permissions: Permissions = None
 
 
-@dataclasses.dataclass
 class AlgoSpec(_AlgoSpec):
     pass
 
 
-@dataclasses.dataclass
 class AggregateAlgoSpec(_AlgoSpec):
     pass
 
 
-@dataclasses.dataclass
 class CompositeAlgoSpec(_AlgoSpec):
     pass
 
 
-@dataclasses.dataclass
 class TraintupleSpec(_Spec):
     algo_key: str
     data_manager_key: str
-    train_data_sample_keys: str
-    in_models_keys: typing.List[str]
-    tag: str
-    compute_plan_id: str
+    train_data_sample_keys: typing.List[str]
+    in_models_keys: typing.List[str] = None
+    tag: str = None
+    compute_plan_id: str = None
     rank: int = None
 
 
-@dataclasses.dataclass
 class AggregatetupleSpec(_Spec):
     algo_key: str
     worker: str
     in_models_keys: typing.List[str]
-    tag: str
-    compute_plan_id: str
+    tag: str = None
+    compute_plan_id: str = None
     rank: int = None
 
 
-@dataclasses.dataclass
 class CompositeTraintupleSpec(_Spec):
     algo_key: str
     data_manager_key: str
-    train_data_sample_keys: str
-    in_head_model_key: str
-    in_trunk_model_key: str
-    tag: str
-    compute_plan_id: str
-    out_trunk_model_permissions: typing.Dict
+    train_data_sample_keys: typing.List[str]
+    in_head_model_key: str = None
+    in_trunk_model_key: str = None
+    tag: str = None
+    compute_plan_id: str = None
+    out_trunk_model_permissions: Permissions
     rank: int = None
 
 
-@dataclasses.dataclass
 class TesttupleSpec(_Spec):
     objective_key: str
     traintuple_key: str
-    tag: str
+    tag: str = None
     data_manager_key: str = None
     test_data_sample_keys: typing.List[str] = None
 
 
-@dataclasses.dataclass
-class ComputePlanTraintupleSpec:
+class ComputePlanTraintupleSpec(_Spec):
     algo_key: str
     data_manager_key: str
-    train_data_sample_keys: str
+    train_data_sample_keys: typing.List[str]
     traintuple_id: str
-    in_models_ids: typing.List[str]
-    tag: str
+    in_models_ids: typing.List[str] = None
+    tag: str = None
 
     @property
     def id(self):
         return self.traintuple_id
 
 
-@dataclasses.dataclass
 class ComputePlanAggregatetupleSpec(_Spec):
     aggregatetuple_id: str
     algo_key: str
     worker: str
-    in_models_ids: typing.List[str]
-    tag: str
+    in_models_ids: typing.List[str] = None
+    tag: str = None
 
     @property
     def id(self):
         return self.aggregatetuple_id
 
 
-@dataclasses.dataclass
 class ComputePlanCompositeTraintupleSpec(_Spec):
     composite_traintuple_id: str
     algo_key: str
     data_manager_key: str
-    train_data_sample_keys: str
-    in_head_model_id: str
-    in_trunk_model_id: str
-    tag: str
-    out_trunk_model_permissions: typing.Dict
+    train_data_sample_keys: typing.List[str]
+    in_head_model_id: str = None
+    in_trunk_model_id: str = None
+    tag: str = None
+    out_trunk_model_permissions: Permissions
 
     @property
     def id(self):
         return self.composite_traintuple_id
 
 
-@dataclasses.dataclass
-class ComputePlanTesttupleSpec:
+class ComputePlanTesttupleSpec(_Spec):
     objective_key: str
     traintuple_id: str
     tag: str
@@ -341,7 +323,6 @@ def _get_keys(obj, field='key'):
     return [_get_key(x, field=field) for x in obj]
 
 
-@dataclasses.dataclass
 class _BaseComputePlanSpec(_Spec, abc.ABC):
     traintuples: typing.List[ComputePlanTraintupleSpec]
     composite_traintuples: typing.List[ComputePlanCompositeTraintupleSpec]
@@ -412,13 +393,11 @@ class _BaseComputePlanSpec(_Spec, abc.ABC):
         return spec
 
 
-@dataclasses.dataclass
 class ComputePlanSpec(_BaseComputePlanSpec):
     tag: str
     clean_models: bool
 
 
-@dataclasses.dataclass
 class UpdateComputePlanSpec(_BaseComputePlanSpec):
     compute_plan_id: str
 

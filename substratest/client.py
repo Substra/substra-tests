@@ -23,62 +23,62 @@ class Client:
         self._client.login()
 
     def add_data_sample(self, spec, *args, **kwargs):
-        res = self._client.add_data_sample(spec.to_dict(), *args, **kwargs)
+        res = self._client.add_data_sample(spec.dict(), *args, **kwargs)
         data_sample = assets.DataSampleCreated.load(res)
         return data_sample
 
     def add_dataset(self, spec, *args, **kwargs):
-        res = self._client.add_dataset(spec.to_dict(), *args, **kwargs)
+        res = self._client.add_dataset(spec.dict(), *args, **kwargs)
         dataset = assets.Dataset.load(res)
         return dataset
 
     def add_objective(self, spec, *args, **kwargs):
-        res = self._client.add_objective(spec.to_dict(), *args, **kwargs)
+        res = self._client.add_objective(spec.dict(), *args, **kwargs)
         objective = assets.Objective.load(res)
         return objective
 
     def add_algo(self, spec, *args, **kwargs):
-        res = self._client.add_algo(spec.to_dict(), *args, **kwargs)
+        res = self._client.add_algo(spec.dict(), *args, **kwargs)
         algo = assets.Algo.load(res)
         return algo
 
     def add_aggregate_algo(self, spec, *args, **kwargs):
-        res = self._client.add_aggregate_algo(spec.to_dict(), *args, **kwargs)
+        res = self._client.add_aggregate_algo(spec.dict(), *args, **kwargs)
         aggregate_algo = assets.AggregateAlgo.load(res)
         return aggregate_algo
 
     def add_composite_algo(self, spec, *args, **kwargs):
-        res = self._client.add_composite_algo(spec.to_dict(), *args, **kwargs)
+        res = self._client.add_composite_algo(spec.dict(), *args, **kwargs)
         composite_algo = assets.CompositeAlgo.load(res)
         return composite_algo
 
     def add_traintuple(self, spec, *args, **kwargs):
-        res = self._client.add_traintuple(spec.to_dict(), *args, **kwargs)
+        res = self._client.add_traintuple(spec.dict(), *args, **kwargs)
         traintuple = assets.Traintuple.load(res).attach(self)
         return traintuple
 
     def add_aggregatetuple(self, spec, *args, **kwargs):
-        res = self._client.add_aggregatetuple(spec.to_dict(), *args, **kwargs)
+        res = self._client.add_aggregatetuple(spec.dict(), *args, **kwargs)
         aggregatetuple = assets.Aggregatetuple.load(res).attach(self)
         return aggregatetuple
 
     def add_composite_traintuple(self, spec, *args, **kwargs):
-        res = self._client.add_composite_traintuple(spec.to_dict(), *args, **kwargs)
+        res = self._client.add_composite_traintuple(spec.dict(), *args, **kwargs)
         composite_traintuple = assets.CompositeTraintuple.load(res).attach(self)
         return composite_traintuple
 
     def add_testtuple(self, spec, *args, **kwargs):
-        res = self._client.add_testtuple(spec.to_dict(), *args, **kwargs)
+        res = self._client.add_testtuple(spec.dict(), *args, **kwargs)
         testtuple = assets.Testtuple.load(res).attach(self)
         return testtuple
 
     def add_compute_plan(self, spec, *args, **kwargs):
-        res = self._client.add_compute_plan(spec.to_dict(), *args, **kwargs)
+        res = self._client.add_compute_plan(spec.dict(), *args, **kwargs)
         compute_plan = assets.ComputePlan.load(res).attach(self)
         return compute_plan
 
     def update_compute_plan(self, spec, *args, **kwargs):
-        res = self._client.update_compute_plan(spec.compute_plan_id, spec.to_dict(), *args, **kwargs)
+        res = self._client.update_compute_plan(spec.compute_plan_id, spec.dict(), *args, **kwargs)
         compute_plan = assets.ComputePlan.load(res).attach(self)
         return compute_plan
 
