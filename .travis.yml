@@ -1,4 +1,5 @@
 language: minimal
+bundler_args: --retry 2
 
 branches:
   only:
