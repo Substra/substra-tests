@@ -19,9 +19,6 @@ git clone --depth 1 https://github.com/SubstraFoundation/substra-tests.git --bra
 cd ..
 
 # Patch skaffold files for kaniko
-python -m venv .venv
-source .venv/bin/activate
-pip install pyyaml
 python ./kaniko-patch.py
 
 # Deploy hlf-k8s

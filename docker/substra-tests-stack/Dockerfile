@@ -15,5 +15,8 @@ RUN mv linux-amd64/helm linux-amd64/tiller /usr/local/bin/
 # Install skaffold (v1.0.1)
 RUN curl -Lo skaffold https://storage.googleapis.com/skaffold/releases/v1.0.1/skaffold-linux-amd64 && chmod +x skaffold && mv skaffold /usr/local/bin
 
+# Install pyyaml
+pip3 install pyyaml
+
 # Copy scripts
 COPY bin/* /substra/
