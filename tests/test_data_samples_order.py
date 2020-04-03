@@ -3,7 +3,7 @@ import pytest
 import copy
 
 
-ALGO_SCRIPT = """
+TEMPLATE_ALGO_SCRIPT = """
 import json
 import substratools as tools
 class TestAlgo(tools.Algo):
@@ -23,7 +23,7 @@ if __name__ == '__main__':
     tools.algo.execute(TestAlgo())
 """
 
-COMPOSITE_ALGO_SCRIPT = """
+TEMPLATE_COMPOSITE_ALGO_SCRIPT = """
 import json
 import substratools as tools
 class TestCompositeAlgo(tools.CompositeAlgo):
@@ -65,7 +65,7 @@ def _shuffle(items):
 def test_traintuple_data_samples_relative_order(factory, client, default_dataset):
     data_sample_keys = _shuffle(default_dataset.train_data_sample_keys)
 
-    algo_script = ALGO_SCRIPT.format(data_sample_keys=data_sample_keys, models=None)
+    algo_script = TEMPLATE_ALGO_SCRIPT.format(data_sample_keys=data_sample_keys, models=None)
     spec = factory.create_algo(py_script=algo_script)
     algo = client.add_algo(spec)
 
@@ -75,6 +75,9 @@ def test_traintuple_data_samples_relative_order(factory, client, default_dataset
         data_samples=data_sample_keys,
     )
     traintuple = client.add_traintuple(spec)
+    # Ensure the order of the data sample keys is correct at 2 levels: :
+    #  1. In the returned traintuple
+    #  2. In the train method of the algo. If the order is incorrect, .future().wait() will fail.
     assert traintuple.dataset.keys == data_sample_keys
     traintuple.future().wait()
 
@@ -83,7 +86,7 @@ def test_traintuple_data_samples_relative_order(factory, client, default_dataset
 def test_composite_traintuple_data_samples_relative_order(factory, client, default_dataset):
     data_sample_keys = _shuffle(default_dataset.train_data_sample_keys)
 
-    composite_algo_script = COMPOSITE_ALGO_SCRIPT.format(data_sample_keys=data_sample_keys, models=None)
+    composite_algo_script = TEMPLATE_COMPOSITE_ALGO_SCRIPT.format(data_sample_keys=data_sample_keys, models=None)
     spec = factory.create_composite_algo(py_script=composite_algo_script)
     composite_algo = client.add_composite_algo(spec)
 
@@ -93,5 +96,8 @@ def test_composite_traintuple_data_samples_relative_order(factory, client, defau
         data_samples=data_sample_keys,
     )
     composite_traintuple = client.add_composite_traintuple(spec)
+    # Ensure the order of the data sample keys is correct at 2 levels: :
+    #  1. In the returned composite traintuple
+    #  2. In the train method of the algo. If the order is incorrect, .future().wait() will fail.
     assert composite_traintuple.dataset.keys == data_sample_keys
     composite_traintuple.future().wait()
