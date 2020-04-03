@@ -269,6 +269,8 @@ class TesttupleSpec(_Spec):
     objective_key: str
     traintuple_key: str
     tag: str
+    data_manager_key: str = None
+    test_data_sample_keys: typing.List[str] = None
 
 
 @dataclasses.dataclass
@@ -629,10 +631,12 @@ class AssetsFactory:
             out_trunk_model_permissions=permissions or DEFAULT_PERMISSIONS,
         )
 
-    def create_testtuple(self, objective=None, traintuple=None, tag=None):
+    def create_testtuple(self, objective=None, traintuple=None, tag=None, dataset=None, data_samples=None):
         return TesttupleSpec(
             objective_key=objective.key if objective else None,
             traintuple_key=traintuple.key if traintuple else None,
+            data_manager_key=dataset.key if dataset else None,
+            test_data_sample_keys=_get_keys(data_samples),
             tag=tag,
         )
 
