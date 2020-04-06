@@ -52,6 +52,7 @@ CHARTS_DIR="${DIR}/../charts"
 KEYS_DIR="${HOME}/.local/" # overridden with --keys-directory=xyz
 KEY_SERVICE_ACCOUNT="substra-208412-3be0df12d87a.json"
 KEY_KANIKO_SERVICE_ACCOUNT="kaniko-secret.json"
+SUBSTRA_TESTS_BRANCH="nightly-tests"
 
 usage() {
 cat <<\EOF
@@ -130,29 +131,56 @@ gcloud container clusters create ${CLUSTER_NAME} \
 gcloud container clusters get-credentials ${CLUSTER_NAME} --zone ${CLUSTER_ZONE} --project ${CLUSTER_PROJECT}
 KUBE_CONTEXT="gke_${CLUSTER_PROJECT}_${CLUSTER_ZONE}_${CLUSTER_NAME}"
 
-# Configure kaniko
-kubectl --context ${KUBE_CONTEXT} create secret generic kaniko-secret --from-file="${KEYS_DIR}/${KEY_KANIKO_SERVICE_ACCOUNT}"
-
 # Configure Tiller
 kubectl --context ${KUBE_CONTEXT} create serviceaccount --namespace kube-system tiller
 kubectl --context ${KUBE_CONTEXT} create clusterrolebinding tiller-cluster-rule --clusterrole=cluster-admin --serviceaccount=kube-system:tiller
 helm --kube-context ${KUBE_CONTEXT} init --service-account tiller --upgrade --wait
 
-# Install docker registry
-helm --kube-context ${KUBE_CONTEXT} install stable/docker-registry --name docker-registry --wait
-REGISTRY_POD_NAME=$(kubectl get pods -o name --context ${KUBE_CONTEXT} | grep docker-registry)
-REGISTRY=$(kubectl get ${REGISTRY_POD_NAME} --template={{.status.podIP}} --context ${KUBE_CONTEXT}):5000
+# Clone repos
+BRANCH_SUBSTRA_BACKEND="master"
+git clone --depth 1 https://github.com/SubstraFoundation/substra-backend.git --branch "${BRANCH_SUBSTRA_BACKEND}"
+COMMIT_SUBSTRA_BACKEND="$(git --git-dir=substra-backend/.git rev-parse origin/${BRANCH_SUBSTRA_BACKEND})"
+cat <<EOF
+Commit hashes:
+- substra-backend: ${COMMIT_SUBSTRA_BACKEND}"
+EOF
+
+# Start builds
+GCLOUD_BUILD_TAG="substra-tests-$(cat /dev/urandom | tr -dc 'a-z0-9' | fold -w 8 | head -n 1)"
+gcloud builds submit \
+    --config=cloudbuild/substra-backend.yaml \
+    --no-source \
+    --async \
+    --substitutions=_BUILD_TAG=${GCLOUD_BUILD_TAG},_BRANCH=${BRANCH_SUBSTRA_BACKEND},_COMMIT=${COMMIT_SUBSTRA_BACKEND}
+
+# Wait for builds to complete
+while [ true ]; do
+    echo -n "Waiting for gcloud builds... "
+    res="$(gcloud builds list --filter="tags=${GCLOUD_BUILD_TAG}" | sed '1d')"
+    num_builds=$(echo "$res" | wc -l)
+    num_success=$(echo "$res" | grep 'SUCCESS' | wc -l)
+    failed_builds="$(echo "$res" | grep -e 'FAIL' -e 'TIMEOUT' -e 'CANCELLED')"
+    has_failures=$(echo -n "${failed_builds}" | wc -c)
+    echo "${num_success}/${num_builds}"
+    if [ "${has_failures}" -ne 0 ]; then
+        echo "One or more builds failed:"
+        echo "$failed_builds"
+        echo "See logs of failed builds:"
+        echo "$failed_builds" | awk '{print $1}' | sed -e "s/^/- https:\/\/cloudbuild.googleapis.com\/v1\/projects\/${CLUSTER_PROJECT}\/builds\//"
+        echo "Aborting."
+        exit 1
+    fi
+    if [ "${num_success}" -eq "${num_builds}" ]; then
+        echo "All the gcloud builds completed succesfully."
+        break
+    fi
+    sleep 10
+done
 
 # Deploy
-# TODO: change git.substraTests.branch to master (necessary for now because skaffold.yaml doesn't exist in master)`
-helm install ${CHARTS_DIR}/substra-tests-stack \
-    --kube-context ${KUBE_CONTEXT} \
-    --name substra-tests-stack \
-    --set image.repository=${IMAGE_SUBSTRA_TESTS_DEPLOY_REPO} \
-    --set image.tag=${IMAGE_SUBSTRA_TESTS_DEPLOY_TAG} \
-    --set deploy.defaultRepo=${REGISTRY} \
-    --set git.substraTests.branch=nightly-tests \
-    --wait
+cd substra-backend;
+skaffold deploy --images=substra-backend=gcr.io/${CLUSTER_PROJECT}/substra-backend:${COMMIT_SUBSTRA_BACKEND}
+cd ..
 
 # Wait for the substra stack to be deployed
 SUBSTRA_TESTS_DEPLOY_POD=$(kubectl --context ${KUBE_CONTEXT} get pods | grep substra-tests-stack | awk '{print $1}')
