@@ -15,7 +15,6 @@ kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: {{ template "substra-tests-stack.fullname" . }}
-  namespace: kube-system
   labels:
     app.kubernetes.io/managed-by: {{ .Release.Service }}
     app.kubernetes.io/instance: {{ .Release.Name }}
@@ -28,16 +27,13 @@ subjects:
   namespace: {{ .Release.Namespace }}
 roleRef:
   kind: ClusterRole
-  name: tiller-user
+  name: {{ template "substra-tests-stack.fullname" . }}
   apiGroup: rbac.authorization.k8s.io
-  namespace: kube-system
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: tiller-user
-  namespace: kube-system
-rules:
+  name: {{ template "substra-tests-stack.fullname" . }}
 rules:
 - apiGroups: ["", "batch", "extensions", "apps"]
   resources: ["*"]

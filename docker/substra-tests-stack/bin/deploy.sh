@@ -7,7 +7,7 @@ DEFAULT_REPO="$1"
 SUBSTRA_TESTS_BRANCH="$2"
 
 # Init helm
-helm init --upgrade --force-upgrade --wait
+helm init --client-only --wait
 
 # Clone repos
 rm -rf src
