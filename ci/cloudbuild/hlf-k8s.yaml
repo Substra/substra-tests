@@ -1,0 +1,15 @@
+steps:
+- name: 'gcr.io/cloud-builders/git'
+  args: ['clone', 'https://github.com/SubstraFoundation/hlf-k8s.git', '--depth', '1', '--branch', '${_BRANCH}']
+- name: 'gcr.io/kaniko-project/executor:latest'
+  args:
+  - --destination=gcr.io/$PROJECT_ID/hlf-k8s:${_COMMIT}
+  - --cache=true
+  - --dockerfile=hlf-k8s/images/hlf-k8s/Dockerfile
+  - --context=hlf-k8s
+tags:
+- ${_BUILD_TAG}
+substitutions:
+    _BUILD_TAG: "substra-tests"
+    _COMMIT: "HEAD"
+    _BRANCH: "master"
