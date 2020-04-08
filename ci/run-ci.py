@@ -348,9 +348,9 @@ def launch_tests():
 
     # Wait for the `substra-tests` pod to be ready
     substra_tests_pod = subprocess.check_output(
-        [f'kubectl --context {KUBE_CONTEXT} get pods -n substra-tests | grep substra-tests | awk "{{print $1}}"'],
+        [f'kubectl --context {KUBE_CONTEXT} get pods -n substra-tests | grep substra-tests'],
         shell=True
-    ).decode().strip()
+    ).decode().strip().split(' ')[0]
 
     try:
         call(f'kubectl --context {KUBE_CONTEXT} wait pod/{substra_tests_pod} '
