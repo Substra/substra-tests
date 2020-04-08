@@ -1,0 +1,15 @@
+steps:
+- name: 'gcr.io/cloud-builders/git'
+  args: ['clone', 'https://github.com/SubstraFoundation/substra-backend.git', '--depth', '1', '--branch', '${_BRANCH}']
+- name: 'gcr.io/kaniko-project/executor:latest'
+  args:
+  - --destination=gcr.io/$PROJECT_ID/celeryworker:${_COMMIT}
+  - --cache=true
+  - --dockerfile=substra-backend/docker/celeryworker/Dockerfile
+  - --context=substra-backend
+tags:
+- ${_BUILD_TAG}
+substitutions:
+    _BUILD_TAG: "substra-tests"
+    _COMMIT: "HEAD"
+    _BRANCH: "master"
