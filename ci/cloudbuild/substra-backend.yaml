@@ -14,5 +14,5 @@ substitutions:
     _BUILD_TAG: "substra-tests"
     _COMMIT: "HEAD"
     _BRANCH: "master"
-    _KANIKO_CACHE_TTL: "6h"
+    _KANIKO_CACHE_TTL: "168h"
 timeout: 1200s

@@ -18,5 +18,5 @@ substitutions:
     _BRANCH: "master"
     _SUBSTRA_GIT_REPO: "https://github.com/SubstraFoundation/substra.git"
     _SUBSTRA_GIT_REF: "master"
-    _KANIKO_CACHE_TTL: "6h"
+    _KANIKO_CACHE_TTL: "168h"
 timeout: 1200s

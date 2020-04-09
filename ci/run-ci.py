@@ -67,7 +67,7 @@ SOURCE_DIR = os.path.realpath(os.path.join(DIR, 'src'))
 KUBE_CONTEXT = ''
 RUN_TAG = ''.join(random.choice(string.ascii_letters + '0123456789') for _ in range(10))
 
-KANIKO_CACHE_TTL = '6h'
+KANIKO_CACHE_TTL = '168h'  # 1 week
 
 
 def call(cmd):
