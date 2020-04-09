@@ -72,7 +72,7 @@ KANIKO_CACHE_TTL = '168h'  # 1 week
 def call(cmd, print_cmd=True):
     if print_cmd:
         print(cmd)
-    return subprocess.check_output([cmd], shell=True).decode().strip()
+    return subprocess.check_output([cmd], stderr=subprocess.STDOUT, shell=True).decode().strip()
 
 
 def cluster_name(value):
