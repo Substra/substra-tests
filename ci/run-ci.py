@@ -181,7 +181,7 @@ def wait_for_cluster():
 
     while True:
         output = subprocess.check_output(
-            [f'gcloud container clusters list --filter="name={CLUSTER_NAME}" 2>/dev/null'],
+            [f'gcloud container clusters list --filter="name={CLUSTER_NAME}"'],
             shell=True
         ).decode().strip()
 
