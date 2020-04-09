@@ -45,8 +45,7 @@ import subprocess
 
 CLUSTER_NAME_ALLOWED_PREFIX = 'substra-tests'
 CLUSTER_NAME = ''
-# CLUSTER_MACHINE_TYPE = 'n1-standard-8'
-CLUSTER_MACHINE_TYPE = 'n1-highmem-4'
+CLUSTER_MACHINE_TYPE = 'n1-standard-8'
 
 CLUSTER_VERSION = '1.15.11-gke.1'
 CLUSTER_PROJECT = 'substra-208412'
