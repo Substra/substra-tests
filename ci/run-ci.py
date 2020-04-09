@@ -42,6 +42,7 @@ import random
 import argparse
 import functools
 import subprocess
+import sys
 
 CLUSTER_NAME_ALLOWED_PREFIX = 'substra-tests'
 CLUSTER_NAME = ''
@@ -69,13 +70,15 @@ RUN_TAG = ''.join(random.choice(string.ascii_letters + '0123456789') for _ in ra
 KANIKO_CACHE_TTL = '168h'  # 1 week
 
 
-def call(cmd, print_cmd=True, print_output=True):
+def call(cmd):
+    print(f'+ {cmd}')
+    return subprocess.check_call([cmd], shell=True)
+
+
+def call_output(cmd, print_cmd=True):
     if print_cmd:
-        print(cmd)
-    output = subprocess.check_output([cmd], stderr=subprocess.STDOUT, shell=True).decode().strip()
-    if print_output:
-        print(output)
-    return output
+        print(f'+ {cmd}')
+    return subprocess.check_output([cmd], shell=True, stderr=subprocess.STDOUT).decode().strip()
 
 
 def cluster_name(value):
@@ -108,7 +111,7 @@ def arg_parse():
     global KANIKO_CACHE_TTL
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('-N', '--cluster-name', type=cluster_name, required=True,
+    parser.add_argument('-N', '--cluster-name', type=cluster_name, default=CLUSTER_NAME_ALLOWED_PREFIX,
                         help='The prefix name if the GKE kubernetes cluster to create')
     parser.add_argument('-K', '--keys-directory', type=str, default=KEYS_DIR,
                         help='The path to a folder containing the GKE service account credentials')
@@ -136,7 +139,7 @@ def arg_parse():
         KANIKO_CACHE_TTL = '-1h'
 
     print(
-        f'💁‍♂️\n'
+        f'💃\n'
         f'KEYS_DIR\t\t= {KEYS_DIR}\n'
         f'CLUSTER_NAME\t\t= {CLUSTER_NAME}\n'
         f'SUBSTRA_TESTS_BRANCH\t= {SUBSTRA_TESTS_BRANCH}\n'
@@ -174,7 +177,7 @@ def create_cluster_async():
 
 def delete_cluster_async():
     wait_for_cluster()
-    print('\n# Delete cluster')
+    print('# Delete cluster')
     cmd = f'yes | gcloud container clusters delete {CLUSTER_NAME} --zone ' \
           f'{CLUSTER_ZONE} --project {CLUSTER_PROJECT} --async --quiet'
     call(cmd)
@@ -184,7 +187,7 @@ def wait_for_cluster():
     print('# Waiting for GKE cluster to be ready ...', end='')
 
     while True:
-        output = call(
+        output = call_output(
             f'gcloud container clusters list --filter="name={CLUSTER_NAME}" --project {CLUSTER_PROJECT}',
             print_cmd=False
         )
@@ -199,7 +202,7 @@ def wait_for_cluster():
             raise(e)
 
         if status == 'RUNNING':
-            print('Done.')
+            print(' Done.')
             break
 
         print('.', end='', flush=True)
@@ -251,7 +254,7 @@ def clone_repository(dirname, url, branch, commit=None):
     call(f'git clone -q --depth 1 {url} --branch "{branch}" {dirname}')
 
     if commit is None:
-        commit = call(f'git --git-dir={dirname}/.git rev-parse origin/{branch}')
+        commit = call_output(f'git --git-dir={dirname}/.git rev-parse origin/{branch}')
 
     return commit
 
@@ -311,7 +314,10 @@ def build_image(tag, image, branch, commit):
         f'--project={CLUSTER_PROJECT} '\
         f'--substitutions=_BUILD_TAG={tag},_BRANCH={branch},_COMMIT={commit},_KANIKO_CACHE_TTL={KANIKO_CACHE_TTL}'
 
-    build_id = call(cmd).split('\n')[-1].split(' ')[0]
+    output = call_output(cmd)
+    print(output)
+
+    build_id = output.split('\n')[-1].split(' ')[0]
 
     return build_id
 
@@ -320,7 +326,7 @@ def wait_for_builds(tag, images):
     print('\n# Waiting for builds to complete ...', end='')
     do_wait = True
     while do_wait:
-        build_list = call(
+        build_list = call_output(
             f'gcloud builds list --filter="tags={tag}" --project={CLUSTER_PROJECT}',
             print_cmd=False
         )
@@ -417,7 +423,7 @@ def patch_skaffold_file(config):
 
 def run_tests():
     print('# Wait for the substra-tests pod to be ready')
-    substra_tests_pod = call(
+    substra_tests_pod = call_output(
         f'kubectl --context {KUBE_CONTEXT} get pods -n substra-tests | grep substra-tests'
     ).split(' ')[0]
 
@@ -429,10 +435,17 @@ def run_tests():
               'This means the `substra-backend-server` pods never reached the "ready" state.')
 
     print('\n# Run tests')
-    call(f'kubectl --context {KUBE_CONTEXT} exec {substra_tests_pod} -n substra-tests -- make test')
+
+    try:
+        call(f'kubectl --context {KUBE_CONTEXT} exec {substra_tests_pod} -n substra-tests -- make test')
+        return True
+    except subprocess.CalledProcessError as e:
+        print('FATAL: `make test` completed with a non-zero exit code. Did some test(s) fail?')
+        return False
 
 
 def main():
+    is_success=False
     arg_parse()
 
     try:
@@ -444,15 +457,19 @@ def main():
         get_kube_context()
         setup_tiller()
         deploy_all(configs)
-        run_tests()
+        is_success = run_tests()
+
+    except Exception as e:
+        print(f'FATAL: {e}')
+        is_success=False
 
     finally:
-
+        print('\n# Perform final teardown')
         if os.path.exists(SOURCE_DIR):
             shutil.rmtree(SOURCE_DIR)
-
         delete_cluster_async()
 
+    sys.exit(0 if is_success else 1)
 
 if __name__ == '__main__':
     main()
