@@ -318,7 +318,7 @@ def wait_for_builds(tag, images):
     while do_wait:
         build_list = call(
             f'gcloud builds list --filter="tags={tag}" --project={CLUSTER_PROJECT}',
-            print_cmd=True
+            print_cmd=False
         )
 
         builds = build_list.split('\n')[1:]
