@@ -307,7 +307,8 @@ def build_image(tag, image, branch, commit):
     cmd = f'gcloud builds submit '\
         f'--config={config_file} '\
         f'--no-source '\
-        f'--async --project={CLUSTER_PROJECT} '\
+        f'--async '\
+        f'--project={CLUSTER_PROJECT} '\
         f'--substitutions=_BUILD_TAG={tag},_BRANCH={branch},_COMMIT={commit},_KANIKO_CACHE_TTL={KANIKO_CACHE_TTL}'
 
     build_id = subprocess.check_output([cmd], shell=True)\
