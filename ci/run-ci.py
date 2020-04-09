@@ -69,10 +69,13 @@ RUN_TAG = ''.join(random.choice(string.ascii_letters + '0123456789') for _ in ra
 KANIKO_CACHE_TTL = '168h'  # 1 week
 
 
-def call(cmd, print_cmd=True):
+def call(cmd, print_cmd=True, print_output=True):
     if print_cmd:
         print(cmd)
-    return subprocess.check_output([cmd], stderr=subprocess.STDOUT, shell=True).decode().strip()
+    output = subprocess.check_output([cmd], stderr=subprocess.STDOUT, shell=True).decode().strip()
+    if print_output:
+        print(output)
+    return output
 
 
 def cluster_name(value):
@@ -133,6 +136,7 @@ def arg_parse():
         KANIKO_CACHE_TTL = '-1h'
 
     print(
+        f'💁‍♂️\n'
         f'KEYS_DIR\t\t= {KEYS_DIR}\n'
         f'CLUSTER_NAME\t\t= {CLUSTER_NAME}\n'
         f'SUBSTRA_TESTS_BRANCH\t= {SUBSTRA_TESTS_BRANCH}\n'
