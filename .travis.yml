@@ -24,6 +24,10 @@ before_install:
   - curl -LO https://storage.googleapis.com/kubernetes-release/release/`curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt`/bin/linux/amd64/kubectl
   - chmod +x ./kubectl
   - mv ./kubectl $HOME/bin/
+  # Install skaffold
+  - curl -Lo skaffold https://storage.googleapis.com/skaffold/releases/v1.0.1/skaffold-linux-amd64
+  - chmod +x ./skaffold
+  - mv ./skaffold $HOME/bin/
 
 script:
   - CLUSTER_NAME="substra-tests-$(date -u +'%Y-%m-%d-%Hh%M')"
