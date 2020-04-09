@@ -7,9 +7,11 @@ steps:
   - --cache=true
   - --dockerfile=substra-backend/docker/substra-backend/Dockerfile
   - --context=substra-backend
+  - --cache-ttl=${_KANIKO_CACHE_TTL}
 tags:
 - ${_BUILD_TAG}
 substitutions:
     _BUILD_TAG: "substra-tests"
     _COMMIT: "HEAD"
     _BRANCH: "master"
+    _KANIKO_CACHE_TTL: "168h"

@@ -10,8 +10,7 @@
 #       - hlf-k8s
 #       - substa-backend
 #       - substra-tests
-#       - substra
-#     - Build the images to the private registry (gcloud)
+#     - Build the images using Google Cloud Builds
 #     - Deploy (skaffold)
 #     - Wait for the substra application stack to be up and ready (i.e. wait
 #       for the substra-backend servers readiness probe)
@@ -44,7 +43,6 @@ import argparse
 import subprocess
 
 
-# GLOBAL VARIABLES
 CLUSTER_NAME_ALLOWED_PREFIX = 'substra-tests'
 CLUSTER_NAME = ''
 CLUSTER_MACHINE_TYPE = 'n1-standard-8'
@@ -61,12 +59,13 @@ HLF_K8S_BRANCH = 'master'
 
 DIR = os.path.dirname(os.path.realpath(__file__))
 CHARTS_DIR = os.path.realpath(os.path.join(DIR, '../charts/'))
-KEYS_DIR = os.path.realpath(os.path.join(os.getenv('HOME'), '.local/'))    # overridden with --keys-directory=xyz
+KEYS_DIR = os.path.realpath(os.path.join(os.getenv('HOME'), '.local/'))
 SOURCE_DIR = os.path.realpath(os.path.join(DIR, 'src'))
 
 KUBE_CONTEXT = ''
 BUILD_TAG = ''.join(random.choice(string.ascii_letters + '0123456789') for _ in range(10))
 
+KANIKO_CACHE_TTL='168h'  # 1 week
 
 def call(cmd):
     print(cmd)
@@ -80,7 +79,7 @@ def cluster_name(value):
     This is to ensure the cluster gets picked up by the stale cluster deletion script.
     """
 
-    if CLUSTER_NAME_ALLOWED_PREFIX not in value:
+    if not value.startswith(CLUSTER_NAME_ALLOWED_PREFIX):
         raise argparse.ArgumentTypeError(
             f'Invalid cluster name "{value}". '
             f'The cluster name must start with "{CLUSTER_NAME_ALLOWED_PREFIX}".')
@@ -95,83 +94,120 @@ def arg_parse():
     global SUBSTRA_TESTS_BRANCH
     global SUBSTRA_BACKEND_BRANCH
     global HLF_K8S_BRANCH
+    global KANIKO_CACHE_TTL
 
     parser = argparse.ArgumentParser()
     parser.add_argument('-N', '--cluster-name', type=cluster_name, required=True,
                         help='The name if the GKE kubernetes cluster to create')
     parser.add_argument('-K', '--keys-directory', type=str, default=KEYS_DIR,
                         help='The path to a folder containing the GKE service account credentials')
-    parser.add_argument('-T', '--substra-tests', type=str, default=SUBSTRA_TESTS_BRANCH,
-                        help='Substra-tests branch')
-    parser.add_argument('-B', '--substra-backend', type=str, default=SUBSTRA_BACKEND_BRANCH,
-                        help='Substra-backend branch')
-    parser.add_argument('-H', '--hlf-k8s', type=str, default=HLF_K8S_BRANCH,
-                        help='Hlf-k8s branch')
+    parser.add_argument('--substra-tests', type=str, default=SUBSTRA_TESTS_BRANCH,
+                        help='substra-tests branch', metavar='GIT_BRANCH')
+    parser.add_argument('--substra-backend', type=str, default=SUBSTRA_BACKEND_BRANCH,
+                        help='substra-backend branch', metavar='GIT_BRANCH')
+    parser.add_argument('--hlf-k8s', type=str, default=HLF_K8S_BRANCH,
+                        help='hlf-k8s branch', metavar='GIT_BRANCH')
+    parser.add_argument('--no-cache', action='store_true',
+                        help='Use this option to disable kaniko caching')
 
     args = vars(parser.parse_args())
 
     CLUSTER_NAME = args['cluster_name']
-    KEYS_DIR = args.get('keys_directory', KEYS_DIR)
-    SUBSTRA_TESTS_BRANCH = args.get('substra_tests', SUBSTRA_TESTS_BRANCH)
-    SUBSTRA_BACKEND_BRANCH = args.get('substra_backend', SUBSTRA_BACKEND_BRANCH)
-    HLF_K8S_BRANCH = args.get('hlf_k8s', HLF_K8S_BRANCH)
+    KEYS_DIR = args['keys_directory']
+    SUBSTRA_TESTS_BRANCH = args['substra_tests']
+    SUBSTRA_BACKEND_BRANCH = args['substra_backend']
+    HLF_K8S_BRANCH = args['hlf_k8s']
+    if args['no_cache']:
+        KANIKO_CACHE_TTL = '-1h'
 
     print(
         f'KEYS_DIR\t\t= {KEYS_DIR}\n'
         f'CLUSTER_NAME\t\t= {CLUSTER_NAME}\n'
         f'SUBSTRA_TESTS_BRANCH\t= {SUBSTRA_TESTS_BRANCH}\n'
         f'SUBSTRA_BACKEND_BRANCH\t= {SUBSTRA_BACKEND_BRANCH}\n'
-        f'HLF_K8S_BRANCH\t= {HLF_K8S_BRANCH}\n'
+        f'HLF_K8S_BRANCH\t\t= {HLF_K8S_BRANCH}\n'
+        f'KANIKO_CACHE_TTL\t= {KANIKO_CACHE_TTL}\n'
     )
 
     return
 
 
-def login():
+def gcloud_login():
+    print('# Log into Google Cloud')
     call(f'gcloud auth activate-service-account {SERVICE_ACCOUNT} --key-file={KEYS_DIR}/{KEY_SERVICE_ACCOUNT}')
 
 
 def get_kube_context():
-
     global KUBE_CONTEXT
-    # Configure kubectl
+
+    print('\n# Fetch kubernetes context')
     call(f'gcloud container clusters get-credentials {CLUSTER_NAME} --zone {CLUSTER_ZONE} --project {CLUSTER_PROJECT}')
     KUBE_CONTEXT = f'gke_{CLUSTER_PROJECT}_{CLUSTER_ZONE}_{CLUSTER_NAME}'
 
 
-def create_cluster():
-    gcloud_extend_zone_project = f' --zone {CLUSTER_ZONE} --project {CLUSTER_PROJECT}'
-    # Create Cluster
+def create_cluster_async():
+    print('\n# Create GKE cluster')
     cmd = f'gcloud container clusters create {CLUSTER_NAME} '\
-        f'--cluster-version {CLUSTER_VERSION} '\
-        f'--machine-type {CLUSTER_MACHINE_TYPE} '\
-        f'--service-account {SERVICE_ACCOUNT} '\
-        f'--num-nodes=1' + gcloud_extend_zone_project
+            f'--cluster-version {CLUSTER_VERSION} '\
+            f'--machine-type {CLUSTER_MACHINE_TYPE} '\
+            f'--service-account {SERVICE_ACCOUNT} '\
+            f'--num-nodes=1 '\
+            f'--zone={CLUSTER_ZONE} '\
+            f'--project={CLUSTER_PROJECT} '\
+            f'--async'
     call(cmd)
 
 
+def wait_for_cluster():
+    print('# Waiting for GKE cluster to be ready...', end='')
+
+    while True:
+        output = subprocess.check_output(
+            [f'gcloud container clusters list --filter="name={CLUSTER_NAME}" 2>/dev/null'],
+            shell=True
+        ).decode().strip()
+
+        try:
+            status = output.split('\n')[1].split(' ')[-1]
+            if status not in ['RUNNING', 'PROVISIONING']:
+                raise Exception(f'Unknown status {status}')
+        except Exception as e:
+            print('\nFATAL: Error retrieving cluster status. Output was:')
+            print(output)
+            raise(e)
+
+        if status == 'RUNNING':
+            print('Done.')
+            break
+
+        print('.', end='', flush=True)
+        time.sleep(5)
+
+
 def setup_tiller():
-    # Configure Tiller
+    print('\n# Set up Tiller')
     call(f'kubectl --context {KUBE_CONTEXT} create serviceaccount --namespace kube-system tiller')
     call(f'kubectl --context {KUBE_CONTEXT} create clusterrolebinding tiller-cluster-rule ' +
          f'--clusterrole=cluster-admin --serviceaccount=kube-system:tiller')
     call(f'helm --kube-context {KUBE_CONTEXT} init --service-account tiller --upgrade --wait')
 
 
-def clone_repositories():
+def clone_repos():
     if os.path.exists(SOURCE_DIR):
         shutil.rmtree(SOURCE_DIR)
 
     os.makedirs(SOURCE_DIR)
 
+    print('\n# Clone repos')
     commit_backend = clone_substra_backend()
     commit_hlf = clone_hlf_k8s()
     commit_tests = clone_substra_tests()
 
     print(
-        f'Commit hashes:\n'
-        f'\t- substra-backend: \t{commit_backend}\n'
-        f'\t- hlf-k8s: \t\t{commit_hlf}'
+        f'\nCommit hashes:\n'
+        f'- substra-backend: \t{commit_backend}\n'
+        f'- hlf-k8s: \t\t{commit_hlf}\n'
+        f'- substra-tests: \t{commit_tests}\n'
     )
     return [
         {'name': 'hlf-k8s',
@@ -190,7 +226,7 @@ def clone_repositories():
 
 
 def clone_repository(dirname, url, branch, commit=None):
-    call(f'git clone --depth 1 {url} --branch "{branch}" {dirname}')
+    call(f'git clone -q --depth 1 {url} --branch "{branch}" {dirname}')
 
     if commit is None:
         commit = subprocess.check_output(
@@ -228,37 +264,43 @@ def clone_substra_tests():
     )
 
 
-def gcloud_builds(configs):
-    gcloud_build_tag = f'substra-tests-{BUILD_TAG}'
+def build_images(configs):
+    tag = f'substra-tests-{BUILD_TAG}'
+    images = {}
 
-    # Launch builds
+    print('# Queue docker image builds')
     for config in configs:
         for image in config['images']:
-            gcloud_build(
-                tag=gcloud_build_tag,
+            build_id = build_image(
+                tag=tag,
                 image=image,
                 branch=config['branch'],
                 commit=config['commit']
             )
+            images[build_id] = image
 
-    # Wait for buids
-    print('Wait for gcloud builds ...')
-    wait_gcloud_build(gcloud_build_tag)
+    wait_for_builds(tag, images)
 
 
-def gcloud_build(tag, image, branch, commit):
+def build_image(tag, image, branch, commit):
     config_file = os.path.join(DIR, f'cloudbuild/{image}.yaml')
+
     cmd = f'gcloud builds submit '\
         f'--config={config_file} '\
         f'--no-source '\
         f'--async '\
-        f'--substitutions=_BUILD_TAG={tag},_BRANCH={branch},_COMMIT={commit}'
-    call(cmd)
+        f'--substitutions=_BUILD_TAG={tag},_BRANCH={branch},_COMMIT={commit},_KANIKO_CACHE_TTL={KANIKO_CACHE_TTL}'
+
+    build_id = subprocess.check_output([cmd], shell=True)\
+        .decode().strip().split('\n')[-1].split(' ')[0]
+
+    return build_id
 
 
-def wait_gcloud_build(tag):
-    wait = True
-    while wait:
+def wait_for_builds(tag, images):
+    print('\n# Waiting for builds to complete...', end='')
+    do_wait = True
+    while do_wait:
         build_list = subprocess.check_output(
             [f'gcloud builds list --filter="tags={tag}"'],
             shell=True
@@ -270,22 +312,25 @@ def wait_gcloud_build(tag):
         num_success = build_list.count('SUCCESS')
         num_failed = build_list.count('TIMEOUT') + build_list.count('CANCELLED') + build_list.count('FAIL')
 
-        wait = (num_builds != (num_success + num_failed))
+        do_wait = (num_builds != (num_success + num_failed))
 
         time.sleep(5)
+        print('.', end='', flush=True)
+
+    print(' Done.')
 
     if num_failed:
-        print(f'ERROR: One or more builds failed.')
-        print(f'See logs of failed builds:')
+        print(f'FATAL: One or more builds failed. See logs for more details')
         for build in builds:
             if 'TIMEOUT' in build or 'CANCELLED' in build or 'FAIL' in build:
                 build_id = build.split(' ')[0]
-                print(f"\t-  https://console.cloud.google.com/cloud-build/builds/{build_id}?project={CLUSTER_PROJECT}")
-
-        raise Exception('Aborting')
+                image = images[build_id]
+                print(f"- [{image}]: https://console.cloud.google.com/cloud-build/builds/{build_id}?project={CLUSTER_PROJECT}")
+        raise Exception('docker image build(s) failed.')
 
 
 def deploy_all(configs):
+    print('\n# Deploy helm charts')
     for config in configs:
         deploy(config)
 
@@ -344,9 +389,8 @@ def patch_skaffold_file(config):
     return skaffold_file
 
 
-def launch_tests():
-
-    # Wait for the `substra-tests` pod to be ready
+def run_tests():
+    print('# Wait for the substra-tests pod to be ready')
     substra_tests_pod = subprocess.check_output(
         [f'kubectl --context {KUBE_CONTEXT} get pods -n substra-tests | grep substra-tests'],
         shell=True
@@ -359,7 +403,7 @@ def launch_tests():
         print('ERROR: Timeout while waiting for the substra-tests pod. '
               'This means the `substra-backend-server` pods never reached the "ready" state.')
 
-    # Run the tests
+    print('\n# Run tests')
     call(f'kubectl --context {KUBE_CONTEXT} exec {substra_tests_pod} -n substra-tests -- make test')
 
 
@@ -367,20 +411,22 @@ def main():
     arg_parse()
 
     try:
-        login()
-        create_cluster()
+        gcloud_login()
+        create_cluster_async()
+        configs = clone_repos()
+        build_images(configs)
+        wait_for_cluster()
         get_kube_context()
         setup_tiller()
-        configs = clone_repositories()
-        gcloud_builds(configs)
         deploy_all(configs)
-        launch_tests()
+        run_tests()
     finally:
         if os.path.exists(SOURCE_DIR):
             shutil.rmtree(SOURCE_DIR)
-        # Delete Cluster
+
+        print('\n# Delete cluster')
         cmd = f'yes | gcloud container clusters delete {CLUSTER_NAME} --zone ' \
-              f'{CLUSTER_ZONE} --project {CLUSTER_PROJECT}'
+              f'{CLUSTER_ZONE} --project {CLUSTER_PROJECT} --async --quiet'
         call(cmd)
 
 

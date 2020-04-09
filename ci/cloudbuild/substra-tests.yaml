@@ -9,6 +9,7 @@ steps:
   - --context=substra-tests
   - --build-arg=SUBSTRA_GIT_REPO=${_SUBSTRA_GIT_REPO}
   - --build-arg=SUBSTRA_GIT_REF=${_SUBSTRA_GIT_REF}
+  - --cache-ttl=${_KANIKO_CACHE_TTL}
 tags:
 - ${_BUILD_TAG}
 substitutions:
@@ -17,3 +18,4 @@ substitutions:
     _BRANCH: "master"
     _SUBSTRA_GIT_REPO: "https://github.com/SubstraFoundation/substra.git"
     _SUBSTRA_GIT_REF: "master"
+    _KANIKO_CACHE_TTL: "168h"
