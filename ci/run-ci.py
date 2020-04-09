@@ -74,6 +74,11 @@ def call(cmd):
     return subprocess.check_call([cmd], shell=True)
 
 
+def call_output(cmd):
+    print(cmd)
+    return subprocess.check_output([cmd], shell=True).decode().strip()
+
+
 def retry_on_error(delay=5, nbtries=10, backoff=2):
 
     def _retry(fn):
@@ -203,15 +208,13 @@ def delete_cluster_async():
     call(cmd)
 
 
-@retry_on_error()
 def wait_for_cluster():
     print('# Waiting for GKE cluster to be ready ...', end='')
 
     while True:
-        output = subprocess.check_output(
-            [f'gcloud container clusters list --filter="name={CLUSTER_NAME} --project {CLUSTER_PROJECT}"'],
-            shell=True
-        ).decode().strip()
+        output = call_output(
+            f'gcloud container clusters list --filter="name={CLUSTER_NAME} --project {CLUSTER_PROJECT}"'
+        )
 
         try:
             status = output.split('\n')[1].split(' ')[-1]
@@ -275,10 +278,7 @@ def clone_repository(dirname, url, branch, commit=None):
     call(f'git clone -q --depth 1 {url} --branch "{branch}" {dirname}')
 
     if commit is None:
-        commit = subprocess.check_output(
-            [f'git --git-dir={dirname}/.git rev-parse origin/{branch}'],
-            shell=True
-        ).decode().strip()
+        commit = call_output(f'git --git-dir={dirname}/.git rev-parse origin/{branch}')
 
     return commit
 
@@ -338,8 +338,7 @@ def build_image(tag, image, branch, commit):
         f'--project={CLUSTER_PROJECT} '\
         f'--substitutions=_BUILD_TAG={tag},_BRANCH={branch},_COMMIT={commit},_KANIKO_CACHE_TTL={KANIKO_CACHE_TTL}'
 
-    build_id = subprocess.check_output([cmd], shell=True)\
-        .decode().strip().split('\n')[-1].split(' ')[0]
+    build_id = call_output(cmd).split('\n')[-1].split(' ')[0]
 
     return build_id
 
@@ -348,10 +347,7 @@ def wait_for_builds(tag, images):
     print('\n# Waiting for builds to complete ...', end='')
     do_wait = True
     while do_wait:
-        build_list = subprocess.check_output(
-            [f'gcloud builds list --filter="tags={tag}" --project={CLUSTER_PROJECT}'],
-            shell=True
-        ).decode().strip()
+        build_list = call_output(f'gcloud builds list --filter="tags={tag}" --project={CLUSTER_PROJECT}')
 
         builds = build_list.split('\n')[1:]
 
@@ -445,10 +441,9 @@ def patch_skaffold_file(config):
 
 def run_tests():
     print('# Wait for the substra-tests pod to be ready')
-    substra_tests_pod = subprocess.check_output(
-        [f'kubectl --context {KUBE_CONTEXT} get pods -n substra-tests | grep substra-tests'],
-        shell=True
-    ).decode().strip().split(' ')[0]
+    substra_tests_pod = call_output(
+        f'kubectl --context {KUBE_CONTEXT} get pods -n substra-tests | grep substra-tests'
+    ).split(' ')[0]
 
     try:
         call(f'kubectl --context {KUBE_CONTEXT} wait pod/{substra_tests_pod} '
