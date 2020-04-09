@@ -40,8 +40,8 @@ import shutil
 import string
 import random
 import argparse
+import functools
 import subprocess
-
 
 CLUSTER_NAME_ALLOWED_PREFIX = 'substra-tests'
 CLUSTER_NAME = ''
@@ -72,6 +72,31 @@ KANIKO_CACHE_TTL = '168h'  # 1 week
 def call(cmd):
     print(cmd)
     return subprocess.check_call([cmd], shell=True)
+
+
+def retry_on_error(delay=5, nbtries=10, backoff=2):
+
+    def _retry(fn):
+        @functools.wraps(fn)
+        def _wrapper(*args, **kwargs):
+
+            _delay = delay
+            _nbtries = nbtries
+            _backoff = backoff
+
+            while True:
+                try:
+                    return fn(*args, **kwargs)
+                except Exception as e:
+                    _nbtries -= 1
+                    if not nbtries:
+                        raise
+                    _delay *= _backoff
+                    time.sleep(_delay)
+                    print(f'Function {fn.__name__} failed ({type(e)}): {e} retrying in {_delay}s')
+
+        return _wrapper
+    return _retry
 
 
 def cluster_name(value):
@@ -169,6 +194,7 @@ def create_cluster_async():
     call(cmd)
 
 
+@retry_on_error()
 def delete_cluster_async():
     wait_for_cluster()
     print('\n# Delete cluster')
@@ -177,6 +203,7 @@ def delete_cluster_async():
     call(cmd)
 
 
+@retry_on_error()
 def wait_for_cluster():
     print('# Waiting for GKE cluster to be ready ...', end='')
 
