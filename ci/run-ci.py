@@ -213,7 +213,7 @@ def wait_for_cluster():
 
     while True:
         output = call_output(
-            f'gcloud container clusters list --filter="name={CLUSTER_NAME} --project {CLUSTER_PROJECT}"'
+            f'gcloud container clusters list --filter="name={CLUSTER_NAME}" --project {CLUSTER_PROJECT}'
         )
 
         try:
