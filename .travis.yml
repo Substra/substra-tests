@@ -26,7 +26,7 @@ before_install:
   - mv ./kubectl $HOME/bin/
 
 script:
-  - CLUSTER_NAME="substra-tests-$(date -u +'%Y-%m-%d-%Hh%M')-$(cat /dev/urandom | tr -dc 'a-z0-9' | fold -w 8 | head -n 1)"
+  - CLUSTER_NAME="substra-tests-$(date -u +'%Y-%m-%d-%Hh%M')"
   - cd ci/
   # Retry on failure. This is to account for the occasional hiccups in deployment of hlf-k8s/substra-backend (some pods occasionally fail to start, maybe 1 time out of 10-20).
   - travis_retry python ./run-ci.py --keys-directory=./keys/ --cluster-name=${CLUSTER_NAME}

@@ -63,9 +63,10 @@ KEYS_DIR = os.path.realpath(os.path.join(os.getenv('HOME'), '.local/'))
 SOURCE_DIR = os.path.realpath(os.path.join(DIR, 'src'))
 
 KUBE_CONTEXT = ''
-BUILD_TAG = ''.join(random.choice(string.ascii_letters + '0123456789') for _ in range(10))
+RUN_TAG = ''.join(random.choice(string.ascii_letters + '0123456789') for _ in range(10))
 
-KANIKO_CACHE_TTL='168h'  # 1 week
+KANIKO_CACHE_TTL = '168h'  # 1 week
+
 
 def call(cmd):
     print(cmd)
@@ -84,6 +85,11 @@ def cluster_name(value):
             f'Invalid cluster name "{value}". '
             f'The cluster name must start with "{CLUSTER_NAME_ALLOWED_PREFIX}".')
 
+    if len(value) > 35:
+        raise argparse.ArgumentTypeError(
+            f'Invalid cluster name "{value}". '
+            f'The cluster name must not be longer than 35 characters.')
+
     return value
 
 
@@ -98,7 +104,7 @@ def arg_parse():
 
     parser = argparse.ArgumentParser()
     parser.add_argument('-N', '--cluster-name', type=cluster_name, required=True,
-                        help='The name if the GKE kubernetes cluster to create')
+                        help='The prefix name if the GKE kubernetes cluster to create')
     parser.add_argument('-K', '--keys-directory', type=str, default=KEYS_DIR,
                         help='The path to a folder containing the GKE service account credentials')
     parser.add_argument('--substra-tests', type=str, default=SUBSTRA_TESTS_BRANCH,
@@ -113,6 +119,10 @@ def arg_parse():
     args = vars(parser.parse_args())
 
     CLUSTER_NAME = args['cluster_name']
+    # Add RUN_TAG to cluster name to make it non-deterministic in case of retry
+    CLUSTER_NAME += f'-{RUN_TAG[:40-len(CLUSTER_NAME)-1]}'
+    CLUSTER_NAME = CLUSTER_NAME.lower()   # Make it lower for gcloud compatibility
+
     KEYS_DIR = args['keys_directory']
     SUBSTRA_TESTS_BRANCH = args['substra_tests']
     SUBSTRA_BACKEND_BRANCH = args['substra_backend']
@@ -148,18 +158,26 @@ def get_kube_context():
 def create_cluster_async():
     print('\n# Create GKE cluster')
     cmd = f'gcloud container clusters create {CLUSTER_NAME} '\
-            f'--cluster-version {CLUSTER_VERSION} '\
-            f'--machine-type {CLUSTER_MACHINE_TYPE} '\
-            f'--service-account {SERVICE_ACCOUNT} '\
-            f'--num-nodes=1 '\
-            f'--zone={CLUSTER_ZONE} '\
-            f'--project={CLUSTER_PROJECT} '\
-            f'--async'
+          f'--cluster-version {CLUSTER_VERSION} '\
+          f'--machine-type {CLUSTER_MACHINE_TYPE} '\
+          f'--service-account {SERVICE_ACCOUNT} '\
+          f'--num-nodes=1 '\
+          f'--zone={CLUSTER_ZONE} '\
+          f'--project={CLUSTER_PROJECT} '\
+          f'--async'
+    call(cmd)
+
+
+def delete_cluster_async():
+    wait_for_cluster()
+    print('\n# Delete cluster')
+    cmd = f'yes | gcloud container clusters delete {CLUSTER_NAME} --zone ' \
+          f'{CLUSTER_ZONE} --project {CLUSTER_PROJECT} --async --quiet'
     call(cmd)
 
 
 def wait_for_cluster():
-    print('# Waiting for GKE cluster to be ready...', end='')
+    print('# Waiting for GKE cluster to be ready ...', end='')
 
     while True:
         output = subprocess.check_output(
@@ -265,7 +283,7 @@ def clone_substra_tests():
 
 
 def build_images(configs):
-    tag = f'substra-tests-{BUILD_TAG}'
+    tag = f'substra-tests-{RUN_TAG}'
     images = {}
 
     print('# Queue docker image builds')
@@ -288,7 +306,7 @@ def build_image(tag, image, branch, commit):
     cmd = f'gcloud builds submit '\
         f'--config={config_file} '\
         f'--no-source '\
-        f'--async '\
+        f'--async --project={CLUSTER_PROJECT} '\
         f'--substitutions=_BUILD_TAG={tag},_BRANCH={branch},_COMMIT={commit},_KANIKO_CACHE_TTL={KANIKO_CACHE_TTL}'
 
     build_id = subprocess.check_output([cmd], shell=True)\
@@ -298,7 +316,7 @@ def build_image(tag, image, branch, commit):
 
 
 def wait_for_builds(tag, images):
-    print('\n# Waiting for builds to complete...', end='')
+    print('\n# Waiting for builds to complete ...', end='')
     do_wait = True
     while do_wait:
         build_list = subprocess.check_output(
@@ -325,7 +343,8 @@ def wait_for_builds(tag, images):
             if 'TIMEOUT' in build or 'CANCELLED' in build or 'FAIL' in build:
                 build_id = build.split(' ')[0]
                 image = images[build_id]
-                print(f"- [{image}]: https://console.cloud.google.com/cloud-build/builds/{build_id}?project={CLUSTER_PROJECT}")
+                print(f"- [{image}]: "
+                      f"https://console.cloud.google.com/cloud-build/builds/{build_id}?project={CLUSTER_PROJECT}")
         raise Exception('docker image build(s) failed.')
 
 
@@ -339,7 +358,7 @@ def deploy(config):
     artifacts_file = create_build_artifacts(config)
     skaffold_file = patch_skaffold_file(config)
     call(f'skaffold deploy --kube-context={KUBE_CONTEXT} '
-         f'-f={skaffold_file} -a={artifacts_file} --status-check=false')
+         f'-f={skaffold_file} -a={artifacts_file} --status-check=true')
 
 
 def create_build_artifacts(config):
@@ -366,6 +385,12 @@ def patch_skaffold_file(config):
     # Patch skaffold file
     with open(skaffold_file, 'r') as file:
         filedata = file.read()
+
+    # Set statusCheckDeadlineSeconds to 300s instead of 120 default
+    filedata = filedata.replace(
+        'deploy:',
+        'deploy:\n  statusCheckDeadlineSeconds: 300'
+    )
 
     filedata = filedata.replace(
         'chartPath: charts/',
@@ -420,14 +445,13 @@ def main():
         setup_tiller()
         deploy_all(configs)
         run_tests()
+
     finally:
+
         if os.path.exists(SOURCE_DIR):
             shutil.rmtree(SOURCE_DIR)
 
-        print('\n# Delete cluster')
-        cmd = f'yes | gcloud container clusters delete {CLUSTER_NAME} --zone ' \
-              f'{CLUSTER_ZONE} --project {CLUSTER_PROJECT} --async --quiet'
-        call(cmd)
+        delete_cluster_async()
 
 
 if __name__ == '__main__':
