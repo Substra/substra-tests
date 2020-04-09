@@ -209,7 +209,7 @@ def wait_for_cluster():
 
     while True:
         output = subprocess.check_output(
-            [f'gcloud container clusters list --filter="name={CLUSTER_NAME}"'],
+            [f'gcloud container clusters list --filter="name={CLUSTER_NAME} --project {CLUSTER_PROJECT}"'],
             shell=True
         ).decode().strip()
 
