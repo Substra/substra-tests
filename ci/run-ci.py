@@ -10,8 +10,8 @@
 #       - hlf-k8s
 #       - substa-backend
 #       - substra-tests
-#     - Build the images using Google Cloud Builds
-#     - Deploy (skaffold)
+#     - Build the docker images using Google Cloud Builds
+#     - Deploy these images using skaffold
 #     - Wait for the substra application stack to be up and ready (i.e. wait
 #       for the substra-backend servers readiness probe)
 #     - Run the full 'substra-tests' test suite
@@ -30,8 +30,8 @@
 #     after 24h. See https://console.cloud.google.com/functions/details/us-central1/clean-substra-tests-ci-deployment
 #
 # USEFUL LINKS
-#   Travis build logs: https://travis-ci.org/github/SubstraFoundation/substra-tests
-#   Stale cluster deletion script:
+#   - Travis build history: https://travis-ci.org/github/SubstraFoundation/substra-tests/builds
+#   - Stale cluster deletion script:
 #       https://console.cloud.google.com/functions/details/us-central1/clean-substra-tests-ci-deployment
 import os
 import time
@@ -139,7 +139,7 @@ def arg_parse():
         KANIKO_CACHE_TTL = '-1h'
 
     print(
-        f'💃\n'
+        f'💃💃💃\n'
         f'KEYS_DIR\t\t= {KEYS_DIR}\n'
         f'CLUSTER_NAME\t\t= {CLUSTER_NAME}\n'
         f'SUBSTRA_TESTS_BRANCH\t= {SUBSTRA_TESTS_BRANCH}\n'
@@ -202,7 +202,7 @@ def wait_for_cluster():
             raise(e)
 
         if status == 'RUNNING':
-            print(' Done.')
+            print('done.')
             break
 
         print('.', end='', flush=True)
@@ -342,7 +342,7 @@ def wait_for_builds(tag, images):
         time.sleep(5)
         print('.', end='', flush=True)
 
-    print(' Done.')
+    print('done.')
 
     if num_failed:
         print(f'FATAL: One or more builds failed. See logs for more details')
