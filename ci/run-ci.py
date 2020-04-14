@@ -40,7 +40,6 @@ import shutil
 import string
 import random
 import argparse
-import functools
 import subprocess
 import sys
 
@@ -445,7 +444,7 @@ def run_tests():
 
 
 def main():
-    is_success=False
+    is_success = False
     arg_parse()
 
     try:
