@@ -54,7 +54,7 @@ CLUSTER_ZONE = 'europe-west4-a'
 SERVICE_ACCOUNT = 'substra-tests@substra-208412.iam.gserviceaccount.com'
 KEY_SERVICE_ACCOUNT = 'substra-208412-3be0df12d87a.json'
 
-SUBSTRA_TESTS_BRANCH = 'nightly-tests'
+SUBSTRA_TESTS_BRANCH = 'master'
 SUBSTRA_BACKEND_BRANCH = 'master'
 HLF_K8S_BRANCH = 'master'
 
