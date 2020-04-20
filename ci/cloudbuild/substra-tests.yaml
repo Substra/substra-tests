@@ -3,7 +3,7 @@ steps:
   args: ['clone', 'https://github.com/SubstraFoundation/substra-tests.git', '--depth', '1', '--branch', '${_BRANCH}']
 - name: 'gcr.io/kaniko-project/executor:latest'
   args:
-  - --destination=gcr.io/$PROJECT_ID/substra-tests:${_COMMIT}
+  - --destination=eu.gcr.io/$PROJECT_ID/substra-tests:ci-${_COMMIT}
   - --cache=true
   - --dockerfile=substra-tests/docker/substra-tests/Dockerfile
   - --context=substra-tests
