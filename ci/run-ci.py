@@ -376,7 +376,7 @@ def create_build_artifacts(config):
         for image in config['images']:
             tags['builds'].append({
                 'imageName': f'substrafoundation/{image}',
-                'tag': f'gcr.io/{CLUSTER_PROJECT}/{image}:{config["commit"]}'
+                'tag': f'eu.gcr.io/{CLUSTER_PROJECT}/{image}:ci-{config["commit"]}'
             })
 
         json.dump(tags, file)
