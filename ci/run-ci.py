@@ -392,12 +392,6 @@ def patch_skaffold_file(config):
     with open(skaffold_file, 'r') as file:
         filedata = file.read()
 
-    # Set statusCheckDeadlineSeconds to 300s instead of 120 default
-    filedata = filedata.replace(
-        'deploy:',
-        'deploy:\n  statusCheckDeadlineSeconds: 300'
-    )
-
     filedata = filedata.replace(
         'chartPath: charts/',
         f'chartPath: {os.path.join(SOURCE_DIR, config["name"],"charts/")}'
