@@ -137,8 +137,11 @@ def arg_parse():
     if args['no_cache']:
         KANIKO_CACHE_TTL = '-1h'
 
+    print(f'💃💃💃\n')
+    print_args()
+
+def print_args():
     print(
-        f'💃💃💃\n'
         f'KEYS_DIR\t\t= {KEYS_DIR}\n'
         f'CLUSTER_NAME\t\t= {CLUSTER_NAME}\n'
         f'SUBSTRA_TESTS_BRANCH\t= {SUBSTRA_TESTS_BRANCH}\n'
@@ -146,7 +149,6 @@ def arg_parse():
         f'HLF_K8S_BRANCH\t\t= {HLF_K8S_BRANCH}\n'
         f'KANIKO_CACHE_TTL\t= {KANIKO_CACHE_TTL}\n'
     )
-
 
 def gcloud_login():
     print('# Log into Google Cloud')
@@ -457,6 +459,8 @@ def main():
         setup_tiller()
         deploy_all(configs)
         is_success = run_tests()
+        print("Completed test run:")
+        print_args()
 
     except Exception as e:
         print(f'FATAL: {e}')
