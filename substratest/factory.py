@@ -158,8 +158,12 @@ class Permissions(pydantic.BaseModel):
     authorized_ids: typing.List[str]
 
 
+class PrivatePermissions(pydantic.BaseModel):
+    authorized_ids: typing.List[str]
+
+
 DEFAULT_PERMISSIONS = Permissions(public=True, authorized_ids=[])
-DEFAULT_OUT_MODEL_PERMISSIONS = Permissions(public=False, authorized_ids=[])
+DEFAULT_OUT_TRUNK_MODEL_PERMISSIONS = PrivatePermissions(authorized_ids=[])
 
 
 class DataSampleSpec(_Spec):
@@ -247,7 +251,7 @@ class CompositeTraintupleSpec(_Spec):
     in_trunk_model_key: str = None
     tag: str = None
     compute_plan_id: str = None
-    out_trunk_model_permissions: Permissions
+    out_trunk_model_permissions: PrivatePermissions
     rank: int = None
 
 
@@ -377,7 +381,7 @@ class _BaseComputePlanSpec(_Spec, abc.ABC):
             train_data_sample_keys=_get_keys(data_samples),
             in_head_model_id=in_head_model.id if in_head_model else None,
             in_trunk_model_id=in_trunk_model.id if in_trunk_model else None,
-            out_trunk_model_permissions=out_trunk_model_permissions or DEFAULT_OUT_MODEL_PERMISSIONS,
+            out_trunk_model_permissions=out_trunk_model_permissions or DEFAULT_OUT_TRUNK_MODEL_PERMISSIONS,
             tag=tag,
         )
         self.composite_traintuples.append(spec)
@@ -607,7 +611,7 @@ class AssetsFactory:
             tag=tag,
             compute_plan_id=compute_plan_id,
             rank=rank,
-            out_trunk_model_permissions=permissions or DEFAULT_PERMISSIONS,
+            out_trunk_model_permissions=permissions or DEFAULT_OUT_TRUNK_MODEL_PERMISSIONS,
         )
 
     def create_testtuple(self, objective=None, traintuple=None, tag=None, dataset=None, data_samples=None):
