@@ -296,7 +296,7 @@ class ComputePlanCompositeTraintupleSpec(_Spec):
     in_head_model_id: str = None
     in_trunk_model_id: str = None
     tag: str = None
-    out_trunk_model_permissions: Permissions
+    out_trunk_model_permissions: PrivatePermissions
 
     @property
     def id(self):

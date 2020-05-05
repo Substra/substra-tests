@@ -101,3 +101,70 @@ def test_permission_public_trunk(factory, client):
     composite_traintuple = sbt.assets.CompositeTraintuple.load(res).attach(client)
     assert composite_traintuple.out_trunk_model.permissions.process.public is False
     composite_traintuple.future().wait()
+
+
+@pytest.mark.parametrize('include_permissions_key', (True, False))
+@pytest.mark.parametrize('asset_name,asset_class', (
+    ('dataset', sbt.assets.Dataset),
+    ('objective', sbt.assets.Objective),
+    ('algo', sbt.assets.Algo),
+    ('composite_algo', sbt.assets.CompositeAlgo),
+    ('aggregate_algo', sbt.assets.AggregateAlgo),
+))
+def test_permission_defaults(factory, client, asset_name, asset_class, include_permissions_key):
+    create_method = getattr(factory, f'create_{asset_name}')
+    add_method = getattr(client._client, f'add_{asset_name}')
+
+    spec = create_method()
+    spec_dict = spec.dict()
+    if include_permissions_key:
+        spec_dict['permissions'] = None
+    else:
+        del spec_dict['permissions']
+    res = add_method(spec_dict)
+    asset = asset_class.load(res)
+    assert asset.permissions.process.public is False
+    assert asset.permissions.process.authorized_ids == [client.node_id]
+
+
+@pytest.mark.parametrize('include_permissions_key', (True, False))
+def test_out_trunk_permission_defaults(factory, client, default_dataset, include_permissions_key):
+    spec = factory.create_composite_algo()
+    algo = client.add_composite_algo(spec)
+
+    spec = factory.create_composite_traintuple(algo=algo,
+                                               dataset=default_dataset,
+                                               data_samples=default_dataset.train_data_sample_keys)
+    spec_dict = spec.dict()
+    if include_permissions_key:
+        spec_dict['out_trunk_model_permissions'] = None
+    else:
+        del spec_dict['out_trunk_model_permissions']
+    res = client._client.add_composite_traintuple(spec_dict)
+    composite_traintuple = sbt.assets.CompositeTraintuple.load(res)
+    assert composite_traintuple.out_trunk_model.permissions.process.public is False
+    assert composite_traintuple.out_trunk_model.permissions.process.authorized_ids == [client.node_id]
+
+
+@pytest.mark.parametrize('include_permissions_key', (True, False))
+def test_compute_plan_out_trunk_permission_defaults(factory, client, default_dataset, include_permissions_key):
+    spec = factory.create_composite_algo()
+    algo = client.add_composite_algo(spec)
+
+    spec = factory.create_compute_plan()
+    spec.add_composite_traintuple(composite_algo=algo,
+                                  dataset=default_dataset,
+                                  data_samples=default_dataset.train_data_sample_keys)
+
+    spec_dict = spec.dict()
+    if include_permissions_key:
+        spec_dict['composite_traintuples'][0]['out_trunk_model_permissions'] = None
+    else:
+        del spec_dict['composite_traintuples'][0]['out_trunk_model_permissions']
+
+    res = client._client.add_compute_plan(spec_dict)
+    compute_plan = sbt.assets.ComputePlan.load(res)
+
+    composite_traintuple = client.get_composite_traintuple(compute_plan.composite_traintuple_keys[0])
+    assert composite_traintuple.out_trunk_model.permissions.process.public is False
+    assert composite_traintuple.out_trunk_model.permissions.process.authorized_ids == [client.node_id]
