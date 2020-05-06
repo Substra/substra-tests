@@ -195,3 +195,7 @@ class Client:
         self._client.link_dataset_with_objective(dataset.key, objective.key)
         # XXX do not return anything as currently the chaincode simply returns the
         #     updated dataset key
+
+    def link_dataset_with_data_samples(self, dataset, data_samples):
+        data_sample_keys = [d.key for d in data_samples]
+        self._client.link_dataset_with_data_samples(dataset.key, data_sample_keys)
