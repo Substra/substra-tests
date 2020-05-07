@@ -140,6 +140,7 @@ def arg_parse():
     print(f'💃💃💃\n')
     print_args()
 
+
 def print_args():
     print(
         f'KEYS_DIR\t\t= {KEYS_DIR}\n'
@@ -149,6 +150,7 @@ def print_args():
         f'HLF_K8S_BRANCH\t\t= {HLF_K8S_BRANCH}\n'
         f'KANIKO_CACHE_TTL\t= {KANIKO_CACHE_TTL}\n'
     )
+
 
 def gcloud_login():
     print('# Log into Google Cloud')
@@ -434,7 +436,7 @@ def run_tests():
     try:
         call(f'kubectl --context {KUBE_CONTEXT} exec {substra_tests_pod} -n substra-tests -- make test')
         return True
-    except subprocess.CalledProcessError as e:
+    except subprocess.CalledProcessError:
         print('FATAL: `make test` completed with a non-zero exit code. Did some test(s) fail?')
         return False
 
@@ -458,7 +460,7 @@ def main():
 
     except Exception as e:
         print(f'FATAL: {e}')
-        is_success=False
+        is_success = False
 
     finally:
         print('\n# Perform final teardown')
@@ -467,6 +469,7 @@ def main():
         delete_cluster_async()
 
     sys.exit(0 if is_success else 1)
+
 
 if __name__ == '__main__':
     main()
