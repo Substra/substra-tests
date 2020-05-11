@@ -80,6 +80,27 @@ def test_add_data_sample(factory, client):
     client.add_data_sample(spec)
 
 
+def test_link_dataset_with_datasamples(factory, client):
+    # create data sample and link it to a dataset
+    spec = factory.create_dataset()
+    dataset_tmp = client.add_dataset(spec)
+
+    spec = factory.create_data_sample(datasets=[dataset_tmp])
+    data_sample = client.add_data_sample(spec)
+
+    # create a new dataset and link existing data sample to the new dataset
+    spec = factory.create_dataset()
+    dataset = client.add_dataset(spec)
+
+    dataset = client.get_dataset(dataset.key)
+    assert dataset.train_data_sample_keys == []
+
+    client.link_dataset_with_data_samples(dataset, [data_sample])
+
+    dataset = client.get_dataset(dataset.key)
+    assert dataset.train_data_sample_keys == [data_sample.key]
+
+
 @pytest.mark.skipif(not settings.HAS_SHARED_PATH, reason='requires a shared path')
 def test_add_data_sample_located_in_shared_path(factory, client, node_cfg):
     spec = factory.create_dataset()
