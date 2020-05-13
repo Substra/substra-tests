@@ -314,30 +314,3 @@ def test_permissions_denied_head_model_process(factory, client_1, client_2):
     )
     with pytest.raises(substra.exceptions.InvalidRequest):
         client_2.add_composite_traintuple(spec)
-
-
-def test_permission_public_trunk(factory, client):
-    spec = factory.create_dataset()
-    dataset = client.add_dataset(spec)
-
-    spec = factory.create_data_sample(
-        test_only=False,
-        datasets=[dataset],
-    )
-    data_sample = client.add_data_sample(spec)
-
-    spec = factory.create_composite_algo()
-    composite_algo = client.add_composite_algo(spec)
-
-    spec = factory.create_composite_traintuple(
-        algo=composite_algo,
-        dataset=dataset,
-        data_samples=[data_sample],
-    )
-    spec_dict = spec.dict()
-    spec_dict['out_trunk_model_permissions']['public'] = True
-
-    res = client._client.add_composite_traintuple(spec_dict)
-    composite_traintuple = assets.CompositeTraintuple.load(res).attach(client)
-    assert composite_traintuple.out_trunk_model.permissions.process.public is False
-    composite_traintuple.future().wait()
