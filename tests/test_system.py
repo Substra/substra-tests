@@ -69,3 +69,35 @@ def test_execution_retry_on_fail(fail_count, status, factory, client, default_da
     # - if it fails less than 2 times, it should be marked as "done"
     # - if it fails 2 times or more, it should be marked as "failed"
     assert traintuple.status == status
+
+
+def test_permission_public_trunk(factory, client):
+    """Makes sure that out trunk models cannot be made public.
+
+    This means forging a not-so-perfect request by adding an extra 'public' key to the
+    'out_trunk_model_permissions' dict. The expected behavior is for this key to be ignored.
+    """
+    spec = factory.create_dataset()
+    dataset = client.add_dataset(spec)
+
+    spec = factory.create_data_sample(
+        test_only=False,
+        datasets=[dataset],
+    )
+    data_sample = client.add_data_sample(spec)
+
+    spec = factory.create_composite_algo()
+    composite_algo = client.add_composite_algo(spec)
+
+    spec = factory.create_composite_traintuple(
+        algo=composite_algo,
+        dataset=dataset,
+        data_samples=[data_sample],
+    )
+    spec_dict = spec.dict()
+    spec_dict['out_trunk_model_permissions']['public'] = True
+
+    res = client._client.add_composite_traintuple(spec_dict)
+    composite_traintuple = sbt.assets.CompositeTraintuple.load(res).attach(client)
+    assert composite_traintuple.out_trunk_model.permissions.process.public is False
+    composite_traintuple.future().wait()
