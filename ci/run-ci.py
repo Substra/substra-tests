@@ -401,17 +401,6 @@ def patch_skaffold_file(config):
         f'chartPath: {os.path.join(SOURCE_DIR, config["name"],"charts/")}'
     )
 
-    if config['name'] == 'substra-backend':
-        # Default Domain
-        filedata = filedata.replace(
-            'defaultDomain: http://substra-backend.node-1.com',
-            'defaultDomain: http://backend-org-1-substra-backend-server.org-1.svc.cluster.local:8000'
-        )
-        filedata = filedata.replace(
-            'defaultDomain: http://substra-backend.node-2.com',
-            'defaultDomain: http://backend-org-2-substra-backend-server.org-2.svc.cluster.local:8000'
-        )
-
     with open(skaffold_file, 'w') as file:
         file.write(filedata)
 
