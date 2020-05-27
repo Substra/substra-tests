@@ -164,6 +164,7 @@ def test_add_objective(factory, client):
 def test_metadata(factory, client, asset_name):
     method_create = getattr(factory, f"create_{asset_name}")
     method_add = getattr(client, f"add_{asset_name}")
+    method_sdk_add = getattr(client._client, f"add_{asset_name}")
 
     # add an asset with metadata
     spec = method_create(metadata={"foo": "bar"})
@@ -183,13 +184,15 @@ def test_metadata(factory, client, asset_name):
 
     assert asset.metadata == {}
 
-    spec = method_create(metadata='foo')
-    asset = method_add(spec)
+    spec = method_create()
+    spec_dict = spec.dict()
+    spec_dict['metadata'] = 'foo'
 
-    assert asset.metadata == {}
+    with pytest.raises(substra.exceptions.InvalidRequest):
+        method_sdk_add(spec_dict)
 
     spec = method_create(metadata={'foo': {"bar": "foo"}})
-    with pytest.raises(ValueError):
+    with pytest.raises(substra.exceptions.InvalidRequest):
         method_add(spec)
 
     too_long = 'foo' * 40
@@ -257,7 +260,7 @@ def test_metadata_traintuple(factory, client, asset_name, algo_type, default_dat
         data_samples=default_dataset.train_data_sample_keys,
         metadata={'foo': {"bar": "foo"}}
     )
-    with pytest.raises(ValueError):
+    with pytest.raises(substra.exceptions.InvalidRequest):
         method_add(spec)
 
     too_long = 'foo' * 40
