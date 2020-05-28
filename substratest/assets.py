@@ -201,7 +201,7 @@ class Dataset(_Asset):
     name: str
     owner: str
     objective_key: str
-    metadata: typing.Dict[str, str] = None
+    metadata: typing.Dict[str, str]
     permissions: Permissions
     # the JSON data returned by list_dataset doesn't include the following keys at all
     # they are only included in the result of get_dataset
@@ -337,7 +337,7 @@ class Testtuple(_Asset, _FutureMixin):
     certified: bool
     rank: int
     tag: str
-    metadata: typing.Dict[str, str] = None
+    metadata: typing.Dict[str, str]
     log: str
 
 
@@ -350,7 +350,7 @@ class ComputePlan(_Asset, _ComputePlanFutureMixin):
     testtuple_keys: typing.List[str]
     id_to_key: typing.Dict[str, str]
     tag: str
-    metadata: typing.Dict[str, str] = None
+    metadata: typing.Dict[str, str]
 
     def __init__(self, *args, **kwargs):
         kwargs['traintuple_keys'] = kwargs.get('traintuple_keys') or []

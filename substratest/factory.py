@@ -370,7 +370,7 @@ class _BaseComputePlanSpec(_Spec, abc.ABC):
             worker=worker,
             in_models_ids=[t.id for t in in_models],
             tag=tag,
-            metadata=metadata or {}
+            metadata=metadata
         )
         self.aggregatetuples.append(spec)
         return spec
@@ -396,7 +396,7 @@ class _BaseComputePlanSpec(_Spec, abc.ABC):
             in_trunk_model_id=in_trunk_model.id if in_trunk_model else None,
             out_trunk_model_permissions=out_trunk_model_permissions or DEFAULT_OUT_TRUNK_MODEL_PERMISSIONS,
             tag=tag,
-            metadata=metadata or {}
+            metadata=metadata
         )
         self.composite_traintuples.append(spec)
         return spec
@@ -406,7 +406,7 @@ class _BaseComputePlanSpec(_Spec, abc.ABC):
             objective_key=objective.key,
             traintuple_id=traintuple_spec.id,
             tag=tag or '',
-            metadata=metadata or {}
+            metadata=metadata
         )
         self.testtuples.append(spec)
         return spec
