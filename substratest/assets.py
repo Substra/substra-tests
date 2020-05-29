@@ -350,7 +350,6 @@ class ComputePlan(_Asset, _ComputePlanFutureMixin):
     testtuple_keys: typing.List[str]
     id_to_key: typing.Dict[str, str]
     tag: str
-    metadata: typing.Dict[str, str]
 
     def __init__(self, *args, **kwargs):
         kwargs['traintuple_keys'] = kwargs.get('traintuple_keys') or []

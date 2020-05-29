@@ -277,7 +277,6 @@ class ComputePlanTraintupleSpec(_Spec):
     traintuple_id: str
     in_models_ids: typing.List[str] = None
     tag: str = None
-    metadata: typing.Dict[str, str] = None
 
     @property
     def id(self):
@@ -290,7 +289,6 @@ class ComputePlanAggregatetupleSpec(_Spec):
     worker: str
     in_models_ids: typing.List[str] = None
     tag: str = None
-    metadata: typing.Dict[str, str] = None
 
     @property
     def id(self):
@@ -305,7 +303,6 @@ class ComputePlanCompositeTraintupleSpec(_Spec):
     in_head_model_id: str = None
     in_trunk_model_id: str = None
     tag: str = None
-    metadata: typing.Dict[str, str] = None
     out_trunk_model_permissions: Permissions
 
     @property
@@ -317,7 +314,6 @@ class ComputePlanTesttupleSpec(_Spec):
     objective_key: str
     traintuple_id: str
     tag: str
-    metadata: typing.Dict[str, str] = None
 
 
 def _get_key(obj, field='key'):
