@@ -299,7 +299,7 @@ class Aggregatetuple(_Asset, _FutureMixin):
     tag: str
     metadata: typing.Dict[str, str]
     log: str
-    in_models: typing.List[InModel]
+    in_models: typing.List[InModel] = None
     out_model: typing.Optional[OutModel]
 
 
