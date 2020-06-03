@@ -20,9 +20,11 @@ def test_tuples_execution_on_same_node(factory, client, default_dataset, default
         algo=algo,
         dataset=default_dataset,
         data_samples=default_dataset.train_data_sample_keys,
+        metadata={"foo": "bar"}
     )
     traintuple = client.add_traintuple(spec).future().wait()
     assert traintuple.status == assets.Status.done
+    assert traintuple.metadata == {"foo": "bar"}
     assert traintuple.out_model is not None
 
     # check we cannot add twice the same traintuple
@@ -41,9 +43,11 @@ def test_tuples_execution_on_same_node(factory, client, default_dataset, default
         dataset=default_dataset,
         data_samples=default_dataset.train_data_sample_keys,
         traintuples=[traintuple],
+        metadata=None
     )
     traintuple = client.add_traintuple(spec).future().wait()
     assert traintuple.status == assets.Status.done
+    assert traintuple.metadata == {}
     assert len(traintuple.in_models) == 1
 
 

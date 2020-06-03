@@ -8,9 +8,6 @@ import substratest as sbt
 from . import settings
 
 
-too_long = 'foo' * 40
-
-
 def test_connection_to_nodes(clients):
     """Connect to each substra nodes using the client."""
     for client in clients:
@@ -161,12 +158,12 @@ def test_add_objective(factory, client):
     (None, {}),
     ({}, {}),
 ])
-def test_metadata(factory, client, asset_name, metadata, metadata_output):
-    method_create = getattr(factory, f"create_{asset_name}")
-    method_add = getattr(client, f"add_{asset_name}")
+def test_asset_with_metadata(factory, client, asset_name, metadata, metadata_output):
+    create_spec = getattr(factory, f"create_{asset_name}")
+    add_asset = getattr(client, f"add_{asset_name}")
 
-    spec = method_create(metadata=metadata)
-    asset = method_add(spec)
+    spec = create_spec(metadata=metadata)
+    asset = add_asset(spec)
 
     assert asset.metadata == metadata_output
 
@@ -179,21 +176,17 @@ def test_metadata(factory, client, asset_name, metadata, metadata_output):
     'composite_algo',
 ])
 @pytest.mark.parametrize('metadata', [
-    'foo',
-    {'foo': {"bar": "foo"}},
-    {too_long: "bar"},
-    {"foo": too_long},
+    {'foo' * 40: "bar"},
+    {"foo": 'bar' * 40},
 ])
-def test_invalid_metadata(factory, client, asset_name, metadata):
-    method_create = getattr(factory, f"create_{asset_name}")
-    method_sdk_add = getattr(client._client, f"add_{asset_name}")
+def test_asset_with_invalid_metadata(factory, client, asset_name, metadata):
+    create_spec = getattr(factory, f"create_{asset_name}")
+    add_asset = getattr(client, f"add_{asset_name}")
 
-    spec = method_create()
-    spec_dict = spec.dict()
-    spec_dict['metadata'] = metadata
+    spec = create_spec(metadata=metadata)
 
     with pytest.raises(substra.exceptions.InvalidRequest):
-        method_sdk_add(spec_dict)
+        add_asset(spec)
 
 
 @pytest.mark.parametrize('asset_name,algo_type', [
@@ -205,22 +198,22 @@ def test_invalid_metadata(factory, client, asset_name, metadata):
     (None, {}),
     ({}, {}),
 ])
-def test_metadata_traintuple(factory, client, asset_name, algo_type, default_dataset, metadata, metadata_output):
-    method_create = getattr(factory, f"create_{asset_name}")
-    method_add = getattr(client, f"add_{asset_name}")
+def test_traintuple_with_metadata(factory, client, asset_name, algo_type, default_dataset, metadata, metadata_output):
+    create_spec = getattr(factory, f"create_{asset_name}")
+    add_asset = getattr(client, f"add_{asset_name}")
 
     algo_create = getattr(factory, f"create_{algo_type}")
     algo_add = getattr(client, f"add_{algo_type}")
 
     algo_spec = algo_create()
     algo = algo_add(algo_spec)
-    spec = method_create(
+    spec = create_spec(
         algo=algo,
         dataset=default_dataset,
         data_samples=default_dataset.train_data_sample_keys,
         metadata=metadata
     )
-    asset = method_add(spec)
+    asset = add_asset(spec)
     assert asset.metadata == metadata_output
 
 
@@ -229,14 +222,12 @@ def test_metadata_traintuple(factory, client, asset_name, algo_type, default_dat
     ('composite_traintuple', 'composite_algo'),
 ])
 @pytest.mark.parametrize('metadata', [
-    'foo',
-    {'foo': {"bar": "foo"}},
-    {too_long: "bar"},
-    {"foo": too_long},
+    {'foo' * 40: "bar"},
+    {"foo": 'bar' * 40},
 ])
-def test_metadata_invalid_traintuple(factory, client, asset_name, algo_type, default_dataset, metadata):
-    method_create = getattr(factory, f"create_{asset_name}")
-    method_sdk_add = getattr(client._client, f"add_{asset_name}")
+def test_traintuple_with_invalid_metadata(factory, client, asset_name, algo_type, default_dataset, metadata):
+    create_spec = getattr(factory, f"create_{asset_name}")
+    add_asset = getattr(client, f"add_{asset_name}")
 
     algo_create = getattr(factory, f"create_{algo_type}")
     algo_add = getattr(client, f"add_{algo_type}")
@@ -244,57 +235,15 @@ def test_metadata_invalid_traintuple(factory, client, asset_name, algo_type, def
     algo_spec = algo_create()
     algo = algo_add(algo_spec)
 
-    spec = method_create(
+    spec = create_spec(
         algo=algo,
         dataset=default_dataset,
         data_samples=default_dataset.train_data_sample_keys,
-    )
-    spec_dict = spec.dict()
-    spec_dict['metadata'] = metadata
-
-    with pytest.raises(substra.exceptions.InvalidRequest):
-        method_sdk_add(spec_dict)
-
-
-@pytest.mark.parametrize('metadata,metadata_output', [
-    ({'foo': 'bar'}, {'foo': 'bar'}),
-    (None, {}),
-    ({}, {}),
-])
-def test_metadata_aggregatetuple(factory, client, default_dataset, metadata, metadata_output):
-    aggregate_algo_spec = factory.create_aggregate_algo()
-    aggregate_algo = client.add_aggregate_algo(aggregate_algo_spec)
-    spec = factory.create_aggregatetuple(
-        algo=aggregate_algo,
-        worker=client.node_id,
-        traintuples=[],
         metadata=metadata
     )
-    asset = client.add_aggregatetuple(spec)
-
-    assert asset.metadata == metadata_output
-
-
-@pytest.mark.parametrize('metadata', [
-    'foo',
-    {'foo': {"bar": "foo"}},
-    {too_long: "bar"},
-    {"foo": too_long},
-])
-def test_metadata_invalid_aggregatetuple(factory, client, default_dataset, metadata):
-    aggregate_algo_spec = factory.create_aggregate_algo()
-    aggregate_algo = client.add_aggregate_algo(aggregate_algo_spec)
-
-    spec = factory.create_aggregatetuple(
-        algo=aggregate_algo,
-        worker=client.node_id,
-        traintuples=[],
-    )
-    spec_dict = spec.dict()
-    spec_dict['metadata'] = metadata
 
     with pytest.raises(substra.exceptions.InvalidRequest):
-        client._client.add_aggregatetuple(spec_dict)
+        add_asset(spec)
 
 
 def test_add_algo(factory, client):
