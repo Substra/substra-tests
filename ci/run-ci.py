@@ -54,8 +54,8 @@ CLUSTER_ZONE = 'europe-west4-a'
 SERVICE_ACCOUNT = 'substra-tests@substra-208412.iam.gserviceaccount.com'
 KEY_SERVICE_ACCOUNT = 'substra-208412-3be0df12d87a.json'
 
-SUBSTRA_TESTS_BRANCH = 'master'
-SUBSTRA_BACKEND_BRANCH = 'master'
+SUBSTRA_TESTS_BRANCH = 'k8s-tasks'
+SUBSTRA_BACKEND_BRANCH = 'k8s-tasks'
 HLF_K8S_BRANCH = 'master'
 
 DIR = os.path.dirname(os.path.realpath(__file__))
@@ -174,6 +174,7 @@ def create_cluster_async():
           f'--num-nodes=1 '\
           f'--zone={CLUSTER_ZONE} '\
           f'--project={CLUSTER_PROJECT} '\
+          f'--enable-network-policy '\
           f'--async'
     call(cmd)
 
@@ -183,6 +184,7 @@ def delete_cluster_async():
     print('# Delete cluster')
     cmd = f'yes | gcloud container clusters delete {CLUSTER_NAME} --zone ' \
           f'{CLUSTER_ZONE} --project {CLUSTER_PROJECT} --async --quiet'
+
     call(cmd)
 
 
