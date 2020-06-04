@@ -189,63 +189,6 @@ def test_asset_with_invalid_metadata(factory, client, asset_name, metadata):
         add_asset(spec)
 
 
-@pytest.mark.parametrize('asset_name,algo_type', [
-    ('traintuple', 'algo'),
-    ('composite_traintuple', 'composite_algo'),
-])
-@pytest.mark.parametrize('metadata,metadata_output', [
-    ({'foo': 'bar'}, {'foo': 'bar'}),
-    (None, {}),
-    ({}, {}),
-])
-def test_traintuple_with_metadata(factory, client, asset_name, algo_type, default_dataset, metadata, metadata_output):
-    create_spec = getattr(factory, f"create_{asset_name}")
-    add_asset = getattr(client, f"add_{asset_name}")
-
-    algo_create = getattr(factory, f"create_{algo_type}")
-    algo_add = getattr(client, f"add_{algo_type}")
-
-    algo_spec = algo_create()
-    algo = algo_add(algo_spec)
-    spec = create_spec(
-        algo=algo,
-        dataset=default_dataset,
-        data_samples=default_dataset.train_data_sample_keys,
-        metadata=metadata
-    )
-    asset = add_asset(spec)
-    assert asset.metadata == metadata_output
-
-
-@pytest.mark.parametrize('asset_name, algo_type', [
-    ('traintuple', 'algo'),
-    ('composite_traintuple', 'composite_algo'),
-])
-@pytest.mark.parametrize('metadata', [
-    {'foo' * 40: "bar"},
-    {"foo": 'bar' * 40},
-])
-def test_traintuple_with_invalid_metadata(factory, client, asset_name, algo_type, default_dataset, metadata):
-    create_spec = getattr(factory, f"create_{asset_name}")
-    add_asset = getattr(client, f"add_{asset_name}")
-
-    algo_create = getattr(factory, f"create_{algo_type}")
-    algo_add = getattr(client, f"add_{algo_type}")
-
-    algo_spec = algo_create()
-    algo = algo_add(algo_spec)
-
-    spec = create_spec(
-        algo=algo,
-        dataset=default_dataset,
-        data_samples=default_dataset.train_data_sample_keys,
-        metadata=metadata
-    )
-
-    with pytest.raises(substra.exceptions.InvalidRequest):
-        add_asset(spec)
-
-
 def test_add_algo(factory, client):
     spec = factory.create_algo()
     algo = client.add_algo(spec)

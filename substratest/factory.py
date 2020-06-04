@@ -340,7 +340,7 @@ class _BaseComputePlanSpec(_Spec, abc.ABC):
     aggregatetuples: typing.List[ComputePlanAggregatetupleSpec]
     testtuples: typing.List[ComputePlanTesttupleSpec]
 
-    def add_traintuple(self, algo, dataset, data_samples, in_models=None, tag='', metadata=None):
+    def add_traintuple(self, algo, dataset, data_samples, in_models=None, tag=''):
         in_models = in_models or []
         spec = ComputePlanTraintupleSpec(
             algo_key=algo.key,
@@ -348,13 +348,12 @@ class _BaseComputePlanSpec(_Spec, abc.ABC):
             data_manager_key=dataset.key,
             train_data_sample_keys=_get_keys(data_samples),
             in_models_ids=[t.id for t in in_models],
-            tag=tag,
-            metadata=metadata,
+            tag=tag
         )
         self.traintuples.append(spec)
         return spec
 
-    def add_aggregatetuple(self, aggregate_algo, worker, in_models=None, tag='', metadata=None):
+    def add_aggregatetuple(self, aggregate_algo, worker, in_models=None, tag=''):
         in_models = in_models or []
 
         for t in in_models:
@@ -365,15 +364,14 @@ class _BaseComputePlanSpec(_Spec, abc.ABC):
             algo_key=aggregate_algo.key,
             worker=worker,
             in_models_ids=[t.id for t in in_models],
-            tag=tag,
-            metadata=metadata
+            tag=tag
         )
         self.aggregatetuples.append(spec)
         return spec
 
     def add_composite_traintuple(self, composite_algo, dataset=None, data_samples=None,
                                  in_head_model=None, in_trunk_model=None,
-                                 out_trunk_model_permissions=None, tag='', metadata=None):
+                                 out_trunk_model_permissions=None, tag=''):
         data_samples = data_samples or []
 
         if in_head_model and in_trunk_model:
@@ -390,19 +388,18 @@ class _BaseComputePlanSpec(_Spec, abc.ABC):
             train_data_sample_keys=_get_keys(data_samples),
             in_head_model_id=in_head_model.id if in_head_model else None,
             in_trunk_model_id=in_trunk_model.id if in_trunk_model else None,
-            out_trunk_model_permissions=out_trunk_model_permissions or DEFAULT_OUT_TRUNK_MODEL_PERMISSIONS,
+            out_trunk_model_permissions=out_trunk_model_permissions or DEFAULT_OUT_MODEL_PERMISSIONS,
             tag=tag,
             metadata=metadata
         )
         self.composite_traintuples.append(spec)
         return spec
 
-    def add_testtuple(self, objective, traintuple_spec, tag=None, metadata=None):
+    def add_testtuple(self, objective, traintuple_spec, tag=None):
         spec = ComputePlanTesttupleSpec(
             objective_key=objective.key,
             traintuple_id=traintuple_spec.id,
-            tag=tag or '',
-            metadata=metadata
+            tag=tag or ''
         )
         self.testtuples.append(spec)
         return spec
