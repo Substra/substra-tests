@@ -5,6 +5,7 @@ python:
 branches:
   only:
     - master
+    - fix-helm-order
 
 git:
   depth: 1
