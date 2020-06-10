@@ -214,15 +214,11 @@ def wait_for_cluster():
 
 def setup_helm():
     print('\n# Setup Helm')
-    call(f'helm repo add bitnami https://charts.bitnami.com/bitnami')
-
-
-def setup_tiller():
-    print('\n# Setup Tiller')
     call(f'kubectl --context {KUBE_CONTEXT} create serviceaccount --namespace kube-system tiller')
     call(f'kubectl --context {KUBE_CONTEXT} create clusterrolebinding tiller-cluster-rule ' +
          f'--clusterrole=cluster-admin --serviceaccount=kube-system:tiller')
     call(f'helm --kube-context {KUBE_CONTEXT} init --service-account tiller --upgrade --wait')
+    call(f'helm repo add bitnami https://charts.bitnami.com/bitnami')
 
 
 def clone_repos():
@@ -447,7 +443,6 @@ def main():
         wait_for_cluster()
         get_kube_context()
         setup_helm()
-        setup_tiller()
         deploy_all(configs)
         is_success = run_tests()
         print("Completed test run:")
