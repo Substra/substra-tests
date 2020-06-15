@@ -388,9 +388,8 @@ class _BaseComputePlanSpec(_Spec, abc.ABC):
             train_data_sample_keys=_get_keys(data_samples),
             in_head_model_id=in_head_model.id if in_head_model else None,
             in_trunk_model_id=in_trunk_model.id if in_trunk_model else None,
-            out_trunk_model_permissions=out_trunk_model_permissions or DEFAULT_OUT_MODEL_PERMISSIONS,
-            tag=tag,
-            metadata=metadata
+            out_trunk_model_permissions=out_trunk_model_permissions or DEFAULT_OUT_TRUNK_MODEL_PERMISSIONS,
+            tag=tag
         )
         self.composite_traintuples.append(spec)
         return spec
