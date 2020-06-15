@@ -349,6 +349,7 @@ class ComputePlan(_Asset, _ComputePlanFutureMixin):
     aggregatetuple_keys: typing.List[str]
     testtuple_keys: typing.List[str]
     id_to_key: typing.Dict[str, str]
+    metadata: typing.Dict[str, str]
     tag: str
 
     def __init__(self, *args, **kwargs):

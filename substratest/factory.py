@@ -406,6 +406,7 @@ class _BaseComputePlanSpec(_Spec, abc.ABC):
 
 class ComputePlanSpec(_BaseComputePlanSpec):
     tag: str
+    metadata: dict
     clean_models: bool
 
 
@@ -641,13 +642,14 @@ class AssetsFactory:
             metadata=metadata,
         )
 
-    def create_compute_plan(self, tag='', clean_models=False):
+    def create_compute_plan(self, tag='', clean_models=False, metadata=None):
         return ComputePlanSpec(
             traintuples=[],
             composite_traintuples=[],
             aggregatetuples=[],
             testtuples=[],
             tag=tag,
+            metadata=metadata,
             clean_models=clean_models
         )
 

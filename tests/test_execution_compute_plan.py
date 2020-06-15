@@ -18,18 +18,23 @@ def test_compute_plan(factory, client_1, client_2, default_dataset_1, default_da
     algo_2 = client_2.add_algo(spec)
 
     # create compute plan
-    cp_spec = factory.create_compute_plan(tag='foo')
+    cp_spec = factory.create_compute_plan(
+        tag='foo',
+        metadata={"foo": "bar"}
+    )
 
     traintuple_spec_1 = cp_spec.add_traintuple(
         algo=algo_2,
         dataset=default_dataset_1,
         data_samples=default_dataset_1.train_data_sample_keys,
+        metadata={"foo": "bar"}
     )
 
     traintuple_spec_2 = cp_spec.add_traintuple(
         algo=algo_2,
         dataset=default_dataset_2,
         data_samples=default_dataset_2.train_data_sample_keys,
+        metadata=None
     )
 
     traintuple_spec_3 = cp_spec.add_traintuple(
@@ -50,6 +55,7 @@ def test_compute_plan(factory, client_1, client_2, default_dataset_1, default_da
 
     cp = cp_added.future().wait()
     assert cp.tag == 'foo'
+    assert cp.metadata == {"foo": "bar"}
 
     traintuples = cp.list_traintuple()
     assert len(traintuples) == 3
@@ -69,6 +75,10 @@ def test_compute_plan(factory, client_1, client_2, default_dataset_1, default_da
         assert t.status == assets.Status.done
 
     testtuple = testtuples[0]
+
+    # check tuples metadata
+    assert traintuple_1.metadata == {"foo": "bar"}
+    assert traintuple_2.metadata == {}
 
     # check tuples rank
     assert traintuple_1.rank == 0
