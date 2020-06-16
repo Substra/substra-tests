@@ -406,7 +406,7 @@ class _BaseComputePlanSpec(_Spec, abc.ABC):
 
 class ComputePlanSpec(_BaseComputePlanSpec):
     tag: str
-    metadata: dict
+    metadata: typing.Dict[str, str] = None
     clean_models: bool
 
 
