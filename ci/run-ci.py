@@ -55,7 +55,7 @@ SERVICE_ACCOUNT = 'substra-tests@substra-208412.iam.gserviceaccount.com'
 KEY_SERVICE_ACCOUNT = 'substra-208412-3be0df12d87a.json'
 
 SUBSTRA_TESTS_BRANCH = 'k8s-tasks'
-SUBSTRA_BACKEND_BRANCH = 'k8s-tasks'
+SUBSTRA_BACKEND_BRANCH = 'melloddy'
 HLF_K8S_BRANCH = 'master'
 
 DIR = os.path.dirname(os.path.realpath(__file__))
