@@ -404,6 +404,11 @@ def patch_skaffold_file(config):
         f'chartPath: {os.path.join(SOURCE_DIR, config["name"],"charts/")}'
     )
 
+    filedata = filedata.replace(
+        'type: makisu',
+        'type: dind'
+    )
+
     with open(skaffold_file, 'w') as file:
         file.write(filedata)
 
