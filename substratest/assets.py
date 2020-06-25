@@ -201,6 +201,7 @@ class Dataset(_Asset):
     name: str
     owner: str
     objective_key: str
+    metadata: typing.Dict[str, str]
     permissions: Permissions
     # the JSON data returned by list_dataset doesn't include the following keys at all
     # they are only included in the result of get_dataset
@@ -212,6 +213,7 @@ class _Algo(_Asset):
     key: str
     name: str
     owner: str
+    metadata: typing.Dict[str, str]
     permissions: Permissions
 
 
@@ -231,6 +233,7 @@ class Objective(_Asset):
     key: str
     name: str
     owner: str
+    metadata: typing.Dict[str, str]
     permissions: Permissions
     test_dataset: typing.Optional[ObjectiveDataset]
 
@@ -279,6 +282,7 @@ class Traintuple(_Asset, _FutureMixin):
     compute_plan_id: str
     rank: int
     tag: str
+    metadata: typing.Dict[str, str]
     log: str
     in_models: typing.Optional[typing.List[InModel]]
     out_model: typing.Optional[OutModel]
@@ -293,8 +297,9 @@ class Aggregatetuple(_Asset, _FutureMixin):
     compute_plan_id: str
     rank: int
     tag: str
+    metadata: typing.Dict[str, str]
     log: str
-    in_models: typing.List[InModel]
+    in_models: typing.List[InModel] = None
     out_model: typing.Optional[OutModel]
 
 
@@ -316,6 +321,7 @@ class CompositeTraintuple(_Asset, _FutureMixin):
     compute_plan_id: str
     rank: int
     tag: str
+    metadata: typing.Dict[str, str]
     log: str
     in_head_model: typing.Optional[InModel]
     in_trunk_model: typing.Optional[InModel]
@@ -331,6 +337,7 @@ class Testtuple(_Asset, _FutureMixin):
     certified: bool
     rank: int
     tag: str
+    metadata: typing.Dict[str, str]
     log: str
 
 

@@ -183,6 +183,7 @@ class DatasetSpec(_Spec):
     data_opener: str
     type: str
     description: str
+    metadata: typing.Dict[str, str] = None
     permissions: Permissions = None
     objective_key: str = None
 
@@ -202,6 +203,7 @@ class ObjectiveSpec(_Spec):
     metrics: str
     test_data_sample_keys: typing.List[str]
     test_data_manager_key: str = None
+    metadata: typing.Dict[str, str] = None
     permissions: Permissions = None
 
 
@@ -209,6 +211,7 @@ class _AlgoSpec(_Spec):
     name: str
     description: str
     file: str
+    metadata: typing.Dict[str, str] = None
     permissions: Permissions = None
 
 
@@ -230,6 +233,7 @@ class TraintupleSpec(_Spec):
     train_data_sample_keys: typing.List[str]
     in_models_keys: typing.List[str] = None
     tag: str = None
+    metadata: typing.Dict[str, str] = None
     compute_plan_id: str = None
     rank: int = None
 
@@ -239,6 +243,7 @@ class AggregatetupleSpec(_Spec):
     worker: str
     in_models_keys: typing.List[str]
     tag: str = None
+    metadata: typing.Dict[str, str] = None
     compute_plan_id: str = None
     rank: int = None
 
@@ -250,6 +255,7 @@ class CompositeTraintupleSpec(_Spec):
     in_head_model_key: str = None
     in_trunk_model_key: str = None
     tag: str = None
+    metadata: typing.Dict[str, str] = None
     compute_plan_id: str = None
     out_trunk_model_permissions: PrivatePermissions
     rank: int = None
@@ -261,6 +267,7 @@ class TesttupleSpec(_Spec):
     tag: str = None
     data_manager_key: str = None
     test_data_sample_keys: typing.List[str] = None
+    metadata: typing.Dict[str, str] = None
 
 
 class ComputePlanTraintupleSpec(_Spec):
@@ -341,7 +348,7 @@ class _BaseComputePlanSpec(_Spec, abc.ABC):
             data_manager_key=dataset.key,
             train_data_sample_keys=_get_keys(data_samples),
             in_models_ids=[t.id for t in in_models],
-            tag=tag,
+            tag=tag
         )
         self.traintuples.append(spec)
         return spec
@@ -357,7 +364,7 @@ class _BaseComputePlanSpec(_Spec, abc.ABC):
             algo_key=aggregate_algo.key,
             worker=worker,
             in_models_ids=[t.id for t in in_models],
-            tag=tag,
+            tag=tag
         )
         self.aggregatetuples.append(spec)
         return spec
@@ -382,7 +389,7 @@ class _BaseComputePlanSpec(_Spec, abc.ABC):
             in_head_model_id=in_head_model.id if in_head_model else None,
             in_trunk_model_id=in_trunk_model.id if in_trunk_model else None,
             out_trunk_model_permissions=out_trunk_model_permissions or DEFAULT_OUT_TRUNK_MODEL_PERMISSIONS,
-            tag=tag,
+            tag=tag
         )
         self.composite_traintuples.append(spec)
         return spec
@@ -391,7 +398,7 @@ class _BaseComputePlanSpec(_Spec, abc.ABC):
         spec = ComputePlanTesttupleSpec(
             objective_key=objective.key,
             traintuple_id=traintuple_spec.id,
-            tag=tag or '',
+            tag=tag or ''
         )
         self.testtuples.append(spec)
         return spec
@@ -444,7 +451,7 @@ class AssetsFactory:
             data_manager_keys=[d.key for d in datasets],
         )
 
-    def create_dataset(self, objective=None, permissions=None):
+    def create_dataset(self, objective=None, permissions=None, metadata=None):
         rdm = random.random()
         idx = self._dataset_counter.inc()
         tmpdir = self._workdir / f'dataset-{idx}'
@@ -465,12 +472,13 @@ class AssetsFactory:
             name=name,
             data_opener=str(opener_path),
             type='Test',
+            metadata=metadata,
             description=str(description_path),
             objective_key=objective.key if objective else None,
             permissions=permissions or DEFAULT_PERMISSIONS,
         )
 
-    def create_objective(self, dataset=None, data_samples=None, permissions=None):
+    def create_objective(self, dataset=None, data_samples=None, permissions=None, metadata=None):
         rdm = random.random()
         idx = self._objective_counter.inc()
         tmpdir = self._workdir / f'objective-{idx}'
@@ -497,12 +505,13 @@ class AssetsFactory:
             description=str(description_path),
             metrics_name='test metrics',
             metrics=str(metrics_zip),
+            metadata=metadata,
             permissions=permissions or DEFAULT_PERMISSIONS,
             test_data_sample_keys=_get_keys(data_samples),
             test_data_manager_key=dataset.key if dataset else None,
         )
 
-    def _create_algo(self, py_script, permissions=None):
+    def _create_algo(self, py_script, permissions=None, metadata=None):
         rdm = random.random()
         idx = self._algo_counter.inc()
         tmpdir = self._workdir / f'algo-{idx}'
@@ -527,29 +536,33 @@ class AssetsFactory:
             description=str(description_path),
             file=str(algo_zip),
             permissions=permissions or DEFAULT_PERMISSIONS,
+            metadata=metadata,
         )
 
-    def create_algo(self, py_script=None, permissions=None):
+    def create_algo(self, py_script=None, permissions=None, metadata=None):
         return self._create_algo(
             py_script or DEFAULT_ALGO_SCRIPT,
             permissions=permissions,
+            metadata=metadata,
         )
 
-    def create_aggregate_algo(self, py_script=None, permissions=None):
+    def create_aggregate_algo(self, py_script=None, permissions=None, metadata=None):
         return self._create_algo(
             py_script or DEFAULT_AGGREGATE_ALGO_SCRIPT,
             permissions=permissions,
+            metadata=metadata,
         )
 
-    def create_composite_algo(self, py_script=None, permissions=None):
+    def create_composite_algo(self, py_script=None, permissions=None, metadata=None):
         return self._create_algo(
             py_script or DEFAULT_COMPOSITE_ALGO_SCRIPT,
             permissions=permissions,
+            metadata=metadata,
         )
 
     def create_traintuple(self, algo=None, dataset=None,
                           data_samples=None, traintuples=None, tag=None,
-                          compute_plan_id=None, rank=None):
+                          compute_plan_id=None, rank=None, metadata=None):
         data_samples = data_samples or []
         traintuples = traintuples or []
 
@@ -562,13 +575,14 @@ class AssetsFactory:
             train_data_sample_keys=_get_keys(data_samples),
             in_models_keys=[t.key for t in traintuples],
             tag=tag,
+            metadata=metadata,
             compute_plan_id=compute_plan_id,
             rank=rank,
         )
 
     def create_aggregatetuple(self, algo=None, worker=None,
                               traintuples=None, tag=None, compute_plan_id=None,
-                              rank=None):
+                              rank=None, metadata=None):
         traintuples = traintuples or []
 
         for t in traintuples:
@@ -579,6 +593,7 @@ class AssetsFactory:
             worker=worker,
             in_models_keys=[t.key for t in traintuples],
             tag=tag,
+            metadata=metadata,
             compute_plan_id=compute_plan_id,
             rank=rank,
         )
@@ -587,7 +602,7 @@ class AssetsFactory:
                                     data_samples=None, head_traintuple=None,
                                     trunk_traintuple=None, tag=None,
                                     compute_plan_id=None, rank=None,
-                                    permissions=None):
+                                    permissions=None, metadata=None):
         data_samples = data_samples or []
 
         if head_traintuple and trunk_traintuple:
@@ -609,18 +624,21 @@ class AssetsFactory:
             in_head_model_key=in_head_model_key,
             in_trunk_model_key=in_trunk_model_key,
             tag=tag,
+            metadata=metadata,
             compute_plan_id=compute_plan_id,
             rank=rank,
             out_trunk_model_permissions=permissions or DEFAULT_OUT_TRUNK_MODEL_PERMISSIONS,
         )
 
-    def create_testtuple(self, objective=None, traintuple=None, tag=None, dataset=None, data_samples=None):
+    def create_testtuple(self, objective=None, traintuple=None, tag=None, dataset=None, data_samples=None,
+                         metadata=None):
         return TesttupleSpec(
             objective_key=objective.key if objective else None,
             traintuple_key=traintuple.key if traintuple else None,
             data_manager_key=dataset.key if dataset else None,
             test_data_sample_keys=_get_keys(data_samples),
             tag=tag,
+            metadata=metadata,
         )
 
     def create_compute_plan(self, tag='', clean_models=False):

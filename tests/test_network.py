@@ -17,6 +17,7 @@ def test_connection_to_nodes(clients):
 def test_add_dataset(factory, client):
     spec = factory.create_dataset()
     dataset = client.add_dataset(spec)
+    assert dataset.metadata == {}
 
     dataset_copy = client.get_dataset(dataset.key)
     assert dataset == dataset_copy
@@ -143,6 +144,49 @@ def test_add_objective(factory, client):
     spec = factory.create_dataset(objective=objective)
     dataset = client.add_dataset(spec)
     assert dataset.objective_key == objective.key
+
+
+@pytest.mark.parametrize('asset_name', [
+    'dataset',
+    'objective',
+    'algo',
+    'aggregate_algo',
+    'composite_algo',
+])
+@pytest.mark.parametrize('metadata,metadata_output', [
+    ({'foo': 'bar'}, {'foo': 'bar'}),
+    (None, {}),
+    ({}, {}),
+])
+def test_asset_with_metadata(factory, client, asset_name, metadata, metadata_output):
+    create_spec = getattr(factory, f"create_{asset_name}")
+    add_asset = getattr(client, f"add_{asset_name}")
+
+    spec = create_spec(metadata=metadata)
+    asset = add_asset(spec)
+
+    assert asset.metadata == metadata_output
+
+
+@pytest.mark.parametrize('asset_name', [
+    'dataset',
+    'objective',
+    'algo',
+    'aggregate_algo',
+    'composite_algo',
+])
+@pytest.mark.parametrize('metadata', [
+    {'foo' * 40: "bar"},
+    {"foo": 'bar' * 40},
+])
+def test_asset_with_invalid_metadata(factory, client, asset_name, metadata):
+    create_spec = getattr(factory, f"create_{asset_name}")
+    add_asset = getattr(client, f"add_{asset_name}")
+
+    spec = create_spec(metadata=metadata)
+
+    with pytest.raises(substra.exceptions.InvalidRequest):
+        add_asset(spec)
 
 
 def test_add_algo(factory, client):
