@@ -54,9 +54,10 @@ CLUSTER_ZONE = 'europe-west4-a'
 SERVICE_ACCOUNT = 'substra-tests@substra-208412.iam.gserviceaccount.com'
 KEY_SERVICE_ACCOUNT = 'substra-208412-3be0df12d87a.json'
 
-SUBSTRA_TESTS_BRANCH = 'k8s-tasks'
-SUBSTRA_BACKEND_BRANCH = 'melloddy'
-HLF_K8S_BRANCH = 'master'
+SUBSTRA_TESTS_BRANCH = 'fix-concurrency'
+SUBSTRA_GIT_REF = 'no_more_pwd'
+SUBSTRA_BACKEND_BRANCH = 'fix-concurrency'
+HLF_K8S_BRANCH = 'fix-concurrency'
 
 DIR = os.path.dirname(os.path.realpath(__file__))
 CHARTS_DIR = os.path.realpath(os.path.join(DIR, '../charts/'))
@@ -105,6 +106,7 @@ def arg_parse():
     global KEYS_DIR
     global CLUSTER_NAME
     global SUBSTRA_TESTS_BRANCH
+    global SUBSTRA_GIT_REF
     global SUBSTRA_BACKEND_BRANCH
     global HLF_K8S_BRANCH
     global KANIKO_CACHE_TTL
@@ -116,6 +118,8 @@ def arg_parse():
                         help='The path to a folder containing the GKE service account credentials')
     parser.add_argument('--substra-tests', type=str, default=SUBSTRA_TESTS_BRANCH,
                         help='substra-tests branch', metavar='GIT_BRANCH')
+    parser.add_argument('--substra', type=str, default=SUBSTRA_GIT_REF,
+                        help='substra-tests git_ref', metavar='GIT_REF')
     parser.add_argument('--substra-backend', type=str, default=SUBSTRA_BACKEND_BRANCH,
                         help='substra-backend branch', metavar='GIT_BRANCH')
     parser.add_argument('--hlf-k8s', type=str, default=HLF_K8S_BRANCH,
@@ -132,6 +136,7 @@ def arg_parse():
 
     KEYS_DIR = args['keys_directory']
     SUBSTRA_TESTS_BRANCH = args['substra_tests']
+    SUBSTRA_GIT_REF = args['substra']
     SUBSTRA_BACKEND_BRANCH = args['substra_backend']
     HLF_K8S_BRANCH = args['hlf_k8s']
     if args['no_cache']:
@@ -146,6 +151,7 @@ def print_args():
         f'KEYS_DIR\t\t= {KEYS_DIR}\n'
         f'CLUSTER_NAME\t\t= {CLUSTER_NAME}\n'
         f'SUBSTRA_TESTS_BRANCH\t= {SUBSTRA_TESTS_BRANCH}\n'
+        f'SUBSTRA_GIT_REF\t= {SUBSTRA_GIT_REF}\n'
         f'SUBSTRA_BACKEND_BRANCH\t= {SUBSTRA_BACKEND_BRANCH}\n'
         f'HLF_K8S_BRANCH\t\t= {HLF_K8S_BRANCH}\n'
         f'KANIKO_CACHE_TTL\t= {KANIKO_CACHE_TTL}\n'
@@ -252,7 +258,7 @@ def clone_repos():
         {'name': 'substra-tests',
          'images': ['substra-tests'],
          'commit': commit_tests,
-         'branch': SUBSTRA_TESTS_BRANCH},
+         'branch': SUBSTRA_TESTS_BRANCH}
     ]
 
 
@@ -313,12 +319,16 @@ def build_images(configs):
 def build_image(tag, image, branch, commit):
     config_file = os.path.join(DIR, f'cloudbuild/{image}.yaml')
 
+    extra_substitutions = ''
+    if image == 'substra-tests':
+        extra_substitutions = f',_SUBSTRA_GIT_REF={SUBSTRA_GIT_REF}'
+
     cmd = f'gcloud builds submit '\
         f'--config={config_file} '\
         f'--no-source '\
         f'--async '\
         f'--project={CLUSTER_PROJECT} '\
-        f'--substitutions=_BUILD_TAG={tag},_BRANCH={branch},_COMMIT={commit},_KANIKO_CACHE_TTL={KANIKO_CACHE_TTL}'
+        f'--substitutions=_BUILD_TAG={tag},_BRANCH={branch},_COMMIT={commit},_KANIKO_CACHE_TTL={KANIKO_CACHE_TTL}{extra_substitutions}'
 
     output = call_output(cmd)
     print(output)
