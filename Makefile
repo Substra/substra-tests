@@ -3,6 +3,7 @@ DOCKER_IMG := $(CWD)
 DOCKER_TAG := latest
 SUBSTRA_GIT_REPO := https://github.com/SubstraFoundation/substra.git
 SUBSTRA_GIT_REF := master
+PARALLELISM := 4
 
 .PHONY: pyclean test test-minimal install docker
 
@@ -13,10 +14,10 @@ pyclean:
 test: test-remote test-local
 
 test-remote: pyclean
-	pytest tests -rs -v --durations=0
+	pytest tests -rs -v --durations=0 -n $(PARALLELISM)
 
 test-minimal: pyclean
-	pytest tests -rs -v --durations=0 -m "not slow"
+	pytest tests -rs -v --durations=0 -m "not slow" -n $(PARALLELISM)
 
 test-local: pyclean
 	pytest tests -rs -v --durations=0 --local
