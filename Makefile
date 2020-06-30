@@ -3,7 +3,7 @@ DOCKER_IMG := $(CWD)
 DOCKER_TAG := latest
 SUBSTRA_GIT_REPO := https://github.com/SubstraFoundation/substra.git
 SUBSTRA_GIT_REF := master
-PARALLELISM := 4
+PARALLELISM := 3
 
 .PHONY: pyclean test test-minimal install docker
 
