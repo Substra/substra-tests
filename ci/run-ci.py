@@ -62,10 +62,10 @@ HLF_K8S_BRANCH = 'fix-concurrency'
 DIR = os.path.dirname(os.path.realpath(__file__))
 CHARTS_DIR = os.path.realpath(os.path.join(DIR, '../charts/'))
 KEYS_DIR = os.path.realpath(os.path.join(os.getenv('HOME'), '.local/'))
-SOURCE_DIR = os.path.realpath(os.path.join(DIR, 'src'))
 
 KUBE_CONTEXT = ''
 RUN_TAG = ''.join(random.choice(string.ascii_letters + '0123456789') for _ in range(10))
+SOURCE_DIR = os.path.realpath(os.path.join(DIR, 'src', RUN_TAG))
 
 KANIKO_CACHE_TTL = '168h'  # 1 week
 
@@ -167,7 +167,9 @@ def get_kube_context():
     global KUBE_CONTEXT
 
     print('\n# Fetch kubernetes context')
+    old_ctx = call_output('kubectl config current-context')
     call(f'gcloud container clusters get-credentials {CLUSTER_NAME} --zone {CLUSTER_ZONE} --project {CLUSTER_PROJECT}')
+    call(f'kubectl config use-context {old_ctx}') # Restore old context
     KUBE_CONTEXT = f'gke_{CLUSTER_PROJECT}_{CLUSTER_ZONE}_{CLUSTER_NAME}'
 
 
@@ -235,7 +237,7 @@ def clone_repos():
 
     os.makedirs(SOURCE_DIR)
 
-    print('\n# Clone repos')
+    print(f'\n# Clone repos in {SOURCE_DIR}')
     commit_backend = clone_substra_backend()
     commit_hlf = clone_hlf_k8s()
     commit_tests = clone_substra_tests()
