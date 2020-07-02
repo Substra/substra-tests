@@ -47,7 +47,7 @@ import yaml
 CLUSTER_NAME_ALLOWED_PREFIX = 'substra-tests'
 CLUSTER_NAME = ''
 CLUSTER_MACHINE_TYPE = 'n1-standard-8'
-CONCURRENCY=6
+CONCURRENCY=3
 TESTS_CONCURRENCY=6
 
 CLUSTER_VERSION = '1.15.12-gke.2'
@@ -113,6 +113,8 @@ def arg_parse():
     global SUBSTRA_BACKEND_BRANCH
     global HLF_K8S_BRANCH
     global KANIKO_CACHE_TTL
+    global CONCURRENCY
+    global TESTS_CONCURRENCY
 
     parser = argparse.ArgumentParser()
     parser.add_argument('-N', '--cluster-name', type=cluster_name, default=CLUSTER_NAME_ALLOWED_PREFIX,
@@ -129,6 +131,10 @@ def arg_parse():
                         help='hlf-k8s branch', metavar='GIT_BRANCH')
     parser.add_argument('--no-cache', action='store_true',
                         help='Use this option to disable kaniko caching')
+    parser.add_argument('--concurrency', type=int, default=CONCURRENCY,
+                        help='The substra worker task concurrency')
+    parser.add_argument('--test-concurrency', type=int, default=TESTS_CONCURRENCY,
+                        help='The number of parallel test runners')
 
     args = vars(parser.parse_args())
 
@@ -142,6 +148,8 @@ def arg_parse():
     SUBSTRA_GIT_REF = args['substra']
     SUBSTRA_BACKEND_BRANCH = args['substra_backend']
     HLF_K8S_BRANCH = args['hlf_k8s']
+    CONCURRENCY = args['concurrency']
+    TESTS_CONCURRENCY = args['test_concurrency']
     if args['no_cache']:
         KANIKO_CACHE_TTL = '-1h'
 
@@ -159,7 +167,7 @@ def print_args():
         f'HLF_K8S_BRANCH\t\t= {HLF_K8S_BRANCH}\n'
         f'KANIKO_CACHE_TTL\t= {KANIKO_CACHE_TTL}\n'
         f'CONCURRENCY\t\t= {CONCURRENCY}\n'
-        f'TESTS_CONCURRENCY\t= {CONCURRENCY}\n'
+        f'TESTS_CONCURRENCY\t= {TESTS_CONCURRENCY}\n'
     )
 
 
