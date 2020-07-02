@@ -47,6 +47,7 @@ import yaml
 CLUSTER_NAME_ALLOWED_PREFIX = 'substra-tests'
 CLUSTER_NAME = ''
 CLUSTER_MACHINE_TYPE = 'n1-standard-8'
+CONCURRENCY=6
 
 CLUSTER_VERSION = '1.15.12-gke.2'
 CLUSTER_PROJECT = 'substra-208412'
@@ -156,6 +157,7 @@ def print_args():
         f'SUBSTRA_BACKEND_BRANCH\t= {SUBSTRA_BACKEND_BRANCH}\n'
         f'HLF_K8S_BRANCH\t\t= {HLF_K8S_BRANCH}\n'
         f'KANIKO_CACHE_TTL\t= {KANIKO_CACHE_TTL}\n'
+        f'CONCURRENCY\t\t= {CONCURRENCY}\n'
     )
 
 
@@ -416,6 +418,7 @@ def patch_skaffold_file(config):
         if r['chartPath'].startswith('charts/'):
             r['chartPath'] = os.path.join(SOURCE_DIR, config["name"], r['chartPath'])
         if config['name'] == 'substra-backend':
+            r['overrides']['celeryworker']['concurrency'] = CONCURRENCY
             r['overrides']['backend']['imageBuilder']['type'] = 'dind'
 
     with open(skaffold_file, 'w') as file:
