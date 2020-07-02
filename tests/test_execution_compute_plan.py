@@ -20,21 +20,21 @@ def test_compute_plan(factory, client_1, client_2, default_dataset_1, default_da
     # create compute plan
     cp_spec = factory.create_compute_plan(
         tag='foo',
-        metadata={"foo": "bar"}
+        metadata={"foo": "bar"},
     )
 
     traintuple_spec_1 = cp_spec.add_traintuple(
         algo=algo_2,
         dataset=default_dataset_1,
         data_samples=default_dataset_1.train_data_sample_keys,
-        metadata={"foo": "bar"}
+        metadata=None,
     )
 
     traintuple_spec_2 = cp_spec.add_traintuple(
         algo=algo_2,
         dataset=default_dataset_2,
         data_samples=default_dataset_2.train_data_sample_keys,
-        metadata=None
+        metadata={},
     )
 
     traintuple_spec_3 = cp_spec.add_traintuple(
@@ -42,11 +42,13 @@ def test_compute_plan(factory, client_1, client_2, default_dataset_1, default_da
         dataset=default_dataset_1,
         data_samples=default_dataset_1.train_data_sample_keys,
         in_models=[traintuple_spec_1, traintuple_spec_2],
+        metadata={"foo": "bar"},
     )
 
     cp_spec.add_testtuple(
         objective=default_objective_1,
         traintuple_spec=traintuple_spec_3,
+        metadata={'foo': 'bar'},
     )
 
     # submit compute plan and wait for it to complete
@@ -77,8 +79,10 @@ def test_compute_plan(factory, client_1, client_2, default_dataset_1, default_da
     testtuple = testtuples[0]
 
     # check tuples metadata
-    assert traintuple_1.metadata == {"foo": "bar"}
+    assert traintuple_1.metadata == {}
     assert traintuple_2.metadata == {}
+    assert traintuple_3.metadata == {"foo": "bar"}
+    assert testtuple.metadata == {"foo": "bar"}
 
     # check tuples rank
     assert traintuple_1.rank == 0
@@ -194,11 +198,13 @@ def test_compute_plan_update(factory, client, default_dataset, default_objective
         algo=algo,
         dataset=default_dataset,
         data_samples=[data_sample_2],
-        in_models=[traintuple_spec_1]
+        in_models=[traintuple_spec_1],
+        metadata={"foo": "bar"},
     )
     cp_spec.add_testtuple(
         objective=default_objective,
-        traintuple_spec=traintuple_spec_2
+        traintuple_spec=traintuple_spec_2,
+        metadata={"foo": "bar"},
     )
     cp = client.update_compute_plan(cp_spec)
 
@@ -219,10 +225,16 @@ def test_compute_plan_update(factory, client, default_dataset, default_objective
 
     # All the train/test tuples should succeed
     cp = client.get_compute_plan(cp.compute_plan_id).future().wait()
-    tuples = cp.list_traintuple() + cp.list_testtuple()
+    traintuples = cp.list_traintuple()
+    testtuples = cp.list_testtuple()
+    tuples = traintuples + testtuples
     assert len(tuples) == 6
     for t in tuples:
         assert t.status == assets.Status.done
+
+    # Check tuples metadata
+    assert traintuples[1].metadata == {"foo": "bar"}
+    assert testtuples[1].metadata == {"foo": "bar"}
 
 
 @pytest.mark.slow
@@ -323,6 +335,7 @@ def test_compute_plan_aggregate_composite_traintuples(factory, clients, default_
                 dataset=dataset,
                 data_samples=[dataset.train_data_sample_keys[0 + round_]],
                 out_trunk_model_permissions=Permissions(public=False, authorized_ids=[c.node_id for c in clients]),
+                metadata={'foo': 'bar'},
                 **kwargs,
             )
             composite_traintuple_specs.append(spec)
@@ -332,6 +345,7 @@ def test_compute_plan_aggregate_composite_traintuples(factory, clients, default_
             aggregate_algo=aggregate_algo,
             worker=aggregate_worker,
             in_models=composite_traintuple_specs,
+            metadata={'foo': 'bar'},
         )
 
         # save state of round
@@ -346,12 +360,18 @@ def test_compute_plan_aggregate_composite_traintuples(factory, clients, default_
         )
 
     cp = clients[0].add_compute_plan(cp_spec).future().wait()
-    tuples = (cp.list_traintuple() +
-              cp.list_composite_traintuple() +
-              cp.list_aggregatetuple() +
-              cp.list_testtuple())
+    traintuples = cp.list_traintuple()
+    composite_traintuples = cp.list_composite_traintuple()
+    aggregatetuples = cp.list_aggregatetuple()
+    testtuples = cp.list_testtuple()
+
+    tuples = traintuples + composite_traintuples + aggregatetuples + testtuples
     for t in tuples:
         assert t.status == assets.Status.done
+
+    # Check tuples metadata
+    for tuple in composite_traintuples + aggregatetuples:
+        assert tuple.metadata == {'foo': 'bar'}
 
 
 @pytest.mark.slow
