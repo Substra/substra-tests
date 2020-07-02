@@ -48,6 +48,7 @@ CLUSTER_NAME_ALLOWED_PREFIX = 'substra-tests'
 CLUSTER_NAME = ''
 CLUSTER_MACHINE_TYPE = 'n1-standard-8'
 CONCURRENCY=6
+TESTS_CONCURRENCY=6
 
 CLUSTER_VERSION = '1.15.12-gke.2'
 CLUSTER_PROJECT = 'substra-208412'
@@ -158,6 +159,7 @@ def print_args():
         f'HLF_K8S_BRANCH\t\t= {HLF_K8S_BRANCH}\n'
         f'KANIKO_CACHE_TTL\t= {KANIKO_CACHE_TTL}\n'
         f'CONCURRENCY\t\t= {CONCURRENCY}\n'
+        f'TESTS_CONCURRENCY\t= {CONCURRENCY}\n'
     )
 
 
@@ -444,7 +446,7 @@ def run_tests():
 
     try:
         # Run the tests on the remote and local backend
-        call(f'kubectl --context {KUBE_CONTEXT} exec {substra_tests_pod} -n substra-tests -- make test-remote')
+        call(f'kubectl --context {KUBE_CONTEXT} exec {substra_tests_pod} -n substra-tests -- make test-remote PARALLELISM={TESTS_CONCURRENCY}')
         return True
     except subprocess.CalledProcessError:
         print('FATAL: `make test-remote` completed with a non-zero exit code. Did some test(s) fail?')
