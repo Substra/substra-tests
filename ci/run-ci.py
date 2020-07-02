@@ -42,6 +42,7 @@ import random
 import argparse
 import subprocess
 import sys
+import yaml
 
 CLUSTER_NAME_ALLOWED_PREFIX = 'substra-tests'
 CLUSTER_NAME = ''
@@ -408,22 +409,17 @@ def patch_skaffold_file(config):
 
     skaffold_file = os.path.join(SOURCE_DIR, config['name'], 'skaffold.yaml')
 
-    # Patch skaffold file
-    with open(skaffold_file, 'r') as file:
-        filedata = file.read()
+    with open(skaffold_file) as file:
+        data = yaml.load(file, Loader=yaml.FullLoader)
 
-    filedata = filedata.replace(
-        'chartPath: charts/',
-        f'chartPath: {os.path.join(SOURCE_DIR, config["name"],"charts/")}'
-    )
-
-    filedata = filedata.replace(
-        'type: makisu',
-        'type: dind'
-    )
+    for r in data['deploy']['helm']['releases']:
+        if r['chartPath'].startswith('charts/'):
+            r['chartPath'] = os.path.join(SOURCE_DIR, config["name"], r['chartPath'])
+        if config['name'] == 'substra-backend':
+            r['overrides']['backend']['imageBuilder']['type'] = 'dind'
 
     with open(skaffold_file, 'w') as file:
-        file.write(filedata)
+        yaml.dump(data, file)
 
     return skaffold_file
 
