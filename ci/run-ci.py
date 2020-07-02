@@ -376,14 +376,15 @@ def wait_for_builds(tag, images):
 def deploy_all(configs):
     print('\n# Deploy helm charts')
     for config in configs:
-        deploy(config)
+        wait = config['name'] != 'hlf-k8s' # don't wait for hlf-k8s deployment to complete
+        deploy(config, wait)
 
 
-def deploy(config):
+def deploy(config, wait=True):
     artifacts_file = create_build_artifacts(config)
     skaffold_file = patch_skaffold_file(config)
     call(f'skaffold deploy --kube-context={KUBE_CONTEXT} '
-         f'-f={skaffold_file} -a={artifacts_file} --status-check=true')
+         f'-f={skaffold_file} -a={artifacts_file} --status-check={"true" if wait else "false"}')
 
 
 def create_build_artifacts(config):
