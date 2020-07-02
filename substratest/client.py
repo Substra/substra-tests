@@ -19,8 +19,8 @@ class Client:
 
         self.node_id = node_id
         self._client = substra.Client()
-        self._client.add_profile(node_name, user, password, address, '0.0')
-        self._client.login()
+        self._client.add_profile(node_name, address, '0.0')
+        self._client.login(user, password)
 
     def add_data_sample(self, spec, *args, **kwargs):
         res = self._client.add_data_sample(spec.dict(), *args, **kwargs)
