@@ -277,6 +277,7 @@ class ComputePlanTraintupleSpec(_Spec):
     traintuple_id: str
     in_models_ids: typing.List[str] = None
     tag: str = None
+    metadata: typing.Dict[str, str] = None
 
     @property
     def id(self):
@@ -289,6 +290,7 @@ class ComputePlanAggregatetupleSpec(_Spec):
     worker: str
     in_models_ids: typing.List[str] = None
     tag: str = None
+    metadata: typing.Dict[str, str] = None
 
     @property
     def id(self):
@@ -304,6 +306,7 @@ class ComputePlanCompositeTraintupleSpec(_Spec):
     in_trunk_model_id: str = None
     tag: str = None
     out_trunk_model_permissions: Permissions
+    metadata: typing.Dict[str, str] = None
 
     @property
     def id(self):
@@ -314,6 +317,7 @@ class ComputePlanTesttupleSpec(_Spec):
     objective_key: str
     traintuple_id: str
     tag: str
+    metadata: typing.Dict[str, str] = None
 
 
 def _get_key(obj, field='key'):
@@ -340,7 +344,7 @@ class _BaseComputePlanSpec(_Spec, abc.ABC):
     aggregatetuples: typing.List[ComputePlanAggregatetupleSpec]
     testtuples: typing.List[ComputePlanTesttupleSpec]
 
-    def add_traintuple(self, algo, dataset, data_samples, in_models=None, tag=''):
+    def add_traintuple(self, algo, dataset, data_samples, in_models=None, tag='', metadata=None):
         in_models = in_models or []
         spec = ComputePlanTraintupleSpec(
             algo_key=algo.key,
@@ -348,12 +352,13 @@ class _BaseComputePlanSpec(_Spec, abc.ABC):
             data_manager_key=dataset.key,
             train_data_sample_keys=_get_keys(data_samples),
             in_models_ids=[t.id for t in in_models],
-            tag=tag
+            tag=tag,
+            metadata=metadata,
         )
         self.traintuples.append(spec)
         return spec
 
-    def add_aggregatetuple(self, aggregate_algo, worker, in_models=None, tag=''):
+    def add_aggregatetuple(self, aggregate_algo, worker, in_models=None, tag='', metadata=None):
         in_models = in_models or []
 
         for t in in_models:
@@ -364,14 +369,15 @@ class _BaseComputePlanSpec(_Spec, abc.ABC):
             algo_key=aggregate_algo.key,
             worker=worker,
             in_models_ids=[t.id for t in in_models],
-            tag=tag
+            tag=tag,
+            metadata=metadata,
         )
         self.aggregatetuples.append(spec)
         return spec
 
     def add_composite_traintuple(self, composite_algo, dataset=None, data_samples=None,
                                  in_head_model=None, in_trunk_model=None,
-                                 out_trunk_model_permissions=None, tag=''):
+                                 out_trunk_model_permissions=None, tag='', metadata=None):
         data_samples = data_samples or []
 
         if in_head_model and in_trunk_model:
@@ -389,16 +395,18 @@ class _BaseComputePlanSpec(_Spec, abc.ABC):
             in_head_model_id=in_head_model.id if in_head_model else None,
             in_trunk_model_id=in_trunk_model.id if in_trunk_model else None,
             out_trunk_model_permissions=out_trunk_model_permissions or DEFAULT_OUT_TRUNK_MODEL_PERMISSIONS,
-            tag=tag
+            tag=tag,
+            metadata=metadata,
         )
         self.composite_traintuples.append(spec)
         return spec
 
-    def add_testtuple(self, objective, traintuple_spec, tag=None):
+    def add_testtuple(self, objective, traintuple_spec, tag='', metadata=None):
         spec = ComputePlanTesttupleSpec(
             objective_key=objective.key,
             traintuple_id=traintuple_spec.id,
-            tag=tag or ''
+            tag=tag,
+            metadata=metadata,
         )
         self.testtuples.append(spec)
         return spec
@@ -406,6 +414,7 @@ class _BaseComputePlanSpec(_Spec, abc.ABC):
 
 class ComputePlanSpec(_BaseComputePlanSpec):
     tag: str
+    metadata: typing.Dict[str, str] = None
     clean_models: bool
 
 
@@ -641,13 +650,14 @@ class AssetsFactory:
             metadata=metadata,
         )
 
-    def create_compute_plan(self, tag='', clean_models=False):
+    def create_compute_plan(self, tag='', clean_models=False, metadata=None):
         return ComputePlanSpec(
             traintuples=[],
             composite_traintuples=[],
             aggregatetuples=[],
             testtuples=[],
             tag=tag,
+            metadata=metadata,
             clean_models=clean_models
         )
 
