@@ -47,8 +47,8 @@ import yaml
 CLUSTER_NAME_ALLOWED_PREFIX = 'substra-tests'
 CLUSTER_NAME = ''
 CLUSTER_MACHINE_TYPE = 'n1-standard-8'
-CONCURRENCY=4
-TESTS_CONCURRENCY=5
+CONCURRENCY = 4
+TESTS_CONCURRENCY = 5
 
 CLUSTER_VERSION = '1.15.12-gke.2'
 CLUSTER_PROJECT = 'substra-208412'
@@ -58,7 +58,7 @@ SERVICE_ACCOUNT = 'substra-tests@substra-208412.iam.gserviceaccount.com'
 KEY_SERVICE_ACCOUNT = 'substra-208412-3be0df12d87a.json'
 
 SUBSTRA_TESTS_BRANCH = 'fix-concurrency'
-SUBSTRA_GIT_REF = 'no_more_pwd'
+SUBSTRA_GIT_REF = 'master'
 SUBSTRA_BACKEND_BRANCH = 'fix-concurrency'
 HLF_K8S_BRANCH = 'fix-concurrency'
 
