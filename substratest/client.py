@@ -14,7 +14,7 @@ class Client:
     Parses responses from server to return Asset instances.
     """
 
-    def __init__(self, node_name, node_id, address, user, password):
+    def __init__(self, node_id, address, user, password):
         super().__init__()
 
         self.node_id = node_id

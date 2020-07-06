@@ -64,7 +64,6 @@ def _get_network():
     """Create network instance from settings."""
     cfg = settings.load()
     clients = [sbt.Client(
-        node_name=n.name,
         node_id=n.msp_id,
         address=n.address,
         user=n.user,
