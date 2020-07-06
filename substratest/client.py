@@ -77,7 +77,10 @@ class Client:
         return compute_plan
 
     def update_compute_plan(self, spec, *args, **kwargs):
-        res = self._client.update_compute_plan(spec.compute_plan_id, spec.dict(), *args, **kwargs)
+        spec_dict = spec.dict()
+        # Remove extra field from data
+        spec_dict.pop("compute_plan_id")
+        res = self._client.update_compute_plan(spec.compute_plan_id, spec_dict, *args, **kwargs)
         compute_plan = assets.ComputePlan.load(res).attach(self)
         return compute_plan
 
