@@ -14,12 +14,11 @@ class Client:
     Parses responses from server to return Asset instances.
     """
 
-    def __init__(self, node_name, node_id, address, user, password):
+    def __init__(self, node_id, address, user, password):
         super().__init__()
 
         self.node_id = node_id
-        self._client = substra.Client()
-        self._client.add_profile(node_name, address, '0.0')
+        self._client = substra.Client(url=address, version="0.0", insecure=False)
         self._client.login(user, password)
 
     def add_data_sample(self, spec, *args, **kwargs):
@@ -78,7 +77,10 @@ class Client:
         return compute_plan
 
     def update_compute_plan(self, spec, *args, **kwargs):
-        res = self._client.update_compute_plan(spec.compute_plan_id, spec.dict(), *args, **kwargs)
+        spec_dict = spec.dict()
+        # Remove extra field from data
+        spec_dict.pop("compute_plan_id")
+        res = self._client.update_compute_plan(spec.compute_plan_id, spec_dict, *args, **kwargs)
         compute_plan = assets.ComputePlan.load(res).attach(self)
         return compute_plan
 
