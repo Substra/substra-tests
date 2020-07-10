@@ -14,7 +14,7 @@ from . import utils, assets
 
 DEFAULT_DATA_SAMPLE_FILENAME = 'data.csv'
 
-DEFAULT_SUBSTRATOOLS_VERSION = '0.5.0'
+DEFAULT_SUBSTRATOOLS_VERSION = '0.6.0'
 
 # TODO improve opener get_X/get_y methods
 # TODO improve metrics score method
@@ -27,9 +27,9 @@ class TestOpener(tools.Opener):
         return folders
     def get_y(self, folders):
         return folders
-    def fake_X(self):
+    def fake_X(self, n_samples=None):
         return 'fakeX'
-    def fake_y(self):
+    def fake_y(self, n_samples=None):
         return 'fakey'
     def get_predictions(self, path):
         with open(path) as f:
