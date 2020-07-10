@@ -1,5 +1,4 @@
 import abc
-import json
 import os
 import pathlib
 import random
@@ -17,33 +16,21 @@ DEFAULT_DATA_SAMPLE_FILENAME = 'data.csv'
 
 DEFAULT_SUBSTRATOOLS_VERSION = '0.6.0'
 
+# TODO improve opener get_X/get_y methods
+# TODO improve metrics score method
+
 DEFAULT_OPENER_SCRIPT = """
 import json
 import substratools as tools
-import os
 class TestOpener(tools.Opener):
     def get_X(self, folders):
-        result = list()
-        for folder in folders:
-            for file in os.listdir(folder):
-                file_path = os.path.join(folder, file)
-                with open(file_path, 'r') as f:
-                    result.append(json.load(f).get('data'))
-        return result
+        return folders
     def get_y(self, folders):
-        result = list()
-        for folder in folders:
-            for file in os.listdir(folder):
-                file_path = os.path.join(folder, file)
-                with open(file_path, 'r') as f:
-                    result.append(json.load(f).get('data'))
-        return result
+        return folders
     def fake_X(self, n_samples=None):
-        n_samples = n_samples or 10
-        return ['fakeX'] * n_samples
+        return 'fakeX'
     def fake_y(self, n_samples=None):
-        n_samples = n_samples or 10
-        return ['fakey'] * n_samples
+        return 'fakey'
     def get_predictions(self, path):
         with open(path) as f:
             return json.load(f)
@@ -57,7 +44,7 @@ import json
 import substratools as tools
 class TestMetrics(tools.Metrics):
     def score(self, y_true, y_pred):
-        return abs(sum(y_true) - sum(y_pred))
+        return 101
 if __name__ == '__main__':
     tools.metrics.execute(TestMetrics())
 """
@@ -457,12 +444,13 @@ class AssetsFactory:
         tmpdir = self._workdir / f'data-{idx}'
         tmpdir.mkdir()
 
-        content = content or {"data": idx}
-        content["random"] = rdm
+        encoding = 'utf-8'
+        content = content or f'0,{idx}'.encode(encoding)
+        content = f'# random={rdm} \n'.encode(encoding) + content
 
         data_filepath = tmpdir / DEFAULT_DATA_SAMPLE_FILENAME
-        with open(data_filepath, 'w') as f:
-            json.dump(content, f)
+        with open(data_filepath, 'wb') as f:
+            f.write(content)
 
         datasets = datasets or []
 
