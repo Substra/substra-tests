@@ -28,17 +28,45 @@ def pytest_configure(config):
     config.addinivalue_line(
         "markers", "slow: marks tests as slow (deselect with '-m \"not slow\"')",
     )
+    config.addinivalue_line(
+        "markers", "local_only: marks tests as local backend only (deselect with '-m \"not local\"')",
+    )
+    config.addinivalue_line(
+        "markers", "remote_only: marks tests as remote backend only (deselect with '-m \"not remote\"')",
+    )
 
 
 def pytest_addoption(parser):
-    parser.addoption("--local", action="store_true", help="Run the tests on the local backend too.")
+    """Command line arguments to configure the network to be local or remote"""
+    parser.addoption(
+        "--local",
+        action="store_true",
+        help="Run the tests on the local backend only. Otherwise run the tests only on the remote backend."
+    )
 
 
-def pytest_generate_tests(metafunc):
-    if "local" in metafunc.fixturenames:
-        metafunc.parametrize("client", "local")
+def pytest_collection_modifyitems(config, items):
+    """Skip the remote tests if local backend and local tests if remote backend.
+    If both or none are specified, run all tests on both.
+    """
+    local = config.getoption("--local")
+    if local:
+        skip_marker = pytest.mark.skip(reason="need --remote option to run")
+        keyword = "remote_only"
     else:
-        metafunc.parametrize("client", "remote")
+        skip_marker = pytest.mark.skip(reason="need --local option to run")
+        keyword = "local_only"
+    for item in items:
+        if keyword in item.keywords:
+            item.add_marker(skip_marker)
+
+
+@pytest.fixture(scope="session")
+def backend(request):
+    local = request.config.getoption("--local")
+    if local:
+        return "local"
+    return "remote"
 
 
 class _DataEnv:
@@ -71,22 +99,6 @@ class Network:
     clients: typing.List[sbt.Client] = dataclasses.field(default_factory=list)
 
 
-def _get_network():
-    """Create network instance from settings."""
-    cfg = settings.load()
-    clients = [sbt.Client(
-        backend="remote",
-        node_id=n.msp_id,
-        address=n.address,
-        user=n.user,
-        password=n.password,
-    ) for n in cfg.nodes]
-    return Network(
-        options=cfg.options,
-        clients=clients,
-    )
-
-
 @pytest.fixture
 def factory(request):
     """Factory fixture.
@@ -99,20 +111,44 @@ def factory(request):
         yield f
 
 
-@pytest.fixture
-def network():
+@pytest.fixture(scope="session")
+def network(backend):
     """Network fixture.
 
     Network must started outside of the tests environment and the network is kept
     alive while running all tests.
 
+    Create network instance from settings.
+
     Returns an instance of the `Network` class.
     """
-    return _get_network()
+    if backend == "remote":
+        cfg = settings.load()
+    else:
+        cfg = settings.Settings(
+            nodes=[settings.NodeCfg(
+                name="local-backend",
+                address="",
+                msp_id="local-backend"
+            )],
+            path="",
+            options=list()
+        )
+    clients = [sbt.Client(
+        backend=backend,
+        node_id=n.msp_id,
+        address=n.address,
+        user=n.user,
+        password=n.password,
+    ) for n in cfg.nodes]
+    return Network(
+        options=cfg.options,
+        clients=clients,
+    )
 
 
 @pytest.fixture(scope="session")
-def default_data_env():
+def default_data_env(network):
     """Fixture with pre-existing assets in all nodes.
 
     The following assets will be created for each node:
@@ -126,7 +162,6 @@ def default_data_env():
 
     Returns the assets created.
     """
-    network = _get_network()
     factory_name = f"{TESTS_RUN_UUID}_global"
 
     with sbt.AssetsFactory(name=factory_name) as f:
@@ -240,13 +275,9 @@ def node_cfg():
 
 
 @pytest.fixture
-def client(request):
+def client(network):
     """Client fixture (first node)."""
-    if request.param == "remote":
-        network = _get_network()
-        return network.clients[0]
-    else:
-        return sbt.Client(backend="local")
+    return network.clients[0]
 
 
 @pytest.fixture

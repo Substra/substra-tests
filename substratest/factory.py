@@ -479,7 +479,7 @@ class AssetsFactory:
         self._dataset_counter = Counter()
         self._objective_counter = Counter()
         self._algo_counter = Counter()
-        self._workdir = pathlib.Path(tempfile.mkdtemp())
+        self._workdir = pathlib.Path(tempfile.mkdtemp(prefix=os.getcwd() + '/'))
         self._uuid = name
 
     def __enter__(self):

@@ -16,6 +16,9 @@ test: pyclean
 test-minimal: pyclean
 	pytest tests -rs -v --durations=0 -m "not slow"
 
+test-local: pyclean
+	pytest tests -rs -v --durations=0 --local
+
 install:
 	pip3 install -r requirements.txt
 

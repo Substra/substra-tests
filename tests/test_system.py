@@ -4,6 +4,7 @@ import substratest as sbt
 from . import settings
 
 
+@pytest.mark.remote_only  # no check on permissions with the local backend
 @pytest.mark.parametrize('fail_count,status', (
     (settings.CELERY_TASK_MAX_RETRIES, 'done'),
     (settings.CELERY_TASK_MAX_RETRIES + 1, 'failed'),
@@ -69,4 +70,3 @@ def test_execution_retry_on_fail(fail_count, status, factory, client, default_da
     # - if it fails less than 2 times, it should be marked as "done"
     # - if it fails 2 times or more, it should be marked as "failed"
     assert traintuple.status == status
-

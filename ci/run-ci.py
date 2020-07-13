@@ -425,6 +425,7 @@ def run_tests():
 
     try:
         call(f'kubectl --context {KUBE_CONTEXT} exec {substra_tests_pod} -n substra-tests -- make test')
+        call(f'kubectl --context {KUBE_CONTEXT} exec {substra_tests_pod} -n substra-tests -- make test-local')
         return True
     except subprocess.CalledProcessError:
         print('FATAL: `make test` completed with a non-zero exit code. Did some test(s) fail?')

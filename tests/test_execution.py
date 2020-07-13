@@ -8,6 +8,7 @@ from substratest.factory import Permissions
 
 from substratest import assets
 
+
 @pytest.mark.slow
 def test_tuples_execution_on_same_node(factory, client, default_dataset, default_objective):
     """Execution of a traintuple, a following testtuple and a following traintuple."""
@@ -93,6 +94,7 @@ def test_federated_learning_workflow(factory, client, default_datasets):
 
 
 @pytest.mark.slow
+@pytest.mark.remote_only
 def test_tuples_execution_on_different_nodes(factory, client_1, client_2, default_objective_1, default_dataset_2):
     """Execution of a traintuple on node 1 and the following testtuple on node 2."""
     # add test data samples / dataset / objective on node 1
@@ -120,6 +122,7 @@ def test_tuples_execution_on_different_nodes(factory, client_1, client_2, defaul
 
 
 @pytest.mark.slow
+@pytest.mark.remote_only
 def test_traintuple_execution_failure(factory, client, default_dataset_1):
     """Invalid algo script is causing traintuple failure."""
 
@@ -137,6 +140,7 @@ def test_traintuple_execution_failure(factory, client, default_dataset_1):
 
 
 @pytest.mark.slow
+@pytest.mark.remote_only
 def test_composite_traintuple_execution_failure(factory, client, default_dataset):
     """Invalid composite algo script is causing traintuple failure."""
 
@@ -155,6 +159,7 @@ def test_composite_traintuple_execution_failure(factory, client, default_dataset
 
 
 @pytest.mark.slow
+@pytest.mark.remote_only
 def test_aggregatetuple_execution_failure(factory, client, default_dataset):
     """Invalid algo script is causing traintuple failure."""
 
@@ -269,6 +274,7 @@ def test_aggregatetuple(factory, client, default_dataset):
 
 
 @pytest.mark.slow
+@pytest.mark.remote_only  # TODO make this test work on local backend too
 def test_aggregate_composite_traintuples(factory, network, clients, default_datasets, default_objectives):
     """Do 2 rounds of composite traintuples aggregations on multiple nodes.
 
