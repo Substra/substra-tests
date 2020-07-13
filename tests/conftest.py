@@ -30,6 +30,17 @@ def pytest_configure(config):
     )
 
 
+def pytest_addoption(parser):
+    parser.addoption("--local", action="store_true", help="Run the tests on the local backend too.")
+
+
+def pytest_generate_tests(metafunc):
+    if "local" in metafunc.fixturenames:
+        metafunc.parametrize("client", "local")
+    else:
+        metafunc.parametrize("client", "remote")
+
+
 class _DataEnv:
     """Test assets.
 
@@ -64,6 +75,7 @@ def _get_network():
     """Create network instance from settings."""
     cfg = settings.load()
     clients = [sbt.Client(
+        backend="remote",
         node_id=n.msp_id,
         address=n.address,
         user=n.user,
@@ -145,7 +157,7 @@ def default_data_env():
             objectives.append(objective)
 
         assets = _DataEnv(datasets=datasets, objectives=objectives)
-        return assets
+        yield assets
 
 
 @pytest.fixture
@@ -228,9 +240,13 @@ def node_cfg():
 
 
 @pytest.fixture
-def client(network):
+def client(request):
     """Client fixture (first node)."""
-    return network.clients[0]
+    if request.param == "remote":
+        network = _get_network()
+        return network.clients[0]
+    else:
+        return sbt.Client(backend="local")
 
 
 @pytest.fixture
