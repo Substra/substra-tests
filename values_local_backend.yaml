@@ -1,0 +1,7 @@
+options:
+  celery_task_max_retries: 0
+  enable_intermediate_model_removal: False
+nodes:
+  - name: 'local-backend'
+    msp_id: 'local-backend'
+    address: ''

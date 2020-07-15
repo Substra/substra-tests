@@ -20,7 +20,7 @@ It can be found [here](https://github.com/SubstraFoundation/substra)
 
 You will need to install it thanks to the `pip` binary.
 
-# Run the tests
+# Run the tests on the default backend
 
 The network configuration is described in a yaml file.
 
@@ -51,6 +51,21 @@ make test-minimal
 Note that `test_compute_plan` from `test_execution_compute_plan.py` is not marked as slow even though it takes several
 seconds to complete. This is because it covers a very basic use case of the platform and is needed to ensure basic
 features aren't broken.
+
+# Run the tests on the local backend
+
+By default the tests (default and minimal) run on the default backend: a running Substra platform.
+They can also be run on the local backend (no Substra deployment).
+
+The network configuration is described in a yaml file: `values_local_backend.yaml` and cannot be changed.
+
+To run the tests using on the local backend:
+
+```
+test-local
+```
+
+Some tests are skipped in this mode as they need the default backend to run.
 
 # Test design guidelines
 

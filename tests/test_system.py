@@ -4,7 +4,9 @@ import substratest as sbt
 from . import settings
 
 
-@pytest.mark.remote_only  # no check on permissions with the local backend
+# CELERY_TASK_MAX_RETRIES uses the remote backend settings
+# no check on permissions with the local backend
+@pytest.mark.remote_only
 @pytest.mark.parametrize('fail_count,status', (
     (settings.CELERY_TASK_MAX_RETRIES, 'done'),
     (settings.CELERY_TASK_MAX_RETRIES + 1, 'failed'),

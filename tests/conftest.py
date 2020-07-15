@@ -125,15 +125,8 @@ def network(backend):
     if backend == "remote":
         cfg = settings.load()
     else:
-        cfg = settings.Settings(
-            nodes=[settings.NodeCfg(
-                name="local-backend",
-                address="",
-                msp_id="local-backend"
-            )],
-            path="",
-            options=list()
-        )
+        # TODO check what enable_intermediate_model_removal does
+        cfg = settings.load_local_backend()
     clients = [sbt.Client(
         backend=backend,
         node_id=n.msp_id,

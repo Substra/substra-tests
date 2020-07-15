@@ -9,6 +9,8 @@ CURRENT_DIR = os.path.dirname(__file__)
 DEFAULT_NETWORK_CONFIGURATION_PATH = os.path.join(CURRENT_DIR, '../', 'values.yaml')
 SUBSTRA_TESTS_CONFIG_FILEPATH = os.getenv('SUBSTRA_TESTS_CONFIG_FILEPATH', DEFAULT_NETWORK_CONFIGURATION_PATH)
 
+DEFAULT_NETWORK_LOCAL_CONFIGURATION_PATH = os.path.join(CURRENT_DIR, '../', 'values_local_backend.yaml')
+
 MIN_NODES = 2
 
 
@@ -36,6 +38,7 @@ class Settings:
 
 
 _SETTINGS = None
+_LOCAL_SETTINGS = None
 
 
 def _load_yaml(path):
@@ -43,7 +46,6 @@ def _load_yaml(path):
     with open(path) as f:
         data = yaml.load(f, Loader=yaml.Loader)
     nodes = [NodeCfg(**kw) for kw in data['nodes']]
-    assert len(nodes) >= MIN_NODES, f'not enough nodes: {len(nodes)}'
     return Settings(
         path=path,
         nodes=nodes,
@@ -63,8 +65,25 @@ def load():
         return _SETTINGS
 
     s = _load_yaml(SUBSTRA_TESTS_CONFIG_FILEPATH)
+    assert len(s.nodes) >= MIN_NODES, f'not enough nodes: {len(s.nodes)}'
     _SETTINGS = s
     return _SETTINGS
+
+
+def load_local_backend():
+    """Loads settings static configuration.
+
+    As the configuration is static and immutable, it is loaded only once from the disk.
+
+    Returns an instance of the `Settings` class.
+    """
+    global _LOCAL_SETTINGS
+    if _LOCAL_SETTINGS is not None:
+        return _LOCAL_SETTINGS
+
+    s = _load_yaml(DEFAULT_NETWORK_LOCAL_CONFIGURATION_PATH)
+    _LOCAL_SETTINGS = s
+    return _LOCAL_SETTINGS
 
 
 # TODO that's a bad idea to expose the static configuration, it has been done to allow
@@ -74,6 +93,7 @@ def load():
 # load configuration at module load time to allow tests parametrization depending on
 # network static configuration
 load()
+load_local_backend()
 
 
 MSP_IDS = [n.msp_id for n in _SETTINGS.nodes]
