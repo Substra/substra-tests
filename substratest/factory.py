@@ -38,10 +38,10 @@ class TestOpener(tools.Opener):
                 for row in reader:
                     res.append(int(row[1]))
         return res  # returns a list of 2's
-    def fake_X(self):
-        return [1]
-    def fake_y(self):
-        return [2]
+    def fake_X(self, n_samples=1):
+        return [1] * n_samples
+    def fake_y(self, n_samples=1):
+        return [2] * n_samples
     def get_predictions(self, path):
         with open(path) as f:
             return json.load(f)
