@@ -18,6 +18,7 @@ class Client:
         super().__init__()
 
         self.node_id = node_id
+        self.backend = backend
         self._client = substra.Client(backend=backend, url=address, version="0.0", insecure=False)
         self._client.login(user, password)
 
