@@ -51,10 +51,10 @@ def pytest_collection_modifyitems(config, items):
     """
     local = config.getoption("--local")
     if local:
-        skip_marker = pytest.mark.skip(reason="need --remote option to run")
+        skip_marker = pytest.mark.skip(reason="remove the --local option to run")
         keyword = "remote_only"
     else:
-        skip_marker = pytest.mark.skip(reason="need --local option to run")
+        skip_marker = pytest.mark.skip(reason="need the --local option to run")
         keyword = "local_only"
     for item in items:
         if keyword in item.keywords:

@@ -9,7 +9,7 @@ CURRENT_DIR = os.path.dirname(__file__)
 DEFAULT_NETWORK_CONFIGURATION_PATH = os.path.join(CURRENT_DIR, '../', 'values.yaml')
 SUBSTRA_TESTS_CONFIG_FILEPATH = os.getenv('SUBSTRA_TESTS_CONFIG_FILEPATH', DEFAULT_NETWORK_CONFIGURATION_PATH)
 
-DEFAULT_NETWORK_LOCAL_CONFIGURATION_PATH = os.path.join(CURRENT_DIR, '../', 'values_local_backend.yaml')
+DEFAULT_NETWORK_LOCAL_CONFIGURATION_PATH = os.path.join(CURRENT_DIR, '../', 'local-backend-values.yaml')
 
 MIN_NODES = 2
 

@@ -20,7 +20,7 @@ It can be found [here](https://github.com/SubstraFoundation/substra)
 
 You will need to install it thanks to the `pip` binary.
 
-# Run the tests on the default backend
+# Run the tests on the remote backend
 
 The network configuration is described in a yaml file.
 
@@ -54,18 +54,18 @@ features aren't broken.
 
 # Run the tests on the local backend
 
-By default the tests (default and minimal) run on the default backend: a running Substra platform.
+By default the tests (default and minimal) run on the remote backend: a running Substra platform.
 They can also be run on the local backend (no Substra deployment).
 
-The network configuration is described in a yaml file: `values_local_backend.yaml` and cannot be changed.
+The network configuration is described in a yaml file: `local-backend-values.yaml` and cannot be changed.
 
 To run the tests using on the local backend:
 
 ```
-test-local
+make test-local
 ```
 
-Some tests are skipped in this mode as they need the default backend to run.
+Some tests are skipped in this mode as they need the remote backend to run.
 
 # Test design guidelines
 
