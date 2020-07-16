@@ -14,7 +14,7 @@ from . import utils, assets
 
 DEFAULT_DATA_SAMPLE_FILENAME = 'data.csv'
 
-DEFAULT_SUBSTRATOOLS_VERSION = '0.6.0'
+DEFAULT_SUBSTRATOOLS_VERSION = '0.6.0-minimal'
 
 # TODO improve opener get_X/get_y methods
 # TODO improve metrics score method
