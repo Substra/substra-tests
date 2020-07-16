@@ -90,6 +90,9 @@ def test_compute_plan(factory, client_1, client_2, default_dataset_1, default_da
     assert traintuple_3.rank == 1
     assert testtuple.rank == traintuple_3.rank
 
+    # check testtuple perf
+    assert testtuple.dataset.perf == 0.4
+
     # XXX as the first two tuples have the same rank, there is currently no way to know
     #     which one will be returned first
     workers_rank_0 = set([traintuple_1.dataset.worker, traintuple_2.dataset.worker])

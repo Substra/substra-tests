@@ -69,7 +69,7 @@ def load():
 
 # TODO that's a bad idea to expose the static configuration, it has been done to allow
 #      tests parametrization but this won't work for specific tests written with more
-#      more nodes
+#      nodes
 
 # load configuration at module load time to allow tests parametrization depending on
 # network static configuration

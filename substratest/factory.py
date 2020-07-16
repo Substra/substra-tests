@@ -16,21 +16,32 @@ DEFAULT_DATA_SAMPLE_FILENAME = 'data.csv'
 
 DEFAULT_SUBSTRATOOLS_VERSION = '0.6.0'
 
-# TODO improve opener get_X/get_y methods
-# TODO improve metrics score method
-
-DEFAULT_OPENER_SCRIPT = """
+DEFAULT_OPENER_SCRIPT = f"""
+import csv
 import json
+import os
 import substratools as tools
 class TestOpener(tools.Opener):
     def get_X(self, folders):
-        return folders
+        res = []
+        for folder in folders:
+            with open(os.path.join(folder, '{DEFAULT_DATA_SAMPLE_FILENAME}'), 'r') as f:
+                reader = csv.reader(f)
+                for row in reader:
+                    res.append(int(row[0]))
+        return res  # returns a list of 1's
     def get_y(self, folders):
-        return folders
-    def fake_X(self, n_samples=None):
-        return 'fakeX'
-    def fake_y(self, n_samples=None):
-        return 'fakey'
+        res = []
+        for folder in folders:
+            with open(os.path.join(folder, '{DEFAULT_DATA_SAMPLE_FILENAME}'), 'r') as f:
+                reader = csv.reader(f)
+                for row in reader:
+                    res.append(int(row[1]))
+        return res  # returns a list of 2's
+    def fake_X(self, n_samples=1):
+        return [1] * n_samples
+    def fake_y(self, n_samples=1):
+        return [2] * n_samples
     def get_predictions(self, path):
         with open(path) as f:
             return json.load(f)
@@ -44,7 +55,7 @@ import json
 import substratools as tools
 class TestMetrics(tools.Metrics):
     def score(self, y_true, y_pred):
-        return 101
+        return sum(y_pred) - sum(y_true)
 if __name__ == '__main__':
     tools.metrics.execute(TestMetrics())
 """
@@ -54,15 +65,28 @@ import json
 import substratools as tools
 class TestAlgo(tools.Algo):
     def train(self, X, y, models, rank):
-        return [0, 1]
+
+        ratio = sum(y) / sum(X)
+        err = 0.1 * ratio  # Add a small error
+
+        if len(models) == 0:
+            return {{'value': ratio + err }}
+        else:
+            ratios = [m['value'] for m in models]
+            avg = sum(ratios) / len(ratios)
+            return {{'value': avg + err }}
+
     def predict(self, X, model):
-        return [0, 99]
+        return [x * model['value'] for x in X]
+
     def load_model(self, path):
         with open(path) as f:
             return json.load(f)
+
     def save_model(self, model, path):
         with open(path, 'w') as f:
             return json.dump(model, f)
+
 if __name__ == '__main__':
     tools.algo.execute(TestAlgo())
 """
@@ -72,7 +96,9 @@ import json
 import substratools as tools
 class TestAggregateAlgo(tools.AggregateAlgo):
     def aggregate(self, models, rank):
-        return [0, 66]
+        values = [m['value'] for m in models]
+        avg = sum(values) / len(values)
+        return {{'value': avg}}
     def load_model(self, path):
         with open(path) as f:
             return json.load(f)
@@ -90,23 +116,47 @@ import json
 import substratools as tools
 class TestCompositeAlgo(tools.CompositeAlgo):
     def train(self, X, y, head_model, trunk_model, rank):
-        return [0, 1], [0, 2]
+
+        ratio = sum(y) / sum(X)
+        err_head = 0.1 * ratio  # Add a small error
+        err_trunk = 0.2 * ratio  # Add a small error
+
+        if head_model:
+            res_head = head_model['value']
+        else:
+            res_head = ratio
+
+        if trunk_model:
+            res_trunk = trunk_model['value']
+        else:
+            res_trunk = ratio
+        return {{'value' : res_head + err_head }}, {{'value' : res_trunk + err_trunk }}
+
     def predict(self, X, head_model, trunk_model):
-        return [0, 99]
+        ratio_sum = head_model['value'] + trunk_model['value']
+        res = [x * ratio_sum for x in X]
+        return res
+
     def load_head_model(self, path):
         return self._load_model(path)
+
     def save_head_model(self, model, path):
         return self._save_model(model, path)
+
     def load_trunk_model(self, path):
         return self._load_model(path)
+
     def save_trunk_model(self, model, path):
         return self._save_model(model, path)
+
     def _load_model(self, path):
         with open(path) as f:
             return json.load(f)
+
     def _save_model(self, model, path):
         with open(path, 'w') as f:
             return json.dump(model, f)
+
 if __name__ == '__main__':
     tools.algo.execute(TestCompositeAlgo())
 """
@@ -445,8 +495,11 @@ class AssetsFactory:
         tmpdir.mkdir()
 
         encoding = 'utf-8'
-        content = content or f'0,{idx}'.encode(encoding)
-        content = f'# random={rdm} \n'.encode(encoding) + content
+        if content:
+            content = f'# random={rdm} \n'.encode(encoding) + content
+        else:
+            # x=1, y=2. The last "random" column ensures the datasample is unique.
+            content = f'1,2,{rdm}\n'.encode(encoding)
 
         data_filepath = tmpdir / DEFAULT_DATA_SAMPLE_FILENAME
         with open(data_filepath, 'wb') as f:
