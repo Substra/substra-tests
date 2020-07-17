@@ -92,7 +92,7 @@ def test_compute_plan(factory, client_1, client_2, default_dataset_1, default_da
     assert testtuple.rank == traintuple_3.rank
 
     # check testtuple perf
-    assert math.isclose(testtuple.dataset.perf, 0.4)
+    assert testtuple.dataset.perf == 4
 
     # XXX as the first two tuples have the same rank, there is currently no way to know
     #     which one will be returned first
