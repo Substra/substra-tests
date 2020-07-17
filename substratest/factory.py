@@ -499,7 +499,7 @@ class AssetsFactory:
             content = f'# random={rdm} \n'.encode(encoding) + content
         else:
             # x=1, y=2. The last "random" column ensures the datasample is unique.
-            content = f'1,2,{rdm}\n'.encode(encoding)
+            content = f'10,20,{rdm}\n'.encode(encoding)
 
         data_filepath = tmpdir / DEFAULT_DATA_SAMPLE_FILENAME
         with open(data_filepath, 'wb') as f:
