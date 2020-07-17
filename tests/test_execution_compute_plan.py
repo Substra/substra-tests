@@ -7,7 +7,7 @@ from substratest.factory import Permissions
 from substratest import assets
 
 
-@pytest.mark.remote_only  # Remove when 'add_compute_plan' is implemented in the local backend
+@pytest.mark.remote_only
 def test_compute_plan(factory, client_1, client_2, default_dataset_1, default_dataset_2, default_objective_1):
     """Execution of a compute plan containing multiple traintuples:
     - 1 traintuple executed on node 1
@@ -114,7 +114,6 @@ def test_compute_plan(factory, client_1, client_2, default_dataset_1, default_da
 
 
 @pytest.mark.slow
-@pytest.mark.remote_only  # Remove when 'add_compute_plan' is implemented in the local backend
 def test_compute_plan_single_client_success(factory, client, default_dataset, default_objective):
     """A compute plan with 3 traintuples and 3 associated testtuples"""
 
@@ -172,7 +171,6 @@ def test_compute_plan_single_client_success(factory, client, default_dataset, de
 
 
 @pytest.mark.slow
-@pytest.mark.remote_only  # Remove when 'add_compute_plan' is implemented in the local backend
 def test_compute_plan_update(factory, client, default_dataset, default_objective):
     """A compute plan with 3 traintuples and 3 associated testtuples.
 
@@ -245,7 +243,7 @@ def test_compute_plan_update(factory, client, default_dataset, default_objective
 
 
 @pytest.mark.slow
-@pytest.mark.remote_only  # Remove when 'add_compute_plan' is implemented in the local backend
+@pytest.mark.remote_only
 def test_compute_plan_single_client_failure(factory, client, default_dataset, default_objective):
     """In a compute plan with 3 traintuples, failing the root traintuple
     should cancel its descendents and the associated testtuples"""
@@ -309,7 +307,6 @@ def test_compute_plan_single_client_failure(factory, client, default_dataset, de
 
 
 @pytest.mark.slow
-@pytest.mark.remote_only  # Remove when 'add_compute_plan' is implemented in the local backend
 def test_compute_plan_aggregate_composite_traintuples(factory, clients, default_datasets, default_objectives):
     """
     Compute plan version of the `test_aggregate_composite_traintuples` method from `test_execution.py`
@@ -384,7 +381,7 @@ def test_compute_plan_aggregate_composite_traintuples(factory, clients, default_
 
 
 @pytest.mark.slow
-@pytest.mark.remote_only  # Remove when 'add_compute_plan' is implemented in the local backend
+@pytest.mark.remote_only
 def test_compute_plan_remove_intermediary_model(factory, client, default_dataset, default_objective):
     """
     Create a simple compute plan with clean_models at true, see it done and
@@ -434,7 +431,6 @@ def test_compute_plan_remove_intermediary_model(factory, client, default_dataset
         client.add_traintuple(traintuple_spec_3).future().wait()
 
 
-@pytest.mark.remote_only  # Remove when 'add_compute_plan' is implemented in the local backend
 def test_compute_plan_circular_dependency_failure(factory, client, default_dataset):
     spec = factory.create_algo()
     algo = client.add_algo(spec)
@@ -463,7 +459,7 @@ def test_compute_plan_circular_dependency_failure(factory, client, default_datas
 
 
 @pytest.mark.slow
-@pytest.mark.remote_only  # Remove when 'add_compute_plan' is implemented in the local backend
+@pytest.mark.remote_only
 def test_execution_compute_plan_canceled(factory, client, default_dataset):
     # XXX A canceled compute plan can be done if the it is canceled while it last tuples
     #     are executing on the workers. The compute plan status will in this case change
