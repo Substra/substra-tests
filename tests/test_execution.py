@@ -1,3 +1,4 @@
+import math
 import pytest
 
 import substra
@@ -36,7 +37,7 @@ def test_tuples_execution_on_same_node(factory, client, default_dataset, default
     spec = factory.create_testtuple(objective=default_objective, traintuple=traintuple)
     testtuple = client.add_testtuple(spec).future().wait()
     assert testtuple.status == assets.Status.done
-    assert testtuple.dataset.perf == 0.2
+    assert math.isclose(testtuple.dataset.perf, 0.2)
 
     # add a traintuple depending on first traintuple
     spec = factory.create_traintuple(
@@ -116,7 +117,7 @@ def test_tuples_execution_on_different_nodes(factory, client_1, client_2, defaul
     testtuple = client_1.add_testtuple(spec).future().wait()
     assert testtuple.status == assets.Status.done
     assert testtuple.dataset.worker == client_1.node_id
-    assert testtuple.dataset.perf == 0.2
+    assert math.isclose(testtuple.dataset.perf, 0.2)
 
 
 @pytest.mark.slow
@@ -223,7 +224,7 @@ def test_composite_traintuples_execution(factory, client, default_dataset, defau
     spec = factory.create_testtuple(objective=default_objective, traintuple=composite_traintuple_2)
     testtuple = client.add_testtuple(spec).future().wait()
     assert testtuple.status == assets.Status.done
-    assert testtuple.dataset.perf == 3.2
+    assert math.isclose(testtuple.dataset.perf, 3.2)
 
     # list composite traintuple
     composite_traintuples = client.list_composite_traintuple()
@@ -350,7 +351,7 @@ def test_aggregate_composite_traintuples(factory, network, clients, default_data
             traintuple=traintuple,
         )
         testtuple = clients[0].add_testtuple(spec).future().wait()
-        assert testtuple.dataset.perf == 3.2
+        math.isclose(testtuple.dataset.perf, 3.2)
 
     if not network.options.enable_intermediate_model_removal:
         return
