@@ -79,7 +79,7 @@ def load_local_backend():
     """
     global _LOCAL_SETTINGS
     if _LOCAL_SETTINGS is None:
-         _LOCAL_SETTINGS = _load_yaml(DEFAULT_NETWORK_LOCAL_CONFIGURATION_PATH)
+        _LOCAL_SETTINGS = _load_yaml(DEFAULT_NETWORK_LOCAL_CONFIGURATION_PATH)
     return _LOCAL_SETTINGS
 
 
@@ -90,7 +90,6 @@ def load_local_backend():
 # load configuration at module load time to allow tests parametrization depending on
 # network static configuration
 load()
-load_local_backend()
 
 
 MSP_IDS = [n.msp_id for n in _SETTINGS.nodes]

@@ -20,7 +20,16 @@ It can be found [here](https://github.com/SubstraFoundation/substra)
 
 You will need to install it thanks to the `pip` binary.
 
-# Run the tests on the remote backend
+# Run the tests
+
+The tests can run both on the deployed backend and the mock backend. To run the complete
+test suite on both backend:
+
+```bash
+make test
+```
+
+# Run the tests on the deployed backend
 
 The network configuration is described in a yaml file.
 
@@ -31,16 +40,16 @@ Two configuration files are currently available:
 To run the tests using the default `values.yaml` file:
 
 ```
-make test
+make test-remote
 ```
 
 To run the tests using the provided `local-values.yaml` (or a custom config file):
 
 ```
-SUBSTRA_TESTS_CONFIG_FILEPATH=local-values.yaml make test
+SUBSTRA_TESTS_CONFIG_FILEPATH=local-values.yaml make test-remote
 ```
 
-# Minimal mode
+## Minimal mode
 
 Since tests can take a long time to run, some of them are marked as slow. You can run the "fast" ones with:
 
@@ -54,12 +63,11 @@ features aren't broken.
 
 # Run the tests on the local backend
 
-By default the tests (default and minimal) run on the remote backend: a running Substra platform.
-They can also be run on the local backend (no Substra deployment).
+By default the tests (default and minimal) run on the depoyed backend: a running Substra platform.
 
 The network configuration is described in a yaml file: `local-backend-values.yaml` and cannot be changed.
 
-To run the tests using on the local backend:
+To run the tests using on the mock backend:
 
 ```
 make test-local
@@ -83,3 +91,4 @@ When adding or modifying tests, please follow these guidelines:
 1. Each test should not complete before all the tuples it created have been executed. This requirement ensures that the next test will be launched with a substra network ready to execute new tuples
 1. Tests must not use hardcoded network configuration settings/values. Use settings files instead (e.g. `values.yaml`)
 1. Tests should target a substra network with at least 2 organisations
+1. By default, a test must pass on the remote and local backend. If the test is specific to one backend, add the corresponding mark.

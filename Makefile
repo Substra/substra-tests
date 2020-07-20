@@ -12,6 +12,10 @@ pyclean:
 
 test: pyclean
 	pytest tests -rs -v --durations=0
+	pytest tests -rs -v --durations=0 --local
+
+test-remote: pyclean
+	pytest tests -rs -v --durations=0
 
 test-minimal: pyclean
 	pytest tests -rs -v --durations=0 -m "not slow"

@@ -1,4 +1,3 @@
-import math
 import pytest
 import substra
 import substratest as sbt

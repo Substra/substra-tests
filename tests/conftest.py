@@ -29,10 +29,10 @@ def pytest_configure(config):
         "markers", "slow: marks tests as slow (deselect with '-m \"not slow\"')",
     )
     config.addinivalue_line(
-        "markers", "local_only: marks tests as local backend only (deselect with '-m \"not local\"')",
+        "markers", "local_only: marks tests as local backend only (deselect with '-m \"not local_only\"')",
     )
     config.addinivalue_line(
-        "markers", "remote_only: marks tests as remote backend only (deselect with '-m \"not remote\"')",
+        "markers", "remote_only: marks tests as remote backend only (deselect with '-m \"not remote_only\"')",
     )
 
 
@@ -47,7 +47,7 @@ def pytest_addoption(parser):
 
 def pytest_collection_modifyitems(config, items):
     """Skip the remote tests if local backend and local tests if remote backend.
-    If both or none are specified, run all tests on both.
+    By default, run only on the remote backend.
     """
     local = config.getoption("--local")
     if local:
