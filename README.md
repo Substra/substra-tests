@@ -12,8 +12,8 @@ Install tests dependencies:
 pip3 install -r requirements.txt
 ```
 
-The tests suite requires a Substra network up and running. The network can be started
-either with skaffold (Kubernetes), with docker-compose, or manually.
+The tests suite requires a Substra network up and running to test the remote backend.  
+The network can be started either with skaffold (Kubernetes), with docker-compose, or manually.
 
 The substra project is needed for running the tests.
 It can be found [here](https://github.com/SubstraFoundation/substra)
@@ -22,14 +22,14 @@ You will need to install it thanks to the `pip` binary.
 
 # Run the tests
 
-The tests can run both on the deployed backend and the mock backend. To run the complete
+The tests can run both on the remmote backend and the local backend. To run the complete
 test suite on both backend:
 
 ```bash
 make test
 ```
 
-# Run the tests on the deployed backend
+# Run the tests on the remote backend
 
 The network configuration is described in a yaml file.
 
@@ -63,11 +63,9 @@ features aren't broken.
 
 # Run the tests on the local backend
 
-By default the tests (default and minimal) run on the depoyed backend: a running Substra platform.
-
 The network configuration is described in a yaml file: `local-backend-values.yaml` and cannot be changed.
 
-To run the tests using on the mock backend:
+To run the tests using on the local backend:
 
 ```
 make test-local
