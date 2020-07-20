@@ -101,8 +101,8 @@ def test_composite_traintuple_fake_data(factory, client, default_dataset, defaul
     assert testtuple.dataset.perf == 48
 
 
-@pytest.mark.slow
 @pytest.mark.local_only
+@pytest.mark.slow
 def test_compute_plan_fake_data(factory, client, default_dataset, default_objective):
     """Execution of a compute plan containing multiple traintuples:
     - 1 traintuple executed on node 1
@@ -123,7 +123,7 @@ def test_compute_plan_fake_data(factory, client, default_dataset, default_object
     traintuple_spec_1 = cp_spec.add_traintuple(
         algo=algo_2,
         dataset=default_dataset,
-        data_samples=default_dataset.train_data_sample_keys,
+        data_samples=list(),
         metadata=None,
         fake_data=True,
         n_fake_samples=1,
@@ -132,7 +132,7 @@ def test_compute_plan_fake_data(factory, client, default_dataset, default_object
     traintuple_spec_2 = cp_spec.add_traintuple(
         algo=algo_2,
         dataset=default_dataset,
-        data_samples=default_dataset.train_data_sample_keys,
+        data_samples=list(),
         in_models=[traintuple_spec_1],
         metadata={},
         fake_data=True,
