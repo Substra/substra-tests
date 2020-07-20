@@ -10,11 +10,16 @@ pyclean:
 	find . -type f -name "*.py[co]" -delete
 	find . -type d -name "__pycache__" -delete
 
-test: pyclean
+test: test-remote test-local
+
+test-remote: pyclean
 	pytest tests -rs -v --durations=0
 
 test-minimal: pyclean
 	pytest tests -rs -v --durations=0 -m "not slow"
+
+test-local: pyclean
+	pytest tests -rs -v --durations=0 --local
 
 install:
 	pip3 install -r requirements.txt

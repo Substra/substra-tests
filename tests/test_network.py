@@ -205,6 +205,7 @@ def test_add_composite_algo(factory, client):
     assert algo == algo_copy
 
 
+@pytest.mark.remote_only  # No node saved in the local backend
 def test_list_nodes(client, network):
     """Nodes are properly registered and list nodes returns expected nodes."""
     nodes = client.list_node()
@@ -241,6 +242,7 @@ def test_list_asset(asset_type, client):
     method()  # should not raise
 
 
+@pytest.mark.remote_only
 @pytest.mark.parametrize(
     'asset_type', sbt.assets.AssetType.can_be_get(),
 )

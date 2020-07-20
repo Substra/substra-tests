@@ -9,6 +9,7 @@ from . import settings
 MSP_IDS = settings.MSP_IDS
 
 
+@pytest.mark.remote_only  # no check on permissions with the local backend
 @pytest.mark.parametrize('is_public', [True, False])
 def test_permission_creation(is_public, factory, client):
     """Test asset creation with simple permission."""
@@ -18,6 +19,7 @@ def test_permission_creation(is_public, factory, client):
     assert dataset.permissions.process.public is is_public
 
 
+@pytest.mark.remote_only  # no check on permissions with the local backend
 @pytest.mark.parametrize('permissions', [
     Permissions(public=True, authorized_ids=[]),
     Permissions(public=False, authorized_ids=[]),
@@ -43,6 +45,7 @@ def test_get_metadata(permissions, factory, clients):
             assert d.permissions.process.public == permissions.public
 
 
+@pytest.mark.remote_only  # no check on permissions with the local backend
 def test_permission_invalid_node_id(factory, client):
     """Test asset creation with invalid permission."""
     invalid_node = 'unknown-node'
@@ -53,6 +56,7 @@ def test_permission_invalid_node_id(factory, client):
     assert "invalid permission input values" in str(exc.value)
 
 
+@pytest.mark.remote_only  # no check on permissions with the local backend
 @pytest.mark.parametrize('permissions', [
     Permissions(public=True, authorized_ids=[]),
     Permissions(public=False, authorized_ids=[MSP_IDS[1]]),
@@ -69,6 +73,7 @@ def test_download_asset_access_granted(permissions, factory, client_1, client_2)
     assert content == spec.read_opener()
 
 
+@pytest.mark.remote_only  # no check on permissions with the local backend
 def test_download_asset_access_restricted(factory, client_1, client_2):
     """Test public asset can be downloaded by all nodes."""
     permissions = Permissions(public=False, authorized_ids=[])
@@ -82,6 +87,7 @@ def test_download_asset_access_restricted(factory, client_1, client_2):
         client_2.download_opener(dataset.key)
 
 
+@pytest.mark.remote_only  # no check on permissions with the local backend
 @pytest.mark.parametrize('permissions_1,permissions_2,expected_permissions', [
     (
         Permissions(public=False, authorized_ids=[MSP_IDS[1]]),
@@ -127,6 +133,7 @@ def test_merge_permissions(permissions_1, permissions_2, expected_permissions,
     assert set(tuple_permissions.authorized_ids) == set(expected_permissions.authorized_ids)
 
 
+@pytest.mark.remote_only  # no check on permissions with the local backend
 def test_permissions_denied_process(factory, client_1, client_2):
     # setup data
 
@@ -159,6 +166,7 @@ def test_permissions_denied_process(factory, client_1, client_2):
         client_1.add_traintuple(spec)
 
 
+@pytest.mark.remote_only  # no check on permissions with the local backend
 @pytest.mark.slow
 @pytest.mark.xfail(reason='permission check not yet implemented in the backend')
 def test_permissions_denied_model_process(factory, client_1, client_2, network):
@@ -207,6 +215,7 @@ def test_permissions_denied_model_process(factory, client_1, client_2, network):
         client_2.add_traintuple(spec)
 
 
+@pytest.mark.remote_only  # no check on permissions with the local backend
 @pytest.mark.skipif(len(MSP_IDS) < 3, reason='requires at least 3 nodes')
 def test_merge_permissions_denied_process(factory, clients):
     """Test to process asset with merged permissions from 2 other nodes
@@ -272,6 +281,7 @@ def test_merge_permissions_denied_process(factory, clients):
             client_3.add_testtuple(spec)
 
 
+@pytest.mark.remote_only  # no check on permissions with the local backend
 def test_permissions_denied_head_model_process(factory, client_1, client_2):
     # setup data
 

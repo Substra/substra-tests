@@ -1,4 +1,3 @@
-import math
 import pytest
 
 import substra
@@ -94,6 +93,7 @@ def test_federated_learning_workflow(factory, client, default_datasets):
 
 
 @pytest.mark.slow
+@pytest.mark.remote_only
 def test_tuples_execution_on_different_nodes(factory, client_1, client_2, default_objective_1, default_dataset_2):
     """Execution of a traintuple on node 1 and the following testtuple on node 2."""
     # add test data samples / dataset / objective on node 1
@@ -132,9 +132,13 @@ def test_traintuple_execution_failure(factory, client, default_dataset_1):
         dataset=default_dataset_1,
         data_samples=default_dataset_1.train_data_sample_keys,
     )
-    traintuple = client.add_traintuple(spec).future().wait(raises=False)
-    assert traintuple.status == assets.Status.failed
-    assert traintuple.out_model is None
+    if client.backend == "remote":
+        traintuple = client.add_traintuple(spec).future().wait(raises=False)
+        assert traintuple.status == assets.Status.failed
+        assert traintuple.out_model is None
+    else:
+        with pytest.raises(substra.sdk.backends.local.compute.spawner.ExecutionError):
+            traintuple = client.add_traintuple(spec)
 
 
 @pytest.mark.slow
@@ -149,10 +153,14 @@ def test_composite_traintuple_execution_failure(factory, client, default_dataset
         dataset=default_dataset,
         data_samples=default_dataset.train_data_sample_keys,
     )
-    composite_traintuple = client.add_composite_traintuple(spec).future().wait(raises=False)
-    assert composite_traintuple.status == assets.Status.failed
-    assert composite_traintuple.out_head_model.out_model is None
-    assert composite_traintuple.out_trunk_model.out_model is None
+    if client.backend == "remote":
+        composite_traintuple = client.add_composite_traintuple(spec).future().wait(raises=False)
+        assert composite_traintuple.status == assets.Status.failed
+        assert composite_traintuple.out_head_model.out_model is None
+        assert composite_traintuple.out_trunk_model.out_model is None
+    else:
+        with pytest.raises(substra.sdk.backends.local.compute.spawner.ExecutionError):
+            composite_traintuple = client.add_composite_traintuple(spec)
 
 
 @pytest.mark.slow
@@ -179,12 +187,16 @@ def test_aggregatetuple_execution_failure(factory, client, default_dataset):
         traintuples=composite_traintuples,
         worker=client.node_id,
     )
-    aggregatetuple = client.add_aggregatetuple(spec).future().wait(raises=False)
-    for composite_traintuple in composite_traintuples:
-        composite_traintuple = client.get_composite_traintuple(composite_traintuple.key)
-        assert composite_traintuple.status == assets.Status.done
-    assert aggregatetuple.status == assets.Status.failed
-    assert aggregatetuple.out_model is None
+    if client.backend == "remote":
+        aggregatetuple = client.add_aggregatetuple(spec).future().wait(raises=False)
+        for composite_traintuple in composite_traintuples:
+            composite_traintuple = client.get_composite_traintuple(composite_traintuple.key)
+            assert composite_traintuple.status == assets.Status.done
+        assert aggregatetuple.status == assets.Status.failed
+        assert aggregatetuple.out_model is None
+    else:
+        with pytest.raises(substra.sdk.backends.local.compute.spawner.ExecutionError):
+            aggregatetuple = client.add_aggregatetuple(spec)
 
 
 @pytest.mark.slow
@@ -351,7 +363,11 @@ def test_aggregate_composite_traintuples(factory, network, clients, default_data
             traintuple=traintuple,
         )
         testtuple = clients[0].add_testtuple(spec).future().wait()
-        assert testtuple.dataset.perf == 32
+        if clients[0].backend == 'remote':
+            assert testtuple.dataset.perf == 32
+        else:
+            # There is only one dataset in 'datasets' in local, hence the difference
+            assert testtuple.dataset.perf == 30
 
     if not network.options.enable_intermediate_model_removal:
         return

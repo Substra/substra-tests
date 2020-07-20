@@ -424,6 +424,7 @@ def run_tests():
     print('\n# Run tests')
 
     try:
+        # Run the tests on the remote and local backend
         call(f'kubectl --context {KUBE_CONTEXT} exec {substra_tests_pod} -n substra-tests -- make test')
         return True
     except subprocess.CalledProcessError:
