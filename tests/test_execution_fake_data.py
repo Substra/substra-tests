@@ -1,12 +1,5 @@
 import pytest
 
-import substra
-
-import substratest as sbt
-from substratest.factory import Permissions
-
-from substratest import assets
-
 
 @pytest.mark.local_only
 @pytest.mark.slow
@@ -29,11 +22,15 @@ def test_traintuple_fake_data(factory, client, default_dataset, default_objectiv
     print(traintuple.log.replace('\n', ''))
 
     # create testtuple
-    # don't create it before to avoid MVCC errors
-    spec = factory.create_testtuple(objective=default_objective, traintuple=traintuple)
+    spec = factory.create_testtuple(
+        objective=default_objective,
+        traintuple=traintuple,
+        fake_data=True,
+        n_fake_samples=1,
+    )
     testtuple = client.add_testtuple(spec).future().wait()
     print(testtuple.log)
-    assert testtuple.dataset.perf == 13
+    assert testtuple.dataset.perf == 3
 
     # add a traintuple depending on first traintuple
     spec = factory.create_traintuple(
@@ -49,11 +46,15 @@ def test_traintuple_fake_data(factory, client, default_dataset, default_objectiv
     print(traintuple.log.replace('\n', ''))
 
     # create testtuple
-    # don't create it before to avoid MVCC errors
-    spec = factory.create_testtuple(objective=default_objective, traintuple=traintuple)
+    spec = factory.create_testtuple(
+        objective=default_objective,
+        traintuple=traintuple,
+        fake_data=True,
+        n_fake_samples=1,
+    )
     testtuple = client.add_testtuple(spec).future().wait()
     print(testtuple.log.replace('\n', ''))
-    assert testtuple.dataset.perf == 16
+    assert testtuple.dataset.perf == 6
 
 
 @pytest.mark.local_only
@@ -89,15 +90,20 @@ def test_composite_traintuple_fake_data(factory, client, default_dataset, defaul
     print(composite_traintuple_2.log.replace('\n', ''))
 
     # add a 'composite' testtuple
-    spec = factory.create_testtuple(objective=default_objective, traintuple=composite_traintuple_2)
+    spec = factory.create_testtuple(
+        objective=default_objective,
+        traintuple=composite_traintuple_2,
+        fake_data=True,
+        n_fake_samples=1,
+    )
     testtuple = client.add_testtuple(spec).future().wait()
     print(testtuple.log.replace('\n', ''))
-    assert testtuple.dataset.perf == 58
+    assert testtuple.dataset.perf == 48
 
 
 @pytest.mark.slow
 @pytest.mark.local_only
-def test_compute_plan(factory, client, default_dataset, default_objective):
+def test_compute_plan_fake_data(factory, client, default_dataset, default_objective):
     """Execution of a compute plan containing multiple traintuples:
     - 1 traintuple executed on node 1
     - 1 traintuple executed on node 2
@@ -147,4 +153,4 @@ def test_compute_plan(factory, client, default_dataset, default_objective):
     # check testtuple perf
     testtuples = cp.list_testtuple()
     testtuple = testtuples[0]
-    assert testtuple.dataset.perf == 16
+    assert testtuple.dataset.perf == 6
