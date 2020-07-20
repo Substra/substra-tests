@@ -78,11 +78,8 @@ def load_local_backend():
     Returns an instance of the `Settings` class.
     """
     global _LOCAL_SETTINGS
-    if _LOCAL_SETTINGS is not None:
-        return _LOCAL_SETTINGS
-
-    s = _load_yaml(DEFAULT_NETWORK_LOCAL_CONFIGURATION_PATH)
-    _LOCAL_SETTINGS = s
+    if _LOCAL_SETTINGS is None:
+         _LOCAL_SETTINGS = _load_yaml(DEFAULT_NETWORK_LOCAL_CONFIGURATION_PATH)
     return _LOCAL_SETTINGS
 
 
