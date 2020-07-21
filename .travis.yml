@@ -2,15 +2,20 @@ language: python
 python:
   - "3.7"
 
-branches:
-  only:
-    - master
+# branches:
+#  only:
+#    - master
 
 git:
   depth: 1
 
 services:
   - docker
+
+env:
+  global:
+    - SUBSTRA_GIT_REPO=https://github.com/SubstraFoundation/substra.git
+    - SUBSTRA_GIT_REF=master
 
 before_install:
   # Decrypt secrets
@@ -31,7 +36,7 @@ before_install:
   - chmod +x ./skaffold
   - mv ./skaffold $HOME/bin/
   # Install substra and substra-tests (for the tests on the local backend)
-  - pip install --no-cache-dir "git+https://github.com/SubstraFoundation/substra.git@master"
+  - pip install --no-cache-dir "${SUBSTRA_GIT_REPO}@${SUBSTRA_GIT_REF}"
   - pip install --no-cache-dir -r requirements.txt
 
 script:
