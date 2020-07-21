@@ -8,7 +8,7 @@ git:
 jobs:
   include:
     - name: "Tests on the remote backend"
-      if: (branch = master AND NOT type = pull_request) OR type = cron
+      if: type = cron
       before_install:
         # Decrypt secrets
         # Secrets generated using the CLI: `travis encrypt-file --add [...]`
