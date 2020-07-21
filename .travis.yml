@@ -36,7 +36,7 @@ before_install:
   - chmod +x ./skaffold
   - mv ./skaffold $HOME/bin/
   # Install substra and substra-tests (for the tests on the local backend)
-  - pip install --no-cache-dir "${SUBSTRA_GIT_REPO}@${SUBSTRA_GIT_REF}"
+  - pip install --no-cache-dir "git+${SUBSTRA_GIT_REPO}@${SUBSTRA_GIT_REF}"
   - pip install --no-cache-dir -r requirements.txt
 
 script:
