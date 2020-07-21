@@ -425,10 +425,10 @@ def run_tests():
 
     try:
         # Run the tests on the remote and local backend
-        call(f'kubectl --context {KUBE_CONTEXT} exec {substra_tests_pod} -n substra-tests -- make test')
+        call(f'kubectl --context {KUBE_CONTEXT} exec {substra_tests_pod} -n substra-tests -- make test-remote')
         return True
     except subprocess.CalledProcessError:
-        print('FATAL: `make test` completed with a non-zero exit code. Did some test(s) fail?')
+        print('FATAL: `make test-remote` completed with a non-zero exit code. Did some test(s) fail?')
         return False
 
 
