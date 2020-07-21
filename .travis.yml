@@ -9,6 +9,9 @@ branches:
 git:
   depth: 1
 
+services:
+  - docker
+
 before_install:
   # Decrypt secrets
   # Secrets generated using the CLI: `travis encrypt-file --add [...]`
@@ -27,12 +30,17 @@ before_install:
   - curl -Lo skaffold https://storage.googleapis.com/skaffold/releases/v1.7.0/skaffold-linux-amd64
   - chmod +x ./skaffold
   - mv ./skaffold $HOME/bin/
+  # Install substra and substra-tests (for the tests on the local backend)
+  - pip install --no-cache-dir "git+https://github.com/SubstraFoundation/substra.git@master"
+  - pip install --no-cache-dir -r requirements.txt
 
 script:
+  - make test-local
   - CLUSTER_NAME="substra-tests-$(date -u +'%Y-%m-%d-%Hh%M')"
   - cd ci/
   # Retry on failure. This is to account for the occasional hiccups in deployment of hlf-k8s/substra-backend (some pods occasionally fail to start, maybe 1 time out of 10-20).
   - travis_retry python -u ./run-ci.py --keys-directory=./keys/ --cluster-name=${CLUSTER_NAME}
+  # Tests on the local backend
 
 notifications:
   slack:
