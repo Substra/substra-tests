@@ -2,6 +2,7 @@ language: python
 python:
   - "3.7"
 
+# TODO uncomment before merging
 # branches:
 #  only:
 #    - master
@@ -9,43 +10,42 @@ python:
 git:
   depth: 1
 
-services:
-  - docker
-
-env:
-  global:
-    - SUBSTRA_GIT_REPO=https://github.com/SubstraFoundation/substra.git
-    - SUBSTRA_GIT_REF=master
-
-before_install:
-  # Decrypt secrets
-  # Secrets generated using the CLI: `travis encrypt-file --add [...]`
-  - openssl aes-256-cbc -K $encrypted_36785d287aa1_key -iv $encrypted_36785d287aa1_iv
-    -in ci/keys/substra-208412-3be0df12d87a.json.enc -out ci/keys/substra-208412-3be0df12d87a.json
-    -d
-  # Install helm (v2.16.7)
-  - curl https://get.helm.sh/helm-v2.16.7-linux-amd64.tar.gz -o helm-v2.16.7-linux-amd64.tar.gz
-  - tar xzf helm-v2.16.7-linux-amd64.tar.gz
-  - mv linux-amd64/helm linux-amd64/tiller $HOME/bin/
-  # Install kubectl
-  - curl -LO https://storage.googleapis.com/kubernetes-release/release/`curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt`/bin/linux/amd64/kubectl
-  - chmod +x ./kubectl
-  - mv ./kubectl $HOME/bin/
-  # Install skaffold
-  - curl -Lo skaffold https://storage.googleapis.com/skaffold/releases/v1.7.0/skaffold-linux-amd64
-  - chmod +x ./skaffold
-  - mv ./skaffold $HOME/bin/
-  # Install substra and substra-tests (for the tests on the local backend)
-  - pip install --no-cache-dir "git+${SUBSTRA_GIT_REPO}@${SUBSTRA_GIT_REF}"
-  - pip install --no-cache-dir -r requirements.txt
-
-script:
-  - make test-local
-  - CLUSTER_NAME="substra-tests-$(date -u +'%Y-%m-%d-%Hh%M')"
-  - cd ci/
-  # Retry on failure. This is to account for the occasional hiccups in deployment of hlf-k8s/substra-backend (some pods occasionally fail to start, maybe 1 time out of 10-20).
-  - travis_retry python -u ./run-ci.py --keys-directory=./keys/ --cluster-name=${CLUSTER_NAME}
-  # Tests on the local backend
+jobs:
+  include:
+    - name: "Tests on the remote backend"
+      before_install:
+        # Decrypt secrets
+        # Secrets generated using the CLI: `travis encrypt-file --add [...]`
+        - openssl aes-256-cbc -K $encrypted_36785d287aa1_key -iv $encrypted_36785d287aa1_iv
+          -in ci/keys/substra-208412-3be0df12d87a.json.enc -out ci/keys/substra-208412-3be0df12d87a.json
+          -d
+        # Install helm (v2.16.7)
+        - curl https://get.helm.sh/helm-v2.16.7-linux-amd64.tar.gz -o helm-v2.16.7-linux-amd64.tar.gz
+        - tar xzf helm-v2.16.7-linux-amd64.tar.gz
+        - mv linux-amd64/helm linux-amd64/tiller $HOME/bin/
+        # Install kubectl
+        - curl -LO https://storage.googleapis.com/kubernetes-release/release/`curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt`/bin/linux/amd64/kubectl
+        - chmod +x ./kubectl
+        - mv ./kubectl $HOME/bin/
+        # Install skaffold
+        - curl -Lo skaffold https://storage.googleapis.com/skaffold/releases/v1.7.0/skaffold-linux-amd64
+        - chmod +x ./skaffold
+        - mv ./skaffold $HOME/bin/
+      script:
+        - CLUSTER_NAME="substra-tests-$(date -u +'%Y-%m-%d-%Hh%M')"
+        - cd ci/
+        # Retry on failure. This is to account for the occasional hiccups in deployment of hlf-k8s/substra-backend (some pods occasionally fail to start, maybe 1 time out of 10-20).
+        - travis_retry python -u ./run-ci.py --keys-directory=./keys/ --cluster-name=${CLUSTER_NAME}
+    - name: "Tests on the local backend"
+      env:
+        - SUBSTRA_GIT_REPO=https://github.com/SubstraFoundation/substra.git
+        - SUBSTRA_GIT_REF=master
+      before_install:
+        # Install substra and substra-tests (for the tests on the local backend)
+        - pip install --no-cache-dir "git+${SUBSTRA_GIT_REPO}@${SUBSTRA_GIT_REF}"
+        - pip install --no-cache-dir -r requirements.txt
+      script:
+        - make test-local
 
 notifications:
   slack:
