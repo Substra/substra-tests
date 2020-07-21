@@ -2,17 +2,13 @@ language: python
 python:
   - "3.7"
 
-# TODO uncomment before merging
-# branches:
-#  only:
-#    - master
-
 git:
   depth: 1
 
 jobs:
   include:
     - name: "Tests on the remote backend"
+      if: branch = master OR type = cron
       before_install:
         # Decrypt secrets
         # Secrets generated using the CLI: `travis encrypt-file --add [...]`
