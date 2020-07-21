@@ -102,6 +102,7 @@ def test_link_dataset_with_datasamples(factory, client):
     assert dataset.train_data_sample_keys == [data_sample.key]
 
 
+@pytest.mark.remote_only
 @pytest.mark.skipif(not settings.HAS_SHARED_PATH, reason='requires a shared path')
 def test_add_data_sample_located_in_shared_path(factory, client, node_cfg):
     spec = factory.create_dataset()
