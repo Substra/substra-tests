@@ -128,7 +128,7 @@ def network(backend):
         # TODO check what enable_intermediate_model_removal does
         cfg = settings.load_local_backend()
     clients = [sbt.Client(
-        backend=backend,
+        debug=backend == "local",  # TODO better way
         node_id=n.msp_id,
         address=n.address,
         user=n.user,

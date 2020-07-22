@@ -132,7 +132,7 @@ def test_traintuple_execution_failure(factory, client, default_dataset_1):
         dataset=default_dataset_1,
         data_samples=default_dataset_1.train_data_sample_keys,
     )
-    if client.backend == "remote":
+    if client.debug:
         traintuple = client.add_traintuple(spec).future().wait(raises=False)
         assert traintuple.status == assets.Status.failed
         assert traintuple.out_model is None
@@ -153,7 +153,7 @@ def test_composite_traintuple_execution_failure(factory, client, default_dataset
         dataset=default_dataset,
         data_samples=default_dataset.train_data_sample_keys,
     )
-    if client.backend == "remote":
+    if client.debug:
         composite_traintuple = client.add_composite_traintuple(spec).future().wait(raises=False)
         assert composite_traintuple.status == assets.Status.failed
         assert composite_traintuple.out_head_model.out_model is None
@@ -187,7 +187,7 @@ def test_aggregatetuple_execution_failure(factory, client, default_dataset):
         traintuples=composite_traintuples,
         worker=client.node_id,
     )
-    if client.backend == "remote":
+    if client.debug:
         aggregatetuple = client.add_aggregatetuple(spec).future().wait(raises=False)
         for composite_traintuple in composite_traintuples:
             composite_traintuple = client.get_composite_traintuple(composite_traintuple.key)
@@ -363,7 +363,7 @@ def test_aggregate_composite_traintuples(factory, network, clients, default_data
             traintuple=traintuple,
         )
         testtuple = clients[0].add_testtuple(spec).future().wait()
-        if clients[0].backend == 'remote':
+        if clients[0].debug:
             assert testtuple.dataset.perf == 32
         else:
             # There is only one dataset in 'datasets' in local, hence the difference
