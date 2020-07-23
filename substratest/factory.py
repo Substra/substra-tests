@@ -29,6 +29,7 @@ class TestOpener(tools.Opener):
                 reader = csv.reader(f)
                 for row in reader:
                     res.append(int(row[0]))
+        print(f'get_X: {{res}}')
         return res  # returns a list of 1's
     def get_y(self, folders):
         res = []
@@ -37,11 +38,20 @@ class TestOpener(tools.Opener):
                 reader = csv.reader(f)
                 for row in reader:
                     res.append(int(row[1]))
+        print(f'get_y: {{res}}')
         return res  # returns a list of 2's
-    def fake_X(self, n_samples=1):
-        return [1] * n_samples
-    def fake_y(self, n_samples=1):
-        return [2] * n_samples
+    def fake_X(self, n_samples=None):
+        if n_samples is None:
+            n_samples = 1
+        res = [10] * n_samples
+        print(f'fake_X: {{res}}')
+        return res
+    def fake_y(self, n_samples=None):
+        if n_samples is None:
+            n_samples = 1
+        res = [30] * n_samples
+        print(f'fake_y: {{res}}')
+        return res
     def get_predictions(self, path):
         with open(path) as f:
             return json.load(f)
@@ -50,12 +60,14 @@ class TestOpener(tools.Opener):
             return json.dump(y_pred, f)
 """
 
-DEFAULT_METRICS_SCRIPT = """
+DEFAULT_METRICS_SCRIPT = f"""
 import json
 import substratools as tools
 class TestMetrics(tools.Metrics):
     def score(self, y_true, y_pred):
-        return sum(y_pred) - sum(y_true)
+        res = sum(y_pred) - sum(y_true)
+        print(f'metrics, y_true: {{y_true}}, y_pred: {{y_pred}}, result: {{res}}')
+        return res
 if __name__ == '__main__':
     tools.metrics.execute(TestMetrics())
 """
@@ -65,19 +77,25 @@ import json
 import substratools as tools
 class TestAlgo(tools.Algo):
     def train(self, X, y, models, rank):
+        print(f'Train, get X: {{X}}, y: {{y}}, models: {{models}}')
 
         ratio = sum(y) / sum(X)
         err = 0.1 * ratio  # Add a small error
 
         if len(models) == 0:
-            return {{'value': ratio + err }}
+            res = {{'value': ratio + err }}
         else:
             ratios = [m['value'] for m in models]
             avg = sum(ratios) / len(ratios)
-            return {{'value': avg + err }}
+            res = {{'value': avg + err }}
+
+        print(f'Train, return {{res}}')
+        return res
 
     def predict(self, X, model):
-        return [x * model['value'] for x in X]
+        res = [x * model['value'] for x in X]
+        print(f'Predict, get X: {{X}}, model: {{model}}, return {{res}}')
+        return res
 
     def load_model(self, path):
         with open(path) as f:
@@ -96,9 +114,12 @@ import json
 import substratools as tools
 class TestAggregateAlgo(tools.AggregateAlgo):
     def aggregate(self, models, rank):
+        print(f'Aggregate models: {{models}}')
         values = [m['value'] for m in models]
         avg = sum(values) / len(values)
-        return {{'value': avg}}
+        res = {{'value': avg}}
+        print(f'Aggregate result: {{res}}')
+        return res
     def load_model(self, path):
         with open(path) as f:
             return json.load(f)
@@ -117,6 +138,8 @@ import substratools as tools
 class TestCompositeAlgo(tools.CompositeAlgo):
     def train(self, X, y, head_model, trunk_model, rank):
 
+        print(f'Composite algo train X: {{X}}, y: {{y}}, head_model: {{head_model}}, trunk_model: {{trunk_model}}')
+
         ratio = sum(y) / sum(X)
         err_head = 0.1 * ratio  # Add a small error
         err_trunk = 0.2 * ratio  # Add a small error
@@ -130,11 +153,16 @@ class TestCompositeAlgo(tools.CompositeAlgo):
             res_trunk = trunk_model['value']
         else:
             res_trunk = ratio
-        return {{'value' : res_head + err_head }}, {{'value' : res_trunk + err_trunk }}
+
+        res = {{'value' : res_head + err_head }}, {{'value' : res_trunk + err_trunk }}
+        print(f'Composite algo train head, trunk result: {{res}}')
+        return res
 
     def predict(self, X, head_model, trunk_model):
+        print(f'Composite algo predict X: {{X}}, head_model: {{head_model}}, trunk_model: {{trunk_model}}')
         ratio_sum = head_model['value'] + trunk_model['value']
         res = [x * ratio_sum for x in X]
+        print(f'Composite algo predict result: {{res}}')
         return res
 
     def load_head_model(self, path):
@@ -451,7 +479,13 @@ class _BaseComputePlanSpec(_Spec, abc.ABC):
         self.composite_traintuples.append(spec)
         return spec
 
-    def add_testtuple(self, objective, traintuple_spec, tag='', metadata=None):
+    def add_testtuple(
+        self,
+        objective,
+        traintuple_spec,
+        tag='',
+        metadata=None,
+    ):
         spec = ComputePlanTesttupleSpec(
             objective_key=objective.key,
             traintuple_id=traintuple_spec.id,
@@ -498,7 +532,7 @@ class AssetsFactory:
         if content:
             content = f'# random={rdm} \n'.encode(encoding) + content
         else:
-            # x=1, y=2. The last "random" column ensures the datasample is unique.
+            # x=10, y=20. The last "random" column ensures the datasample is unique.
             content = f'10,20,{rdm}\n'.encode(encoding)
 
         data_filepath = tmpdir / DEFAULT_DATA_SAMPLE_FILENAME

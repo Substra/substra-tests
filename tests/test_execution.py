@@ -140,6 +140,7 @@ def test_traintuple_execution_failure(factory, client, default_dataset_1):
         assert traintuple.status == assets.Status.failed
         assert traintuple.out_model is None
 
+
 @pytest.mark.slow
 def test_composite_traintuple_execution_failure(factory, client, default_dataset):
     """Invalid composite algo script is causing traintuple failure."""

@@ -14,13 +14,15 @@ class Client:
     Parses responses from server to return Asset instances.
     """
 
-    def __init__(self, debug, node_id=None, address=None, user=None, password=None):
+    def __init__(self, debug, node_id=None, address=None, token=None, user=None, password=None):
         super().__init__()
 
         self.node_id = node_id
         self.debug = debug
-        self._client = substra.Client(debug=debug, url=address, version="0.0", insecure=False)
-        self._client.login(user, password)
+        self._client = substra.Client(debug=debug, url=address, version="0.0", insecure=False, token=token)
+        if not token:
+            self._client.login(user, password)
+        self.token = self._client._token
 
     def add_data_sample(self, spec, *args, **kwargs):
         res = self._client.add_data_sample(spec.dict(), *args, **kwargs)

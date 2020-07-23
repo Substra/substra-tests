@@ -115,7 +115,7 @@ def factory(request):
 def network(backend):
     """Network fixture.
 
-    Network must started outside of the tests environment and the network is kept
+    Network must ge started outside of the tests environment and the network is kept
     alive while running all tests.
 
     Create network instance from settings.
@@ -267,7 +267,7 @@ def node_cfg():
     return cfg.nodes[0]
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def client(network):
     """Client fixture (first node)."""
     return network.clients[0]
@@ -277,3 +277,18 @@ def client(network):
 def clients(network):
     """Client fixture (first node)."""
     return network.clients
+
+
+@pytest.fixture(scope="session")
+def debug_client(client):
+    # THIS DOES NOT WORK, AUTHORIZATION ERROR
+    cfg = settings.load()
+    node = cfg.nodes[0]
+    return sbt.Client(
+        debug=True,
+        node_id=node.msp_id,
+        address=node.address,
+        user=node.user,
+        password=node.password,
+        token=client.token
+    )
