@@ -13,8 +13,7 @@ from . import utils, assets
 
 
 DEFAULT_DATA_SAMPLE_FILENAME = 'data.csv'
-
-DEFAULT_SUBSTRATOOLS_VERSION = '0.6.0-minimal'
+DEFAULT_SUBSTRATOOLS_VERSION = '0.6.1-minimal'
 
 DEFAULT_OPENER_SCRIPT = f"""
 import csv
