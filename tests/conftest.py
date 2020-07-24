@@ -281,7 +281,6 @@ def clients(network):
 
 @pytest.fixture(scope="session")
 def debug_client(client):
-    # THIS DOES NOT WORK, AUTHORIZATION ERROR
     cfg = settings.load()
     node = cfg.nodes[0]
     return sbt.Client(
