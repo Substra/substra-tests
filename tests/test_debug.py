@@ -101,3 +101,8 @@ def test_debug_compute_plan_aggregate_composite(client, debug_client, factory, d
     tuples = traintuples + composite_traintuples + aggregatetuples + testtuples
     for t in tuples:
         assert t.status == assets.Status.done
+
+
+@pytest.mark.remote_only
+def test_debug_download_dataset(debug_client, default_dataset):
+    debug_client.download_opener(default_dataset.key)
