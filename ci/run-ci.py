@@ -431,7 +431,6 @@ def patch_skaffold_file(config):
             r['chartPath'] = os.path.join(SOURCE_DIR, config["name"], r['chartPath'])
         if config['name'] == 'substra-backend':
             r['overrides']['celeryworker']['concurrency'] = CONCURRENCY
-            r['overrides']['backend']['imageBuilder']['type'] = 'dind'
 
     with open(skaffold_file, 'w') as file:
         yaml.dump(data, file)
