@@ -12,8 +12,8 @@ Install tests dependencies:
 pip3 install -r requirements.txt
 ```
 
-The tests suite requires a Substra network up and running to test the remote backend.  
-The network can be started either with skaffold (Kubernetes), with docker-compose, or manually.
+The tests suite requires a Substra network up and running to test the remote backend.
+The network can be started with skaffold (Kubernetes) or manually with helm charts.
 
 The substra project is needed for running the tests.
 It can be found [here](https://github.com/SubstraFoundation/substra)
@@ -33,9 +33,8 @@ make test
 
 The network configuration is described in a yaml file.
 
-Two configuration files are currently available:
+A default configuration file is available:
 - `values.yaml` (default): for networks started with Kubernetes
-- `local-values.yaml`: for networks started with docker-compose, or started manually
 
 To run the tests using the default `values.yaml` file:
 
@@ -80,7 +79,7 @@ When adding or modifying tests, please follow these guidelines:
 1. The complete test suite must be independent from the substra network
    - The substra network must be started prior to (and independently from) executing the tests
    - The substra network can be running locally / on the cloud
-   - The substra network can be started through docker-compose or through kubernetes
+   - The substra network must be started through kubernetes
 1. It should be possible to run the test suite multiple times without restarting the substra network
 1. Each test must have a deterministic behavior (must not fail randomly)
 1. Each test must be fast to run:
