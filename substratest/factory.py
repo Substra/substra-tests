@@ -7,6 +7,7 @@ import tempfile
 import typing
 import uuid
 
+
 import pydantic
 
 from . import utils, assets
@@ -221,11 +222,24 @@ class DataSampleSpec(_Spec):
     test_only: bool
     data_manager_keys: typing.List[str]
 
-    def move_data_to(self, destination):
-        destination = destination if destination.endswith('/') else destination + '/'
-        destination = tempfile.mkdtemp(dir=destination)
-        shutil.move(self.path, destination)
-        self.path = os.path.join(destination, os.path.basename(self.path))
+    def move_data_to(self, copy_destination, minikube=False):
+        copy_destination = copy_destination if copy_destination.endswith('/') else copy_destination + '/'
+
+        if not minikube:
+            destination = tempfile.mkdtemp(dir=copy_destination)
+            shutil.move(self.path, destination)
+        else:
+            destination = os.path.join(copy_destination, random_uuid()[0:8])
+
+            minikube_private_key = '~/.minikube/machines/minikube/id_rsa'
+            minikube_ssh = 'docker@$(minikube ip)'
+
+            os.system(f'scp -r -i {minikube_private_key} {self.path} {minikube_ssh}:/tmp/')
+            os.system(f'ssh -i {minikube_private_key} {minikube_ssh} '
+                      f'"sudo mkdir -p {destination} && sudo mv /tmp/{os.path.basename(self.path)} {destination}"')
+
+        self.path = os.path.join(destination.replace(copy_destination, '/var/substra/servermedias/'),
+                                 os.path.basename(self.path))
 
 
 class DatasetSpec(_Spec):

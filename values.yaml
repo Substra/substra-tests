@@ -8,9 +8,12 @@ nodes:
     user: 'node-1'
     password: 'p@$swr0d44'
     shared_path: '/tmp/org-1/servermedias'
+    # minikube: True
   - name: 'node-2'
     msp_id: 'MyOrg2MSP'
     address: 'http://substra-backend.node-2.com'
     user: 'node-2'
     password: 'p@$swr0d45'
     shared_path: '/tmp/org-2/servermedias'
+    # minikube: True
+
