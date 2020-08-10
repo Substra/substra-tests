@@ -215,30 +215,33 @@ class PrivatePermissions(pydantic.BaseModel):
 
 DEFAULT_PERMISSIONS = Permissions(public=True, authorized_ids=[])
 DEFAULT_OUT_TRUNK_MODEL_PERMISSIONS = PrivatePermissions(authorized_ids=[])
-
+SERVER_MEDIA_PATH='/var/substra/servermedias/'
 
 class DataSampleSpec(_Spec):
     path: str
     test_only: bool
     data_manager_keys: typing.List[str]
 
-    def move_data_to(self, copy_destination, minikube=False):
-        copy_destination = copy_destination if copy_destination.endswith('/') else copy_destination + '/'
+    def move_data_to_server(self, destination_folder, minikube=False):
+        destination_folder = destination_folder if destination_folder.endswith('/') else destination_folder + '/'
 
         if not minikube:
-            destination = tempfile.mkdtemp(dir=copy_destination)
+            destination = tempfile.mkdtemp(dir=destination_folder)
             shutil.move(self.path, destination)
         else:
-            destination = os.path.join(copy_destination, random_uuid()[0:8])
+            destination = os.path.join(destination_folder, random_uuid()[0:8])
 
             minikube_private_key = '~/.minikube/machines/minikube/id_rsa'
             minikube_ssh = 'docker@$(minikube ip)'
 
             os.system(f'scp -r -i {minikube_private_key} {self.path} {minikube_ssh}:/tmp/')
-            os.system(f'ssh -i {minikube_private_key} {minikube_ssh} '
+            os.system(f'ssh -i {minikube_private_key} -oStrictHostKeyChecking=no {minikube_ssh} '
                       f'"sudo mkdir -p {destination} && sudo mv /tmp/{os.path.basename(self.path)} {destination}"')
 
-        self.path = os.path.join(destination.replace(copy_destination, '/var/substra/servermedias/'),
+            # Clean path after copy
+            shutil.rmtree(self.path)
+
+        self.path = os.path.join(destination.replace(destination_folder, SERVER_MEDIA_PATH),
                                  os.path.basename(self.path))
 
 

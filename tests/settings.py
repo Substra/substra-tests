@@ -22,13 +22,13 @@ class NodeCfg:
     user: str = None
     password: str = None
     shared_path: str = None
-    minikube: bool = False
 
 
 @dataclasses.dataclass(frozen=True)
 class Options:
     celery_task_max_retries: int
     enable_intermediate_model_removal: bool
+    minikube: bool = False
 
 
 @dataclasses.dataclass(frozen=True)
@@ -95,5 +95,5 @@ load()
 
 MSP_IDS = [n.msp_id for n in _SETTINGS.nodes]
 HAS_SHARED_PATH = bool(_SETTINGS.nodes[0].shared_path)
-IS_MINIKUBE = bool(_SETTINGS.nodes[0].minikube)
+IS_MINIKUBE = bool(_SETTINGS.options.minikube)
 CELERY_TASK_MAX_RETRIES = _SETTINGS.options.celery_task_max_retries
