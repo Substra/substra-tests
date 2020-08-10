@@ -14,5 +14,5 @@ def _getenv(name, default_env_value, converter=None):
     return converter(value) if converter else value
 
 
-FUTURE_TIMEOUT = _getenv('FUTURE_TIMEOUT', '120', converter=int)  # seconds
+FUTURE_TIMEOUT = _getenv('FUTURE_TIMEOUT', '300', converter=int)  # seconds
 FUTURE_POLLING_PERIOD = _getenv('FUTURE_POLLING_PERIOD', '0.5', converter=float)  # seconds

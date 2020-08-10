@@ -27,6 +27,8 @@ jobs:
         - curl -Lo skaffold https://storage.googleapis.com/skaffold/releases/v1.7.0/skaffold-linux-amd64
         - chmod +x ./skaffold
         - mv ./skaffold $HOME/bin/
+        # Install pyyaml
+        - pip install pyyaml
       script:
         - CLUSTER_NAME="substra-tests-$(date -u +'%Y-%m-%d-%Hh%M')"
         - cd ci/

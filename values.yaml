@@ -1,6 +1,7 @@
 options:
   celery_task_max_retries: 1
   enable_intermediate_model_removal: False
+  # minikube: True
 nodes:
   - name: 'node-1'
     msp_id: 'MyOrg1MSP'
@@ -14,3 +15,4 @@ nodes:
     user: 'node-2'
     password: 'p@$swr0d45'
     shared_path: '/tmp/org-2/servermedias'
+

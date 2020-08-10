@@ -42,10 +42,13 @@ import random
 import argparse
 import subprocess
 import sys
+import yaml
 
 CLUSTER_NAME_ALLOWED_PREFIX = 'substra-tests'
 CLUSTER_NAME = ''
 CLUSTER_MACHINE_TYPE = 'n1-standard-8'
+CONCURRENCY = 4
+TESTS_CONCURRENCY = 5
 
 CLUSTER_VERSION = '1.15.12'
 CLUSTER_PROJECT = 'substra-208412'
@@ -55,16 +58,17 @@ SERVICE_ACCOUNT = 'substra-tests@substra-208412.iam.gserviceaccount.com'
 KEY_SERVICE_ACCOUNT = 'substra-208412-3be0df12d87a.json'
 
 SUBSTRA_TESTS_BRANCH = 'master'
+SUBSTRA_GIT_REF = 'master'
 SUBSTRA_BACKEND_BRANCH = 'master'
 HLF_K8S_BRANCH = 'master'
 
 DIR = os.path.dirname(os.path.realpath(__file__))
 CHARTS_DIR = os.path.realpath(os.path.join(DIR, '../charts/'))
 KEYS_DIR = os.path.realpath(os.path.join(os.getenv('HOME'), '.local/'))
-SOURCE_DIR = os.path.realpath(os.path.join(DIR, 'src'))
 
 KUBE_CONTEXT = ''
 RUN_TAG = ''.join(random.choice(string.ascii_letters + '0123456789') for _ in range(10))
+SOURCE_DIR = os.path.realpath(os.path.join(DIR, 'src', RUN_TAG))
 
 KANIKO_CACHE_TTL = '168h'  # 1 week
 
@@ -105,9 +109,12 @@ def arg_parse():
     global KEYS_DIR
     global CLUSTER_NAME
     global SUBSTRA_TESTS_BRANCH
+    global SUBSTRA_GIT_REF
     global SUBSTRA_BACKEND_BRANCH
     global HLF_K8S_BRANCH
     global KANIKO_CACHE_TTL
+    global CONCURRENCY
+    global TESTS_CONCURRENCY
 
     parser = argparse.ArgumentParser()
     parser.add_argument('-N', '--cluster-name', type=cluster_name, default=CLUSTER_NAME_ALLOWED_PREFIX,
@@ -116,12 +123,18 @@ def arg_parse():
                         help='The path to a folder containing the GKE service account credentials')
     parser.add_argument('--substra-tests', type=str, default=SUBSTRA_TESTS_BRANCH,
                         help='substra-tests branch', metavar='GIT_BRANCH')
+    parser.add_argument('--substra', type=str, default=SUBSTRA_GIT_REF,
+                        help='substra-tests git_ref', metavar='GIT_REF')
     parser.add_argument('--substra-backend', type=str, default=SUBSTRA_BACKEND_BRANCH,
                         help='substra-backend branch', metavar='GIT_BRANCH')
     parser.add_argument('--hlf-k8s', type=str, default=HLF_K8S_BRANCH,
                         help='hlf-k8s branch', metavar='GIT_BRANCH')
     parser.add_argument('--no-cache', action='store_true',
                         help='Use this option to disable kaniko caching')
+    parser.add_argument('--concurrency', type=int, default=CONCURRENCY,
+                        help='The substra worker task concurrency')
+    parser.add_argument('--test-concurrency', type=int, default=TESTS_CONCURRENCY,
+                        help='The number of parallel test runners')
 
     args = vars(parser.parse_args())
 
@@ -132,8 +145,11 @@ def arg_parse():
 
     KEYS_DIR = args['keys_directory']
     SUBSTRA_TESTS_BRANCH = args['substra_tests']
+    SUBSTRA_GIT_REF = args['substra']
     SUBSTRA_BACKEND_BRANCH = args['substra_backend']
     HLF_K8S_BRANCH = args['hlf_k8s']
+    CONCURRENCY = args['concurrency']
+    TESTS_CONCURRENCY = args['test_concurrency']
     if args['no_cache']:
         KANIKO_CACHE_TTL = '-1h'
 
@@ -146,9 +162,12 @@ def print_args():
         f'KEYS_DIR\t\t= {KEYS_DIR}\n'
         f'CLUSTER_NAME\t\t= {CLUSTER_NAME}\n'
         f'SUBSTRA_TESTS_BRANCH\t= {SUBSTRA_TESTS_BRANCH}\n'
+        f'SUBSTRA_GIT_REF\t= {SUBSTRA_GIT_REF}\n'
         f'SUBSTRA_BACKEND_BRANCH\t= {SUBSTRA_BACKEND_BRANCH}\n'
         f'HLF_K8S_BRANCH\t\t= {HLF_K8S_BRANCH}\n'
         f'KANIKO_CACHE_TTL\t= {KANIKO_CACHE_TTL}\n'
+        f'CONCURRENCY\t\t= {CONCURRENCY}\n'
+        f'TESTS_CONCURRENCY\t= {TESTS_CONCURRENCY}\n'
     )
 
 
@@ -161,7 +180,9 @@ def get_kube_context():
     global KUBE_CONTEXT
 
     print('\n# Fetch kubernetes context')
+    old_ctx = call_output('kubectl config current-context')
     call(f'gcloud container clusters get-credentials {CLUSTER_NAME} --zone {CLUSTER_ZONE} --project {CLUSTER_PROJECT}')
+    call(f'kubectl config use-context {old_ctx}') # Restore old context
     KUBE_CONTEXT = f'gke_{CLUSTER_PROJECT}_{CLUSTER_ZONE}_{CLUSTER_NAME}'
 
 
@@ -174,6 +195,7 @@ def create_cluster_async():
           f'--num-nodes=1 '\
           f'--zone={CLUSTER_ZONE} '\
           f'--project={CLUSTER_PROJECT} '\
+          f'--enable-network-policy '\
           f'--async'
     call(cmd)
 
@@ -183,6 +205,7 @@ def delete_cluster_async():
     print('# Delete cluster')
     cmd = f'yes | gcloud container clusters delete {CLUSTER_NAME} --zone ' \
           f'{CLUSTER_ZONE} --project {CLUSTER_PROJECT} --async --quiet'
+
     call(cmd)
 
 
@@ -227,7 +250,7 @@ def clone_repos():
 
     os.makedirs(SOURCE_DIR)
 
-    print('\n# Clone repos')
+    print(f'\n# Clone repos in {SOURCE_DIR}')
     commit_backend = clone_substra_backend()
     commit_hlf = clone_hlf_k8s()
     commit_tests = clone_substra_tests()
@@ -250,7 +273,7 @@ def clone_repos():
         {'name': 'substra-tests',
          'images': ['substra-tests'],
          'commit': commit_tests,
-         'branch': SUBSTRA_TESTS_BRANCH},
+         'branch': SUBSTRA_TESTS_BRANCH}
     ]
 
 
@@ -311,12 +334,16 @@ def build_images(configs):
 def build_image(tag, image, branch, commit):
     config_file = os.path.join(DIR, f'cloudbuild/{image}.yaml')
 
+    extra_substitutions = ''
+    if image == 'substra-tests':
+        extra_substitutions = f',_SUBSTRA_GIT_REF={SUBSTRA_GIT_REF}'
+
     cmd = f'gcloud builds submit '\
         f'--config={config_file} '\
         f'--no-source '\
         f'--async '\
         f'--project={CLUSTER_PROJECT} '\
-        f'--substitutions=_BUILD_TAG={tag},_BRANCH={branch},_COMMIT={commit},_KANIKO_CACHE_TTL={KANIKO_CACHE_TTL}'
+        f'--substitutions=_BUILD_TAG={tag},_BRANCH={branch},_COMMIT={commit},_KANIKO_CACHE_TTL={KANIKO_CACHE_TTL}{extra_substitutions}'
 
     output = call_output(cmd)
     print(output)
@@ -362,14 +389,15 @@ def wait_for_builds(tag, images):
 def deploy_all(configs):
     print('\n# Deploy helm charts')
     for config in configs:
-        deploy(config)
+        wait = config['name'] != 'hlf-k8s' # don't wait for hlf-k8s deployment to complete
+        deploy(config, wait)
 
 
-def deploy(config):
+def deploy(config, wait=True):
     artifacts_file = create_build_artifacts(config)
     skaffold_file = patch_skaffold_file(config)
     call(f'skaffold deploy --kube-context={KUBE_CONTEXT} '
-         f'-f={skaffold_file} -a={artifacts_file} --status-check=true')
+         f'-f={skaffold_file} -a={artifacts_file} --status-check={"true" if wait else "false"}')
 
 
 def create_build_artifacts(config):
@@ -393,17 +421,19 @@ def patch_skaffold_file(config):
 
     skaffold_file = os.path.join(SOURCE_DIR, config['name'], 'skaffold.yaml')
 
-    # Patch skaffold file
-    with open(skaffold_file, 'r') as file:
-        filedata = file.read()
+    with open(skaffold_file) as file:
+        data = yaml.load(file, Loader=yaml.FullLoader)
 
-    filedata = filedata.replace(
-        'chartPath: charts/',
-        f'chartPath: {os.path.join(SOURCE_DIR, config["name"],"charts/")}'
-    )
+    data['deploy']['statusCheckDeadlineSeconds'] = 400
+
+    for r in data['deploy']['helm']['releases']:
+        if r['chartPath'].startswith('charts/'):
+            r['chartPath'] = os.path.join(SOURCE_DIR, config["name"], r['chartPath'])
+        if config['name'] == 'substra-backend':
+            r['overrides']['celeryworker']['concurrency'] = CONCURRENCY
 
     with open(skaffold_file, 'w') as file:
-        file.write(filedata)
+        yaml.dump(data, file)
 
     return skaffold_file
 
@@ -425,7 +455,7 @@ def run_tests():
 
     try:
         # Run the tests on the remote and local backend
-        call(f'kubectl --context {KUBE_CONTEXT} exec {substra_tests_pod} -n substra-tests -- make test-remote')
+        call(f'kubectl --context {KUBE_CONTEXT} exec {substra_tests_pod} -n substra-tests -- make test-remote PARALLELISM={TESTS_CONCURRENCY}')
         return True
     except subprocess.CalledProcessError:
         print('FATAL: `make test-remote` completed with a non-zero exit code. Did some test(s) fail?')

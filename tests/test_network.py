@@ -109,7 +109,7 @@ def test_add_data_sample_located_in_shared_path(factory, client, node_cfg):
     dataset = client.add_dataset(spec)
 
     spec = factory.create_data_sample(test_only=True, datasets=[dataset])
-    spec.move_data_to(node_cfg.shared_path)
+    spec.move_data_to_server(node_cfg.shared_path, settings.IS_MINIKUBE)
     client.add_data_sample(spec, local=False)  # should not raise
 
 
@@ -121,7 +121,7 @@ def test_add_data_sample_path_big_files(filesize, factory, client, node_cfg):
 
     content = os.urandom(filesize * 1000 * 1000)
     spec = factory.create_data_sample(content=content, datasets=[dataset])
-    spec.move_data_to(node_cfg.shared_path)
+    spec.move_data_to_server(node_cfg.shared_path, settings.IS_MINIKUBE)
     client.add_data_sample(spec, local=False)  # should not raise
 
 
