@@ -215,7 +215,7 @@ class PrivatePermissions(pydantic.BaseModel):
 
 DEFAULT_PERMISSIONS = Permissions(public=True, authorized_ids=[])
 DEFAULT_OUT_TRUNK_MODEL_PERMISSIONS = PrivatePermissions(authorized_ids=[])
-SERVER_MEDIA_PATH='/var/substra/servermedias/'
+SERVER_MEDIA_PATH = '/var/substra/servermedias/'
 
 class DataSampleSpec(_Spec):
     path: str
