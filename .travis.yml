@@ -32,8 +32,7 @@ jobs:
       script:
         - CLUSTER_NAME="substra-tests-$(date -u +'%Y-%m-%d-%Hh%M')"
         - cd ci/
-        # Retry on failure. This is to account for the occasional hiccups in deployment of hlf-k8s/substra-backend (some pods occasionally fail to start, maybe 1 time out of 10-20).
-        - travis_retry python -u ./run-ci.py --keys-directory=./keys/ --cluster-name=${CLUSTER_NAME}
+        - python -u ./run-ci.py --keys-directory=./keys/ --cluster-name=${CLUSTER_NAME}
     - name: "Tests on the local backend"
       env:
         - SUBSTRA_GIT_REPO=https://github.com/SubstraFoundation/substra.git
