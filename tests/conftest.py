@@ -284,6 +284,9 @@ def debug_client(client):
     """Client fixture in debug mode (first node)."""
     cfg = settings.load()
     node = cfg.nodes[0]
+    # Debug client and client share the same
+    # token, otherwise when one connects the other
+    # is disconnected.
     return sbt.Client(
         debug=True,
         node_id=node.msp_id,
