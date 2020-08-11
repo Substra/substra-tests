@@ -62,11 +62,11 @@ def pytest_collection_modifyitems(config, items):
 
 
 @pytest.fixture(scope="session")
-def backend(request):
+def client_debug_local(request):
     local = request.config.getoption("--local")
     if local:
-        return "local"
-    return "remote"
+        return True
+    return False
 
 
 class _DataEnv:
@@ -112,7 +112,7 @@ def factory(request):
 
 
 @pytest.fixture(scope="session")
-def network(backend):
+def network(client_debug_local):
     """Network fixture.
 
     Network must ge started outside of the tests environment and the network is kept
@@ -122,13 +122,13 @@ def network(backend):
 
     Returns an instance of the `Network` class.
     """
-    if backend == "remote":
+    if not client_debug_local:
         cfg = settings.load()
     else:
         # TODO check what enable_intermediate_model_removal does
         cfg = settings.load_local_backend()
     clients = [sbt.Client(
-        debug=backend == "local",  # TODO better way
+        debug=client_debug_local,
         node_id=n.msp_id,
         address=n.address,
         user=n.user,
@@ -281,6 +281,7 @@ def clients(network):
 
 @pytest.fixture(scope="session")
 def debug_client(client):
+    """Client fixture in debug mode (first node)."""
     cfg = settings.load()
     node = cfg.nodes[0]
     return sbt.Client(

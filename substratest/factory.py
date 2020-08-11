@@ -479,13 +479,7 @@ class _BaseComputePlanSpec(_Spec, abc.ABC):
         self.composite_traintuples.append(spec)
         return spec
 
-    def add_testtuple(
-        self,
-        objective,
-        traintuple_spec,
-        tag='',
-        metadata=None,
-    ):
+    def add_testtuple(self, objective, traintuple_spec, tag='', metadata=None):
         spec = ComputePlanTesttupleSpec(
             objective_key=objective.key,
             traintuple_id=traintuple_spec.id,
