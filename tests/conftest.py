@@ -115,7 +115,7 @@ def factory(request):
 def network(client_debug_local):
     """Network fixture.
 
-    Network must ge started outside of the tests environment and the network is kept
+    Network must be started outside of the tests environment and the network is kept
     alive while running all tests.
 
     Create network instance from settings.
