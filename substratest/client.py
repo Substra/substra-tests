@@ -19,7 +19,7 @@ class Client:
 
         self.node_id = node_id
         self.debug = debug
-        self._client = substra.Client(debug=debug, url=address, version="0.0", insecure=False, token=token)
+        self._client = substra.Client(debug=debug, url=address, insecure=False, token=token)
         if not token:
             token = self._client.login(user, password)
         self.token = token
