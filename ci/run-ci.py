@@ -153,7 +153,7 @@ def arg_parse():
     if args['no_cache']:
         KANIKO_CACHE_TTL = '-1h'
 
-    print(f'💃💃💃\n')
+    print('💃💃💃\n')
     print_args()
 
 
@@ -179,10 +179,17 @@ def gcloud_login():
 def get_kube_context():
     global KUBE_CONTEXT
 
+    old_ctx = None
     print('\n# Fetch kubernetes context')
-    old_ctx = call_output('kubectl config current-context')
+
+    if call_output('kubectl config get-contexts --no-headers'):
+        old_ctx = call_output('kubectl config current-context')
+
     call(f'gcloud container clusters get-credentials {CLUSTER_NAME} --zone {CLUSTER_ZONE} --project {CLUSTER_PROJECT}')
-    call(f'kubectl config use-context {old_ctx}') # Restore old context
+
+    if old_ctx is not None:
+        call(f'kubectl config use-context {old_ctx}')  # Restore old context
+
     KUBE_CONTEXT = f'gke_{CLUSTER_PROJECT}_{CLUSTER_ZONE}_{CLUSTER_NAME}'
 
 
@@ -239,9 +246,9 @@ def setup_helm():
     print('\n# Setup Helm')
     call(f'kubectl --context {KUBE_CONTEXT} create serviceaccount --namespace kube-system tiller')
     call(f'kubectl --context {KUBE_CONTEXT} create clusterrolebinding tiller-cluster-rule ' +
-         f'--clusterrole=cluster-admin --serviceaccount=kube-system:tiller')
+         '--clusterrole=cluster-admin --serviceaccount=kube-system:tiller')
     call(f'helm --kube-context {KUBE_CONTEXT} init --service-account tiller --upgrade --wait')
-    call(f'helm repo add bitnami https://charts.bitnami.com/bitnami')
+    call('helm repo add bitnami https://charts.bitnami.com/bitnami')
 
 
 def clone_repos():
@@ -376,7 +383,7 @@ def wait_for_builds(tag, images):
     print('done.')
 
     if num_failed:
-        print(f'FATAL: One or more builds failed. See logs for more details')
+        print('FATAL: One or more builds failed. See logs for more details')
         for build in builds:
             if 'TIMEOUT' in build or 'CANCELLED' in build or 'FAIL' in build:
                 build_id = build.split(' ')[0]
@@ -389,7 +396,7 @@ def wait_for_builds(tag, images):
 def deploy_all(configs):
     print('\n# Deploy helm charts')
     for config in configs:
-        wait = config['name'] != 'hlf-k8s' # don't wait for hlf-k8s deployment to complete
+        wait = config['name'] != 'hlf-k8s'  # don't wait for hlf-k8s deployment to complete
         deploy(config, wait)
 
 
