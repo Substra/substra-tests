@@ -43,8 +43,6 @@ spec:
             - mountPath: /etc/substra/
               name: values
               readOnly: true
-          securityContext:
-            privileged: true
         - name: dind
           image: docker:stable-dind
           securityContext:
