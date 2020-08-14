@@ -38,11 +38,13 @@ spec:
             - name: SUBSTRA_TESTS_CONFIG_FILEPATH
               value: /etc/substra/values.yaml
             - name: DOCKER_HOST
-              value: tcp://localhost:2375
+              value: tcp://localhost:2376
           volumeMounts:
             - mountPath: /etc/substra/
               name: values
               readOnly: true
+          securityContext:
+            privileged: true
         - name: dind
           image: docker:stable-dind
           securityContext:
