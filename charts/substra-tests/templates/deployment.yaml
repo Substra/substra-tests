@@ -41,6 +41,10 @@ spec:
             - mountPath: /etc/substra/
               name: values
               readOnly: true
+            - mountPath: /var/run/docker.sock
+              name: docker-socket-volume
+          securityContext:
+            privileged: true
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
@@ -49,6 +53,10 @@ spec:
         - name: values
           configMap:
             name: {{ template "substra-tests.fullname" . }}-configmap
+        - name: docker-socket-volume
+          hostPath:
+            path: /var/run/docker.sock
+            type: File
     {{- with .Values.affinity }}
       affinity:
         {{- toYaml . | nindent 8 }}
