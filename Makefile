@@ -14,7 +14,7 @@ pyclean:
 test: test-remote test-local
 
 test-remote: pyclean
-	pytest tests/test_debug.py -rs -v --durations=0 -n $(PARALLELISM)
+	pytest tests -rs -v --durations=0 -n $(PARALLELISM)
 
 test-minimal: pyclean
 	pytest tests -rs -v --durations=0 -m "not slow" -n $(PARALLELISM)
