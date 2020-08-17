@@ -19,8 +19,6 @@ def test_execution_debug(client, debug_client, factory, default_dataset, default
         dataset=default_dataset,
         data_samples=default_dataset.train_data_sample_keys[0],
     )
-    import pdb
-    pdb.set_trace()
     traintuple = debug_client.add_traintuple(spec)
     assert traintuple.status == assets.Status.done
     assert traintuple.out_model is not None
