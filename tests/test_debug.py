@@ -4,7 +4,7 @@ from substratest import assets
 from substratest.factory import Permissions
 
 
-@pytest.mark.skip("Need to fix this test")
+# @pytest.mark.skip("Need to fix this test")
 @pytest.mark.remote_only
 @pytest.mark.slow
 def test_execution_debug(client, debug_client, factory, default_dataset, default_objective):
@@ -34,7 +34,7 @@ def test_execution_debug(client, debug_client, factory, default_dataset, default
     assert testtuple.dataset.perf == 3
 
 
-@pytest.mark.skip("Need to fix this test")
+# @pytest.mark.skip("Need to fix this test")
 @pytest.mark.remote_only
 @pytest.mark.slow
 def test_debug_compute_plan_aggregate_composite(client, debug_client, factory, default_datasets, default_objectives):

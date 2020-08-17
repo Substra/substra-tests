@@ -49,6 +49,10 @@ spec:
               readOnly: true
             - name: dind-certs
               mountPath: /root/.docker
+            - name: tmp
+              mountPath: /tmp
+            - name: local-worker
+              mountPath: /usr/src/app/local-worker/
         - name: dind
           image: docker:19.03.12-dind
           securityContext:
@@ -58,6 +62,10 @@ spec:
               mountPath: /var/lib/docker
             - name: dind-certs
               mountPath: /root/.docker
+            - name: tmp
+              mountPath: /tmp
+            - name: local-worker
+              mountPath: /usr/src/app/local-worker/
           env:
             - name: DOCKER_TLS_CERTDIR
               value: /root/.docker
@@ -73,6 +81,10 @@ spec:
         - name: values
           configMap:
             name: {{ template "substra-tests.fullname" . }}-configmap
+        - name: tmp
+          emptyDir: {}
+        - name: local-worker
+          emptyDir: {}
     {{- with .Values.affinity }}
       affinity:
         {{- toYaml . | nindent 8 }}
