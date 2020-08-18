@@ -378,6 +378,9 @@ def test_compute_plan_aggregate_composite_traintuples(factory, clients, default_
     for tuple in composite_traintuples + aggregatetuples:
         assert tuple.metadata == {'foo': 'bar'}
 
+    # Check that permissions were correctly set
+    for tuple in composite_traintuples:
+        assert len(tuple.out_trunk_model.permissions.process.authorized_ids) == len(clients)
 
 @pytest.mark.slow
 @pytest.mark.remote_only
