@@ -193,7 +193,7 @@ def test_compute_plan_update(factory, client, default_dataset, default_objective
         objective=default_objective,
         traintuple_spec=traintuple_spec_1
     )
-    cp = client.add_compute_plan(cp_spec)
+    cp = client.add_compute_plan(cp_spec, auto_batching=True, batch_size=1)
 
     # Update compute plan with traintuple + testtuple
 
@@ -210,9 +210,9 @@ def test_compute_plan_update(factory, client, default_dataset, default_objective
         traintuple_spec=traintuple_spec_2,
         metadata={"foo": "bar"},
     )
-    cp = client.update_compute_plan(cp_spec)
+    cp = client.update_compute_plan(cp_spec, auto_batching=True, batch_size=1)
 
-    # Update compute plan with traintuple + testtuple
+    # Update compute plan with traintuple
 
     cp_spec = factory.update_compute_plan(cp)
     traintuple_spec_3 = cp_spec.add_traintuple(
@@ -221,6 +221,11 @@ def test_compute_plan_update(factory, client, default_dataset, default_objective
         data_samples=[data_sample_3],
         in_models=[traintuple_spec_2]
     )
+    cp = client.update_compute_plan(cp_spec)
+
+    # Update compute plan with testtuple
+
+    cp_spec = factory.update_compute_plan(cp)
     cp_spec.add_testtuple(
         objective=default_objective,
         traintuple_spec=traintuple_spec_3
@@ -502,3 +507,40 @@ def test_execution_compute_plan_canceled(factory, client, default_dataset):
     # check that the status of the done tuple as not been updated
     first_traintuple = [t for t in cp.list_traintuple() if t.rank == 0][0]
     assert first_traintuple.status == assets.Status.done
+
+
+@pytest.mark.slow
+@pytest.mark.remote_only
+def test_compute_plan_no_batching(factory, client, default_dataset, default_objective):
+    data_sample_1, data_sample_2, _, _ = default_dataset.train_data_sample_keys
+
+    spec = factory.create_algo()
+    algo = client.add_algo(spec)
+
+    # Create a compute plan
+    cp_spec = factory.create_compute_plan()
+    traintuple_spec_1 = cp_spec.add_traintuple(
+        algo=algo,
+        dataset=default_dataset,
+        data_samples=[data_sample_1],
+    )
+    cp = client.add_compute_plan(cp_spec, auto_batching=False).future().wait()
+
+    traintuples = cp.list_traintuple()
+    assert len(traintuples) == 1
+    assert all([tuple_.status == assets.Status.done for tuple_ in traintuples])
+
+    # Update the compute plan
+    cp_spec = factory.update_compute_plan(cp)
+    cp_spec.add_traintuple(
+        algo=algo,
+        dataset=default_dataset,
+        data_samples=[data_sample_2],
+        in_models=[traintuple_spec_1],
+        metadata={"foo": "bar"},
+    )
+    cp = client.update_compute_plan(cp_spec, auto_batching=False).future().wait()
+
+    traintuples = cp.list_traintuple()
+    assert len(traintuples) == 2
+    assert all([tuple_.status == assets.Status.done for tuple_ in traintuples])
