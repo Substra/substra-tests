@@ -32,6 +32,6 @@ install:
 #   make docker DOCKER_TAG=pr_123 SUBSTRA_GIT_REF=refs/pull/123/head
 #   make docker DOCKER_TAG=commit SUBSTRA_GIT_REF=da39a3ee5e6b4b0d3255bfef95601890afd80709
 docker:
-	docker build -f --no-cache docker/substra-tests/Dockerfile .	-t $(DOCKER_IMG):$(DOCKER_TAG) \
+	docker build -f docker/substra-tests/Dockerfile .	-t $(DOCKER_IMG):$(DOCKER_TAG) \
 		--build-arg SUBSTRA_GIT_REPO=$(SUBSTRA_GIT_REPO) \
 		--build-arg SUBSTRA_GIT_REF=$(SUBSTRA_GIT_REF)
