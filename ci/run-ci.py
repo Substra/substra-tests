@@ -244,10 +244,6 @@ def wait_for_cluster():
 
 def setup_helm():
     print('\n# Setup Helm')
-    call(f'kubectl --context {KUBE_CONTEXT} create serviceaccount --namespace kube-system tiller')
-    call(f'kubectl --context {KUBE_CONTEXT} create clusterrolebinding tiller-cluster-rule ' +
-         '--clusterrole=cluster-admin --serviceaccount=kube-system:tiller')
-    call(f'helm --kube-context {KUBE_CONTEXT} init --service-account tiller --upgrade --wait')
     call('helm repo add bitnami https://charts.bitnami.com/bitnami')
 
 
