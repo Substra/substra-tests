@@ -293,6 +293,17 @@ def clone_repository(dirname, url, branch, commit=None):
     return commit
 
 
+def get_remote_commit(url, branch, commit=None):
+    if commit is None:
+        commit = call_output(f'git ls-remote --refs {url} {branch}')
+        commits = commit.split('\t')
+        if len(commits) != 2:
+            print(f'FATAL: the substra branch does not match one and only one commit: {commits}')
+            raise Exception('Unable to get the right commit for the substra repository.')
+        commit = commits[0]
+    return commit
+
+
 def clone_substra_backend():
     url = 'https://github.com/SubstraFoundation/substra-backend.git'
     return clone_repository(
@@ -343,9 +354,10 @@ def build_image(tag, image, branch, commit):
 
     extra_substitutions = ''
     if image == 'substra-tests':
-        substra_dirname = os.path.join(SOURCE_DIR, 'substra')
-        substra_git_commit = call_output(f'git --git-dir={substra_dirname}/.git rev-parse origin/{SUBSTRA_BRANCH}')
-        extra_substitutions = f',_SUBSTRA_GIT_COMMIT={substra_git_commit}'
+        url = 'https://github.com/SubstraFoundation/substra.git'
+        substra_commit = get_remote_commit(url=url, branch=SUBSTRA_BRANCH)
+        extra_substitutions = f',_SUBSTRA_GIT_COMMIT={substra_commit}'
+        print(f'Commit hash - substra: {substra_commit}')
 
     cmd = f'gcloud builds submit '\
         f'--config={config_file} '\
