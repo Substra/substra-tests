@@ -22,7 +22,7 @@ build:
         dockerfile: docker/substra-tests/Dockerfile
         buildArgs:
           SUBSTRA_GIT_REPO: https://github.com/SubstraFoundation/substra.git
-          SUBSTRA_GIT_COMMIT: HEAD
+          SUBSTRA_GIT_COMMIT: master
 deploy:
   helm:
     releases:
