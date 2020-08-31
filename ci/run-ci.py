@@ -162,7 +162,7 @@ def print_args():
         f'KEYS_DIR\t\t= {KEYS_DIR}\n'
         f'CLUSTER_NAME\t\t= {CLUSTER_NAME}\n'
         f'SUBSTRA_TESTS_BRANCH\t= {SUBSTRA_TESTS_BRANCH}\n'
-        f'SUBSTRA_BRANCH\t= {SUBSTRA_BRANCH}\n'
+        f'SUBSTRA_BRANCH\t\t= {SUBSTRA_BRANCH}\n'
         f'SUBSTRA_BACKEND_BRANCH\t= {SUBSTRA_BACKEND_BRANCH}\n'
         f'HLF_K8S_BRANCH\t\t= {HLF_K8S_BRANCH}\n'
         f'KANIKO_CACHE_TTL\t= {KANIKO_CACHE_TTL}\n'
@@ -260,13 +260,15 @@ def clone_repos():
     print(f'\n# Clone repos in {SOURCE_DIR}')
     commit_backend = clone_substra_backend()
     commit_hlf = clone_hlf_k8s()
-    commit_tests = clone_substra_tests()
+    commit_substra_tests = clone_substra_tests()
+    commit_substra = get_remote_commit('https://github.com/SubstraFoundation/substra.git', SUBSTRA_BRANCH)
 
     print(
         f'\nCommit hashes:\n'
         f'- substra-backend: \t{commit_backend}\n'
         f'- hlf-k8s: \t\t{commit_hlf}\n'
-        f'- substra-tests: \t{commit_tests}\n'
+        f'- substra-tests: \t{commit_substra_tests}\n'
+        f'- substra: \t\t{commit_substra}\n'
     )
     return [
         {'name': 'hlf-k8s',
@@ -279,20 +281,19 @@ def clone_repos():
          'branch': SUBSTRA_BACKEND_BRANCH},
         {'name': 'substra-tests',
          'images': ['substra-tests'],
-         'commit': commit_tests,
-         'branch': SUBSTRA_TESTS_BRANCH}
+         'commit': commit_substra_tests,
+         'branch': SUBSTRA_TESTS_BRANCH,
+         'substra_commit' : commit_substra}
     ]
 
 
-def get_remote_commit(url, branch, commit=None):
-    if commit is None:
-        commit = call_output(f'git ls-remote --refs {url} {branch}')
-        commits = commit.split('\t')
-        if len(commits) != 2:
-            print(f'FATAL: On the repository {url}, the branch does not match one and only one commit: {commits}')
-            raise Exception('Unable to get the right commit for the repository.')
-        commit = commits[0]
-    return commit
+def get_remote_commit(url, branch):
+    commit = call_output(f'git ls-remote --refs {url} {branch}')
+    commits = commit.split('\t')
+    if len(commits) != 2:
+        print(f'FATAL: On the repository {url}, the branch does not match one and only one commit: {commits}')
+        raise Exception('Unable to get the right commit for the repository.')
+    return commits[0]
 
 
 def clone_repository(dirname, url, branch, commit=None):
@@ -341,23 +342,21 @@ def build_images(configs):
             build_id = build_image(
                 tag=tag,
                 image=image,
-                branch=config['branch'],
-                commit=config['commit']
+                config=config
             )
             images[build_id] = image
 
     wait_for_builds(tag, images)
 
 
-def build_image(tag, image, branch, commit):
+def build_image(tag, image, config):
+    branch = config["branch"]
+    commit = config["commit"]
     config_file = os.path.join(DIR, f'cloudbuild/{image}.yaml')
 
     extra_substitutions = ''
     if image == 'substra-tests':
-        url = 'https://github.com/SubstraFoundation/substra.git'
-        substra_commit = get_remote_commit(url=url, branch=SUBSTRA_BRANCH)
-        extra_substitutions = f',_SUBSTRA_GIT_COMMIT={substra_commit}'
-        print(f'Commit hash - substra: {substra_commit}')
+        extra_substitutions = f',_SUBSTRA_GIT_COMMIT={config["substra_commit"]}'
 
     cmd = f'gcloud builds submit '\
         f'--config={config_file} '\
@@ -428,10 +427,18 @@ def create_build_artifacts(config):
     with open(artifacts_file, 'w') as file:
         tags = {'builds': []}
         for image in config['images']:
+
+            tag = f'eu.gcr.io/{CLUSTER_PROJECT}/{image}:ci-{config["commit"]}'
+
+            if image == 'substra-tests':
+                tag += f'-{config["substra_commit"]}'
+
             tags['builds'].append({
                 'imageName': f'substrafoundation/{image}',
-                'tag': f'eu.gcr.io/{CLUSTER_PROJECT}/{image}:ci-{config["commit"]}'
+                'tag': tag
             })
+
+            print(f'Created build artifact for {tag}')
 
         json.dump(tags, file)
 
