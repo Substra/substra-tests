@@ -124,7 +124,7 @@ def arg_parse():
     parser.add_argument('--substra-tests', type=str, default=SUBSTRA_TESTS_BRANCH,
                         help='substra-tests branch', metavar='GIT_BRANCH')
     parser.add_argument('--substra', type=str, default=SUBSTRA_BRANCH,
-                        help='substra-tests git_ref', metavar='GIT_REF')
+                        help='substra branch', metavar='GIT_REF')
     parser.add_argument('--substra-backend', type=str, default=SUBSTRA_BACKEND_BRANCH,
                         help='substra-backend branch', metavar='GIT_BRANCH')
     parser.add_argument('--hlf-k8s', type=str, default=HLF_K8S_BRANCH,
