@@ -8,7 +8,7 @@ steps:
   - --dockerfile=substra-tests/docker/substra-tests/Dockerfile
   - --context=substra-tests
   - --build-arg=SUBSTRA_GIT_REPO=${_SUBSTRA_GIT_REPO}
-  - --build-arg=SUBSTRA_GIT_COMMIT=${_SUBSTRA_GIT_COMMIT}
+  - --build-arg=SUBSTRA_GIT_REF=${_SUBSTRA_GIT_COMMIT}
   - --cache-ttl=${_KANIKO_CACHE_TTL}
 tags:
 - ${_BUILD_TAG}
