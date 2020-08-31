@@ -284,23 +284,23 @@ def clone_repos():
     ]
 
 
+def get_remote_commit(url, branch, commit=None):
+    if commit is None:
+        commit = call_output(f'git ls-remote --refs {url} {branch}')
+        commits = commit.split('\t')
+        if len(commits) != 2:
+            print(f'FATAL: On the repository {url}, the branch does not match one and only one commit: {commits}')
+            raise Exception('Unable to get the right commit for the repository.')
+        commit = commits[0]
+    return commit
+
+
 def clone_repository(dirname, url, branch, commit=None):
     call(f'git clone -q --depth 1 {url} --branch "{branch}" {dirname}')
 
     if commit is None:
         commit = call_output(f'git --git-dir={dirname}/.git rev-parse origin/{branch}')
 
-    return commit
-
-
-def get_remote_commit(url, branch, commit=None):
-    if commit is None:
-        commit = call_output(f'git ls-remote --refs {url} {branch}')
-        commits = commit.split('\t')
-        if len(commits) != 2:
-            print(f'FATAL: the substra branch does not match one and only one commit: {commits}')
-            raise Exception('Unable to get the right commit for the substra repository.')
-        commit = commits[0]
     return commit
 
 
