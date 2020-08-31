@@ -58,7 +58,7 @@ SERVICE_ACCOUNT = 'substra-tests@substra-208412.iam.gserviceaccount.com'
 KEY_SERVICE_ACCOUNT = 'substra-208412-3be0df12d87a.json'
 
 SUBSTRA_TESTS_BRANCH = 'master'
-SUBSTRA_GIT_REF = 'master'
+SUBSTRA_BRANCH = 'master'
 SUBSTRA_BACKEND_BRANCH = 'master'
 HLF_K8S_BRANCH = 'master'
 
@@ -109,7 +109,7 @@ def arg_parse():
     global KEYS_DIR
     global CLUSTER_NAME
     global SUBSTRA_TESTS_BRANCH
-    global SUBSTRA_GIT_REF
+    global SUBSTRA_BRANCH
     global SUBSTRA_BACKEND_BRANCH
     global HLF_K8S_BRANCH
     global KANIKO_CACHE_TTL
@@ -123,7 +123,7 @@ def arg_parse():
                         help='The path to a folder containing the GKE service account credentials')
     parser.add_argument('--substra-tests', type=str, default=SUBSTRA_TESTS_BRANCH,
                         help='substra-tests branch', metavar='GIT_BRANCH')
-    parser.add_argument('--substra', type=str, default=SUBSTRA_GIT_REF,
+    parser.add_argument('--substra', type=str, default=SUBSTRA_BRANCH,
                         help='substra-tests git_ref', metavar='GIT_REF')
     parser.add_argument('--substra-backend', type=str, default=SUBSTRA_BACKEND_BRANCH,
                         help='substra-backend branch', metavar='GIT_BRANCH')
@@ -145,7 +145,7 @@ def arg_parse():
 
     KEYS_DIR = args['keys_directory']
     SUBSTRA_TESTS_BRANCH = args['substra_tests']
-    SUBSTRA_GIT_REF = args['substra']
+    SUBSTRA_BRANCH = args['substra']
     SUBSTRA_BACKEND_BRANCH = args['substra_backend']
     HLF_K8S_BRANCH = args['hlf_k8s']
     CONCURRENCY = args['concurrency']
@@ -162,7 +162,7 @@ def print_args():
         f'KEYS_DIR\t\t= {KEYS_DIR}\n'
         f'CLUSTER_NAME\t\t= {CLUSTER_NAME}\n'
         f'SUBSTRA_TESTS_BRANCH\t= {SUBSTRA_TESTS_BRANCH}\n'
-        f'SUBSTRA_GIT_REF\t= {SUBSTRA_GIT_REF}\n'
+        f'SUBSTRA_BRANCH\t= {SUBSTRA_BRANCH}\n'
         f'SUBSTRA_BACKEND_BRANCH\t= {SUBSTRA_BACKEND_BRANCH}\n'
         f'HLF_K8S_BRANCH\t\t= {HLF_K8S_BRANCH}\n'
         f'KANIKO_CACHE_TTL\t= {KANIKO_CACHE_TTL}\n'
@@ -343,7 +343,9 @@ def build_image(tag, image, branch, commit):
 
     extra_substitutions = ''
     if image == 'substra-tests':
-        extra_substitutions = f',_SUBSTRA_GIT_REF={SUBSTRA_GIT_REF}'
+        substra_dirname = os.path.join(SOURCE_DIR, 'substra')
+        substra_git_commit = call_output(f'git --git-dir={substra_dirname}/.git rev-parse origin/{SUBSTRA_BRANCH}')
+        extra_substitutions = f',_SUBSTRA_GIT_COMMIT={substra_git_commit}'
 
     cmd = f'gcloud builds submit '\
         f'--config={config_file} '\
