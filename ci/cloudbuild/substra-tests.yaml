@@ -3,12 +3,12 @@ steps:
   args: ['clone', 'https://github.com/SubstraFoundation/substra-tests.git', '--depth', '1', '--branch', '${_BRANCH}']
 - name: 'gcr.io/kaniko-project/executor:v0.23.0'
   args:
-  - --destination=eu.gcr.io/$PROJECT_ID/substra-tests:ci-${_COMMIT}
+  - --destination=eu.gcr.io/$PROJECT_ID/substra-tests:ci-${_COMMIT}-${_SUBSTRA_GIT_COMMIT}
   - --cache=true
   - --dockerfile=substra-tests/docker/substra-tests/Dockerfile
   - --context=substra-tests
   - --build-arg=SUBSTRA_GIT_REPO=${_SUBSTRA_GIT_REPO}
-  - --build-arg=SUBSTRA_GIT_REF=${_SUBSTRA_GIT_REF}
+  - --build-arg=SUBSTRA_GIT_REF=${_SUBSTRA_GIT_COMMIT}
   - --cache-ttl=${_KANIKO_CACHE_TTL}
 tags:
 - ${_BUILD_TAG}
@@ -17,6 +17,6 @@ substitutions:
     _COMMIT: "HEAD"
     _BRANCH: "master"
     _SUBSTRA_GIT_REPO: "https://github.com/SubstraFoundation/substra.git"
-    _SUBSTRA_GIT_REF: "master"
+    _SUBSTRA_GIT_COMMIT: "master"
     _KANIKO_CACHE_TTL: "168h"
 timeout: 1200s
