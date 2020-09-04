@@ -75,7 +75,7 @@ class Client:
         return testtuple
 
     def add_compute_plan(self, spec, *args, **kwargs):
-        res = self._client.add_compute_plan(spec.dict(), *args, get_asset=True, **kwargs)
+        res = self._client.add_compute_plan(spec.dict(), *args, **kwargs)
         compute_plan = assets.ComputePlan.load(res).attach(self)
         return compute_plan
 
