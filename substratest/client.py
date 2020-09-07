@@ -25,8 +25,8 @@ class Client:
         self.token = token
 
     def add_data_sample(self, spec, *args, **kwargs):
-        res = self._client.add_data_sample(spec.dict(), *args, get_asset=True, **kwargs)
-        data_sample = assets.DataSampleCreated.load(res)
+        res = self._client.add_data_sample(spec.dict(), *args, **kwargs)
+        data_sample = assets.DataSampleCreated(key=res)
         return data_sample
 
     def add_dataset(self, spec, *args, **kwargs):
