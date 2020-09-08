@@ -132,7 +132,6 @@ class _ComputePlanFutureMixin(_BaseFutureMixin):
 _MANUAL_CONVERTION_FIELDS = {
     'authorizedIDs': 'authorized_ids',
     'dataManagerKey': 'dataset_key',
-    'pkhash': 'key',
 }
 
 
@@ -181,8 +180,6 @@ class Permissions(_InternalStruct):
 
 class DataSampleCreated(_Asset):
     key: str
-    validated: bool
-    path: str
 
 
 class DataSample(_Asset):
