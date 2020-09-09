@@ -1,5 +1,4 @@
 import os
-import re
 import zipfile
 
 
@@ -22,12 +21,6 @@ def create_archive(tmpdir, *files):
         with open(tmpdir / path, 'w') as f:
             f.write(content)
     return zip_folder(str(tmpdir))
-
-
-def camel_to_snake(name):
-    """Convert camel case to snake case."""
-    s = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', name)
-    return re.sub('([a-z0-9])([A-Z])', r'\1_\2', s).lower()
 
 
 def replace_dict_keys(d, converter):
