@@ -25,52 +25,61 @@ class Client:
         self.token = token
 
     def add_data_sample(self, spec, *args, **kwargs):
-        res = self._client.add_data_sample(spec.dict(), *args, **kwargs)
-        data_sample = assets.DataSampleCreated.load(res)
+        key = self._client.add_data_sample(spec.dict(), *args, **kwargs)
+        data_sample = assets.DataSampleCreated(key=key)
         return data_sample
 
     def add_dataset(self, spec, *args, **kwargs):
-        res = self._client.add_dataset(spec.dict(), *args, **kwargs)
+        key = self._client.add_dataset(spec.dict(), *args, **kwargs)
+        res = self._client.get_dataset(key)
         dataset = assets.Dataset.load(res)
         return dataset
 
     def add_objective(self, spec, *args, **kwargs):
-        res = self._client.add_objective(spec.dict(), *args, **kwargs)
+        key = self._client.add_objective(spec.dict(), *args, **kwargs)
+        res = self._client.get_objective(key)
         objective = assets.Objective.load(res)
         return objective
 
     def add_algo(self, spec, *args, **kwargs):
-        res = self._client.add_algo(spec.dict(), *args, **kwargs)
+        key = self._client.add_algo(spec.dict(), *args, **kwargs)
+        res = self._client.get_algo(key)
         algo = assets.Algo.load(res)
         return algo
 
     def add_aggregate_algo(self, spec, *args, **kwargs):
-        res = self._client.add_aggregate_algo(spec.dict(), *args, **kwargs)
+        key = self._client.add_aggregate_algo(spec.dict(), *args, **kwargs)
+        res = self._client.get_aggregate_algo(key)
         aggregate_algo = assets.AggregateAlgo.load(res)
         return aggregate_algo
 
     def add_composite_algo(self, spec, *args, **kwargs):
-        res = self._client.add_composite_algo(spec.dict(), *args, **kwargs)
+        key = self._client.add_composite_algo(spec.dict(), *args, **kwargs)
+        res = self._client.get_composite_algo(key)
         composite_algo = assets.CompositeAlgo.load(res)
         return composite_algo
 
     def add_traintuple(self, spec, *args, **kwargs):
-        res = self._client.add_traintuple(spec.dict(), *args, **kwargs)
+        key = self._client.add_traintuple(spec.dict(), *args, **kwargs)
+        res = self._client.get_traintuple(key)
         traintuple = assets.Traintuple.load(res).attach(self)
         return traintuple
 
     def add_aggregatetuple(self, spec, *args, **kwargs):
-        res = self._client.add_aggregatetuple(spec.dict(), *args, **kwargs)
+        key = self._client.add_aggregatetuple(spec.dict(), *args, **kwargs)
+        res = self._client.get_aggregatetuple(key)
         aggregatetuple = assets.Aggregatetuple.load(res).attach(self)
         return aggregatetuple
 
     def add_composite_traintuple(self, spec, *args, **kwargs):
-        res = self._client.add_composite_traintuple(spec.dict(), *args, **kwargs)
+        key = self._client.add_composite_traintuple(spec.dict(), *args, **kwargs)
+        res = self._client.get_composite_traintuple(key)
         composite_traintuple = assets.CompositeTraintuple.load(res).attach(self)
         return composite_traintuple
 
     def add_testtuple(self, spec, *args, **kwargs):
-        res = self._client.add_testtuple(spec.dict(), *args, **kwargs)
+        key = self._client.add_testtuple(spec.dict(), *args, **kwargs)
+        res = self._client.get_testtuple(key)
         testtuple = assets.Testtuple.load(res).attach(self)
         return testtuple
 
