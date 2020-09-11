@@ -245,6 +245,7 @@ def wait_for_cluster():
 def setup_helm():
     print('\n# Setup Helm')
     call('helm repo add bitnami https://charts.bitnami.com/bitnami')
+    call('helm repo add googleapis https://kubernetes-charts.storage.googleapis.com/')
 
 
 def clone_repos():
