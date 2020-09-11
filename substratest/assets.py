@@ -129,22 +129,6 @@ class _ComputePlanFutureMixin(_BaseFutureMixin):
     _future_cls = ComputePlanFuture
 
 
-_MANUAL_CONVERTION_FIELDS = {
-    'data_manager_key': 'dataset_key',
-}
-
-
-def convert_asset_field_names(name):
-    """Converts asset camel case fields to snake case fields.
-
-    Special cases are handled through a global dict variable.
-    """
-    # XXX using a mapper for converting specific is not very flexible as it will be
-    #     applied to all fields from all assets.
-    mapper = _MANUAL_CONVERTION_FIELDS
-    return mapper[name] if name in mapper else name
-
-
 class _InternalStruct(pydantic.BaseModel, abc.ABC):
     """Internal nested structure."""
 
@@ -158,11 +142,8 @@ class _Asset(_InternalStruct, abc.ABC):
     @classmethod
     def load(cls, d):
         """Create asset from dictionary."""
-        # TODO we could use the pydantic alias generator feature to handle the case
-        # https://pydantic-docs.helpmanual.io/usage/model_config/#alias-generator
-        kwargs = utils.replace_dict_keys(d, convert_asset_field_names)
         try:
-            return cls(**kwargs)
+            return cls(**d)
         except TypeError as e:
             raise errors.TError(f"cannot parse asset `{d}`") from e
 
@@ -188,7 +169,7 @@ class DataSample(_Asset):
 
 
 class ObjectiveDataset(_InternalStruct):
-    dataset_key: str
+    data_manager_key: str
     data_sample_keys: typing.List[str]
 
 
