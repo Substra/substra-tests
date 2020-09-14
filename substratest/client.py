@@ -159,3 +159,35 @@ class Client:
 
     def link_dataset_with_data_samples(self, dataset, data_samples):
         self._client.link_dataset_with_data_samples(dataset.key, data_samples)
+
+    def get_compute_plan_traintuple(self, compute_plan_id):
+        filters = [
+            f'traintuple:compute_plan_id:{compute_plan_id}',
+        ]
+        tuples = self.list_traintuple(filters=filters)
+        tuples = sorted(tuples, key=lambda t: t.rank)
+        return tuples
+
+    def get_compute_plan_composite_traintuple(self, compute_plan_id):
+        filters = [
+            f'composite_traintuple:compute_plan_id:{compute_plan_id}',
+        ]
+        tuples = self.list_composite_traintuple(filters=filters)
+        tuples = sorted(tuples, key=lambda t: t.rank)
+        return tuples
+
+    def get_compute_plan_aggregatetuple(self, compute_plan_id):
+        filters = [
+            f'aggregatetuple:compute_plan_id:{compute_plan_id}',
+        ]
+        tuples = self.list_aggregatetuple(filters=filters)
+        tuples = sorted(tuples, key=lambda t: t.rank)
+        return tuples
+
+    def get_compute_plan_testtuple(self, compute_plan_id):
+        filters = [
+            f'testtuple:compute_plan_id:{compute_plan_id}',
+        ]
+        tuples = self.list_testtuple(filters=filters)
+        tuples = sorted(tuples, key=lambda t: t.rank)
+        return tuples

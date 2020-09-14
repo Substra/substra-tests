@@ -27,6 +27,7 @@ class Future(BaseFuture):
         'Testtuple': 'get_testtuple',
         'Aggregatetuple': 'get_aggregatetuple',
         'CompositeTraintuple': 'get_composite_traintuple',
+        'ComputePlan': 'get_compute_plan'
     }
 
     def __init__(self, asset, client):
@@ -44,13 +45,12 @@ class Future(BaseFuture):
     def wait(self, timeout=cfg.FUTURE_TIMEOUT, raises=True):
         """Wait until completed (done or failed)."""
         tstart = time.time()
-        key = self._asset.key
         while self._asset.status not in [models.Status.done, models.Status.failed, models.Status.canceled]:
             if time.time() - tstart > timeout:
                 raise errors.FutureTimeoutError(f'Future timeout on {self._asset}')
 
             time.sleep(cfg.FUTURE_POLLING_PERIOD)
-            self._asset = self._getter(key)
+            self._asset = self._getter(self._key)
 
         if raises and self._asset.status == models.Status.failed:
             raise errors.FutureFailureError(f'Future execution failed on {self._asset}')
@@ -63,30 +63,6 @@ class Future(BaseFuture):
     def get(self):
         """Get asset."""
         return self._asset
-
-
-class ComputePlanFuture(BaseFuture):
-    def __init__(self, compute_plan, client):
-        self._compute_plan = compute_plan
-        self._client = client
-
-    def wait(self, timeout=cfg.FUTURE_TIMEOUT):
-        """wait until all tuples are completed (done or failed)."""
-        tuples = (self._compute_plan.list_traintuple() +
-                  self._compute_plan.list_composite_traintuple() +
-                  self._compute_plan.list_aggregatetuple())
-        # order tuples by rank to wait on the tuples that should be executed first
-        tuples = sorted(tuples, key=lambda t: t.rank)
-        # testtuples do not have a rank attribute
-        tuples += self._compute_plan.list_testtuple()
-
-        for tuple_ in tuples:
-            Future(tuple_, self._client).wait(timeout, raises=False)
-
-        return self.get()
-
-    def get(self):
-        return self._client.get_compute_plan(self._compute_plan.compute_plan_id)
 
 
 class ComputePlan(pydantic.BaseModel):
