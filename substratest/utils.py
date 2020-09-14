@@ -22,20 +22,3 @@ def create_archive(tmpdir, *files):
             f.write(content)
     return zip_folder(str(tmpdir))
 
-
-def replace_dict_keys(d, converter):
-    """Replace fields in a dict and return updated dict (recursive).
-
-    Apply converter to each dict field.
-    """
-    assert isinstance(d, dict)
-    new_d = {}
-    for key, value in d.items():
-        if isinstance(value, dict):
-            value = replace_dict_keys(value, converter)
-        elif isinstance(value, list):
-            if all([isinstance(v, dict) for v in value]):
-                value = [replace_dict_keys(v, converter) for v in value]
-
-        new_d[converter(key)] = value
-    return new_d

@@ -99,7 +99,7 @@ def test_link_dataset_with_datasamples(factory, client):
     client.link_dataset_with_data_samples(dataset, [data_sample])
 
     dataset = client.get_dataset(dataset.key)
-    assert dataset.train_data_sample_keys == [data_sample.key]
+    assert dataset.train_data_sample_keys == [data_sample]
 
 
 @pytest.mark.remote_only

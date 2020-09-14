@@ -5,7 +5,8 @@ import typing
 
 import pydantic
 
-from . import errors, cfg, utils
+from substra.sdk import models
+from . import errors, cfg
 
 
 class BaseFuture(abc.ABC):
@@ -16,15 +17,6 @@ class BaseFuture(abc.ABC):
     @abc.abstractmethod
     def get(self):
         raise NotImplementedError
-
-
-class Status:
-    doing = 'doing'
-    done = 'done'
-    failed = 'failed'
-    todo = 'todo'
-    waiting = 'waiting'
-    canceled = 'canceled'
 
 
 class Future(BaseFuture):
@@ -44,22 +36,26 @@ class Future(BaseFuture):
         except KeyError:
             assert False, 'Future not supported'
         self._getter = getattr(client, m)
+        if asset.__class__.__name__ == "ComputePlan":
+            self._key = asset.compute_plan_id
+        else:
+            self._key = asset.key
 
     def wait(self, timeout=cfg.FUTURE_TIMEOUT, raises=True):
         """Wait until completed (done or failed)."""
         tstart = time.time()
         key = self._asset.key
-        while self._asset.status not in [Status.done, Status.failed, Status.canceled]:
+        while self._asset.status not in [models.Status.done, models.Status.failed, models.Status.canceled]:
             if time.time() - tstart > timeout:
                 raise errors.FutureTimeoutError(f'Future timeout on {self._asset}')
 
             time.sleep(cfg.FUTURE_POLLING_PERIOD)
             self._asset = self._getter(key)
 
-        if raises and self._asset.status == Status.failed:
+        if raises and self._asset.status == models.Status.failed:
             raise errors.FutureFailureError(f'Future execution failed on {self._asset}')
 
-        if raises and self._asset.status == Status.canceled:
+        if raises and self._asset.status == models.Status.canceled:
             raise errors.FutureFailureError(f'Future execution canceled on {self._asset}')
 
         return self.get()
@@ -85,7 +81,7 @@ class ComputePlanFuture(BaseFuture):
         tuples += self._compute_plan.list_testtuple()
 
         for tuple_ in tuples:
-            tuple_.future().wait(timeout, raises=False)
+            Future(tuple_, self._client).wait(timeout, raises=False)
 
         return self.get()
 
@@ -93,232 +89,7 @@ class ComputePlanFuture(BaseFuture):
         return self._client.get_compute_plan(self._compute_plan.compute_plan_id)
 
 
-class _BaseFutureMixin(abc.ABC):
-    _future_cls = None
-
-    def attach(self, client):
-        """Attach client to asset."""
-        # XXX because Pydantic doesn't support private fields, we have to use
-        # __getattribute__ and __setattr__ (https://github.com/samuelcolvin/pydantic/issues/655)
-        object.__setattr__(self, '__client', client)
-        return self
-
-    @property
-    def _client(self):
-        try:
-            return object.__getattribute__(self, '__client')
-        except AttributeError:
-            raise errors.TError(f'No client attached with {self}')
-
-    def future(self):
-        """Returns future from asset."""
-        return self._future_cls(self, self._client)
-
-
-class _FutureMixin(_BaseFutureMixin):
-    """Represents a single task that is executed on the platform."""
-    _future_cls = Future
-
-    def future(self):
-        assert hasattr(self, 'status')
-        assert hasattr(self, 'key')
-        return super().future()
-
-
-class _ComputePlanFutureMixin(_BaseFutureMixin):
-    _future_cls = ComputePlanFuture
-
-
-class _InternalStruct(pydantic.BaseModel, abc.ABC):
-    """Internal nested structure."""
-
-
-class _Asset(_InternalStruct, abc.ABC):
-    """Represents assets stored in the Substra framework.
-
-    Convert a dict with camel case fields to a Dataclass.
-    """
-
-    @classmethod
-    def load(cls, d):
-        """Create asset from dictionary."""
-        try:
-            return cls(**d)
-        except TypeError as e:
-            raise errors.TError(f"cannot parse asset `{d}`") from e
-
-
-class Permission(_InternalStruct):
-    public: bool
-    authorized_ids: typing.List[str]
-
-
-class Permissions(_InternalStruct):
-    """Permissions structure stored in various asset types."""
-    process: Permission
-
-
-class DataSampleCreated(_Asset):
-    key: str
-
-
-class DataSample(_Asset):
-    key: str
-    owner: str
-    data_manager_keys: typing.List[str]
-
-
-class ObjectiveDataset(_InternalStruct):
-    data_manager_key: str
-    data_sample_keys: typing.List[str]
-
-
-class Dataset(_Asset):
-    key: str
-    name: str
-    owner: str
-    objective_key: str
-    metadata: typing.Dict[str, str]
-    permissions: Permissions
-    # the JSON data returned by list_dataset doesn't include the following keys at all
-    # they are only included in the result of get_dataset
-    train_data_sample_keys: typing.List[str] = None
-    test_data_sample_keys: typing.List[str] = None
-
-
-class _Algo(_Asset):
-    key: str
-    name: str
-    owner: str
-    metadata: typing.Dict[str, str]
-    permissions: Permissions
-
-
-class Algo(_Algo):
-    pass
-
-
-class AggregateAlgo(_Algo):
-    pass
-
-
-class CompositeAlgo(_Algo):
-    pass
-
-
-class Objective(_Asset):
-    key: str
-    name: str
-    owner: str
-    metadata: typing.Dict[str, str]
-    permissions: Permissions
-    test_dataset: typing.Optional[ObjectiveDataset]
-
-
-class TesttupleDataset(_InternalStruct):
-    opener_hash: str
-    perf: float
-    keys: typing.List[str]
-    worker: str
-
-    @property
-    def key(self):
-        return self.opener_hash
-
-
-class TraintupleDataset(_InternalStruct):
-    opener_hash: str
-    keys: typing.List[str]
-    worker: str
-
-    @property
-    def key(self):
-        return self.opener_hash
-
-
-class InModel(_InternalStruct):
-    hash_: str = pydantic.Field(..., alias='hash')
-    storage_address: str
-
-
-class OutModel(_InternalStruct):
-    hash_: str = pydantic.Field(..., alias='hash')
-    storage_address: str
-
-
-class OutHeadModel(_InternalStruct):
-    hash_: str = pydantic.Field(..., alias='hash')
-
-
-class Traintuple(_Asset, _FutureMixin):
-    key: str
-    creator: str
-    status: str
-    dataset: TraintupleDataset
-    permissions: Permissions
-    compute_plan_id: str
-    rank: int
-    tag: str
-    metadata: typing.Dict[str, str]
-    log: str
-    in_models: typing.Optional[typing.List[InModel]]
-    out_model: typing.Optional[OutModel]
-
-
-class Aggregatetuple(_Asset, _FutureMixin):
-    key: str
-    creator: str
-    status: str
-    worker: str
-    permissions: Permissions
-    compute_plan_id: str
-    rank: int
-    tag: str
-    metadata: typing.Dict[str, str]
-    log: str
-    in_models: typing.List[InModel] = None
-    out_model: typing.Optional[OutModel]
-
-
-class OutCompositeTrunkModel(_InternalStruct):
-    permissions: Permissions
-    out_model: typing.Optional[OutModel]
-
-
-class OutCompositeHeadModel(_InternalStruct):
-    permissions: Permissions
-    out_model: typing.Optional[OutHeadModel]
-
-
-class CompositeTraintuple(_Asset, _FutureMixin):
-    key: str
-    creator: str
-    status: str
-    dataset: TraintupleDataset
-    compute_plan_id: str
-    rank: int
-    tag: str
-    metadata: typing.Dict[str, str]
-    log: str
-    in_head_model: typing.Optional[InModel]
-    in_trunk_model: typing.Optional[InModel]
-    out_head_model: OutCompositeHeadModel
-    out_trunk_model: OutCompositeTrunkModel
-
-
-class Testtuple(_Asset, _FutureMixin):
-    key: str
-    creator: str
-    status: str
-    dataset: TesttupleDataset
-    certified: bool
-    rank: int
-    tag: str
-    metadata: typing.Dict[str, str]
-    log: str
-
-
-class ComputePlan(_Asset, _ComputePlanFutureMixin):
+class ComputePlan(pydantic.BaseModel):
     compute_plan_id: str
     status: str
     traintuple_keys: typing.List[str]
@@ -377,10 +148,9 @@ class ComputePlan(_Asset, _ComputePlanFutureMixin):
         return tuples
 
 
-class Node(_Asset):
+class Node(pydantic.BaseModel):
     id: str
     is_current: bool
-
 
 class AssetType(enum.Enum):
     algo = enum.auto()
