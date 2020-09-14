@@ -442,7 +442,7 @@ def test_compute_plan_remove_intermediary_model(factory, client, default_dataset
 
     with pytest.raises(sbt.errors.FutureFailureError):
         cp_added = client.add_traintuple(traintuple_spec_3)
-        assets.Future(cp_added).wait()
+        assets.Future(cp_added, client).wait()
 
 
 def test_compute_plan_circular_dependency_failure(factory, client, default_dataset):

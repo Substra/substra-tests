@@ -80,7 +80,7 @@ def test_traintuple_data_samples_relative_order(factory, client, default_dataset
     #  1. In the returned traintuple
     #  2. In the train method of the algo. If the order is incorrect, Future(...).wait() will fail.
     assert traintuple.dataset.keys == data_sample_keys
-    assets.Future(traintuple).wait()
+    assets.Future(traintuple, client).wait()
 
 
 @pytest.mark.xfail(reason='data samples relative order is not preserved (yet)')
@@ -101,4 +101,4 @@ def test_composite_traintuple_data_samples_relative_order(factory, client, defau
     #  1. In the returned composite traintuple
     #  2. In the train method of the algo. If the order is incorrect, assets.Future().wait() will fail.
     assert composite_traintuple.dataset.keys == data_sample_keys
-    assets.Future(composite_traintuple).wait()
+    assets.Future(composite_traintuple, client).wait()

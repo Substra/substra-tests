@@ -29,7 +29,7 @@ def test_execution_debug(client, debug_client, factory, default_dataset, default
         traintuple=traintuple,
         data_samples=default_dataset.test_data_sample_keys[0],
     )
-    testtuple = assets.Future(debug_client.add_testtuple(spec)).wait()
+    testtuple = debug_client.add_testtuple(spec)
     assert testtuple.status == models.Status.done
     assert testtuple.dataset.perf == 3
 
