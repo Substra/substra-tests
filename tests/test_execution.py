@@ -143,7 +143,8 @@ def test_traintuple_execution_failure(factory, client, default_dataset_1):
         with pytest.raises(substra.sdk.backends.local.compute.spawner.ExecutionError):
             traintuple = client.add_traintuple(spec)
     else:
-        traintuple = client.add_traintuple(spec).future().wait(raises=False)
+        traintuple = client.add_traintuple(spec)
+        traintuple = assets.Future(traintuple, client).wait(raises=False)
         assert traintuple.status == models.Status.failed
         assert traintuple.out_model is None
 
@@ -164,7 +165,8 @@ def test_composite_traintuple_execution_failure(factory, client, default_dataset
         with pytest.raises(substra.sdk.backends.local.compute.spawner.ExecutionError):
             composite_traintuple = client.add_composite_traintuple(spec)
     else:
-        composite_traintuple = client.add_composite_traintuple(spec).future().wait(raises=False)
+        composite_traintuple = client.add_composite_traintuple(spec)
+        composite_traintuple = assets.Future(composite_traintuple, client).wait(raises=False)
         assert composite_traintuple.status == models.Status.failed
         assert composite_traintuple.out_head_model.out_model is None
         assert composite_traintuple.out_trunk_model.out_model is None
@@ -198,7 +200,8 @@ def test_aggregatetuple_execution_failure(factory, client, default_dataset):
         with pytest.raises(substra.sdk.backends.local.compute.spawner.ExecutionError):
             aggregatetuple = client.add_aggregatetuple(spec)
     else:
-        aggregatetuple = client.add_aggregatetuple(spec).future().wait(raises=False)
+        aggregatetuple = client.add_aggregatetuple(spec)
+        aggregatetuple = assets.Future(aggregatetuple, client).wait(raises=False)
         for composite_traintuple in composite_traintuples:
             composite_traintuple = client.get_composite_traintuple(composite_traintuple.key)
             assert composite_traintuple.status == models.Status.done

@@ -304,7 +304,7 @@ def test_compute_plan_single_client_failure(factory, client, default_dataset, de
 
     # Submit compute plan and wait for it to complete
     cp_added = client.add_compute_plan(cp_spec)
-    cp = assets.Future(cp_added, client).wait()
+    cp = assets.Future(cp_added, client).wait(raises=False)
 
     traintuples = client.get_compute_plan_traintuple(cp.compute_plan_id)
     testtuples = client.get_compute_plan_testtuple(cp.compute_plan_id)
@@ -508,7 +508,7 @@ def test_execution_compute_plan_canceled(factory, client, default_dataset):
     cp = client.cancel_compute_plan(cp.compute_plan_id)
     assert cp.status == models.Status.canceled
 
-    cp = assets.Future(cp, client).wait()
+    cp = assets.Future(cp, client).wait(raises=False)
     assert cp.status == models.Status.canceled
 
     # check that the status of the done tuple as not been updated

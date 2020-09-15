@@ -3,8 +3,6 @@ import enum
 import time
 import typing
 
-import pydantic
-
 from substra.sdk import models
 from . import errors, cfg
 
@@ -64,69 +62,6 @@ class Future(BaseFuture):
         """Get asset."""
         return self._asset
 
-
-class ComputePlan(pydantic.BaseModel):
-    compute_plan_id: str
-    status: str
-    traintuple_keys: typing.List[str]
-    composite_traintuple_keys: typing.List[str]
-    aggregatetuple_keys: typing.List[str]
-    testtuple_keys: typing.List[str]
-    id_to_key: typing.Dict[str, str]
-    tag: str
-    metadata: typing.Dict[str, str]
-
-    def __init__(self, *args, **kwargs):
-        kwargs['traintuple_keys'] = kwargs.get('traintuple_keys') or []
-        kwargs['composite_traintuple_keys'] = kwargs.get('composite_traintuple_keys') or []
-        kwargs['aggregatetuple_keys'] = kwargs.get('aggregatetuple_keys') or []
-        kwargs['testtuple_keys'] = kwargs.get('testtuple_keys') or []
-        super().__init__(*args, **kwargs)
-
-    def list_traintuple(self):
-        filters = [
-            f'traintuple:compute_plan_id:{self.compute_plan_id}',
-        ]
-        tuples = self._client.list_traintuple(filters=filters)
-        assert len(tuples) == len(self.traintuple_keys)
-        assert set(self.traintuple_keys) == set([t.key for t in tuples])
-        tuples = sorted(tuples, key=lambda t: t.rank)
-        return tuples
-
-    def list_composite_traintuple(self):
-        filters = [
-            f'composite_traintuple:compute_plan_id:{self.compute_plan_id}',
-        ]
-        tuples = self._client.list_composite_traintuple(filters=filters)
-        assert len(tuples) == len(self.composite_traintuple_keys)
-        assert set(self.composite_traintuple_keys) == set([t.key for t in tuples])
-        tuples = sorted(tuples, key=lambda t: t.rank)
-        return tuples
-
-    def list_aggregatetuple(self):
-        filters = [
-            f'aggregatetuple:compute_plan_id:{self.compute_plan_id}',
-        ]
-        tuples = self._client.list_aggregatetuple(filters=filters)
-        assert len(tuples) == len(self.aggregatetuple_keys)
-        assert set(self.aggregatetuple_keys) == set([t.key for t in tuples])
-        tuples = sorted(tuples, key=lambda t: t.rank)
-        return tuples
-
-    def list_testtuple(self):
-        filters = [
-            f'testtuple:compute_plan_id:{self.compute_plan_id}',
-        ]
-        tuples = self._client.list_testtuple(filters=filters)
-        assert len(tuples) == len(self.testtuple_keys)
-        assert set(self.testtuple_keys) == set([t.key for t in tuples])
-        tuples = sorted(tuples, key=lambda t: t.rank)
-        return tuples
-
-
-class Node(pydantic.BaseModel):
-    id: str
-    is_current: bool
 
 class AssetType(enum.Enum):
     algo = enum.auto()
