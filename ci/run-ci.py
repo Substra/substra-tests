@@ -182,8 +182,11 @@ def get_kube_context():
     old_ctx = None
     print('\n# Fetch kubernetes context')
 
-    if call_output('kubectl config get-contexts --no-headers'):
-        old_ctx = call_output('kubectl config current-context')
+    try:
+        if call_output('kubectl config get-contexts --no-headers'):
+            old_ctx = call_output('kubectl config current-context')
+    except Exception:
+        pass
 
     call(f'gcloud container clusters get-credentials {CLUSTER_NAME} --zone {CLUSTER_ZONE} --project {CLUSTER_PROJECT}')
 
