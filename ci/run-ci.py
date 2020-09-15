@@ -59,7 +59,7 @@ KEY_SERVICE_ACCOUNT = 'substra-208412-3be0df12d87a.json'
 
 SUBSTRA_TESTS_BRANCH = 'master'
 SUBSTRA_BRANCH = 'master'
-SUBSTRA_BACKEND_BRANCH = 'master'
+SUBSTRA_BACKEND_BRANCH = 'simplify-celery-images'
 HLF_K8S_BRANCH = 'master'
 
 DIR = os.path.dirname(os.path.realpath(__file__))
@@ -276,14 +276,14 @@ def clone_repos():
          'commit': commit_hlf,
          'branch': HLF_K8S_BRANCH},
         {'name': 'substra-backend',
-         'images': ['substra-backend', 'celeryworker', 'celerybeat', 'flower'],
+         'images': ['substra-backend', 'celery', 'flower'],
          'commit': commit_backend,
          'branch': SUBSTRA_BACKEND_BRANCH},
         {'name': 'substra-tests',
          'images': ['substra-tests'],
          'commit': commit_substra_tests,
          'branch': SUBSTRA_TESTS_BRANCH,
-         'substra_commit' : commit_substra}
+         'substra_commit': commit_substra}
     ]
 
 
