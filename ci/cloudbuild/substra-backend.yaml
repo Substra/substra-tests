@@ -1,7 +1,7 @@
 steps:
 - name: 'gcr.io/cloud-builders/git'
   args: ['clone', 'https://github.com/SubstraFoundation/substra-backend.git', '--depth', '1', '--branch', '${_BRANCH}']
-- name: 'gcr.io/kaniko-project/executor:v0.23.0'
+- name: 'gcr.io/kaniko-project/executor:v1.0.0'
   args:
   - --destination=eu.gcr.io/$PROJECT_ID/substra-backend:ci-${_COMMIT}
   - --cache=true
