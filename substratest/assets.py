@@ -3,7 +3,7 @@ import enum
 import time
 import typing
 
-from substra.sdk import models
+from substra.sdk.models import Status
 from . import errors, cfg
 
 
@@ -43,17 +43,17 @@ class Future(BaseFuture):
     def wait(self, timeout=cfg.FUTURE_TIMEOUT, raises=True):
         """Wait until completed (done or failed)."""
         tstart = time.time()
-        while self._asset.status not in [models.Status.done, models.Status.failed, models.Status.canceled]:
+        while self._asset.status not in [Status.done, Status.failed, Status.canceled]:
             if time.time() - tstart > timeout:
                 raise errors.FutureTimeoutError(f'Future timeout on {self._asset}')
 
             time.sleep(cfg.FUTURE_POLLING_PERIOD)
             self._asset = self._getter(self._key)
 
-        if raises and self._asset.status == models.Status.failed:
+        if raises and self._asset.status == Status.failed:
             raise errors.FutureFailureError(f'Future execution failed on {self._asset}')
 
-        if raises and self._asset.status == models.Status.canceled:
+        if raises and self._asset.status == Status.canceled:
             raise errors.FutureFailureError(f'Future execution canceled on {self._asset}')
 
         return self.get()

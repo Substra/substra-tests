@@ -1,7 +1,7 @@
 import pytest
 
 import substra
-from substra.sdk import models
+from substra.sdk.models import Status
 
 import substratest as sbt
 from substratest.factory import Permissions
@@ -25,7 +25,7 @@ def test_tuples_execution_on_same_node(factory, client, default_dataset, default
     )
     traintuple = client.add_traintuple(spec)
     traintuple = assets.Future(traintuple, client).wait()
-    assert traintuple.status == models.Status.done
+    assert traintuple.status == Status.done
     assert traintuple.metadata == {"foo": "bar"}
     assert traintuple.out_model is not None
 
@@ -38,7 +38,7 @@ def test_tuples_execution_on_same_node(factory, client, default_dataset, default
     spec = factory.create_testtuple(objective=default_objective, traintuple=traintuple)
     testtuple = client.add_testtuple(spec)
     testtuple = assets.Future(testtuple, client).wait()
-    assert testtuple.status == models.Status.done
+    assert testtuple.status == Status.done
     assert testtuple.dataset.perf == 2
 
     # add a traintuple depending on first traintuple
@@ -51,7 +51,7 @@ def test_tuples_execution_on_same_node(factory, client, default_dataset, default
     )
     traintuple = client.add_traintuple(spec)
     traintuple = assets.Future(traintuple, client).wait()
-    assert traintuple.status == models.Status.done
+    assert traintuple.status == Status.done
     assert traintuple.metadata == {}
     assert len(traintuple.in_models) == 1
 
@@ -84,7 +84,7 @@ def test_federated_learning_workflow(factory, client, default_datasets):
         )
         traintuple = client.add_traintuple(spec)
         traintuple = assets.Future(traintuple, client).wait()
-        assert traintuple.status == models.Status.done
+        assert traintuple.status == Status.done
         assert traintuple.out_model is not None
         assert traintuple.tag == 'foo'
         assert traintuple.compute_plan_id   # check it is not None or ''
@@ -94,7 +94,7 @@ def test_federated_learning_workflow(factory, client, default_datasets):
 
     # check a compute plan has been created and its status is at done
     cp = client.get_compute_plan(compute_plan_id)
-    assert cp.status == models.Status.done
+    assert cp.status == Status.done
 
 
 @pytest.mark.slow
@@ -114,7 +114,7 @@ def test_tuples_execution_on_different_nodes(factory, client_1, client_2, defaul
     )
     traintuple = client_1.add_traintuple(spec)
     traintuple = assets.Future(traintuple, client_1).wait()
-    assert traintuple.status == models.Status.done
+    assert traintuple.status == Status.done
     assert traintuple.out_model is not None
     assert traintuple.dataset.worker == client_2.node_id
 
@@ -122,7 +122,7 @@ def test_tuples_execution_on_different_nodes(factory, client_1, client_2, defaul
     spec = factory.create_testtuple(objective=default_objective_1, traintuple=traintuple)
     testtuple = client_1.add_testtuple(spec)
     testtuple = assets.Future(testtuple, client_1).wait()
-    assert testtuple.status == models.Status.done
+    assert testtuple.status == Status.done
     assert testtuple.dataset.worker == client_1.node_id
     assert testtuple.dataset.perf == 2
 
@@ -145,7 +145,7 @@ def test_traintuple_execution_failure(factory, client, default_dataset_1):
     else:
         traintuple = client.add_traintuple(spec)
         traintuple = assets.Future(traintuple, client).wait(raises=False)
-        assert traintuple.status == models.Status.failed
+        assert traintuple.status == Status.failed
         assert traintuple.out_model is None
 
 
@@ -167,7 +167,7 @@ def test_composite_traintuple_execution_failure(factory, client, default_dataset
     else:
         composite_traintuple = client.add_composite_traintuple(spec)
         composite_traintuple = assets.Future(composite_traintuple, client).wait(raises=False)
-        assert composite_traintuple.status == models.Status.failed
+        assert composite_traintuple.status == Status.failed
         assert composite_traintuple.out_head_model.out_model is None
         assert composite_traintuple.out_trunk_model.out_model is None
 
@@ -204,8 +204,8 @@ def test_aggregatetuple_execution_failure(factory, client, default_dataset):
         aggregatetuple = assets.Future(aggregatetuple, client).wait(raises=False)
         for composite_traintuple in composite_traintuples:
             composite_traintuple = client.get_composite_traintuple(composite_traintuple.key)
-            assert composite_traintuple.status == models.Status.done
-        assert aggregatetuple.status == models.Status.failed
+            assert composite_traintuple.status == Status.done
+        assert aggregatetuple.status == Status.failed
         assert aggregatetuple.out_model is None
 
 
@@ -224,7 +224,7 @@ def test_composite_traintuples_execution(factory, client, default_dataset, defau
     )
     composite_traintuple_1 = client.add_composite_traintuple(spec)
     composite_traintuple_1 = assets.Future(composite_traintuple_1, client).wait()
-    assert composite_traintuple_1.status == models.Status.done
+    assert composite_traintuple_1.status == Status.done
     assert composite_traintuple_1.out_head_model is not None
     assert composite_traintuple_1.out_head_model.out_model is not None
     assert composite_traintuple_1.out_trunk_model is not None
@@ -240,7 +240,7 @@ def test_composite_traintuples_execution(factory, client, default_dataset, defau
     )
     composite_traintuple_2 = client.add_composite_traintuple(spec)
     composite_traintuple_2 = assets.Future(composite_traintuple_2, client).wait()
-    assert composite_traintuple_2.status == models.Status.done
+    assert composite_traintuple_2.status == Status.done
     assert composite_traintuple_2.out_head_model is not None
     assert composite_traintuple_2.out_trunk_model is not None
 
@@ -248,7 +248,7 @@ def test_composite_traintuples_execution(factory, client, default_dataset, defau
     spec = factory.create_testtuple(objective=default_objective, traintuple=composite_traintuple_2)
     testtuple = client.add_testtuple(spec)
     testtuple = assets.Future(testtuple, client).wait()
-    assert testtuple.status == models.Status.done
+    assert testtuple.status == Status.done
     assert testtuple.dataset.perf == 32
 
     # list composite traintuple
@@ -292,7 +292,7 @@ def test_aggregatetuple(factory, client, default_dataset):
     )
     aggregatetuple = client.add_aggregatetuple(spec)
     aggregatetuple = assets.Future(aggregatetuple, client).wait()
-    assert aggregatetuple.status == models.Status.done
+    assert aggregatetuple.status == Status.done
     assert len(aggregatetuple.in_models) == number_of_traintuples_to_aggregate
 
 
@@ -411,4 +411,4 @@ def test_aggregate_composite_traintuples(factory, network, clients, default_data
     )
     traintuple = client.add_traintuple(spec)
     traintuple = assets.Future(traintuple, client).wait()
-    assert traintuple.status == models.Status.failed
+    assert traintuple.status == Status.failed
