@@ -452,8 +452,6 @@ def patch_skaffold_file(config):
     with open(skaffold_file) as file:
         data = yaml.load(file, Loader=yaml.FullLoader)
 
-    data['deploy']['statusCheckDeadlineSeconds'] = 400
-
     for r in data['deploy']['helm']['releases']:
         if r['chartPath'].startswith('charts/'):
             r['chartPath'] = os.path.join(SOURCE_DIR, config["name"], r['chartPath'])
