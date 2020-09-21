@@ -276,14 +276,14 @@ def clone_repos():
          'commit': commit_hlf,
          'branch': HLF_K8S_BRANCH},
         {'name': 'substra-backend',
-         'images': ['substra-backend', 'celeryworker', 'celerybeat', 'flower'],
+         'images': ['substra-backend', 'celery', 'flower'],
          'commit': commit_backend,
          'branch': SUBSTRA_BACKEND_BRANCH},
         {'name': 'substra-tests',
          'images': ['substra-tests'],
          'commit': commit_substra_tests,
          'branch': SUBSTRA_TESTS_BRANCH,
-         'substra_commit' : commit_substra}
+         'substra_commit': commit_substra}
     ]
 
 

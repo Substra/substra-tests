@@ -3,9 +3,9 @@ steps:
   args: ['clone', 'https://github.com/SubstraFoundation/substra-backend.git', '--depth', '1', '--branch', '${_BRANCH}']
 - name: 'gcr.io/kaniko-project/executor:v1.0.0'
   args:
-  - --destination=eu.gcr.io/$PROJECT_ID/celerybeat:ci-${_COMMIT}
+  - --destination=eu.gcr.io/$PROJECT_ID/celery:ci-${_COMMIT}
   - --cache=true
-  - --dockerfile=substra-backend/docker/celerybeat/Dockerfile
+  - --dockerfile=substra-backend/docker/celery/Dockerfile
   - --context=substra-backend
   - --cache-ttl=${_KANIKO_CACHE_TTL}
 tags:
