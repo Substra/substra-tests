@@ -1,11 +1,21 @@
 import os
 import tempfile
+import time
 
 import substra
+from substra.sdk.models import Status
 
-from . import assets
+from . import errors, cfg
 
 DATASET_DOWNLOAD_FILENAME = 'opener.py'
+
+_get_methods = {
+    'Traintuple': 'get_traintuple',
+    'Testtuple': 'get_testtuple',
+    'Aggregatetuple': 'get_aggregatetuple',
+    'CompositeTraintuple': 'get_composite_traintuple',
+    'ComputePlan': 'get_compute_plan'
+}
 
 
 class Client:
@@ -160,7 +170,7 @@ class Client:
     def link_dataset_with_data_samples(self, dataset, data_samples):
         self._client.link_dataset_with_data_samples(dataset.key, data_samples)
 
-    def get_compute_plan_traintuple(self, compute_plan_id):
+    def list_compute_plan_traintuples(self, compute_plan_id):
         filters = [
             f'traintuple:compute_plan_id:{compute_plan_id}',
         ]
@@ -168,7 +178,7 @@ class Client:
         tuples = sorted(tuples, key=lambda t: t.rank)
         return tuples
 
-    def get_compute_plan_composite_traintuple(self, compute_plan_id):
+    def list_compute_plan_composite_traintuples(self, compute_plan_id):
         filters = [
             f'composite_traintuple:compute_plan_id:{compute_plan_id}',
         ]
@@ -176,7 +186,7 @@ class Client:
         tuples = sorted(tuples, key=lambda t: t.rank)
         return tuples
 
-    def get_compute_plan_aggregatetuple(self, compute_plan_id):
+    def list_compute_plan_aggregatetuples(self, compute_plan_id):
         filters = [
             f'aggregatetuple:compute_plan_id:{compute_plan_id}',
         ]
@@ -184,10 +194,38 @@ class Client:
         tuples = sorted(tuples, key=lambda t: t.rank)
         return tuples
 
-    def get_compute_plan_testtuple(self, compute_plan_id):
+    def list_compute_plan_testtuples(self, compute_plan_id):
         filters = [
             f'testtuple:compute_plan_id:{compute_plan_id}',
         ]
         tuples = self.list_testtuple(filters=filters)
         tuples = sorted(tuples, key=lambda t: t.rank)
         return tuples
+
+    def wait(self, asset, timeout=cfg.FUTURE_TIMEOUT, raises=True):
+        try:
+            m = _get_methods[asset.__class__.__name__]
+        except KeyError:
+            assert False, 'Future not supported'
+        getter = getattr(self, m)
+
+        if asset.__class__.__name__ == "ComputePlan":
+            key = asset.compute_plan_id
+        else:
+            key = asset.key
+
+        tstart = time.time()
+        while asset.status not in [Status.done.value, Status.failed.value, Status.canceled.value]:
+            if time.time() - tstart > timeout:
+                raise errors.FutureTimeoutError(f'Future timeout on {asset}')
+
+            time.sleep(cfg.FUTURE_POLLING_PERIOD)
+            asset = getter(key)
+
+        if raises and asset.status == Status.failed.value:
+            raise errors.FutureFailureError(f'Future execution failed on {asset}')
+
+        if raises and asset.status == Status.canceled.value:
+            raise errors.FutureFailureError(f'Future execution canceled on {asset}')
+
+        return asset

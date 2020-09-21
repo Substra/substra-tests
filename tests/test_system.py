@@ -68,7 +68,7 @@ def test_execution_retry_on_fail(fail_count, status, factory, client, default_da
                  # folder (that's where we store the counter)
     )
     traintuple = client.add_traintuple(spec)
-    traintuple = sbt.assets.Future(traintuple, client).wait(raises=False)
+    traintuple = client.wait(traintuple, raises=False)
 
     # Assuming that, on the backend, CELERY_TASK_MAX_RETRIES is set to 1, the algo
     # should be retried up to 1 time(s) (i.e. max 2 attempts in total)

@@ -57,14 +57,14 @@ def test_compute_plan(factory, client_1, client_2, default_dataset_1, default_da
     cp_added = client_1.add_compute_plan(cp_spec)
     id_to_key = cp_added.id_to_key
 
-    cp = assets.Future(cp_added, client_1).wait()
+    cp = client_1.wait(cp_added)
     assert cp.tag == 'foo'
     assert cp.metadata == {"foo": "bar"}
 
-    traintuples = client_1.get_compute_plan_traintuple(cp.compute_plan_id)
+    traintuples = client_1.list_compute_plan_traintuples(cp.compute_plan_id)
     assert len(traintuples) == 3
 
-    testtuples = client_1.get_compute_plan_testtuple(cp.compute_plan_id)
+    testtuples = client_1.list_compute_plan_testtuples(cp.compute_plan_id)
     assert len(testtuples) == 1
 
     # check all tuples are done and check they have been executed on the expected node
@@ -164,10 +164,10 @@ def test_compute_plan_single_client_success(factory, client, default_dataset, de
 
     # Submit compute plan and wait for it to complete
     cp_added = client.add_compute_plan(cp_spec)
-    cp = assets.Future(cp_added, client).wait()
+    cp = client.wait(cp_added)
 
     # All the train/test tuples should succeed
-    for t in client.get_compute_plan_traintuple(cp.compute_plan_id) + client.get_compute_plan_testtuple(cp.compute_plan_id):
+    for t in client.list_compute_plan_traintuples(cp.compute_plan_id) + client.list_compute_plan_testtuples(cp.compute_plan_id):
         assert t.status == models.Status.done
 
 
@@ -236,9 +236,9 @@ def test_compute_plan_update(factory, client, default_dataset, default_objective
 
     # All the train/test tuples should succeed
     cp_added = client.get_compute_plan(cp.compute_plan_id)
-    cp = assets.Future(cp_added, client).wait()
-    traintuples = client.get_compute_plan_traintuple(cp.compute_plan_id)
-    testtuples = client.get_compute_plan_testtuple(cp.compute_plan_id)
+    cp = client.wait(cp_added)
+    traintuples = client.list_compute_plan_traintuples(cp.compute_plan_id)
+    testtuples = client.list_compute_plan_testtuples(cp.compute_plan_id)
     tuples = traintuples + testtuples
     assert len(tuples) == 6
     for t in tuples:
@@ -304,10 +304,10 @@ def test_compute_plan_single_client_failure(factory, client, default_dataset, de
 
     # Submit compute plan and wait for it to complete
     cp_added = client.add_compute_plan(cp_spec)
-    cp = assets.Future(cp_added, client).wait(raises=False)
+    cp = client.wait(cp_added, raises=False)
 
-    traintuples = client.get_compute_plan_traintuple(cp.compute_plan_id)
-    testtuples = client.get_compute_plan_testtuple(cp.compute_plan_id)
+    traintuples = client.list_compute_plan_traintuples(cp.compute_plan_id)
+    testtuples = client.list_compute_plan_testtuples(cp.compute_plan_id)
 
     # All the train/test tuples should be marked either as failed or canceled
     for t in traintuples + testtuples:
@@ -374,11 +374,11 @@ def test_compute_plan_aggregate_composite_traintuples(factory, clients, default_
         )
 
     cp_added = clients[0].add_compute_plan(cp_spec)
-    cp = assets.Future(cp_added, clients[0]).wait()
-    traintuples = clients[0].get_compute_plan_traintuple(cp.compute_plan_id)
-    composite_traintuples = clients[0].get_compute_plan_composite_traintuple(cp.compute_plan_id)
-    aggregatetuples = clients[0].get_compute_plan_aggregatetuple(cp.compute_plan_id)
-    testtuples = clients[0].get_compute_plan_testtuple(cp.compute_plan_id)
+    cp = clients[0].wait(cp_added)
+    traintuples = clients[0].list_compute_plan_traintuples(cp.compute_plan_id)
+    composite_traintuples = clients[0].list_compute_plan_composite_traintuples(cp.compute_plan_id)
+    aggregatetuples = clients[0].list_compute_plan_aggregatetuples(cp.compute_plan_id)
+    testtuples = clients[0].list_compute_plan_testtuples(cp.compute_plan_id)
 
     tuples = traintuples + composite_traintuples + aggregatetuples + testtuples
     for t in tuples:
@@ -431,18 +431,18 @@ def test_compute_plan_remove_intermediary_model(factory, client, default_dataset
     )
 
     cp_added = client.add_compute_plan(cp_spec)
-    cp = assets.Future(cp_added, client).wait()
+    cp = client.wait(cp_added)
 
     traintuple_spec_3 = factory.create_traintuple(
         algo=algo,
         dataset=default_dataset,
         data_samples=[data_sample_3],
-        traintuples=client.get_compute_plan_traintuple(cp.compute_plan_id)
+        traintuples=client.list_compute_plan_traintuples(cp.compute_plan_id)
     )
 
     with pytest.raises(sbt.errors.FutureFailureError):
         cp_added = client.add_traintuple(traintuple_spec_3)
-        assets.Future(cp_added, client).wait()
+        client.wait(cp_added)
 
 
 def test_compute_plan_circular_dependency_failure(factory, client, default_dataset):
@@ -501,18 +501,18 @@ def test_execution_compute_plan_canceled(factory, client, default_dataset):
 
     # wait the first traintuple to be executed to ensure that the compute plan is launched
     # and tuples are scheduled in the celery workers
-    first_traintuple = [t for t in client.get_compute_plan_traintuple(cp.compute_plan_id) if t.rank == 0][0]
-    first_traintuple = assets.Future(first_traintuple, client).wait()
+    first_traintuple = [t for t in client.list_compute_plan_traintuples(cp.compute_plan_id) if t.rank == 0][0]
+    first_traintuple = client.wait(first_traintuple)
     assert first_traintuple.status == models.Status.done
 
     cp = client.cancel_compute_plan(cp.compute_plan_id)
     assert cp.status == models.Status.canceled
 
-    cp = assets.Future(cp, client).wait(raises=False)
+    cp = client.wait(cp, raises=False)
     assert cp.status == models.Status.canceled
 
     # check that the status of the done tuple as not been updated
-    first_traintuple = [t for t in client.get_compute_plan_traintuple(cp.compute_plan_id) if t.rank == 0][0]
+    first_traintuple = [t for t in client.list_compute_plan_traintuples(cp.compute_plan_id) if t.rank == 0][0]
     assert first_traintuple.status == models.Status.done
 
 
@@ -532,9 +532,9 @@ def test_compute_plan_no_batching(factory, client, default_dataset, default_obje
         data_samples=[data_sample_1],
     )
     cp_added = client.add_compute_plan(cp_spec, auto_batching=False)
-    cp = assets.Future(cp_added, client).wait()
+    cp = client.wait(cp_added)
 
-    traintuples = client.get_compute_plan_traintuple(cp.compute_plan_id)
+    traintuples = client.list_compute_plan_traintuples(cp.compute_plan_id)
     assert len(traintuples) == 1
     assert all([tuple_.status == models.Status.done for tuple_ in traintuples])
 
@@ -548,8 +548,8 @@ def test_compute_plan_no_batching(factory, client, default_dataset, default_obje
         metadata={"foo": "bar"},
     )
     cp_added = client.update_compute_plan(cp_spec, auto_batching=False)
-    cp = assets.Future(cp_added, client).wait()
+    cp = client.wait(cp_added)
 
-    traintuples = client.get_compute_plan_traintuple(cp.compute_plan_id)
+    traintuples = client.list_compute_plan_traintuples(cp.compute_plan_id)
     assert len(traintuples) == 2
     assert all([tuple_.status == models.Status.done for tuple_ in traintuples])

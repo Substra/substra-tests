@@ -87,7 +87,7 @@ def test_link_dataset_with_datasamples(factory, client):
     dataset_tmp = client.add_dataset(spec)
 
     spec = factory.create_data_sample(datasets=[dataset_tmp])
-    data_sample = client.add_data_sample(spec)
+    data_sample_key = client.add_data_sample(spec)
 
     # create a new dataset and link existing data sample to the new dataset
     spec = factory.create_dataset()
@@ -96,10 +96,10 @@ def test_link_dataset_with_datasamples(factory, client):
     dataset = client.get_dataset(dataset.key)
     assert dataset.train_data_sample_keys == []
 
-    client.link_dataset_with_data_samples(dataset, [data_sample])
+    client.link_dataset_with_data_samples(dataset, [data_sample_key])
 
     dataset = client.get_dataset(dataset.key)
-    assert dataset.train_data_sample_keys == [data_sample]
+    assert dataset.train_data_sample_keys == [data_sample_key]
 
 
 @pytest.mark.remote_only
