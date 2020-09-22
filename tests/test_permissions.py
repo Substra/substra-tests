@@ -2,6 +2,8 @@ import substra
 
 import pytest
 
+from substra.sdk import models
+
 from substratest.factory import Permissions
 from substratest import assets
 from . import settings
@@ -124,8 +126,8 @@ def test_merge_permissions(permissions_1, permissions_2, expected_permissions,
         dataset=dataset_1,
         data_samples=[train_data_sample_1],
     )
-    traintuple = client_1.add_traintuple(spec).future().wait()
-    assert traintuple.status == assets.Status.done
+    traintuple = client_1.add_traintuple(spec)
+    traintuple = client_1.wait(traintuple)
     assert traintuple.out_model is not None
     assert traintuple.dataset.worker == client_1.node_id
     tuple_permissions = traintuple.permissions.process
@@ -199,7 +201,8 @@ def test_permissions_denied_model_process(factory, client_1, client_2, network):
         data_samples=dataset_1.train_data_sample_keys,
         tag='foo',
     )
-    traintuple_1 = client_1.add_traintuple(spec).future().wait()
+    traintuple_1 = client_1.add_traintuple(spec)
+    traintuple_1 = client_1.wait(traintuple_1)
 
     assert not traintuple_1.permissions.process.public
     assert traintuple_1.permissions.process.authorized_ids == [client_1.node_id]
@@ -269,7 +272,8 @@ def test_merge_permissions_denied_process(factory, clients):
             dataset=dataset_1,
             data_samples=[train_data_sample_1],
         )
-        traintuple_2 = client_2.add_traintuple(spec).future().wait()
+        traintuple_2 = client_2.add_traintuple(spec)
+        traintuple_2 = client_2.wait(traintuple_2)
 
         # failed to add testtuple from node 3
         spec = factory.create_testtuple(

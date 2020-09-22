@@ -1,5 +1,6 @@
 import pytest
 
+from substra.sdk import models
 from substratest import assets
 from substratest.factory import Permissions
 
@@ -19,7 +20,7 @@ def test_execution_debug(client, debug_client, factory, default_dataset, default
         data_samples=default_dataset.train_data_sample_keys[0],
     )
     traintuple = debug_client.add_traintuple(spec)
-    assert traintuple.status == assets.Status.done
+    assert traintuple.status == models.Status.done
     assert traintuple.out_model is not None
 
     # Add the testtuple
@@ -28,8 +29,8 @@ def test_execution_debug(client, debug_client, factory, default_dataset, default
         traintuple=traintuple,
         data_samples=default_dataset.test_data_sample_keys[0],
     )
-    testtuple = debug_client.add_testtuple(spec).future().wait()
-    assert testtuple.status == assets.Status.done
+    testtuple = debug_client.add_testtuple(spec)
+    assert testtuple.status == models.Status.done
     assert testtuple.dataset.perf == 3
 
 
@@ -92,15 +93,15 @@ def test_debug_compute_plan_aggregate_composite(client, debug_client, factory, d
             traintuple_spec=composite_traintuple_spec,
         )
 
-    cp = debug_client.add_compute_plan(cp_spec).future().wait()
-    traintuples = cp.list_traintuple()
-    composite_traintuples = cp.list_composite_traintuple()
-    aggregatetuples = cp.list_aggregatetuple()
-    testtuples = cp.list_testtuple()
+    cp = debug_client.add_compute_plan(cp_spec)
+    traintuples = debug_client.list_compute_plan_traintuples(cp.compute_plan_id)
+    composite_traintuples = client.list_compute_plan_composite_traintuples(cp.compute_plan_id)
+    aggregatetuples = client.list_compute_plan_aggregatetuples(cp.compute_plan_id)
+    testtuples = client.list_compute_plan_testtuples(cp.compute_plan_id)
 
     tuples = traintuples + composite_traintuples + aggregatetuples + testtuples
     for t in tuples:
-        assert t.status == assets.Status.done
+        assert t.status == models.Status.done
 
 
 @pytest.mark.remote_only

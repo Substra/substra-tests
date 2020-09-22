@@ -1,5 +1,7 @@
 import pytest
 
+from substra.sdk.models import Status
+
 import substratest as sbt
 from . import settings
 
@@ -8,8 +10,8 @@ from . import settings
 # no check on permissions with the local backend
 @pytest.mark.remote_only
 @pytest.mark.parametrize('fail_count,status', (
-    (settings.CELERY_TASK_MAX_RETRIES, 'done'),
-    (settings.CELERY_TASK_MAX_RETRIES + 1, 'failed'),
+    (settings.CELERY_TASK_MAX_RETRIES, Status.done),
+    (settings.CELERY_TASK_MAX_RETRIES + 1, Status.failed),
 ))
 def test_execution_retry_on_fail(fail_count, status, factory, client, default_dataset):
     """Execution of a traintuple which fails on the N first tries, and suceeds on the N+1th try"""
@@ -65,7 +67,8 @@ def test_execution_retry_on_fail(fail_count, status, factory, client, default_da
         rank=0,  # make sure it's part of a compute plan, so we have access to the /sandbox/local
                  # folder (that's where we store the counter)
     )
-    traintuple = client.add_traintuple(spec).future().wait(raises=False)
+    traintuple = client.add_traintuple(spec)
+    traintuple = client.wait(traintuple, raises=False)
 
     # Assuming that, on the backend, CELERY_TASK_MAX_RETRIES is set to 1, the algo
     # should be retried up to 1 time(s) (i.e. max 2 attempts in total)

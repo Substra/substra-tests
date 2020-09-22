@@ -10,6 +10,7 @@ import uuid
 
 import pydantic
 
+from substra.sdk import models
 from . import utils, assets
 
 
@@ -674,7 +675,7 @@ class AssetsFactory:
         traintuples = traintuples or []
 
         for t in traintuples:
-            assert isinstance(t, assets.Traintuple)
+            assert isinstance(t, models.Traintuple)
 
         return TraintupleSpec(
             algo_key=algo.key if algo else None,
@@ -693,7 +694,7 @@ class AssetsFactory:
         traintuples = traintuples or []
 
         for t in traintuples:
-            assert isinstance(t, (assets.Traintuple, assets.CompositeTraintuple))
+            assert isinstance(t, (models.Traintuple, models.CompositeTraintuple))
 
         return AggregatetupleSpec(
             algo_key=algo.key if algo else None,
@@ -713,10 +714,10 @@ class AssetsFactory:
         data_samples = data_samples or []
 
         if head_traintuple and trunk_traintuple:
-            assert isinstance(head_traintuple, assets.CompositeTraintuple)
+            assert isinstance(head_traintuple, models.CompositeTraintuple)
             assert isinstance(
                 trunk_traintuple,
-                (assets.CompositeTraintuple, assets.Aggregatetuple)
+                (models.CompositeTraintuple, models.Aggregatetuple)
             )
             in_head_model_key = head_traintuple.key
             in_trunk_model_key = trunk_traintuple.key
