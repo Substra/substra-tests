@@ -1,5 +1,4 @@
 options:
-  celery_task_max_retries: 1
   enable_intermediate_model_removal: False
   # minikube: True
 nodes:
