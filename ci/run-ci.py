@@ -59,7 +59,7 @@ KEY_SERVICE_ACCOUNT = 'substra-208412-3be0df12d87a.json'
 
 SUBSTRA_TESTS_BRANCH = 'master'
 SUBSTRA_BRANCH = 'master'
-SUBSTRA_BACKEND_BRANCH = 'master'
+SUBSTRA_BACKEND_BRANCH = 'cleaning'
 HLF_K8S_BRANCH = 'master'
 
 DIR = os.path.dirname(os.path.realpath(__file__))
@@ -276,7 +276,7 @@ def clone_repos():
          'commit': commit_hlf,
          'branch': HLF_K8S_BRANCH},
         {'name': 'substra-backend',
-         'images': ['substra-backend', 'celery', 'flower'],
+         'images': ['substra-backend'],
          'commit': commit_backend,
          'branch': SUBSTRA_BACKEND_BRANCH},
         {'name': 'substra-tests',
@@ -416,8 +416,10 @@ def deploy_all(configs):
 def deploy(config, wait=True):
     artifacts_file = create_build_artifacts(config)
     skaffold_file = patch_skaffold_file(config)
-    call(f'skaffold deploy --kube-context={KUBE_CONTEXT} '
-         f'-f={skaffold_file} -a={artifacts_file} --status-check={"true" if wait else "false"}')
+
+    path = os.path.dirname(skaffold_file)
+    call(f'cd {path} && skaffold deploy --kube-context={KUBE_CONTEXT} '
+         f'-f=skaffold.yaml -a={artifacts_file} --status-check={"true" if wait else "false"}')
 
 
 def create_build_artifacts(config):
@@ -426,6 +428,7 @@ def create_build_artifacts(config):
 
     with open(artifacts_file, 'w') as file:
         tags = {'builds': []}
+
         for image in config['images']:
 
             tag = f'eu.gcr.io/{CLUSTER_PROJECT}/{image}:ci-{config["commit"]}'
@@ -456,7 +459,7 @@ def patch_skaffold_file(config):
         if r['chartPath'].startswith('charts/'):
             r['chartPath'] = os.path.join(SOURCE_DIR, config["name"], r['chartPath'])
         if config['name'] == 'substra-backend':
-            r['overrides']['celeryworker']['concurrency'] = CONCURRENCY
+            r['overrides'] = {'celeryworker': {'concurrency': CONCURRENCY}}
 
     with open(skaffold_file, 'w') as file:
         yaml.dump(data, file)
