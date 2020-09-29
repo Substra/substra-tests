@@ -59,7 +59,7 @@ KEY_SERVICE_ACCOUNT = 'substra-208412-3be0df12d87a.json'
 
 SUBSTRA_TESTS_BRANCH = 'master'
 SUBSTRA_BRANCH = 'master'
-SUBSTRA_BACKEND_BRANCH = 'cleaning'
+SUBSTRA_BACKEND_BRANCH = 'master'
 HLF_K8S_BRANCH = 'master'
 
 DIR = os.path.dirname(os.path.realpath(__file__))
