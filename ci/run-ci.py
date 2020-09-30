@@ -418,6 +418,17 @@ def deploy(config, wait=True):
     skaffold_file = patch_skaffold_file(config)
 
     path = os.path.dirname(skaffold_file)
+
+
+    if config['name'] == 'hlf-k8s':
+        call(f'kubectl create namespace orderer; \
+               kubectl create namespace org-1; \
+               kubectl create namespace org-2; \
+               kubectl apply -f "{path}/examples/secrets/secrets-orderer-genesis.yaml"; \
+               kubectl apply -f "{path}/examples/secrets/secrets-orderer.yaml"; \
+               kubectl apply -f "{path}/examples/secrets/secrets-org-1.yaml"; \
+               kubectl apply -f "{path}/examples/secrets/secrets-org-2.yaml"')
+
     call(f'cd {path} && skaffold deploy --kube-context={KUBE_CONTEXT} '
          f'-f=skaffold.yaml -a={artifacts_file} --status-check={"true" if wait else "false"}')
 
