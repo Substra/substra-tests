@@ -47,13 +47,12 @@ import yaml
 CLUSTER_NAME_ALLOWED_PREFIX = 'substra-tests'
 CLUSTER_NAME = ''
 CLUSTER_MACHINE_TYPE = 'n1-standard-8'
-CONCURRENCY = 4
-TESTS_CONCURRENCY = 5
 
-CLUSTER_VERSION = '1.15.12'
+CLUSTER_VERSION = '1.17.9'
 CLUSTER_PROJECT = 'substra-208412'
-CLUSTER_ZONE = 'europe-west4-a'
-
+CLUSTER_ZONE = 'europe-west4-a'  # Zone must be specific (e.g. "europe-west1-b" and not "europe-west1")
+                                 # or else several kubernetes nodes will be created instead of just one,
+                                 # which can lead to pod/volume affinity issues at runtime.
 SERVICE_ACCOUNT = 'substra-tests@substra-208412.iam.gserviceaccount.com'
 KEY_SERVICE_ACCOUNT = 'substra-208412-3be0df12d87a.json'
 
@@ -71,6 +70,11 @@ RUN_TAG = ''.join(random.choice(string.ascii_letters + '0123456789') for _ in ra
 SOURCE_DIR = os.path.realpath(os.path.join(DIR, 'src', RUN_TAG))
 
 KANIKO_CACHE_TTL = '168h'  # 1 week
+
+BACKEND_CELERY_CONCURRENCY = 4
+
+TESTS_CONCURRENCY = 5
+TESTS_FUTURE_TIMEOUT=400
 
 
 def call(cmd):
@@ -107,16 +111,20 @@ def cluster_name(value):
 def arg_parse():
 
     global KEYS_DIR
+    global CLUSTER_MACHINE_TYPE
     global CLUSTER_NAME
     global SUBSTRA_TESTS_BRANCH
     global SUBSTRA_BRANCH
     global SUBSTRA_BACKEND_BRANCH
     global HLF_K8S_BRANCH
     global KANIKO_CACHE_TTL
-    global CONCURRENCY
+    global BACKEND_CELERY_CONCURRENCY
     global TESTS_CONCURRENCY
+    global TESTS_FUTURE_TIMEOUT
 
     parser = argparse.ArgumentParser()
+    parser.add_argument('--machine-type', type=str, default=CLUSTER_MACHINE_TYPE,
+                        help='The GKE machine type to use')
     parser.add_argument('-N', '--cluster-name', type=cluster_name, default=CLUSTER_NAME_ALLOWED_PREFIX,
                         help='The prefix name if the GKE kubernetes cluster to create')
     parser.add_argument('-K', '--keys-directory', type=str, default=KEYS_DIR,
@@ -131,10 +139,12 @@ def arg_parse():
                         help='hlf-k8s branch', metavar='GIT_BRANCH')
     parser.add_argument('--no-cache', action='store_true',
                         help='Use this option to disable kaniko caching')
-    parser.add_argument('--concurrency', type=int, default=CONCURRENCY,
-                        help='The substra worker task concurrency')
-    parser.add_argument('--test-concurrency', type=int, default=TESTS_CONCURRENCY,
+    parser.add_argument('--backend-celery-concurrency', type=int, default=BACKEND_CELERY_CONCURRENCY,
+                        help='The substra-backend worker task concurrency')
+    parser.add_argument('--tests-concurrency', type=int, default=TESTS_CONCURRENCY,
                         help='The number of parallel test runners')
+    parser.add_argument('--tests-future-timeout', type=int, default=TESTS_FUTURE_TIMEOUT,
+                        help='In substra-tests, the number of seconds to wait for a training task to complete')
 
     args = vars(parser.parse_args())
 
@@ -143,13 +153,15 @@ def arg_parse():
     CLUSTER_NAME += f'-{RUN_TAG[:40-len(CLUSTER_NAME)-1]}'
     CLUSTER_NAME = CLUSTER_NAME.lower()   # Make it lower for gcloud compatibility
 
+    CLUSTER_MACHINE_TYPE=args['machine_type']
     KEYS_DIR = args['keys_directory']
     SUBSTRA_TESTS_BRANCH = args['substra_tests']
     SUBSTRA_BRANCH = args['substra']
     SUBSTRA_BACKEND_BRANCH = args['substra_backend']
     HLF_K8S_BRANCH = args['hlf_k8s']
-    CONCURRENCY = args['concurrency']
-    TESTS_CONCURRENCY = args['test_concurrency']
+    BACKEND_CELERY_CONCURRENCY = args['backend_celery_concurrency']
+    TESTS_CONCURRENCY = args['tests_concurrency']
+    TESTS_FUTURE_TIMEOUT=args['tests_future_timeout']
     if args['no_cache']:
         KANIKO_CACHE_TTL = '-1h'
 
@@ -159,15 +171,17 @@ def arg_parse():
 
 def print_args():
     print(
-        f'KEYS_DIR\t\t= {KEYS_DIR}\n'
-        f'CLUSTER_NAME\t\t= {CLUSTER_NAME}\n'
-        f'SUBSTRA_TESTS_BRANCH\t= {SUBSTRA_TESTS_BRANCH}\n'
-        f'SUBSTRA_BRANCH\t\t= {SUBSTRA_BRANCH}\n'
-        f'SUBSTRA_BACKEND_BRANCH\t= {SUBSTRA_BACKEND_BRANCH}\n'
-        f'HLF_K8S_BRANCH\t\t= {HLF_K8S_BRANCH}\n'
-        f'KANIKO_CACHE_TTL\t= {KANIKO_CACHE_TTL}\n'
-        f'CONCURRENCY\t\t= {CONCURRENCY}\n'
-        f'TESTS_CONCURRENCY\t= {TESTS_CONCURRENCY}\n'
+        f'CLUSTER_MACHINE_TYPE\t\t= {CLUSTER_MACHINE_TYPE}\n'
+        f'CLUSTER_NAME\t\t\t= {CLUSTER_NAME}\n'
+        f'KEYS_DIR\t\t\t= {KEYS_DIR}\n'
+        f'SUBSTRA_TESTS_BRANCH\t\t= {SUBSTRA_TESTS_BRANCH}\n'
+        f'SUBSTRA_BRANCH\t\t\t= {SUBSTRA_BRANCH}\n'
+        f'SUBSTRA_BACKEND_BRANCH\t\t= {SUBSTRA_BACKEND_BRANCH}\n'
+        f'HLF_K8S_BRANCH\t\t\t= {HLF_K8S_BRANCH}\n'
+        f'KANIKO_CACHE_TTL\t\t= {KANIKO_CACHE_TTL}\n'
+        f'BACKEND_CELERY_CONCURRENCY\t= {BACKEND_CELERY_CONCURRENCY}\n'
+        f'TESTS_CONCURRENCY\t\t= {TESTS_CONCURRENCY}\n'
+        f'TESTS_FUTURE_TIMEOUT\t\t= {TESTS_FUTURE_TIMEOUT}\n'
     )
 
 
@@ -205,6 +219,8 @@ def create_cluster_async():
           f'--num-nodes=1 '\
           f'--zone={CLUSTER_ZONE} '\
           f'--project={CLUSTER_PROJECT} '\
+          f'--enable-ip-alias '\
+          f'--no-enable-autoupgrade '\
           f'--enable-network-policy '\
           f'--async'
     call(cmd)
@@ -459,7 +475,7 @@ def patch_skaffold_file(config):
         if r['chartPath'].startswith('charts/'):
             r['chartPath'] = os.path.join(SOURCE_DIR, config["name"], r['chartPath'])
         if config['name'] == 'substra-backend':
-            r['overrides'] = {'celeryworker': {'concurrency': CONCURRENCY}}
+            r['overrides'] = {'celeryworker': {'concurrency': BACKEND_CELERY_CONCURRENCY}}
 
     with open(skaffold_file, 'w') as file:
         yaml.dump(data, file)
@@ -484,7 +500,8 @@ def run_tests():
 
     try:
         # Run the tests on the remote and local backend
-        call(f'kubectl --context {KUBE_CONTEXT} exec {substra_tests_pod} -n substra-tests -- make test-remote PARALLELISM={TESTS_CONCURRENCY}')
+        call(f'kubectl --context {KUBE_CONTEXT} exec {substra_tests_pod} -n substra-tests -- '\
+             f'env SUBSTRA_TESTS_FUTURE_TIMEOUT={TESTS_FUTURE_TIMEOUT} make test-remote PARALLELISM={TESTS_CONCURRENCY}')
         return True
     except subprocess.CalledProcessError:
         print('FATAL: `make test-remote` completed with a non-zero exit code. Did some test(s) fail?')
