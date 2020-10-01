@@ -418,6 +418,11 @@ def deploy(config, wait=True):
     skaffold_file = patch_skaffold_file(config)
 
     path = os.path.dirname(skaffold_file)
+
+
+    if config['name'] == 'hlf-k8s':
+        call(f'KUBE_CONTEXT={KUBE_CONTEXT} {path}/examples/dev-secrets.sh create')
+
     call(f'cd {path} && skaffold deploy --kube-context={KUBE_CONTEXT} '
          f'-f=skaffold.yaml -a={artifacts_file} --status-check={"true" if wait else "false"}')
 
