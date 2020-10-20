@@ -39,12 +39,12 @@ def test_describe_dataset(factory, client):
     assert content == spec.read_description()
 
 
-def test_add_dataset_conflict(factory, client):
+def test_add_duplicate_dataset(factory, client):
     spec = factory.create_dataset()
     dataset = client.add_dataset(spec)
 
-    with pytest.raises(substra.exceptions.AlreadyExists):
-        client.add_dataset(spec)
+    # does not raise
+    client.add_dataset(spec)
 
     dataset_copy = client.add_dataset(spec, exist_ok=True)
     assert dataset == dataset_copy
