@@ -46,9 +46,6 @@ def test_add_duplicate_dataset(factory, client):
     # does not raise
     client.add_dataset(spec)
 
-    dataset_copy = client.add_dataset(spec, exist_ok=True)
-    assert dataset == dataset_copy
-
 
 def test_link_dataset_with_objective(factory, client):
     spec = factory.create_objective()
