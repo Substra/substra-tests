@@ -29,9 +29,8 @@ def test_tuples_execution_on_same_node(factory, client, default_dataset, default
     assert traintuple.metadata == {"foo": "bar"}
     assert traintuple.out_model is not None
 
-    # check we cannot add twice the same traintuple
-    with pytest.raises(substra.exceptions.AlreadyExists):
-        client.add_traintuple(spec)
+    # check we can add twice the same traintuple
+    client.add_traintuple(spec)
 
     # create testtuple
     # don't create it before to avoid MVCC errors
