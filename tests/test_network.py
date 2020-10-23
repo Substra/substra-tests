@@ -256,7 +256,4 @@ def test_error_get_asset_invalid_request(asset_type, client):
 def test_error_get_asset_not_found(asset_type, client):
     method = getattr(client, f'get_{asset_type.name}')
     with pytest.raises(substra.exceptions.NotFound):
-        if str(asset_type) in ['AssetType.objective', 'AssetType.dataset']:
-            method(str(uuid.uuid4()))
-        else:
-            method('42' * 32)  # a valid key must have a 64 length
+        method(str(uuid.uuid4()))
