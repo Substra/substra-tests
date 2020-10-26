@@ -48,7 +48,6 @@ CLUSTER_NAME_ALLOWED_PREFIX = 'substra-tests'
 CLUSTER_NAME = ''
 CLUSTER_MACHINE_TYPE = 'n1-standard-8'
 
-CLUSTER_VERSION = '1.17.9'
 CLUSTER_PROJECT = 'substra-208412'
 CLUSTER_ZONE = 'europe-west4-a'  # Zone must be specific (e.g. "europe-west1-b" and not "europe-west1")
                                  # or else several kubernetes nodes will be created instead of just one,
@@ -106,6 +105,22 @@ def cluster_name(value):
             f'The cluster name must not be longer than 35 characters.')
 
     return value
+
+
+def cluster_version():
+    """
+    Fetch gcloud last regular version
+    This is to ensure the cluster is up to date with the regular channel version.
+    """
+    cluster_versions = call_output(f'gcloud container get-server-config --zone={CLUSTER_ZONE} --format=json')
+    # Remove first line because it's a log info from gcloud cli
+    cluster_versions = '\n'.join(cluster_versions.split('\n')[1:])
+    cluster_versions = json.loads(cluster_versions)
+
+    regular_cluster = [cv for cv in cluster_versions['channels']
+                       if cv['channel'] == 'REGULAR'].pop()
+
+    return regular_cluster['defaultVersion'].split('-')[0]
 
 
 def arg_parse():
@@ -213,7 +228,7 @@ def get_kube_context():
 def create_cluster_async():
     print('\n# Create GKE cluster')
     cmd = f'gcloud container clusters create {CLUSTER_NAME} '\
-          f'--cluster-version {CLUSTER_VERSION} '\
+          f'--cluster-version {cluster_version()} '\
           f'--machine-type {CLUSTER_MACHINE_TYPE} '\
           f'--service-account {SERVICE_ACCOUNT} '\
           f'--num-nodes=1 '\
