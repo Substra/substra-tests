@@ -535,17 +535,12 @@ class AssetsFactory:
         shutil.rmtree(str(self._workdir), ignore_errors=True)
 
     def create_data_sample(self, content=None, datasets=None, test_only=False):
-        rdm = random.random()
         idx = self._data_sample_counter.inc()
         tmpdir = self._workdir / f'data-{idx}'
         tmpdir.mkdir()
 
-        encoding = 'utf-8'
-        if content:
-            content = f'# random={rdm} \n'.encode(encoding) + content
-        else:
-            # x=10, y=20. The last "random" column ensures the datasample is unique.
-            content = f'10,20,{rdm}\n'.encode(encoding)
+        content = (content or '10,20')
+        content = content.encode('utf-8')
 
         data_filepath = tmpdir / DEFAULT_DATA_SAMPLE_FILENAME
         with open(data_filepath, 'wb') as f:
@@ -560,7 +555,6 @@ class AssetsFactory:
         )
 
     def create_dataset(self, objective=None, permissions=None, metadata=None):
-        rdm = random.random()
         idx = self._dataset_counter.inc()
         tmpdir = self._workdir / f'dataset-{idx}'
         tmpdir.mkdir()
@@ -572,9 +566,8 @@ class AssetsFactory:
             f.write(description_content)
 
         opener_path = tmpdir / 'opener.py'
-        opener_content = f'# random={rdm} \n' + DEFAULT_OPENER_SCRIPT
         with open(opener_path, 'w') as f:
-            f.write(opener_content)
+            f.write(DEFAULT_OPENER_SCRIPT)
 
         return DatasetSpec(
             name=name,
@@ -587,22 +580,19 @@ class AssetsFactory:
         )
 
     def create_objective(self, dataset=None, data_samples=None, permissions=None, metadata=None):
-        rdm = random.random()
         idx = self._objective_counter.inc()
         tmpdir = self._workdir / f'objective-{idx}'
         tmpdir.mkdir()
         name = _shorten_name(f'{self._uuid} - Objective {idx}')
 
         description_path = tmpdir / 'description.md'
-        description_content = f'# random={rdm} {name}'
+        description_content = name
         with open(description_path, 'w') as f:
             f.write(description_content)
 
-        metrics_content = f'# random={rdm} \n' + DEFAULT_METRICS_SCRIPT
-
         metrics_zip = utils.create_archive(
             tmpdir / 'metrics',
-            ('metrics.py', metrics_content),
+            ('metrics.py', DEFAULT_METRICS_SCRIPT),
             ('Dockerfile', DEFAULT_METRICS_DOCKERFILE),
         )
 
@@ -620,7 +610,6 @@ class AssetsFactory:
         )
 
     def _create_algo(self, py_script, permissions=None, metadata=None):
-        rdm = random.random()
         idx = self._algo_counter.inc()
         tmpdir = self._workdir / f'algo-{idx}'
         tmpdir.mkdir()
@@ -631,7 +620,7 @@ class AssetsFactory:
         with open(description_path, 'w') as f:
             f.write(description_content)
 
-        algo_content = f'# random={rdm} \n' + py_script
+        algo_content = py_script
 
         algo_zip = utils.create_archive(
             tmpdir / 'algo',
