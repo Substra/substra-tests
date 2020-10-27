@@ -48,11 +48,13 @@ CLUSTER_NAME_ALLOWED_PREFIX = 'substra-tests'
 CLUSTER_NAME = ''
 CLUSTER_MACHINE_TYPE = 'n1-standard-8'
 
-CLUSTER_VERSION = '1.17.9'
 CLUSTER_PROJECT = 'substra-208412'
-CLUSTER_ZONE = 'europe-west4-a'  # Zone must be specific (e.g. "europe-west1-b" and not "europe-west1")
-                                 # or else several kubernetes nodes will be created instead of just one,
-                                 # which can lead to pod/volume affinity issues at runtime.
+
+# Zone must be specific (e.g. "europe-west1-b" and not "europe-west1")
+# or else several kubernetes nodes will be created instead of just one,
+# which can lead to pod/volume affinity issues at runtime.
+CLUSTER_ZONE = 'europe-west4-a'
+
 SERVICE_ACCOUNT = 'substra-tests@substra-208412.iam.gserviceaccount.com'
 KEY_SERVICE_ACCOUNT = 'substra-208412-3be0df12d87a.json'
 
@@ -74,7 +76,7 @@ KANIKO_CACHE_TTL = '168h'  # 1 week
 BACKEND_CELERY_CONCURRENCY = 4
 
 TESTS_CONCURRENCY = 5
-TESTS_FUTURE_TIMEOUT=400
+TESTS_FUTURE_TIMEOUT = 400
 
 
 def call(cmd):
@@ -106,7 +108,6 @@ def cluster_name(value):
             f'The cluster name must not be longer than 35 characters.')
 
     return value
-
 
 def arg_parse():
 
@@ -153,7 +154,7 @@ def arg_parse():
     CLUSTER_NAME += f'-{RUN_TAG[:40-len(CLUSTER_NAME)-1]}'
     CLUSTER_NAME = CLUSTER_NAME.lower()   # Make it lower for gcloud compatibility
 
-    CLUSTER_MACHINE_TYPE=args['machine_type']
+    CLUSTER_MACHINE_TYPE = args['machine_type']
     KEYS_DIR = args['keys_directory']
     SUBSTRA_TESTS_BRANCH = args['substra_tests']
     SUBSTRA_BRANCH = args['substra']
@@ -161,7 +162,7 @@ def arg_parse():
     HLF_K8S_BRANCH = args['hlf_k8s']
     BACKEND_CELERY_CONCURRENCY = args['backend_celery_concurrency']
     TESTS_CONCURRENCY = args['tests_concurrency']
-    TESTS_FUTURE_TIMEOUT=args['tests_future_timeout']
+    TESTS_FUTURE_TIMEOUT = args['tests_future_timeout']
     if args['no_cache']:
         KANIKO_CACHE_TTL = '-1h'
 
@@ -213,7 +214,6 @@ def get_kube_context():
 def create_cluster_async():
     print('\n# Create GKE cluster')
     cmd = f'gcloud container clusters create {CLUSTER_NAME} '\
-          f'--cluster-version {CLUSTER_VERSION} '\
           f'--machine-type {CLUSTER_MACHINE_TYPE} '\
           f'--service-account {SERVICE_ACCOUNT} '\
           f'--num-nodes=1 '\
@@ -379,7 +379,8 @@ def build_image(tag, image, config):
         f'--no-source '\
         f'--async '\
         f'--project={CLUSTER_PROJECT} '\
-        f'--substitutions=_BUILD_TAG={tag},_BRANCH={branch},_COMMIT={commit},_KANIKO_CACHE_TTL={KANIKO_CACHE_TTL}{extra_substitutions}'
+        f'--substitutions=_BUILD_TAG={tag},_BRANCH={branch},_COMMIT={commit},'\
+        f'_KANIKO_CACHE_TTL={KANIKO_CACHE_TTL}{extra_substitutions}'
 
     output = call_output(cmd)
     print(output)
@@ -434,7 +435,6 @@ def deploy(config, wait=True):
     skaffold_file = patch_skaffold_file(config)
 
     path = os.path.dirname(skaffold_file)
-
 
     if config['name'] == 'hlf-k8s':
         call(f'KUBE_CONTEXT={KUBE_CONTEXT} {path}/examples/dev-secrets.sh create')
@@ -505,8 +505,9 @@ def run_tests():
 
     try:
         # Run the tests on the remote and local backend
-        call(f'kubectl --context {KUBE_CONTEXT} exec {substra_tests_pod} -n substra-tests -- '\
-             f'env SUBSTRA_TESTS_FUTURE_TIMEOUT={TESTS_FUTURE_TIMEOUT} make test-remote PARALLELISM={TESTS_CONCURRENCY}')
+        call(f'kubectl --context {KUBE_CONTEXT} exec {substra_tests_pod} -n substra-tests -- '
+             f'env SUBSTRA_TESTS_FUTURE_TIMEOUT={TESTS_FUTURE_TIMEOUT} '
+             f'make test-remote PARALLELISM={TESTS_CONCURRENCY}')
         return True
     except subprocess.CalledProcessError:
         print('FATAL: `make test-remote` completed with a non-zero exit code. Did some test(s) fail?')
