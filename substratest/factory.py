@@ -539,7 +539,7 @@ class AssetsFactory:
         tmpdir = self._workdir / f'data-{idx}'
         tmpdir.mkdir()
 
-        content = (content or '10,20')
+        content = content or '10,20'
         content = content.encode('utf-8')
 
         data_filepath = tmpdir / DEFAULT_DATA_SAMPLE_FILENAME
