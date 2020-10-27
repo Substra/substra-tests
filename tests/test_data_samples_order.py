@@ -2,7 +2,26 @@ import random
 import pytest
 import copy
 
-from substratest import assets
+
+OPENER_SCRIPT = """
+import json
+import substratools as tools
+class TestOpener(tools.Opener):
+    def get_X(self, folders):
+        return folders
+    def get_y(self, folders):
+        return folders
+    def fake_X(self, n_samples=None):
+        pass
+    def fake_y(self, n_samples=None):
+        pass
+    def get_predictions(self, path):
+        with open(path) as f:
+            return json.load(f)
+    def save_predictions(self, y_pred, path):
+        with open(path, 'w') as f:
+            return json.dump(y_pred, f)
+"""
 
 TEMPLATE_ALGO_SCRIPT = """
 import json
@@ -62,9 +81,23 @@ def _shuffle(items):
     return res
 
 
-@pytest.mark.xfail(reason='data samples relative order is not preserved (yet)')
-def test_traintuple_data_samples_relative_order(factory, client, default_dataset):
-    data_sample_keys = _shuffle(default_dataset.train_data_sample_keys)
+@pytest.fixture
+def dataset(factory, client):
+    """Creates a pass through dataset only handling folder names, not actual data."""
+    # create dataset
+    spec = factory.create_dataset(py_script=OPENER_SCRIPT)
+    dataset = client.add_dataset(spec)
+
+    # create train data samples
+    for i in range(4):
+        spec = factory.create_data_sample(datasets=[dataset], test_only=False)
+        client.add_data_sample(spec)
+
+    return client.get_dataset(dataset.key)
+
+
+def test_traintuple_data_samples_relative_order(factory, client, dataset):
+    data_sample_keys = _shuffle(dataset.train_data_sample_keys)
 
     algo_script = TEMPLATE_ALGO_SCRIPT.format(data_sample_keys=data_sample_keys, models=None)
     spec = factory.create_algo(py_script=algo_script)
@@ -72,7 +105,7 @@ def test_traintuple_data_samples_relative_order(factory, client, default_dataset
 
     spec = factory.create_traintuple(
         algo=algo,
-        dataset=default_dataset,
+        dataset=dataset,
         data_samples=data_sample_keys,
     )
     traintuple = client.add_traintuple(spec)
@@ -83,9 +116,8 @@ def test_traintuple_data_samples_relative_order(factory, client, default_dataset
     client.wait(traintuple)
 
 
-@pytest.mark.xfail(reason='data samples relative order is not preserved (yet)')
-def test_composite_traintuple_data_samples_relative_order(factory, client, default_dataset):
-    data_sample_keys = _shuffle(default_dataset.train_data_sample_keys)
+def test_composite_traintuple_data_samples_relative_order(factory, client, dataset):
+    data_sample_keys = _shuffle(dataset.train_data_sample_keys)
 
     composite_algo_script = TEMPLATE_COMPOSITE_ALGO_SCRIPT.format(data_sample_keys=data_sample_keys, models=None)
     spec = factory.create_composite_algo(py_script=composite_algo_script)
@@ -93,7 +125,7 @@ def test_composite_traintuple_data_samples_relative_order(factory, client, defau
 
     spec = factory.create_composite_traintuple(
         algo=composite_algo,
-        dataset=default_dataset,
+        dataset=dataset,
         data_samples=data_sample_keys,
     )
     composite_traintuple = client.add_composite_traintuple(spec)

@@ -16,7 +16,7 @@ from . import utils, assets
 
 DEFAULT_DATA_SAMPLE_FILENAME = 'data.csv'
 
-DEFAULT_SUBSTRATOOLS_VERSION = '0.6.1-minimal'
+DEFAULT_SUBSTRATOOLS_VERSION = '0.7.0'
 
 DEFAULT_OPENER_SCRIPT = f"""
 import csv
@@ -554,7 +554,7 @@ class AssetsFactory:
             data_manager_keys=[d.key for d in datasets],
         )
 
-    def create_dataset(self, objective=None, permissions=None, metadata=None):
+    def create_dataset(self, objective=None, permissions=None, metadata=None, py_script=None):
         idx = self._dataset_counter.inc()
         tmpdir = self._workdir / f'dataset-{idx}'
         tmpdir.mkdir()
@@ -567,7 +567,7 @@ class AssetsFactory:
 
         opener_path = tmpdir / 'opener.py'
         with open(opener_path, 'w') as f:
-            f.write(DEFAULT_OPENER_SCRIPT)
+            f.write(py_script or DEFAULT_OPENER_SCRIPT)
 
         return DatasetSpec(
             name=name,
