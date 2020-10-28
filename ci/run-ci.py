@@ -61,6 +61,7 @@ KEY_SERVICE_ACCOUNT = 'substra-208412-3be0df12d87a.json'
 SUBSTRA_TESTS_BRANCH = 'master'
 SUBSTRA_BRANCH = 'master'
 SUBSTRA_BACKEND_BRANCH = 'master'
+SUBSTRA_CHAINCODE_BRANCH = 'master'
 HLF_K8S_BRANCH = 'master'
 
 DIR = os.path.dirname(os.path.realpath(__file__))
@@ -118,6 +119,7 @@ def arg_parse():
     global SUBSTRA_BRANCH
     global SUBSTRA_BACKEND_BRANCH
     global HLF_K8S_BRANCH
+    global SUBSTRA_CHAINCODE_BRANCH
     global KANIKO_CACHE_TTL
     global BACKEND_CELERY_CONCURRENCY
     global TESTS_CONCURRENCY
@@ -136,6 +138,8 @@ def arg_parse():
                         help='substra branch', metavar='GIT_REF')
     parser.add_argument('--substra-backend', type=str, default=SUBSTRA_BACKEND_BRANCH,
                         help='substra-backend branch', metavar='GIT_BRANCH')
+    parser.add_argument('--substra-chaincode', type=str, default=SUBSTRA_CHAINCODE_BRANCH,
+                        help='substra-chaincode branch', metavar='GIT_BRANCH')
     parser.add_argument('--hlf-k8s', type=str, default=HLF_K8S_BRANCH,
                         help='hlf-k8s branch', metavar='GIT_BRANCH')
     parser.add_argument('--no-cache', action='store_true',
@@ -159,6 +163,7 @@ def arg_parse():
     SUBSTRA_TESTS_BRANCH = args['substra_tests']
     SUBSTRA_BRANCH = args['substra']
     SUBSTRA_BACKEND_BRANCH = args['substra_backend']
+    SUBSTRA_CHAINCODE_BRANCH = args['substra_chaincode']
     HLF_K8S_BRANCH = args['hlf_k8s']
     BACKEND_CELERY_CONCURRENCY = args['backend_celery_concurrency']
     TESTS_CONCURRENCY = args['tests_concurrency']
@@ -178,6 +183,7 @@ def print_args():
         f'SUBSTRA_TESTS_BRANCH\t\t= {SUBSTRA_TESTS_BRANCH}\n'
         f'SUBSTRA_BRANCH\t\t\t= {SUBSTRA_BRANCH}\n'
         f'SUBSTRA_BACKEND_BRANCH\t\t= {SUBSTRA_BACKEND_BRANCH}\n'
+        f'SUBSTRA_CHAINCODE_BRANCH\t= {SUBSTRA_CHAINCODE_BRANCH}\n'
         f'HLF_K8S_BRANCH\t\t\t= {HLF_K8S_BRANCH}\n'
         f'KANIKO_CACHE_TTL\t\t= {KANIKO_CACHE_TTL}\n'
         f'BACKEND_CELERY_CONCURRENCY\t= {BACKEND_CELERY_CONCURRENCY}\n'
@@ -476,16 +482,35 @@ def patch_skaffold_file(config):
     with open(skaffold_file) as file:
         data = yaml.load(file, Loader=yaml.FullLoader)
 
+    values_files = []
+
     for r in data['deploy']['helm']['releases']:
         if r['chartPath'].startswith('charts/'):
             r['chartPath'] = os.path.join(SOURCE_DIR, config["name"], r['chartPath'])
-        if config['name'] == 'substra-backend':
-            r['overrides'] = {'celeryworker': {'concurrency': BACKEND_CELERY_CONCURRENCY}}
+        if 'valuesFiles' in r:
+            values_files.extend(r['valuesFiles'])
 
     with open(skaffold_file, 'w') as file:
         yaml.dump(data, file)
 
+    for values_file in values_files:
+        patch_values_file(config, os.path.join(SOURCE_DIR, config['name'], values_file))
+
     return skaffold_file
+
+
+def patch_values_file(config, value_file):
+    with open(value_file) as file:
+        data = yaml.load(file, Loader=yaml.FullLoader)
+
+    if config['name'] == 'substra-backend':
+        data['celeryworker']['concurrency'] = BACKEND_CELERY_CONCURRENCY
+    if config['name'] == 'hlf-k8s':
+        if 'chaincodes' in data:
+            data['chaincodes'][0]['src'] = f'https://github.com/SubstraFoundation/substra-chaincode/archive/{SUBSTRA_CHAINCODE_BRANCH}.tar.gz'
+
+    with open(value_file, 'w') as file:
+        yaml.dump(data, file)
 
 
 def run_tests():
