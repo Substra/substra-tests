@@ -1,0 +1,18 @@
+steps:
+- name: 'gcr.io/cloud-builders/git'
+  args: ['clone', 'https://github.com/SubstraFoundation/substra-chaincode.git', '--depth', '1', '--branch', '${_BRANCH}']
+- name: 'gcr.io/kaniko-project/executor:v1.0.0'
+  args:
+  - --destination=eu.gcr.io/$PROJECT_ID/substra-chaincode:ci-${_COMMIT}
+  - --cache=true
+  - --dockerfile=substra-chaincode/Dockerfile
+  - --context=substra-chaincode
+  - --cache-ttl=${_KANIKO_CACHE_TTL}
+tags:
+- ${_BUILD_TAG}
+substitutions:
+    _BUILD_TAG: "substra-tests"
+    _COMMIT: "HEAD"
+    _BRANCH: "master"
+    _KANIKO_CACHE_TTL: "168h"
+timeout: 1200s

@@ -58,11 +58,11 @@ CLUSTER_ZONE = 'europe-west4-a'
 SERVICE_ACCOUNT = 'substra-tests@substra-208412.iam.gserviceaccount.com'
 KEY_SERVICE_ACCOUNT = 'substra-208412-3be0df12d87a.json'
 
-SUBSTRA_TESTS_BRANCH = 'master'
+SUBSTRA_TESTS_BRANCH = 'hlf-2'
 SUBSTRA_BRANCH = 'master'
-SUBSTRA_BACKEND_BRANCH = 'master'
-SUBSTRA_CHAINCODE_BRANCH = 'master'
-HLF_K8S_BRANCH = 'master'
+SUBSTRA_BACKEND_BRANCH = 'hlf-2'
+SUBSTRA_CHAINCODE_BRANCH = 'hlf-2'
+HLF_K8S_BRANCH = 'hlf-2'
 
 DIR = os.path.dirname(os.path.realpath(__file__))
 CHARTS_DIR = os.path.realpath(os.path.join(DIR, '../charts/'))
@@ -110,6 +110,7 @@ def cluster_name(value):
 
     return value
 
+
 def arg_parse():
 
     global KEYS_DIR
@@ -118,6 +119,7 @@ def arg_parse():
     global SUBSTRA_TESTS_BRANCH
     global SUBSTRA_BRANCH
     global SUBSTRA_BACKEND_BRANCH
+    global SUBSTRA_CHAINCODE_BRANCH
     global HLF_K8S_BRANCH
     global SUBSTRA_CHAINCODE_BRANCH
     global KANIKO_CACHE_TTL
@@ -183,7 +185,7 @@ def print_args():
         f'SUBSTRA_TESTS_BRANCH\t\t= {SUBSTRA_TESTS_BRANCH}\n'
         f'SUBSTRA_BRANCH\t\t\t= {SUBSTRA_BRANCH}\n'
         f'SUBSTRA_BACKEND_BRANCH\t\t= {SUBSTRA_BACKEND_BRANCH}\n'
-        f'SUBSTRA_CHAINCODE_BRANCH\t= {SUBSTRA_CHAINCODE_BRANCH}\n'
+        f'SUBSTRA_CHAINCODE_BRANCH\t\t= {SUBSTRA_CHAINCODE_BRANCH}\n'
         f'HLF_K8S_BRANCH\t\t\t= {HLF_K8S_BRANCH}\n'
         f'KANIKO_CACHE_TTL\t\t= {KANIKO_CACHE_TTL}\n'
         f'BACKEND_CELERY_CONCURRENCY\t= {BACKEND_CELERY_CONCURRENCY}\n'
@@ -272,7 +274,6 @@ def setup_helm():
     call('helm repo add stable https://charts.helm.sh/stable')
     call('helm repo add owkin https://owkin.github.io/charts/')
     call('helm repo add bitnami https://charts.bitnami.com/bitnami')
-    call('helm repo add googleapis https://kubernetes-charts.storage.googleapis.com/')
 
 
 def clone_repos():
@@ -283,6 +284,7 @@ def clone_repos():
 
     print(f'\n# Clone repos in {SOURCE_DIR}')
     commit_backend = clone_substra_backend()
+    commit_chaincode = clone_substra_chaincode()
     commit_hlf = clone_hlf_k8s()
     commit_substra_tests = clone_substra_tests()
     commit_substra = get_remote_commit('https://github.com/SubstraFoundation/substra.git', SUBSTRA_BRANCH)
@@ -290,19 +292,25 @@ def clone_repos():
     print(
         f'\nCommit hashes:\n'
         f'- substra-backend: \t{commit_backend}\n'
+        f'- substra-chaincode: \t{commit_chaincode}\n'
         f'- hlf-k8s: \t\t{commit_hlf}\n'
         f'- substra-tests: \t{commit_substra_tests}\n'
         f'- substra: \t\t{commit_substra}\n'
     )
     return [
         {'name': 'hlf-k8s',
-         'images': ['hlf-k8s'],
+         'images': ['hlf-k8s', 'hlf-k8s-ca', 'fabric-peer'],
          'commit': commit_hlf,
          'branch': HLF_K8S_BRANCH},
         {'name': 'substra-backend',
          'images': ['substra-backend'],
          'commit': commit_backend,
          'branch': SUBSTRA_BACKEND_BRANCH},
+        {'name': 'substra-chaincode',
+         'images': ['substra-chaincode'],
+         'commit': commit_chaincode,
+         'branch': SUBSTRA_CHAINCODE_BRANCH,
+         'substra_commit': commit_substra},
         {'name': 'substra-tests',
          'images': ['substra-tests'],
          'commit': commit_substra_tests,
@@ -335,6 +343,15 @@ def clone_substra_backend():
         dirname=os.path.join(SOURCE_DIR, 'substra-backend'),
         url=url,
         branch=SUBSTRA_BACKEND_BRANCH
+    )
+
+
+def clone_substra_chaincode():
+    url = 'https://github.com/SubstraFoundation/substra-chaincode.git'
+    return clone_repository(
+        dirname=os.path.join(SOURCE_DIR, 'substra-chaincode'),
+        url=url,
+        branch=SUBSTRA_CHAINCODE_BRANCH
     )
 
 
@@ -433,14 +450,25 @@ def wait_for_builds(tag, images):
 
 def deploy_all(configs):
     print('\n# Deploy helm charts')
+
+    chaincode_tag = None
     for config in configs:
+        if config['name'] == 'substra-chaincode':
+            chaincode_tag = f'ci-{config["commit"]}'
+
+    for config in configs:
+        # Chaincode does not need to be deployed
+        if config['name'] == 'substra-chaincode':
+            continue
+
         wait = config['name'] != 'hlf-k8s'  # don't wait for hlf-k8s deployment to complete
-        deploy(config, wait)
+        chaincode_tag = None if config['name'] != 'hlf-k8s' else chaincode_tag
+        deploy(config, wait, chaincode_tag)
 
 
-def deploy(config, wait=True):
+def deploy(config, wait=True, chaincode_tag=None):
     artifacts_file = create_build_artifacts(config)
-    skaffold_file = patch_skaffold_file(config)
+    skaffold_file = patch_skaffold_file(config, chaincode_tag)
 
     path = os.path.dirname(skaffold_file)
 
@@ -477,7 +505,7 @@ def create_build_artifacts(config):
     return artifacts_file
 
 
-def patch_skaffold_file(config):
+def patch_skaffold_file(config, chaincode_tag=None):
 
     skaffold_file = os.path.join(SOURCE_DIR, config['name'], 'skaffold.yaml')
 
@@ -496,20 +524,23 @@ def patch_skaffold_file(config):
         yaml.dump(data, file)
 
     for values_file in values_files:
-        patch_values_file(config, os.path.join(SOURCE_DIR, config['name'], values_file))
-
+        patch_values_file(config, os.path.join(SOURCE_DIR, config['name'], values_file),
+                          chaincode_tag=chaincode_tag)
     return skaffold_file
 
 
-def patch_values_file(config, value_file):
+def patch_values_file(config, value_file, chaincode_tag=None):
     with open(value_file) as file:
         data = yaml.load(file, Loader=yaml.FullLoader)
 
     if config['name'] == 'substra-backend':
         data['celeryworker']['concurrency'] = BACKEND_CELERY_CONCURRENCY
     if config['name'] == 'hlf-k8s':
-        if 'chaincodes' in data:
-            data['chaincodes'][0]['src'] = f'https://github.com/SubstraFoundation/substra-chaincode/archive/{SUBSTRA_CHAINCODE_BRANCH}.tar.gz'
+        if 'appChannels' in data:
+            for i in range(len(data['appChannels'])):
+                if 'chaincodes' in data['appChannels'][i]:
+                    data['appChannels'][i]['chaincodes'][0]['image']['repository'] = f'eu.gcr.io/{CLUSTER_PROJECT}/substra-chaincode'
+                    data['appChannels'][i]['chaincodes'][0]['image']['tag'] = chaincode_tag
 
     with open(value_file, 'w') as file:
         yaml.dump(data, file)
