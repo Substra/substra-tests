@@ -515,7 +515,7 @@ class ComputePlanSpec(_BaseComputePlanSpec):
 
 
 class UpdateComputePlanSpec(_BaseComputePlanSpec):
-    compute_plan_key: str
+    key: str
 
 
 class AssetsFactory:
@@ -755,5 +755,5 @@ class AssetsFactory:
             composite_traintuples=[],
             aggregatetuples=[],
             testtuples=[],
-            compute_plan_key=compute_plan.key,
+            key=compute_plan.key,
         )

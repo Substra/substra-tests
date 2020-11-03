@@ -80,8 +80,8 @@ class Client:
     def update_compute_plan(self, spec, *args, **kwargs):
         spec_dict = spec.dict()
         # Remove extra field from data
-        spec_dict.pop("compute_plan_key")
-        return self._client.update_compute_plan(spec.compute_plan_key, spec_dict, *args, **kwargs)
+        spec_dict.pop("key")
+        return self._client.update_compute_plan(spec.key, spec_dict, *args, **kwargs)
 
     def list_compute_plan(self, *args, **kwargs):
         return self._client.list_compute_plan(*args, **kwargs)
