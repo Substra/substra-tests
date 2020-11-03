@@ -1,5 +1,5 @@
 import os
-
+import uuid
 import substra
 
 import pytest
@@ -39,15 +39,12 @@ def test_describe_dataset(factory, client):
     assert content == spec.read_description()
 
 
-def test_add_dataset_conflict(factory, client):
+def test_add_duplicate_dataset(factory, client):
     spec = factory.create_dataset()
     dataset = client.add_dataset(spec)
 
-    with pytest.raises(substra.exceptions.AlreadyExists):
-        client.add_dataset(spec)
-
-    dataset_copy = client.add_dataset(spec, exist_ok=True)
-    assert dataset == dataset_copy
+    # does not raise
+    client.add_dataset(spec)
 
 
 def test_link_dataset_with_objective(factory, client):
@@ -259,4 +256,4 @@ def test_error_get_asset_invalid_request(asset_type, client):
 def test_error_get_asset_not_found(asset_type, client):
     method = getattr(client, f'get_{asset_type.name}')
     with pytest.raises(substra.exceptions.NotFound):
-        method('42' * 32)  # a valid key must have a 64 length
+        method(str(uuid.uuid4()))
