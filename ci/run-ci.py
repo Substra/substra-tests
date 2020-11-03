@@ -58,11 +58,11 @@ CLUSTER_ZONE = 'europe-west4-a'
 SERVICE_ACCOUNT = 'substra-tests@substra-208412.iam.gserviceaccount.com'
 KEY_SERVICE_ACCOUNT = 'substra-208412-3be0df12d87a.json'
 
-SUBSTRA_TESTS_BRANCH = 'hlf-2'
+SUBSTRA_TESTS_BRANCH = 'master'
 SUBSTRA_BRANCH = 'master'
-SUBSTRA_BACKEND_BRANCH = 'hlf-2'
-SUBSTRA_CHAINCODE_BRANCH = 'hlf-2'
-HLF_K8S_BRANCH = 'hlf-2'
+SUBSTRA_BACKEND_BRANCH = 'master'
+SUBSTRA_CHAINCODE_BRANCH = 'master'
+HLF_K8S_BRANCH = 'master'
 
 DIR = os.path.dirname(os.path.realpath(__file__))
 CHARTS_DIR = os.path.realpath(os.path.join(DIR, '../charts/'))
@@ -185,7 +185,7 @@ def print_args():
         f'SUBSTRA_TESTS_BRANCH\t\t= {SUBSTRA_TESTS_BRANCH}\n'
         f'SUBSTRA_BRANCH\t\t\t= {SUBSTRA_BRANCH}\n'
         f'SUBSTRA_BACKEND_BRANCH\t\t= {SUBSTRA_BACKEND_BRANCH}\n'
-        f'SUBSTRA_CHAINCODE_BRANCH\t\t= {SUBSTRA_CHAINCODE_BRANCH}\n'
+        f'SUBSTRA_CHAINCODE_BRANCH\t= {SUBSTRA_CHAINCODE_BRANCH}\n'
         f'HLF_K8S_BRANCH\t\t\t= {HLF_K8S_BRANCH}\n'
         f'KANIKO_CACHE_TTL\t\t= {KANIKO_CACHE_TTL}\n'
         f'BACKEND_CELERY_CONCURRENCY\t= {BACKEND_CELERY_CONCURRENCY}\n'
@@ -309,8 +309,7 @@ def clone_repos():
         {'name': 'substra-chaincode',
          'images': ['substra-chaincode'],
          'commit': commit_chaincode,
-         'branch': SUBSTRA_CHAINCODE_BRANCH,
-         'substra_commit': commit_substra},
+         'branch': SUBSTRA_CHAINCODE_BRANCH},
         {'name': 'substra-tests',
          'images': ['substra-tests'],
          'commit': commit_substra_tests,
