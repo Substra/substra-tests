@@ -755,5 +755,5 @@ class AssetsFactory:
             composite_traintuples=[],
             aggregatetuples=[],
             testtuples=[],
-            compute_plan_key=compute_plan.compute_plan_key,
+            compute_plan_key=compute_plan.key,
         )
