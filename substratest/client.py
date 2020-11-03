@@ -209,10 +209,7 @@ class Client:
             assert False, 'Future not supported'
         getter = getattr(self, m)
 
-        if asset.__class__.__name__ == "ComputePlan":
-            key = asset.compute_plan_key
-        else:
-            key = asset.key
+        key = asset.key
 
         tstart = time.time()
         while asset.status not in [Status.done.value, Status.failed.value, Status.canceled.value]:
