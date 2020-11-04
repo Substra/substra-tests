@@ -3,15 +3,16 @@ steps:
   args: ['clone', 'https://github.com/SubstraFoundation/hlf-k8s.git', '--depth', '1', '--branch', '${_BRANCH}']
 - name: 'gcr.io/kaniko-project/executor:v1.0.0'
   args:
-  - --destination=eu.gcr.io/$PROJECT_ID/hlf-k8s:ci-${_COMMIT}
+  - --destination=eu.gcr.io/$PROJECT_ID/${_IMAGE}:ci-${_COMMIT}
   - --cache=true
-  - --dockerfile=hlf-k8s/images/hlf-k8s/Dockerfile
+  - --dockerfile=hlf-k8s/images/${_IMAGE}/Dockerfile
   - --context=hlf-k8s
   - --cache-ttl=${_KANIKO_CACHE_TTL}
 tags:
 - ${_BUILD_TAG}
 substitutions:
     _BUILD_TAG: "substra-tests"
+    _IMAGE: "hlf-k8s"
     _COMMIT: "HEAD"
     _BRANCH: "master"
     _KANIKO_CACHE_TTL: "168h"

@@ -3,15 +3,16 @@ steps:
   args: ['clone', 'https://github.com/SubstraFoundation/substra-backend.git', '--depth', '1', '--branch', '${_BRANCH}']
 - name: 'gcr.io/kaniko-project/executor:v1.0.0'
   args:
-  - --destination=eu.gcr.io/$PROJECT_ID/substra-backend:ci-${_COMMIT}
+  - --destination=eu.gcr.io/$PROJECT_ID/${_IMAGE}:ci-${_COMMIT}
   - --cache=true
-  - --dockerfile=substra-backend/docker/substra-backend/Dockerfile
+  - --dockerfile=substra-backend/docker/${_IMAGE}/Dockerfile
   - --context=substra-backend
   - --cache-ttl=${_KANIKO_CACHE_TTL}
 tags:
 - ${_BUILD_TAG}
 substitutions:
     _BUILD_TAG: "substra-tests"
+    _IMAGE: "substra-backend"
     _COMMIT: "HEAD"
     _BRANCH: "master"
     _KANIKO_CACHE_TTL: "168h"

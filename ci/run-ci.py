@@ -65,6 +65,8 @@ SUBSTRA_BACKEND_BRANCH = 'master'
 SUBSTRA_CHAINCODE_BRANCH = 'master'
 HLF_K8S_BRANCH = 'master'
 
+CHAINCODE_COMMIT = ''
+
 DIR = os.path.dirname(os.path.realpath(__file__))
 CHARTS_DIR = os.path.realpath(os.path.join(DIR, '../charts/'))
 KEYS_DIR = os.path.realpath(os.path.join(os.getenv('HOME'), '.local/'))
@@ -286,6 +288,9 @@ def setup_helm():
 
 
 def clone_repos():
+
+    global CHAINCODE_COMMIT
+
     if os.path.exists(SOURCE_DIR):
         shutil.rmtree(SOURCE_DIR)
 
@@ -293,7 +298,7 @@ def clone_repos():
 
     print(f'\n# Clone repos in {SOURCE_DIR}')
     commit_backend = clone_substra_backend()
-    commit_chaincode = clone_substra_chaincode()
+    CHAINCODE_COMMIT = clone_substra_chaincode()
     commit_hlf = clone_hlf_k8s()
     commit_substra_tests = clone_substra_tests()
     commit_substra = get_remote_commit('https://github.com/SubstraFoundation/substra.git', SUBSTRA_BRANCH)
@@ -301,7 +306,7 @@ def clone_repos():
     print(
         f'\nCommit hashes:\n'
         f'- substra-backend: \t{commit_backend}\n'
-        f'- substra-chaincode: \t{commit_chaincode}\n'
+        f'- substra-chaincode: \t{CHAINCODE_COMMIT}\n'
         f'- hlf-k8s: \t\t{commit_hlf}\n'
         f'- substra-tests: \t{commit_substra_tests}\n'
         f'- substra: \t\t{commit_substra}\n'
@@ -317,7 +322,7 @@ def clone_repos():
          'branch': SUBSTRA_BACKEND_BRANCH},
         {'name': 'substra-chaincode',
          'images': ['substra-chaincode'],
-         'commit': commit_chaincode,
+         'commit': CHAINCODE_COMMIT,
          'branch': SUBSTRA_CHAINCODE_BRANCH},
         {'name': 'substra-tests',
          'images': ['substra-tests'],
@@ -401,7 +406,8 @@ def build_images(configs):
 def build_image(tag, image, config):
     branch = config["branch"]
     commit = config["commit"]
-    config_file = os.path.join(DIR, f'cloudbuild/{image}.yaml')
+    name = config["name"]
+    config_file = os.path.join(DIR, f'cloudbuild/{name}.yaml')
 
     extra_substitutions = ''
     if image == 'substra-tests':
@@ -412,7 +418,7 @@ def build_image(tag, image, config):
         f'--no-source '\
         f'--async '\
         f'--project={CLUSTER_PROJECT} '\
-        f'--substitutions=_BUILD_TAG={tag},_BRANCH={branch},_COMMIT={commit},'\
+        f'--substitutions=_BUILD_TAG={tag},_IMAGE={image},_BRANCH={branch},_COMMIT={commit},'\
         f'_KANIKO_CACHE_TTL={KANIKO_CACHE_TTL}{extra_substitutions}'
 
     output = call_output(cmd)
@@ -459,24 +465,18 @@ def wait_for_builds(tag, images):
 def deploy_all(configs):
     print('\n# Deploy helm charts')
 
-    chaincode_tag = None
-    for config in configs:
-        if config['name'] == 'substra-chaincode':
-            chaincode_tag = f'ci-{config["commit"]}'
-
     for config in configs:
         # Chaincode does not need to be deployed
         if config['name'] == 'substra-chaincode':
             continue
 
         wait = config['name'] != 'hlf-k8s'  # don't wait for hlf-k8s deployment to complete
-        chaincode_tag = None if config['name'] != 'hlf-k8s' else chaincode_tag
-        deploy(config, wait, chaincode_tag)
+        deploy(config, wait)
 
 
-def deploy(config, wait=True, chaincode_tag=None):
+def deploy(config, wait=True):
     artifacts_file = create_build_artifacts(config)
-    skaffold_file = patch_skaffold_file(config, chaincode_tag)
+    skaffold_file = patch_skaffold_file(config)
 
     path = os.path.dirname(skaffold_file)
 
@@ -513,7 +513,7 @@ def create_build_artifacts(config):
     return artifacts_file
 
 
-def patch_skaffold_file(config, chaincode_tag=None):
+def patch_skaffold_file(config):
 
     skaffold_file = os.path.join(SOURCE_DIR, config['name'], 'skaffold.yaml')
 
@@ -532,12 +532,11 @@ def patch_skaffold_file(config, chaincode_tag=None):
         yaml.dump(data, file)
 
     for values_file in values_files:
-        patch_values_file(config, os.path.join(SOURCE_DIR, config['name'], values_file),
-                          chaincode_tag=chaincode_tag)
+        patch_values_file(config, os.path.join(SOURCE_DIR, config['name'], values_file))
     return skaffold_file
 
 
-def patch_values_file(config, value_file, chaincode_tag=None):
+def patch_values_file(config, value_file):
     with open(value_file) as file:
         data = yaml.load(file, Loader=yaml.FullLoader)
 
@@ -548,7 +547,7 @@ def patch_values_file(config, value_file, chaincode_tag=None):
             for i in range(len(data['appChannels'])):
                 if 'chaincodes' in data['appChannels'][i]:
                     data['appChannels'][i]['chaincodes'][0]['image']['repository'] = f'eu.gcr.io/{CLUSTER_PROJECT}/substra-chaincode'
-                    data['appChannels'][i]['chaincodes'][0]['image']['tag'] = chaincode_tag
+                    data['appChannels'][i]['chaincodes'][0]['image']['tag'] = f'ci-{CHAINCODE_COMMIT}'
 
     with open(value_file, 'w') as file:
         yaml.dump(data, file)
