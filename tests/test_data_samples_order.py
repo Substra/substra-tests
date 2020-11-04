@@ -1,6 +1,4 @@
-import random
 import pytest
-import copy
 
 
 OPENER_SCRIPT = """
@@ -73,12 +71,9 @@ if __name__ == '__main__':
 
 
 def _shuffle(items):
-    res = copy.copy(items)
-    random.shuffle(res)
-    # make sure the items are not sorted in alphabetical order
-    while res == sorted(res):
-        random.shuffle(res)
-    return res
+    """Makes sure items are not in alphabetical order or any other kind of order."""
+    items = sorted(items)
+    return [items[1], items[0]] + items[2:]
 
 
 @pytest.fixture
