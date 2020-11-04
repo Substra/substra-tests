@@ -3,9 +3,9 @@ steps:
   args: ['clone', 'https://github.com/SubstraFoundation/substra-tests.git', '--depth', '1', '--branch', '${_BRANCH}']
 - name: 'gcr.io/kaniko-project/executor:v1.0.0'
   args:
-  - --destination=eu.gcr.io/$PROJECT_ID/substra-tests:ci-${_COMMIT}-${_SUBSTRA_GIT_COMMIT}
+  - --destination=eu.gcr.io/$PROJECT_ID/${_IMAGE}:ci-${_COMMIT}-${_SUBSTRA_GIT_COMMIT}
   - --cache=true
-  - --dockerfile=substra-tests/docker/substra-tests/Dockerfile
+  - --dockerfile=substra-tests/docker/${_IMAGE}/Dockerfile
   - --context=substra-tests
   - --build-arg=SUBSTRA_GIT_REPO=${_SUBSTRA_GIT_REPO}
   - --build-arg=SUBSTRA_GIT_REF=${_SUBSTRA_GIT_COMMIT}
@@ -14,6 +14,7 @@ tags:
 - ${_BUILD_TAG}
 substitutions:
     _BUILD_TAG: "substra-tests"
+    _IMAGE: "substra-tests"
     _COMMIT: "HEAD"
     _BRANCH: "master"
     _SUBSTRA_GIT_REPO: "https://github.com/SubstraFoundation/substra.git"
