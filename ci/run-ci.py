@@ -458,6 +458,7 @@ def deploy_all(configs):
     print('\n# Deploy helm charts')
 
     for config in configs:
+
         # Chaincode does not need to be deployed
         if config['name'] == 'substra-chaincode':
             continue
@@ -466,9 +467,28 @@ def deploy_all(configs):
         deploy(config, wait)
 
 
+def delete_all(configs):
+    print('\n# Delete helm charts')
+
+    for config in configs:
+        try:
+            # Chaincode does not need to be deployed
+            if config['name'] == 'substra-chaincode':
+                continue
+
+            skaffold_file = os.path.join(SOURCE_DIR, config['name'], 'skaffold.yaml')
+            path = os.path.dirname(skaffold_file)
+            call(f'cd {path} && skaffold delete --kube-context={KUBE_CONTEXT} -f=skaffold.yaml')
+        except Exception as e:
+            print(f'Error while deleting {config["name"]}', e)
+            pass
+
+
 def deploy(config, wait=True):
     artifacts_file = create_build_artifacts(config)
-    skaffold_file = patch_skaffold_file(config)
+    skaffold_file = os.path.join(SOURCE_DIR, config['name'], 'skaffold.yaml')
+
+    patch_skaffold_file(skaffold_file, config)
 
     path = os.path.dirname(skaffold_file)
 
@@ -505,9 +525,7 @@ def create_build_artifacts(config):
     return artifacts_file
 
 
-def patch_skaffold_file(config):
-
-    skaffold_file = os.path.join(SOURCE_DIR, config['name'], 'skaffold.yaml')
+def patch_skaffold_file(skaffold_file, config):
 
     with open(skaffold_file) as file:
         data = yaml.load(file, Loader=yaml.FullLoader)
@@ -525,7 +543,6 @@ def patch_skaffold_file(config):
 
     for values_file in values_files:
         patch_values_file(config, os.path.join(SOURCE_DIR, config['name'], values_file))
-    return skaffold_file
 
 
 def patch_values_file(config, value_file):
@@ -570,7 +587,6 @@ def run_tests():
         print('FATAL: `make test-remote` completed with a non-zero exit code. Did some test(s) fail?')
         return False
 
-
 def main():
     is_success = False
     arg_parse()
@@ -594,6 +610,7 @@ def main():
 
     finally:
         print('\n# Perform final teardown')
+        delete_all(configs)
         if os.path.exists(SOURCE_DIR):
             shutil.rmtree(SOURCE_DIR)
         delete_cluster_async()
