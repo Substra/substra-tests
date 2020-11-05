@@ -10,6 +10,7 @@
 #       - hlf-k8s
 #       - substa-backend
 #       - substra-tests
+#       - substra-chaincode
 #     - Build the docker images using Google Cloud Builds
 #     - Deploy these images using skaffold
 #     - Wait for the substra application stack to be up and ready (i.e. wait
@@ -401,7 +402,7 @@ def build_image(tag, image, config):
     config_file = os.path.join(DIR, f'cloudbuild/{name}.yaml')
 
     extra_substitutions = ''
-    if image == 'substra-tests':
+    if name == 'substra-tests':
         extra_substitutions = f',_SUBSTRA_GIT_COMMIT={config["substra_commit"]}'
 
     cmd = f'gcloud builds submit '\
