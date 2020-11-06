@@ -80,8 +80,8 @@ class Client:
     def update_compute_plan(self, spec, *args, **kwargs):
         spec_dict = spec.dict()
         # Remove extra field from data
-        spec_dict.pop("compute_plan_id")
-        return self._client.update_compute_plan(spec.compute_plan_id, spec_dict, *args, **kwargs)
+        spec_dict.pop("key")
+        return self._client.update_compute_plan(spec.key, spec_dict, *args, **kwargs)
 
     def list_compute_plan(self, *args, **kwargs):
         return self._client.list_compute_plan(*args, **kwargs)
@@ -170,33 +170,33 @@ class Client:
     def link_dataset_with_data_samples(self, dataset, data_samples):
         self._client.link_dataset_with_data_samples(dataset.key, data_samples)
 
-    def list_compute_plan_traintuples(self, compute_plan_id):
+    def list_compute_plan_traintuples(self, compute_plan_key):
         filters = [
-            f'traintuple:compute_plan_id:{compute_plan_id}',
+            f'traintuple:compute_plan_key:{compute_plan_key}',
         ]
         tuples = self.list_traintuple(filters=filters)
         tuples = sorted(tuples, key=lambda t: t.rank)
         return tuples
 
-    def list_compute_plan_composite_traintuples(self, compute_plan_id):
+    def list_compute_plan_composite_traintuples(self, compute_plan_key):
         filters = [
-            f'composite_traintuple:compute_plan_id:{compute_plan_id}',
+            f'composite_traintuple:compute_plan_key:{compute_plan_key}',
         ]
         tuples = self.list_composite_traintuple(filters=filters)
         tuples = sorted(tuples, key=lambda t: t.rank)
         return tuples
 
-    def list_compute_plan_aggregatetuples(self, compute_plan_id):
+    def list_compute_plan_aggregatetuples(self, compute_plan_key):
         filters = [
-            f'aggregatetuple:compute_plan_id:{compute_plan_id}',
+            f'aggregatetuple:compute_plan_key:{compute_plan_key}',
         ]
         tuples = self.list_aggregatetuple(filters=filters)
         tuples = sorted(tuples, key=lambda t: t.rank)
         return tuples
 
-    def list_compute_plan_testtuples(self, compute_plan_id):
+    def list_compute_plan_testtuples(self, compute_plan_key):
         filters = [
-            f'testtuple:compute_plan_id:{compute_plan_id}',
+            f'testtuple:compute_plan_key:{compute_plan_key}',
         ]
         tuples = self.list_testtuple(filters=filters)
         tuples = sorted(tuples, key=lambda t: t.rank)
@@ -209,10 +209,7 @@ class Client:
             assert False, 'Future not supported'
         getter = getattr(self, m)
 
-        if asset.__class__.__name__ == "ComputePlan":
-            key = asset.compute_plan_id
-        else:
-            key = asset.key
+        key = asset.key
 
         tstart = time.time()
         while asset.status not in [Status.done.value, Status.failed.value, Status.canceled.value]:

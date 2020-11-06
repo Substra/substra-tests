@@ -79,7 +79,7 @@ def test_traintuple_data_samples_relative_order(factory, client, default_dataset
     # Ensure the order of the data sample keys is correct at 2 levels: :
     #  1. In the returned traintuple
     #  2. In the train method of the algo. If the order is incorrect, wait() will fail.
-    assert traintuple.dataset.keys == data_sample_keys
+    assert traintuple.dataset.data_sample_keys == data_sample_keys
     client.wait(traintuple)
 
 
@@ -100,5 +100,5 @@ def test_composite_traintuple_data_samples_relative_order(factory, client, defau
     # Ensure the order of the data sample keys is correct at 2 levels: :
     #  1. In the returned composite traintuple
     #  2. In the train method of the algo. If the order is incorrect, wait() will fail.
-    assert composite_traintuple.dataset.keys == data_sample_keys
+    assert composite_traintuple.dataset.data_sample_keys == data_sample_keys
     client.wait(composite_traintuple)

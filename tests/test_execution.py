@@ -66,7 +66,7 @@ def test_federated_learning_workflow(factory, client, default_datasets):
     # create 1 traintuple per dataset and chain them
     traintuple = None
     rank = 0
-    compute_plan_id = None
+    compute_plan_key = None
 
     # default_datasets contains datasets on each node and
     # that has a result we can use for federated learning
@@ -79,20 +79,20 @@ def test_federated_learning_workflow(factory, client, default_datasets):
             traintuples=traintuples,
             tag='foo',
             rank=rank,
-            compute_plan_id=compute_plan_id,
+            compute_plan_key=compute_plan_key,
         )
         traintuple = client.add_traintuple(spec)
         traintuple = client.wait(traintuple)
         assert traintuple.status == Status.done
         assert traintuple.out_model is not None
         assert traintuple.tag == 'foo'
-        assert traintuple.compute_plan_id   # check it is not None or ''
+        assert traintuple.compute_plan_key   # check it is not None or ''
 
         rank += 1
-        compute_plan_id = traintuple.compute_plan_id
+        compute_plan_key = traintuple.compute_plan_key
 
     # check a compute plan has been created and its status is at done
-    cp = client.get_compute_plan(compute_plan_id)
+    cp = client.get_compute_plan(compute_plan_key)
     assert cp.status == Status.done
 
 

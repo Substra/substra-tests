@@ -330,7 +330,7 @@ class TraintupleSpec(_Spec):
     in_models_keys: typing.List[str] = None
     tag: str = None
     metadata: typing.Dict[str, str] = None
-    compute_plan_id: str = None
+    compute_plan_key: str = None
     rank: int = None
 
 
@@ -340,7 +340,7 @@ class AggregatetupleSpec(_Spec):
     in_models_keys: typing.List[str]
     tag: str = None
     metadata: typing.Dict[str, str] = None
-    compute_plan_id: str = None
+    compute_plan_key: str = None
     rank: int = None
 
 
@@ -352,7 +352,7 @@ class CompositeTraintupleSpec(_Spec):
     in_trunk_model_key: str = None
     tag: str = None
     metadata: typing.Dict[str, str] = None
-    compute_plan_id: str = None
+    compute_plan_key: str = None
     out_trunk_model_permissions: PrivatePermissions
     rank: int = None
 
@@ -515,7 +515,7 @@ class ComputePlanSpec(_BaseComputePlanSpec):
 
 
 class UpdateComputePlanSpec(_BaseComputePlanSpec):
-    compute_plan_id: str
+    key: str
 
 
 class AssetsFactory:
@@ -659,7 +659,7 @@ class AssetsFactory:
 
     def create_traintuple(self, algo=None, dataset=None,
                           data_samples=None, traintuples=None, tag=None,
-                          compute_plan_id=None, rank=None, metadata=None):
+                          compute_plan_key=None, rank=None, metadata=None):
         data_samples = data_samples or []
         traintuples = traintuples or []
 
@@ -673,12 +673,12 @@ class AssetsFactory:
             in_models_keys=[t.key for t in traintuples],
             tag=tag,
             metadata=metadata,
-            compute_plan_id=compute_plan_id,
+            compute_plan_key=compute_plan_key,
             rank=rank,
         )
 
     def create_aggregatetuple(self, algo=None, worker=None,
-                              traintuples=None, tag=None, compute_plan_id=None,
+                              traintuples=None, tag=None, compute_plan_key=None,
                               rank=None, metadata=None):
         traintuples = traintuples or []
 
@@ -691,14 +691,14 @@ class AssetsFactory:
             in_models_keys=[t.key for t in traintuples],
             tag=tag,
             metadata=metadata,
-            compute_plan_id=compute_plan_id,
+            compute_plan_key=compute_plan_key,
             rank=rank,
         )
 
     def create_composite_traintuple(self, algo=None, dataset=None,
                                     data_samples=None, head_traintuple=None,
                                     trunk_traintuple=None, tag=None,
-                                    compute_plan_id=None, rank=None,
+                                    compute_plan_key=None, rank=None,
                                     permissions=None, metadata=None):
         data_samples = data_samples or []
 
@@ -722,7 +722,7 @@ class AssetsFactory:
             in_trunk_model_key=in_trunk_model_key,
             tag=tag,
             metadata=metadata,
-            compute_plan_id=compute_plan_id,
+            compute_plan_key=compute_plan_key,
             rank=rank,
             out_trunk_model_permissions=permissions or DEFAULT_OUT_TRUNK_MODEL_PERMISSIONS,
         )
@@ -755,5 +755,5 @@ class AssetsFactory:
             composite_traintuples=[],
             aggregatetuples=[],
             testtuples=[],
-            compute_plan_id=compute_plan.compute_plan_id,
+            key=compute_plan.key,
         )

@@ -94,10 +94,10 @@ def test_debug_compute_plan_aggregate_composite(client, debug_client, factory, d
         )
 
     cp = debug_client.add_compute_plan(cp_spec)
-    traintuples = debug_client.list_compute_plan_traintuples(cp.compute_plan_id)
-    composite_traintuples = client.list_compute_plan_composite_traintuples(cp.compute_plan_id)
-    aggregatetuples = client.list_compute_plan_aggregatetuples(cp.compute_plan_id)
-    testtuples = client.list_compute_plan_testtuples(cp.compute_plan_id)
+    traintuples = debug_client.list_compute_plan_traintuples(cp.key)
+    composite_traintuples = client.list_compute_plan_composite_traintuples(cp.key)
+    aggregatetuples = client.list_compute_plan_aggregatetuples(cp.key)
+    testtuples = client.list_compute_plan_testtuples(cp.key)
 
     tuples = traintuples + composite_traintuples + aggregatetuples + testtuples
     for t in tuples:
