@@ -283,7 +283,6 @@ def wait_for_cluster():
 
 def setup_helm():
     print('\n# Setup Helm')
-    call('helm repo add stable https://charts.helm.sh/stable')
     call('helm repo add owkin https://owkin.github.io/charts/')
     call('helm repo add bitnami https://charts.bitnami.com/bitnami')
 
