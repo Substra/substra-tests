@@ -46,6 +46,7 @@ import yaml
 
 CLUSTER_NAME_ALLOWED_PREFIX = 'substra-tests'
 CLUSTER_NAME = ''
+PVC_VOLUME_NAME_PREFIX = ''
 CLUSTER_MACHINE_TYPE = 'n1-standard-8'
 
 CLUSTER_PROJECT = 'substra-208412'
@@ -115,6 +116,7 @@ def arg_parse():
     global KEYS_DIR
     global CLUSTER_MACHINE_TYPE
     global CLUSTER_NAME
+    global PVC_VOLUME_NAME_PREFIX
     global SUBSTRA_TESTS_BRANCH
     global SUBSTRA_BRANCH
     global SUBSTRA_BACKEND_BRANCH
@@ -157,6 +159,7 @@ def arg_parse():
     # Add RUN_TAG to cluster name to make it non-deterministic in case of retry
     CLUSTER_NAME += f'-{RUN_TAG[:40-len(CLUSTER_NAME)-1]}'
     CLUSTER_NAME = CLUSTER_NAME.lower()   # Make it lower for gcloud compatibility
+    PVC_VOLUME_NAME_PREFIX = args['cluster_name'] + f'-{RUN_TAG[:4]}'
 
     CLUSTER_MACHINE_TYPE = args['machine_type']
     KEYS_DIR = args['keys_directory']
@@ -232,12 +235,18 @@ def create_cluster_async():
     call(cmd)
 
 
-def delete_cluster_async():
+def delete_cluster():
     wait_for_cluster()
     print('# Delete cluster')
     cmd = f'yes | gcloud container clusters delete {CLUSTER_NAME} --zone ' \
-          f'{CLUSTER_ZONE} --project {CLUSTER_PROJECT} --async --quiet'
+          f'{CLUSTER_ZONE} --project {CLUSTER_PROJECT} --quiet'
+    call(cmd)
 
+
+def delete_volumes():
+    filter=f'name~^gke-{PVC_VOLUME_NAME_PREFIX}-pvc-.* AND -users:*'
+    cmd=f'gcloud compute disks list --format="table(name)" --filter="{filter}" | '\
+         'sed 1d | xargs --no-run-if-empty gcloud compute disks delete --quiet'
     call(cmd)
 
 
@@ -564,7 +573,8 @@ def main():
         print('\n# Perform final teardown')
         if os.path.exists(SOURCE_DIR):
             shutil.rmtree(SOURCE_DIR)
-        delete_cluster_async()
+        delete_cluster()
+        delete_volumes()
 
     sys.exit(0 if is_success else 1)
 
