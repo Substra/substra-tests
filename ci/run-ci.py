@@ -313,7 +313,7 @@ def clone_repos():
     )
     return [
         {'name': 'hlf-k8s',
-         'images': ['hlf-k8s', 'hlf-k8s-ca', 'fabric-peer'],
+         'images': ['fabric-tools', 'fabric-tools-ca', 'fabric-peer'],
          'commit': commit_hlf,
          'branch': HLF_K8S_BRANCH},
         {'name': 'substra-backend',
