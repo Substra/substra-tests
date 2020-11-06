@@ -243,11 +243,16 @@ def delete_cluster():
     call(cmd)
 
 
-def delete_volumes():
-    filter=f'name~^gke-{PVC_VOLUME_NAME_PREFIX}-pvc-.* AND -users:*'
-    cmd=f'gcloud compute disks list --format="table(name)" --filter="{filter}" | '\
-         'sed 1d | xargs --no-run-if-empty gcloud compute disks delete --quiet'
-    call(cmd)
+def delete_disks():
+    try:
+        filter=f'name~^gke-{PVC_VOLUME_NAME_PREFIX}-pvc-.* AND -users:*'
+        cmd=f'gcloud compute disks list --format="table(name)" --filter="{filter}" | sed 1d'
+        disks = call_output(cmd)
+        disks = disks.replace("\n", " ")
+        if disks:
+            call(f'gcloud compute disks delete --quiet {disks}')
+    except Exception as ex:
+        print('ERROR: Deletion of the GCP disks failed', ex)
 
 
 def wait_for_cluster():
@@ -574,7 +579,7 @@ def main():
         if os.path.exists(SOURCE_DIR):
             shutil.rmtree(SOURCE_DIR)
         delete_cluster()
-        delete_volumes()
+        delete_disks()
 
     sys.exit(0 if is_success else 1)
 
