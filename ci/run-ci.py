@@ -10,6 +10,7 @@
 #       - hlf-k8s
 #       - substa-backend
 #       - substra-tests
+#       - substra-chaincode
 #     - Build the docker images using Google Cloud Builds
 #     - Deploy these images using skaffold
 #     - Wait for the substra application stack to be up and ready (i.e. wait
@@ -65,6 +66,8 @@ SUBSTRA_BACKEND_BRANCH = 'master'
 SUBSTRA_CHAINCODE_BRANCH = 'master'
 HLF_K8S_BRANCH = 'master'
 
+CHAINCODE_COMMIT = ''
+
 DIR = os.path.dirname(os.path.realpath(__file__))
 CHARTS_DIR = os.path.realpath(os.path.join(DIR, '../charts/'))
 KEYS_DIR = os.path.realpath(os.path.join(os.getenv('HOME'), '.local/'))
@@ -111,6 +114,7 @@ def cluster_name(value):
 
     return value
 
+
 def arg_parse():
 
     global KEYS_DIR
@@ -120,6 +124,7 @@ def arg_parse():
     global SUBSTRA_TESTS_BRANCH
     global SUBSTRA_BRANCH
     global SUBSTRA_BACKEND_BRANCH
+    global SUBSTRA_CHAINCODE_BRANCH
     global HLF_K8S_BRANCH
     global SUBSTRA_CHAINCODE_BRANCH
     global KANIKO_CACHE_TTL
@@ -283,11 +288,14 @@ def wait_for_cluster():
 
 def setup_helm():
     print('\n# Setup Helm')
+    call('helm repo add owkin https://owkin.github.io/charts/')
     call('helm repo add bitnami https://charts.bitnami.com/bitnami')
-    call('helm repo add googleapis https://kubernetes-charts.storage.googleapis.com/')
 
 
 def clone_repos():
+
+    global CHAINCODE_COMMIT
+
     if os.path.exists(SOURCE_DIR):
         shutil.rmtree(SOURCE_DIR)
 
@@ -295,6 +303,7 @@ def clone_repos():
 
     print(f'\n# Clone repos in {SOURCE_DIR}')
     commit_backend = clone_substra_backend()
+    CHAINCODE_COMMIT = clone_substra_chaincode()
     commit_hlf = clone_hlf_k8s()
     commit_substra_tests = clone_substra_tests()
     commit_substra = get_remote_commit('https://github.com/SubstraFoundation/substra.git', SUBSTRA_BRANCH)
@@ -302,19 +311,24 @@ def clone_repos():
     print(
         f'\nCommit hashes:\n'
         f'- substra-backend: \t{commit_backend}\n'
+        f'- substra-chaincode: \t{CHAINCODE_COMMIT}\n'
         f'- hlf-k8s: \t\t{commit_hlf}\n'
         f'- substra-tests: \t{commit_substra_tests}\n'
         f'- substra: \t\t{commit_substra}\n'
     )
     return [
         {'name': 'hlf-k8s',
-         'images': ['hlf-k8s'],
+         'images': ['fabric-tools', 'fabric-ca-tools', 'fabric-peer'],
          'commit': commit_hlf,
          'branch': HLF_K8S_BRANCH},
         {'name': 'substra-backend',
          'images': ['substra-backend'],
          'commit': commit_backend,
          'branch': SUBSTRA_BACKEND_BRANCH},
+        {'name': 'substra-chaincode',
+         'images': ['substra-chaincode'],
+         'commit': CHAINCODE_COMMIT,
+         'branch': SUBSTRA_CHAINCODE_BRANCH},
         {'name': 'substra-tests',
          'images': ['substra-tests'],
          'commit': commit_substra_tests,
@@ -347,6 +361,15 @@ def clone_substra_backend():
         dirname=os.path.join(SOURCE_DIR, 'substra-backend'),
         url=url,
         branch=SUBSTRA_BACKEND_BRANCH
+    )
+
+
+def clone_substra_chaincode():
+    url = 'https://github.com/SubstraFoundation/substra-chaincode.git'
+    return clone_repository(
+        dirname=os.path.join(SOURCE_DIR, 'substra-chaincode'),
+        url=url,
+        branch=SUBSTRA_CHAINCODE_BRANCH
     )
 
 
@@ -388,10 +411,11 @@ def build_images(configs):
 def build_image(tag, image, config):
     branch = config["branch"]
     commit = config["commit"]
-    config_file = os.path.join(DIR, f'cloudbuild/{image}.yaml')
+    name = config["name"]
+    config_file = os.path.join(DIR, f'cloudbuild/{name}.yaml')
 
     extra_substitutions = ''
-    if image == 'substra-tests':
+    if name == 'substra-tests':
         extra_substitutions = f',_SUBSTRA_GIT_COMMIT={config["substra_commit"]}'
 
     cmd = f'gcloud builds submit '\
@@ -399,7 +423,7 @@ def build_image(tag, image, config):
         f'--no-source '\
         f'--async '\
         f'--project={CLUSTER_PROJECT} '\
-        f'--substitutions=_BUILD_TAG={tag},_BRANCH={branch},_COMMIT={commit},'\
+        f'--substitutions=_BUILD_TAG={tag},_IMAGE={image},_BRANCH={branch},_COMMIT={commit},'\
         f'_KANIKO_CACHE_TTL={KANIKO_CACHE_TTL}{extra_substitutions}'
 
     output = call_output(cmd)
@@ -445,7 +469,12 @@ def wait_for_builds(tag, images):
 
 def deploy_all(configs):
     print('\n# Deploy helm charts')
+
     for config in configs:
+        # Chaincode does not need to be deployed
+        if config['name'] == 'substra-chaincode':
+            continue
+
         wait = config['name'] != 'hlf-k8s'  # don't wait for hlf-k8s deployment to complete
         deploy(config, wait)
 
@@ -509,7 +538,6 @@ def patch_skaffold_file(config):
 
     for values_file in values_files:
         patch_values_file(config, os.path.join(SOURCE_DIR, config['name'], values_file))
-
     return skaffold_file
 
 
@@ -520,8 +548,11 @@ def patch_values_file(config, value_file):
     if config['name'] == 'substra-backend':
         data['celeryworker']['concurrency'] = BACKEND_CELERY_CONCURRENCY
     if config['name'] == 'hlf-k8s':
-        if 'chaincodes' in data:
-            data['chaincodes'][0]['src'] = f'https://github.com/SubstraFoundation/substra-chaincode/archive/{SUBSTRA_CHAINCODE_BRANCH}.tar.gz'
+        if 'appChannels' in data:
+            for i in range(len(data['appChannels'])):
+                if 'chaincodes' in data['appChannels'][i]:
+                    data['appChannels'][i]['chaincodes'][0]['image']['repository'] = f'eu.gcr.io/{CLUSTER_PROJECT}/substra-chaincode'
+                    data['appChannels'][i]['chaincodes'][0]['image']['tag'] = f'ci-{CHAINCODE_COMMIT}'
 
     with open(value_file, 'w') as file:
         yaml.dump(data, file)
