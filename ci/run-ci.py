@@ -250,8 +250,8 @@ def delete_cluster():
 
 def delete_disks():
     try:
-        filter=f'name~^gke-{PVC_VOLUME_NAME_PREFIX}-pvc-.* AND -users:*'
-        cmd=f'gcloud compute disks list --format="table(name)" --filter="{filter}" | sed 1d'
+        filter = f'name~^gke-{PVC_VOLUME_NAME_PREFIX}-pvc-.* AND -users:*'
+        cmd = f'gcloud compute disks list --format="table(name)" --filter="{filter}" | sed 1d'
         disks = call_output(cmd)
         disks = disks.replace("\n", " ")
         if disks:
@@ -551,7 +551,8 @@ def patch_values_file(config, value_file):
         if 'appChannels' in data:
             for i in range(len(data['appChannels'])):
                 if 'chaincodes' in data['appChannels'][i]:
-                    data['appChannels'][i]['chaincodes'][0]['image']['repository'] = f'eu.gcr.io/{CLUSTER_PROJECT}/substra-chaincode'
+                    data['appChannels'][i]['chaincodes'][0]['image']['repository'] = \
+                        f'eu.gcr.io/{CLUSTER_PROJECT}/substra-chaincode'
                     data['appChannels'][i]['chaincodes'][0]['image']['tag'] = f'ci-{CHAINCODE_COMMIT}'
 
     with open(value_file, 'w') as file:
