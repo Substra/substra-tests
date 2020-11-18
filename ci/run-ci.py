@@ -250,12 +250,12 @@ def delete_cluster():
 
 def delete_disks():
     try:
-        filter = f'name~^gke-{PVC_VOLUME_NAME_PREFIX}-pvc-.* AND -users:*'
+        filter = f'name~^gke-{PVC_VOLUME_NAME_PREFIX}-pvc-.* AND -users:* AND -zones:({CLUSTER_ZONE})'
         cmd = f'gcloud compute disks list --format="table(name)" --filter="{filter}" | sed 1d'
         disks = call_output(cmd)
         disks = disks.replace("\n", " ")
         if disks:
-            call(f'gcloud compute disks delete --quiet {disks}')
+            call(f'gcloud compute disks delete --zone {CLUSTER_ZONE} --quiet {disks}')
     except Exception as ex:
         print('ERROR: Deletion of the GCP disks failed', ex)
 
