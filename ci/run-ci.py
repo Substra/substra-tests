@@ -44,6 +44,7 @@ import argparse
 import subprocess
 import sys
 import yaml
+import logging
 
 CLUSTER_NAME_ALLOWED_PREFIX = 'substra-tests'
 CLUSTER_NAME = ''
@@ -550,12 +551,10 @@ def patch_values_file(config, value_file):
     if config['name'] == 'substra-backend':
         data['celeryworker']['concurrency'] = BACKEND_CELERY_CONCURRENCY
     if config['name'] == 'hlf-k8s':
-        if 'appChannels' in data:
-            for i in range(len(data['appChannels'])):
-                if 'chaincodes' in data['appChannels'][i]:
-                    data['appChannels'][i]['chaincodes'][0]['image']['repository'] = \
-                        f'eu.gcr.io/{CLUSTER_PROJECT}/substra-chaincode'
-                    data['appChannels'][i]['chaincodes'][0]['image']['tag'] = f'ci-{CHAINCODE_COMMIT}'
+        if 'chaincodes' in data:
+            data['chaincodes'][0]['image']['repository'] = \
+                f'eu.gcr.io/{CLUSTER_PROJECT}/substra-chaincode'
+            data['chaincodes'][0]['image']['tag'] = f'ci-{CHAINCODE_COMMIT}'
 
     with open(value_file, 'w') as file:
         yaml.dump(data, file)
@@ -606,6 +605,7 @@ def main():
 
     except Exception as e:
         print(f'FATAL: {e}')
+        logging.exception(e)
         is_success = False
 
     finally:
