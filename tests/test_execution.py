@@ -380,11 +380,7 @@ def test_aggregate_composite_traintuples(factory, network, clients, default_data
         )
         testtuple = clients[0].add_testtuple(spec)
         testtuple = clients[0].wait(testtuple)
-        if clients[0].debug:
-            assert testtuple.dataset.perf == 30
-        else:
-            # There is only one dataset in 'datasets' in local, hence the difference
-            assert testtuple.dataset.perf == 32
+        assert testtuple.dataset.perf == 32
 
     if not network.options.enable_intermediate_model_removal:
         return
