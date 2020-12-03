@@ -353,7 +353,12 @@ def clone_repository(dirname, url, branch, commit=None):
     call(f'git clone -q --depth 1 {url} --branch "{branch}" {dirname}')
 
     if commit is None:
-        commit = call_output(f'git --git-dir={dirname}/.git rev-parse origin/{branch}')
+        try:
+            commit = call_output(f'git --git-dir={dirname}/.git rev-parse origin/{branch}')
+        except Exception:
+            # It didn't work with a branch name.
+            # Try with a tag name
+            commit = call_output(f'git --git-dir={dirname}/.git rev-list {branch}')
 
     return commit
 
