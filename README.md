@@ -22,8 +22,8 @@ You will need to install it thanks to the `pip` binary.
 
 # Run the tests
 
-The tests can run both on the remmote backend and the local backend. To run the complete
-test suite on both backend:
+The tests can run both on the remote backend and the local backend. To run the complete
+test suite on both backends:
 
 ```bash
 make test
