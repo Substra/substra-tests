@@ -1,7 +1,6 @@
 import abc
 import os
 import pathlib
-import random
 import shutil
 import tempfile
 import typing
@@ -11,7 +10,7 @@ import uuid
 import pydantic
 
 from substra.sdk import models
-from . import utils, assets
+from . import utils, assets # noqa F401
 
 
 DEFAULT_DATA_SAMPLE_FILENAME = 'data.csv'
@@ -62,7 +61,7 @@ class TestOpener(tools.Opener):
             return json.dump(y_pred, f)
 """
 
-DEFAULT_METRICS_SCRIPT = f"""
+DEFAULT_METRICS_SCRIPT = """
 import json
 import substratools as tools
 class TestMetrics(tools.Metrics):
@@ -74,7 +73,7 @@ if __name__ == '__main__':
     tools.metrics.execute(TestMetrics())
 """
 
-DEFAULT_ALGO_SCRIPT = f"""
+DEFAULT_ALGO_SCRIPT = """
 import json
 import substratools as tools
 class TestAlgo(tools.Algo):
@@ -111,7 +110,7 @@ if __name__ == '__main__':
     tools.algo.execute(TestAlgo())
 """
 
-DEFAULT_AGGREGATE_ALGO_SCRIPT = f"""
+DEFAULT_AGGREGATE_ALGO_SCRIPT = """
 import json
 import substratools as tools
 class TestAggregateAlgo(tools.AggregateAlgo):
@@ -134,7 +133,7 @@ if __name__ == '__main__':
 
 # TODO we should have a different serializer for head and trunk models
 
-DEFAULT_COMPOSITE_ALGO_SCRIPT = f"""
+DEFAULT_COMPOSITE_ALGO_SCRIPT = """
 import json
 import substratools as tools
 class TestCompositeAlgo(tools.CompositeAlgo):
@@ -245,6 +244,7 @@ class PrivatePermissions(pydantic.BaseModel):
 DEFAULT_PERMISSIONS = Permissions(public=True, authorized_ids=[])
 DEFAULT_OUT_TRUNK_MODEL_PERMISSIONS = PrivatePermissions(authorized_ids=[])
 SERVER_MEDIA_PATH = '/var/substra/servermedias/'
+
 
 class DataSampleSpec(_Spec):
     path: str

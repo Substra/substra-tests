@@ -4,8 +4,6 @@ from substra.sdk import models
 import substratest as sbt
 from substratest.factory import Permissions
 
-from substratest import assets
-
 
 @pytest.mark.remote_only
 def test_compute_plan(factory, client_1, client_2, default_dataset_1, default_dataset_2, default_objective_1):
@@ -391,6 +389,7 @@ def test_compute_plan_aggregate_composite_traintuples(factory, clients, default_
     # Check that permissions were correctly set
     for tuple in composite_traintuples:
         assert len(tuple.out_trunk_model.permissions.process.authorized_ids) == len(clients)
+
 
 @pytest.mark.slow
 @pytest.mark.remote_only
