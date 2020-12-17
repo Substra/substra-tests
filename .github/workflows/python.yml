@@ -1,0 +1,30 @@
+name: Python
+
+on:
+  push:
+    branches:
+      - "master"
+  pull_request:
+    branches:
+      - "master"
+  schedule:
+    - cron: '0 0 * * *' # every day at midnight
+
+jobs:
+  test:
+    name: Local tests
+    runs-on: ubuntu-latest
+    env:
+      SUBSTRA_GIT_REPO: https://github.com/SubstraFoundation/substra.git
+      SUBSTRA_BRANCH: master
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+        with:
+          python-version: 3.7
+      - name: Install requirements
+        run: |
+          pip install --no-cache-dir "git+${SUBSTRA_GIT_REPO}@${SUBSTRA_BRANCH}"
+          pip install --no-cache-dir -r requirements.txt
+      - name: Test
+        run: make test-local
