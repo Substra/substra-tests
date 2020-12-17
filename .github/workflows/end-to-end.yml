@@ -1,0 +1,40 @@
+name: End to end tests
+
+on:
+  schedule:
+    - cron: '0 0 * * *' # every day at midnight
+
+jobs:
+  test:
+    if: github.repository == 'SubstraFoundation/substra-tests' # Prevent the test from running on forks
+    name: Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+        name: Set up python
+        with:
+          python-version: 3.7
+      - uses: azure/setup-helm@v1
+        with:
+            version: 'v3.2.3'
+      - uses: azure/setup-kubectl@v1
+        with:
+            version: 'latest'
+      - name: Install Skaffold
+        run: |
+          curl -Lo skaffold https://storage.googleapis.com/skaffold/releases/v1.14.0/skaffold-linux-amd64
+          chmod +x ./skaffold
+          sudo mv ./skaffold /usr/local/bin/skaffold
+          skaffold version
+      - name: Install tools
+        run: pip install pyyaml
+      - name: Open GCP key
+        env:
+          SECRET_KEY: ${{ secrets.GCLOUD_ENC }}
+        run: gpg --quiet --batch --yes --decrypt --passphrase="$SECRET_KEY" --output ci/keys/substra-208412-3be0df12d87a.json ci/keys/substra-208412-3be0df12d87a.json.gpg
+      - name: Test
+        run: |
+          CLUSTER_NAME="substra-tests-$(date -u +'%Y-%m-%d-%Hh%M')"
+          cd ci/
+          python -u ./run-ci.py --keys-directory=./keys/ --cluster-name=${CLUSTER_NAME}

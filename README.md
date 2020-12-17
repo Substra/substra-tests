@@ -1,4 +1,4 @@
-# substra-tests
+# substra-tests [![End to end tests](https://github.com/SubstraFoundation/substra-tests/workflows/End%20to%20end%20tests/badge.svg)](https://github.com/SubstraFoundation/substra-tests/actions?query=workflow%3A%22End+to+end+tests%22)
 
 Substra end-to-end (e2e) tests
 
