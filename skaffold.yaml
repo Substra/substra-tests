@@ -24,6 +24,7 @@ build:
           SUBSTRA_GIT_REPO: https://github.com/SubstraFoundation/substra.git
           SUBSTRA_GIT_REF: master
 deploy:
+  statusCheckDeadlineSeconds: 300
   helm:
     releases:
       - name: substra-tests
