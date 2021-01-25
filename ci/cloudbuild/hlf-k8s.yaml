@@ -1,7 +1,7 @@
 steps:
 - name: 'gcr.io/cloud-builders/git'
   args: ['clone', 'https://github.com/SubstraFoundation/hlf-k8s.git', '--depth', '1', '--branch', '${_BRANCH}']
-- name: 'gcr.io/kaniko-project/executor:v1.0.0'
+- name: 'gcr.io/kaniko-project/executor:v1.3.0'
   args:
   - --destination=eu.gcr.io/$PROJECT_ID/${_IMAGE}:ci-${_COMMIT}
   - --cache=true
