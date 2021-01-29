@@ -6,8 +6,6 @@ from substra.sdk.models import Status
 import substratest as sbt
 from substratest.factory import Permissions
 
-from substratest import assets
-
 
 @pytest.mark.slow
 def test_tuples_execution_on_same_node(factory, client, default_dataset, default_objective):

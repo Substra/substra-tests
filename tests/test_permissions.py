@@ -2,10 +2,7 @@ import substra
 
 import pytest
 
-from substra.sdk import models
-
 from substratest.factory import Permissions
-from substratest import assets
 from . import settings
 
 MSP_IDS = settings.MSP_IDS

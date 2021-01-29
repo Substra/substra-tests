@@ -21,4 +21,3 @@ def create_archive(tmpdir, *files):
         with open(tmpdir / path, 'w') as f:
             f.write(content)
     return zip_folder(str(tmpdir))
-
