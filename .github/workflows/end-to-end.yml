@@ -1,0 +1,64 @@
+name: End to end tests
+
+on:
+  schedule:
+    - cron: '0 0 * * *' # every day at midnight
+
+jobs:
+  test:
+    if: github.repository == 'SubstraFoundation/substra-tests' # Prevent the test from running on forks
+    name: Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+        name: Set up python
+        with:
+          python-version: 3.7
+      - uses: azure/setup-helm@v1
+        with:
+            version: 'v3.2.3'
+      - uses: azure/setup-kubectl@v1
+        with:
+            version: 'latest'
+      - name: Install Skaffold
+        run: |
+          curl -Lo skaffold https://storage.googleapis.com/skaffold/releases/v1.14.0/skaffold-linux-amd64
+          chmod +x ./skaffold
+          sudo mv ./skaffold /usr/local/bin/skaffold
+          skaffold version
+      - name: Install tools
+        run: pip install pyyaml
+      - name: Open GCP key
+        env:
+          SECRET_KEY: ${{ secrets.GCLOUD_ENC }}
+        run: gpg --quiet --batch --yes --decrypt --passphrase="$SECRET_KEY" --output ci/keys/substra-208412-3be0df12d87a.json ci/keys/substra-208412-3be0df12d87a.json.gpg
+      - name: Test
+        run: |
+          CLUSTER_NAME="substra-tests-$(date -u +'%Y-%m-%d-%Hh%M')"
+          cd ci/
+          python -u ./run-ci.py --keys-directory=./keys/ --cluster-name=${CLUSTER_NAME}
+      - name: Slack Notification
+        if: ${{ success() }}
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_COLOR: '#159e39'
+          SLACK_ICON: https://github.com/SubstraFoundation/substra/blob/master/substra-logo.svg
+          SLACK_TITLE: Substra CI e2e Success
+          SLACK_USERNAME: Substra CI
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+          SLACK_MESSAGE: ":white_check_mark: Workflow succeeded, <https://github.com/SubstraFoundation/substra-tests/actions/runs/${{ github.run_id }}|run/${{ github.run_id }}>"
+          MSG_MINIMAL: True
+          SLACK_FOOTER: ""
+      - name: Slack Notification
+        if: ${{ failure() }}
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_COLOR: '#eb4a15'
+          SLACK_ICON: https://github.com/SubstraFoundation/substra/blob/master/substra-logo.svg
+          SLACK_TITLE: Substra CI e2e Failure
+          SLACK_USERNAME: Substra CI
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+          SLACK_MESSAGE: ":x: Workflow failed, <https://github.com/SubstraFoundation/substra-tests/actions/runs/${{ github.run_id }}|run/${{ github.run_id }}>"
+          MSG_MINIMAL: True
+          SLACK_FOOTER: ""
