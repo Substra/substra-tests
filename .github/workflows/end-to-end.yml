@@ -38,3 +38,27 @@ jobs:
           CLUSTER_NAME="substra-tests-$(date -u +'%Y-%m-%d-%Hh%M')"
           cd ci/
           python -u ./run-ci.py --keys-directory=./keys/ --cluster-name=${CLUSTER_NAME}
+      - name: Slack Notification
+        if: ${{ success() }}
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_COLOR: '#159e39'
+          SLACK_ICON: https://github.com/SubstraFoundation/substra/blob/master/substra-logo.svg
+          SLACK_TITLE: Substra CI e2e Success
+          SLACK_USERNAME: Substra CI
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+          SLACK_MESSAGE: ":white_check_mark: Workflow succeeded, <https://github.com/SubstraFoundation/substra-tests/actions/runs/${{ github.run_id }}|run/${{ github.run_id }}>"
+          MSG_MINIMAL: True
+          SLACK_FOOTER: ""
+      - name: Slack Notification
+        if: ${{ failure() }}
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_COLOR: '#eb4a15'
+          SLACK_ICON: https://github.com/SubstraFoundation/substra/blob/master/substra-logo.svg
+          SLACK_TITLE: Substra CI e2e Failure
+          SLACK_USERNAME: Substra CI
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+          SLACK_MESSAGE: ":x: Workflow failed, <https://github.com/SubstraFoundation/substra-tests/actions/runs/${{ github.run_id }}|run/${{ github.run_id }}>"
+          MSG_MINIMAL: True
+          SLACK_FOOTER: ""
