@@ -141,15 +141,15 @@ def arg_parse():
     parser.add_argument('-K', '--keys-directory', type=str, default=KEYS_DIR,
                         help='The path to a folder containing the GKE service account credentials')
     parser.add_argument('--substra-tests', type=str, default=SUBSTRA_TESTS_BRANCH,
-                        help='substra-tests branch', metavar='GIT_BRANCH')
+                        help='substra-tests branch or tag', metavar='GIT_BRANCH')
     parser.add_argument('--substra', type=str, default=SUBSTRA_BRANCH,
-                        help='substra branch', metavar='GIT_REF')
+                        help='substra branch or tag', metavar='GIT_REF')
     parser.add_argument('--substra-backend', type=str, default=SUBSTRA_BACKEND_BRANCH,
-                        help='substra-backend branch', metavar='GIT_BRANCH')
+                        help='substra-backend branch or tag', metavar='GIT_BRANCH')
     parser.add_argument('--substra-chaincode', type=str, default=SUBSTRA_CHAINCODE_BRANCH,
-                        help='substra-chaincode branch', metavar='GIT_BRANCH')
+                        help='substra-chaincode branch or tag', metavar='GIT_BRANCH')
     parser.add_argument('--hlf-k8s', type=str, default=HLF_K8S_BRANCH,
-                        help='hlf-k8s branch', metavar='GIT_BRANCH')
+                        help='hlf-k8s branch or tag', metavar='GIT_BRANCH')
     parser.add_argument('--no-cache', action='store_true',
                         help='Use this option to disable kaniko caching')
     parser.add_argument('--backend-celery-concurrency', type=int, default=BACKEND_CELERY_CONCURRENCY,
@@ -356,8 +356,7 @@ def clone_repository(dirname, url, branch, commit=None):
         try:
             commit = call_output(f'git --git-dir={dirname}/.git rev-parse origin/{branch}')
         except Exception:
-            # It didn't work with a branch name.
-            # Try with a tag name
+            # It didn't work with a branch name. Try with a tag name.
             commit = call_output(f'git --git-dir={dirname}/.git rev-list {branch}')
 
     return commit
