@@ -165,7 +165,7 @@ def arg_parse():
     # Add RUN_TAG to cluster name to make it non-deterministic in case of retry
     CLUSTER_NAME += f'-{RUN_TAG[:40-len(CLUSTER_NAME)-1]}'
     CLUSTER_NAME = CLUSTER_NAME.lower()   # Make it lower for gcloud compatibility
-    PVC_VOLUME_NAME_PREFIX = args['cluster_name'] + f'-{RUN_TAG[:4]}'
+    PVC_VOLUME_NAME_PREFIX = CLUSTER_NAME[:18]  # Only the 18 first characters are taken into account
 
     CLUSTER_MACHINE_TYPE = args['machine_type']
     KEYS_DIR = args['keys_directory']
