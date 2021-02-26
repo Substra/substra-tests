@@ -251,7 +251,7 @@ def delete_cluster():
 
 def delete_disks():
     try:
-        filter = f'name~^gke-{PVC_VOLUME_NAME_PREFIX}-pvc-.* AND -users:* AND -zones:({CLUSTER_ZONE})'
+        filter = f'name~^gke-{PVC_VOLUME_NAME_PREFIX}-pvc-.* users~.* zone~{CLUSTER_ZONE}'  # the filter AND is implicit
         cmd = f'gcloud compute disks list --project {CLUSTER_PROJECT} --format="table(name)" --filter="{filter}" '\
               '| sed 1d'
         disks = call_output(cmd)

@@ -35,7 +35,8 @@ jobs:
         run: gpg --quiet --batch --yes --decrypt --passphrase="$SECRET_KEY" --output ci/keys/substra-208412-3be0df12d87a.json ci/keys/substra-208412-3be0df12d87a.json.gpg
       - name: Test
         run: |
-          CLUSTER_NAME="substra-tests-$(date -u +'%Y-%m-%d-%Hh%M')"
+          RANDOM_ID=$(LC_CTYPE=C tr -dc 'a-z0-9' < /dev/urandom | head -c 4)
+          CLUSTER_NAME="substra-tests-${RANDOM_ID}-$(date -u +'%Y-%m-%d-%Hh%M')"
           cd ci/
           python -u ./run-ci.py --keys-directory=./keys/ --cluster-name=${CLUSTER_NAME}
       - name: Slack Notification
