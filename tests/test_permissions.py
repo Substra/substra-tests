@@ -1,11 +1,11 @@
+import abc
+import pydantic
 import substra
 
 import pytest
 
-from substra.sdk import models
-
+import typing
 from substratest.factory import Permissions
-from substratest import assets
 from . import settings
 
 MSP_IDS = settings.MSP_IDS
@@ -168,17 +168,141 @@ def test_permissions_denied_process(factory, client_1, client_2):
         client_1.add_traintuple(spec)
 
 
+# @pytest.mark.remote_only  # no check on permissions with the local backend
+# @pytest.mark.slow
+# def test_permissions_allowed_model_process(factory, client_1, client_2, network):
+
+#     # Client_1 creates a traintuple with permissions for client 1 and client 2
+
+#     spec = factory.create_dataset(permissions=Permissions(public=False, authorized_ids=[client_1.node_id, client_2.node_id]))
+#     dataset_1 = client_1.add_dataset(spec)
+
+#     spec = factory.create_data_sample(
+#         test_only=False,
+#         datasets=[dataset_1],
+#     )
+#     data_sample_1_key = client_1.add_data_sample(spec)
+
+#     spec = factory.create_algo(permissions=Permissions(public=False, authorized_ids=[client_1.node_id, client_2.node_id]))
+#     algo_1 = client_2.add_algo(spec)
+
+#     spec = factory.create_traintuple(
+#         algo=algo_1,
+#         dataset=dataset_1,
+#         data_samples=[data_sample_1_key],
+#     )
+#     traintuple_1 = client_1.add_traintuple(spec)
+#     traintuple_1 = client_1.wait(traintuple_1)
+
+
+#     ## Client 2 creates a traintuple with permissions for client 2 only.
+#     ## The traintuple has client_1's traintuple as an in-model
+
+#     spec = factory.create_dataset(permissions=Permissions(public=False, authorized_ids=[]))
+#     dataset_2 = client_2.add_dataset(spec)
+
+#     spec = factory.create_data_sample(
+#         test_only=False,
+#         datasets=[dataset_2],
+#     )
+#     data_sample_2_key = client_2.add_data_sample(spec)
+
+#     spec = factory.create_algo(permissions=Permissions(public=False, authorized_ids=[]))
+#     algo_2 = client_2.add_algo(spec)
+
+#     spec = factory.create_traintuple(
+#         algo=algo_2,
+#         dataset=dataset_2,
+#         data_samples=[data_sample_2_key],
+#         traintuples=[traintuple_1]
+#     )
+
+#     # should succeed
+#     traintuple_2 = client_2.add_traintuple(spec)
+#     traintuple_2 = client_2.wait(traintuple_2)
+
+
+# @pytest.mark.remote_only  # no check on permissions with the local backend
+# @pytest.mark.slow
+# def test_permissions_denied_model_process(factory, client_1, client_2, network):
+#     # setup
+
+#     datasets = []
+#     algos = []
+#     for client in network.clients[:2]:
+#         # dataset
+#         spec = factory.create_dataset(permissions=Permissions(public=False, authorized_ids=[]))
+#         dataset = client.add_dataset(spec)
+#         spec = factory.create_data_sample(
+#             test_only=False,
+#             datasets=[dataset],
+#         )
+#         client.add_data_sample(spec)
+#         datasets.append(client.get_dataset(dataset.key))
+#         # algo
+#         spec = factory.create_algo(permissions=Permissions(public=False, authorized_ids=[]))
+#         algos.append(client.add_algo(spec))
+
+#     dataset_1, dataset_2 = datasets
+#     algo_1, algo_2 = algos
+
+#     # traintuples
+
+#     spec = factory.create_traintuple(
+#         algo=algo_1,
+#         dataset=dataset_1,
+#         data_samples=dataset_1.train_data_sample_keys,
+#         tag='foo',
+#     )
+#     traintuple_1 = client_1.add_traintuple(spec)
+#     traintuple_1 = client_1.wait(traintuple_1)
+
+#     assert not traintuple_1.permissions.process.public
+#     assert traintuple_1.permissions.process.authorized_ids == [client_1.node_id]
+
+#     spec = factory.create_traintuple(
+#         algo=algo_2,
+#         dataset=dataset_2,
+#         data_samples=dataset_2.train_data_sample_keys,
+#         traintuples=[traintuple_1]
+#     )
+
+#     with pytest.raises(substra.exceptions.AuthenticationError):
+#         client_2.add_traintuple(spec)
+
+
+
 @pytest.mark.remote_only  # no check on permissions with the local backend
 @pytest.mark.slow
-@pytest.mark.xfail(reason='permission check not yet implemented in the backend')
-def test_permissions_denied_model_process(factory, client_1, client_2, network):
-    # setup
-
+@pytest.mark.parametrize('client_1_permissions,client_2_permissions,expected_success', [
+    (
+        Permissions(public=False, authorized_ids=[]),
+        Permissions(public=False, authorized_ids=[]),
+        False
+    ),
+    (
+        Permissions(public=False, authorized_ids=[MSP_IDS[1]]),
+        Permissions(public=False, authorized_ids=[]),
+        True
+    ),
+])
+def test_permissions_model_process(
+    client_1_permissions,
+    client_2_permissions,
+    expected_success,
+    factory,
+    client_1,
+    client_2,
+    network
+):
+    """Test that a traintuple can/cannot process an in-model depending on permissions."""
     datasets = []
     algos = []
     for client in network.clients[:2]:
+        permissions = client_1_permissions if client == client_1 else client_2_permissions
+
         # dataset
-        spec = factory.create_dataset(permissions=Permissions(public=False, authorized_ids=[]))
+        spec = factory.create_dataset(permissions=permissions)
         dataset = client.add_dataset(spec)
         spec = factory.create_data_sample(
             test_only=False,
@@ -187,7 +311,7 @@ def test_permissions_denied_model_process(factory, client_1, client_2, network):
         client.add_data_sample(spec)
         datasets.append(client.get_dataset(dataset.key))
         # algo
-        spec = factory.create_algo(permissions=Permissions(public=False, authorized_ids=[]))
+        spec = factory.create_algo(permissions=permissions)
         algos.append(client.add_algo(spec))
 
     dataset_1, dataset_2 = datasets
@@ -199,13 +323,12 @@ def test_permissions_denied_model_process(factory, client_1, client_2, network):
         algo=algo_1,
         dataset=dataset_1,
         data_samples=dataset_1.train_data_sample_keys,
-        tag='foo',
     )
     traintuple_1 = client_1.add_traintuple(spec)
     traintuple_1 = client_1.wait(traintuple_1)
 
     assert not traintuple_1.permissions.process.public
-    assert traintuple_1.permissions.process.authorized_ids == [client_1.node_id]
+    assert traintuple_1.permissions.process.authorized_ids == [client_1.node_id] + client_1_permissions.authorized_ids
 
     spec = factory.create_traintuple(
         algo=algo_2,
@@ -214,8 +337,11 @@ def test_permissions_denied_model_process(factory, client_1, client_2, network):
         traintuples=[traintuple_1]
     )
 
-    with pytest.raises(substra.exceptions.AuthenticationError):
+    if expected_success:
         client_2.add_traintuple(spec)
+    else:
+        with pytest.raises(substra.exceptions.AuthenticationError):
+            client_2.add_traintuple(spec)
 
 
 @pytest.mark.remote_only  # no check on permissions with the local backend
