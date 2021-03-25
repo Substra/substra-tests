@@ -26,11 +26,25 @@ import json
 import substratools as tools
 class TestAlgo(tools.Algo):
     def train(self, X, y, models, rank):
-        data_sample_keys = [folder.split('/')[-1] for folder in X]
-        assert data_sample_keys == {data_sample_keys}, data_sample_keys
-        return [0, 1]
+        # Check that the order of X is the same as the one passed to add_traintuple
+        X_data_sample_keys = [folder.split('/')[-1] for folder in X]
+        assert X_data_sample_keys == {data_sample_keys}, data_sample_keys
+        
+        # Check that the order of y is the same as the one passed to add_traintuple
+        y_data_sample_keys = [folder.split('/')[-1] for folder in y]
+        assert y_data_sample_keys == {data_sample_keys}, data_sample_keys
+        
+        # Check that the order of X is the same as the order of y
+        assert X_data_sample_keys == y_data_sample_keys 
+        
+        return [0, 1], [0, 2]
+        
     def predict(self, X, model):
-        return [0, 99]
+        # Check that the order of X is the same as the one passed to add_testtuple
+        predict_data_sample_keys = [folder.split('/')[-1] for folder in X]
+        assert predict_data_sample_keys == {predict_data_sample_keys}, predict_data_sample_keys
+        
+        return X
     def load_model(self, path):
         with open(path) as f:
             return json.load(f)
@@ -46,11 +60,26 @@ import json
 import substratools as tools
 class TestCompositeAlgo(tools.CompositeAlgo):
     def train(self, X, y, head_model, trunk_model, rank):
-        data_sample_keys = [folder.split('/')[-1] for folder in X]
-        assert data_sample_keys == {data_sample_keys}, data_sample_keys
+        # Check that the order of X is the same as the one passed to add_traintuple
+        X_data_sample_keys = [folder.split('/')[-1] for folder in X]
+        assert X_data_sample_keys == {data_sample_keys}, data_sample_keys
+        
+        # Check that the order of y is the same as the one passed to add_traintuple
+        y_data_sample_keys = [folder.split('/')[-1] for folder in y]
+        assert y_data_sample_keys == {data_sample_keys}, data_sample_keys
+        
+        # Check that the order of X is the same as the order of y
+        assert X_data_sample_keys == y_data_sample_keys 
+        
         return [0, 1], [0, 2]
+        
     def predict(self, X, head_model, trunk_model):
-        return [0, 99]
+        # Check that the order of X is the same as the one passed to add_testtuple
+        predict_data_sample_keys = [folder.split('/')[-1] for folder in X]
+        assert predict_data_sample_keys == {predict_data_sample_keys}, predict_data_sample_keys
+        
+        return X
+        
     def load_head_model(self, path):
         return self._load_model(path)
     def save_head_model(self, model, path):
@@ -67,6 +96,26 @@ class TestCompositeAlgo(tools.CompositeAlgo):
             return json.dump(model, f)
 if __name__ == '__main__':
     tools.algo.execute(TestCompositeAlgo())
+"""
+
+TEMPLATE_OBJECTIVE_SCRIPT = """
+import substratools as tools
+class Metrics(tools.Metrics):
+    def score(self, y_true, y_pred):
+        y_pred_data_sample_keys = [folder.split('/')[-1] for folder in y_pred]
+        assert y_pred_data_sample_keys == {data_sample_keys}
+        
+        y_true_data_sample_keys = [folder.split('/')[-1] for folder in y_true]
+        assert y_true_data_sample_keys == {data_sample_keys}
+        
+        # y_true is a list of unordered data samples
+        # since the Algo returns y==x, y_pred should respect the same order
+        
+        for y, y_hat in zip(y_true, y_pred):
+            assert y == y_hat, (y, y_hat)
+        return 1.0
+if __name__ == "__main__":
+    tools.metrics.execute(Metrics())
 """
 
 
@@ -94,38 +143,75 @@ def dataset(factory, client):
 def test_traintuple_data_samples_relative_order(factory, client, dataset):
     data_sample_keys = _shuffle(dataset.train_data_sample_keys)
 
-    algo_script = TEMPLATE_ALGO_SCRIPT.format(data_sample_keys=data_sample_keys, models=None)
-    spec = factory.create_algo(py_script=algo_script)
-    algo = client.add_algo(spec)
+    # Format TEMPLATE_ALGO_SCRIPT with current data_sample_keys
+    algo_script = TEMPLATE_ALGO_SCRIPT.format(data_sample_keys=data_sample_keys,
+                                              predict_data_sample_keys=data_sample_keys,
+                                              models=None)
+    algo_spec = factory.create_algo(py_script=algo_script)
+    algo = client.add_algo(algo_spec)
 
-    spec = factory.create_traintuple(
+    objective_script = TEMPLATE_OBJECTIVE_SCRIPT.format(data_sample_keys=data_sample_keys)
+    objective_spec = factory.create_objective(dataset=dataset,
+                                              data_samples=data_sample_keys,
+                                              py_script=objective_script)
+    objective = client.add_objective(objective_spec)
+
+    traintuple_spec = factory.create_traintuple(
         algo=algo,
         dataset=dataset,
         data_samples=data_sample_keys,
     )
-    traintuple = client.add_traintuple(spec)
+    traintuple = client.add_traintuple(traintuple_spec)
+
     # Ensure the order of the data sample keys is correct at 2 levels: :
     #  1. In the returned traintuple
     #  2. In the train method of the algo. If the order is incorrect, wait() will fail.
     assert traintuple.dataset.data_sample_keys == data_sample_keys
     client.wait(traintuple)
 
+    testtuple_spec = factory.create_testtuple(objective=objective,
+                                              traintuple=traintuple,
+                                              dataset=dataset,
+                                              data_samples=data_sample_keys)
+    testtuple = client.add_testtuple(testtuple_spec)
+
+    # Assert order is correct in the objective. If not, wait() will fail.
+    client.wait(testtuple)
+
 
 def test_composite_traintuple_data_samples_relative_order(factory, client, dataset):
     data_sample_keys = _shuffle(dataset.train_data_sample_keys)
 
-    composite_algo_script = TEMPLATE_COMPOSITE_ALGO_SCRIPT.format(data_sample_keys=data_sample_keys, models=None)
-    spec = factory.create_composite_algo(py_script=composite_algo_script)
-    composite_algo = client.add_composite_algo(spec)
+    # Format TEMPLATE_COMPOSITE_ALGO_SCRIPT with current data_sample_keys
+    composite_algo_script = TEMPLATE_COMPOSITE_ALGO_SCRIPT.format(data_sample_keys=data_sample_keys,
+                                                                  predict_data_sample_keys=data_sample_keys,
+                                                                  models=None)
+    algo_spec = factory.create_composite_algo(py_script=composite_algo_script)
+    composite_algo = client.add_composite_algo(algo_spec)
 
-    spec = factory.create_composite_traintuple(
+    objective_script = TEMPLATE_OBJECTIVE_SCRIPT.format(data_sample_keys=data_sample_keys)
+    objective_spec = factory.create_objective(dataset=dataset,
+                                              data_samples=data_sample_keys,
+                                              py_script=objective_script)
+    objective = client.add_objective(objective_spec)
+
+    traintuple_spec = factory.create_composite_traintuple(
         algo=composite_algo,
         dataset=dataset,
         data_samples=data_sample_keys,
     )
-    composite_traintuple = client.add_composite_traintuple(spec)
+    composite_traintuple = client.add_composite_traintuple(traintuple_spec)
     # Ensure the order of the data sample keys is correct at 2 levels: :
     #  1. In the returned composite traintuple
     #  2. In the train method of the algo. If the order is incorrect, wait() will fail.
     assert composite_traintuple.dataset.data_sample_keys == data_sample_keys
     client.wait(composite_traintuple)
+
+    testtuple_spec = factory.create_testtuple(objective=objective,
+                                              traintuple=composite_traintuple,
+                                              dataset=dataset,
+                                              data_samples=data_sample_keys)
+    testtuple = client.add_testtuple(testtuple_spec)
+
+    # Assert order is correct in the objective. If not, wait() will fail.
+    client.wait(testtuple)

@@ -9,6 +9,7 @@ This project requires python 3.6+.
 Install tests dependencies:
 
 ```
+pip3 install --no-cache-dir "git+https://github.com/SubstraFoundation/substra.git@master"
 pip3 install -r requirements.txt
 ```
 
