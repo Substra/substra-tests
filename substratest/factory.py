@@ -579,7 +579,15 @@ class AssetsFactory:
             permissions=permissions or DEFAULT_PERMISSIONS,
         )
 
-    def create_objective(self, dataset=None, data_samples=None, permissions=None, metadata=None):
+    def create_objective(self,
+                         dataset=None,
+                         data_samples=None,
+                         permissions=None,
+                         metadata=None,
+                         py_script=None):
+        if py_script is None:
+            py_script = DEFAULT_METRICS_SCRIPT
+
         idx = self._objective_counter.inc()
         tmpdir = self._workdir / f'objective-{idx}'
         tmpdir.mkdir()
@@ -592,7 +600,7 @@ class AssetsFactory:
 
         metrics_zip = utils.create_archive(
             tmpdir / 'metrics',
-            ('metrics.py', DEFAULT_METRICS_SCRIPT),
+            ('metrics.py', py_script),
             ('Dockerfile', DEFAULT_METRICS_DOCKERFILE),
         )
 
