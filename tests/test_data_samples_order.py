@@ -25,7 +25,7 @@ TEMPLATE_ALGO_SCRIPT = """
 import json
 import substratools as tools
 class TestAlgo(tools.Algo):
-    def train(self, X, y, head_model, trunk_model, rank):
+    def train(self, X, y, models, rank):
         # Check that the order of X is the same as the one passed to add_traintuple
         X_data_sample_keys = [folder.split('/')[-1] for folder in X]
         assert X_data_sample_keys == {data_sample_keys}, data_sample_keys
@@ -37,15 +37,14 @@ class TestAlgo(tools.Algo):
         # Check that the order of X is the same as the order of y
         assert X_data_sample_keys == y_data_sample_keys 
         
-        return X
+        return [0, 1], [0, 2]
         
-    def predict(self, X, head_model, trunk_model):
+    def predict(self, X, model):
         # Check that the order of X is the same as the one passed to add_testtuple
         predict_data_sample_keys = [folder.split('/')[-1] for folder in X]
         assert predict_data_sample_keys == {predict_data_sample_keys}, predict_data_sample_keys
         
         return X
-        
     def load_model(self, path):
         with open(path) as f:
             return json.load(f)
@@ -72,7 +71,7 @@ class TestCompositeAlgo(tools.CompositeAlgo):
         # Check that the order of X is the same as the order of y
         assert X_data_sample_keys == y_data_sample_keys 
         
-        return X
+        return [0, 1], [0, 2]
         
     def predict(self, X, head_model, trunk_model):
         # Check that the order of X is the same as the one passed to add_testtuple
