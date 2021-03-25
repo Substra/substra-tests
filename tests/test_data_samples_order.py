@@ -25,14 +25,27 @@ TEMPLATE_ALGO_SCRIPT = """
 import json
 import substratools as tools
 class TestAlgo(tools.Algo):
-    def train(self, X, y, models, rank):
-        data_sample_keys = [folder.split('/')[-1] for folder in X]
-        assert data_sample_keys == {data_sample_keys}, data_sample_keys
-        return [0, 1]
-    def predict(self, X, model):
+    def train(self, X, y, head_model, trunk_model, rank):
+        # Check that the order of X is the same as the one passed to add_traintuple
+        X_data_sample_keys = [folder.split('/')[-1] for folder in X]
+        assert X_data_sample_keys == {data_sample_keys}, data_sample_keys
+        
+        # Check that the order of y is the same as the one passed to add_traintuple
+        y_data_sample_keys = [folder.split('/')[-1] for folder in y]
+        assert y_data_sample_keys == {data_sample_keys}, data_sample_keys
+        
+        # Check that the order of X is the same as the order of y
+        assert X_data_sample_keys == y_data_sample_keys 
+        
+        return X
+        
+    def predict(self, X, head_model, trunk_model):
+        # Check that the order of X is the same as the one passed to add_testtuple
         predict_data_sample_keys = [folder.split('/')[-1] for folder in X]
         assert predict_data_sample_keys == {predict_data_sample_keys}, predict_data_sample_keys
+        
         return X
+        
     def load_model(self, path):
         with open(path) as f:
             return json.load(f)
@@ -59,7 +72,7 @@ class TestCompositeAlgo(tools.CompositeAlgo):
         # Check that the order of X is the same as the order of y
         assert X_data_sample_keys == y_data_sample_keys 
         
-        return [0, 1], [0, 2]
+        return X
         
     def predict(self, X, head_model, trunk_model):
         # Check that the order of X is the same as the one passed to add_testtuple
@@ -86,10 +99,16 @@ if __name__ == '__main__':
     tools.algo.execute(TestCompositeAlgo())
 """
 
-OBJECTIVE_SCRIPT = """
+TEMPLATE_OBJECTIVE_SCRIPT = """
 import substratools as tools
 class Metrics(tools.Metrics):
     def score(self, y_true, y_pred):
+        y_pred_data_sample_keys = [folder.split('/')[-1] for folder in y_pred]
+        assert y_pred_data_sample_keys == {data_sample_keys}
+        
+        y_true_data_sample_keys = [folder.split('/')[-1] for folder in y_true]
+        assert y_true_data_sample_keys == {data_sample_keys}
+        
         # y_true is a list of unordered data samples
         # since the Algo returns y==x, y_pred should respect the same order
         
@@ -132,9 +151,10 @@ def test_traintuple_data_samples_relative_order(factory, client, dataset):
     algo_spec = factory.create_algo(py_script=algo_script)
     algo = client.add_algo(algo_spec)
 
+    objective_script = TEMPLATE_OBJECTIVE_SCRIPT.format(data_sample_keys=data_sample_keys)
     objective_spec = factory.create_objective(dataset=dataset,
                                               data_samples=data_sample_keys,
-                                              py_script=OBJECTIVE_SCRIPT)
+                                              py_script=objective_script)
     objective = client.add_objective(objective_spec)
 
     traintuple_spec = factory.create_traintuple(
@@ -170,9 +190,10 @@ def test_composite_traintuple_data_samples_relative_order(factory, client, datas
     algo_spec = factory.create_composite_algo(py_script=composite_algo_script)
     composite_algo = client.add_composite_algo(algo_spec)
 
+    objective_script = TEMPLATE_OBJECTIVE_SCRIPT.format(data_sample_keys=data_sample_keys)
     objective_spec = factory.create_objective(dataset=dataset,
                                               data_samples=data_sample_keys,
-                                              py_script=OBJECTIVE_SCRIPT)
+                                              py_script=objective_script)
     objective = client.add_objective(objective_spec)
 
     traintuple_spec = factory.create_composite_traintuple(
