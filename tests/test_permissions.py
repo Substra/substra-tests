@@ -192,9 +192,7 @@ def test_permissions_model_process(
     """Test that a traintuple can/cannot process an in-model depending on permissions."""
     datasets = []
     algos = []
-    for client in network.clients[:2]:
-        permissions = client_1_permissions if client == client_1 else client_2_permissions
-
+    for client, permissions in zip([client_1, client_2], [client_1_permissions, client_2_permissions]):
         # dataset
         spec = factory.create_dataset(permissions=permissions)
         dataset = client.add_dataset(spec)
