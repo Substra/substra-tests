@@ -27,6 +27,7 @@ class NodeCfg:
 @dataclasses.dataclass(frozen=True)
 class Options:
     enable_intermediate_model_removal: bool
+    enable_model_download: bool
     minikube: bool = False
 
 

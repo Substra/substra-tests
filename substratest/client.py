@@ -156,6 +156,21 @@ class Client:
             with open(path, 'rb') as f:
                 return f.read()
 
+    def download_model(self, key):
+        with tempfile.TemporaryDirectory() as tmp:
+            self._client.download_model(key, tmp)
+            path = os.path.join(tmp, f'model_{key}')
+            with open(path, 'rb') as f:
+                return f.read()
+
+    def download_composite_traintuple_trunk_model(self, composite_traintuple_key):
+        with tempfile.TemporaryDirectory() as tmp:
+            self._client.download_composite_traintuple_trunk_model(composite_traintuple_key, tmp)
+            tuple = self.get_composite_traintuple(composite_traintuple_key)
+            path = os.path.join(tmp, f'model_{tuple.out_trunk_model.out_model.key}')
+            with open(path, 'rb') as f:
+                return f.read()
+
     def describe_dataset(self, key):
         return self._client.describe_dataset(key)
 
