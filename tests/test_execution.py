@@ -391,7 +391,7 @@ def test_aggregate_composite_traintuples(factory, network, clients, default_data
         # - One out-model download is not proxified (direct download)
         # - One out-model download is proxified (as it belongs to another org)
         for tuple in previous_composite_traintuples:
-            assert clients[0].download_composite_traintuple_trunk_model(tuple.key) == b'{"value": 2.8}'
+            assert clients[0].download_trunk_model_from_composite_traintuple(tuple.key) == b'{"value": 2.8}'
 
     if network.options.enable_intermediate_model_removal:
         # Optional (if "enable_intermediate_model_removal" is True): ensure the aggregatetuple of round 1 has been deleted.
