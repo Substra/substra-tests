@@ -10,7 +10,7 @@ from substratest import assets
 
 
 @pytest.mark.slow
-def test_tuples_execution_on_same_node(factory, client, default_dataset, default_objective):
+def test_tuples_execution_on_same_node(factory, network, client, default_dataset, default_objective):
     """Execution of a traintuple, a following testtuple and a following traintuple."""
 
     spec = factory.create_algo()
@@ -28,6 +28,9 @@ def test_tuples_execution_on_same_node(factory, client, default_dataset, default
     assert traintuple.status == Status.done
     assert traintuple.metadata == {"foo": "bar"}
     assert traintuple.out_model is not None
+
+    if network.options.enable_model_download:
+        assert client.download_model(traintuple.out_model.key) == b'{"value": 2.2}'
 
     # check we can add twice the same traintuple
     client.add_traintuple(spec)
@@ -382,28 +385,34 @@ def test_aggregate_composite_traintuples(factory, network, clients, default_data
         testtuple = clients[0].wait(testtuple)
         assert testtuple.dataset.perf == 32
 
-    if not network.options.enable_intermediate_model_removal:
-        return
+    if network.options.enable_model_download:
+        # Optional (if "enable_model_download" is True): ensure we can export out-models.
+        #
+        # - One out-model download is not proxified (direct download)
+        # - One out-model download is proxified (as it belongs to another org)
+        for tuple in previous_composite_traintuples:
+            assert clients[0].download_trunk_model_from_composite_traintuple(tuple.key) == b'{"value": 2.8}'
 
-    # Optional (if "enable_intermediate_model_removal" is True): ensure the aggregatetuple of round 1 has been deleted.
-    #
-    # We do this by creating a new traintuple that depends on the deleted aggregatatuple, and ensuring that starting
-    # the traintuple fails.
-    #
-    # Ideally it would be better to try to do a request "as a backend" to get the deleted model. This would be closer
-    # to what we want to test and would also check that this request is correctly handled when the model has been
-    # deleted. Here, we cannot know for sure the failure reason. Unfortunately this cannot be done now as the
-    # username/password are not available in the settings files.
+    if network.options.enable_intermediate_model_removal:
+        # Optional (if "enable_intermediate_model_removal" is True): ensure the aggregatetuple of round 1 has been deleted.
+        #
+        # We do this by creating a new traintuple that depends on the deleted aggregatatuple, and ensuring that starting
+        # the traintuple fails.
+        #
+        # Ideally it would be better to try to do a request "as a backend" to get the deleted model. This would be closer
+        # to what we want to test and would also check that this request is correctly handled when the model has been
+        # deleted. Here, we cannot know for sure the failure reason. Unfortunately this cannot be done now as the
+        # username/password are not available in the settings files.
 
-    client = clients[0]
-    dataset = default_datasets[0]
-    algo = client.add_algo(spec)
+        client = clients[0]
+        dataset = default_datasets[0]
+        algo = client.add_algo(spec)
 
-    spec = factory.create_traintuple(
-        algo=algo,
-        dataset=dataset,
-        data_samples=dataset.train_data_sample_keys,
-    )
-    traintuple = client.add_traintuple(spec)
-    traintuple = client.wait(traintuple)
-    assert traintuple.status == Status.failed
+        spec = factory.create_traintuple(
+            algo=algo,
+            dataset=dataset,
+            data_samples=dataset.train_data_sample_keys,
+        )
+        traintuple = client.add_traintuple(spec)
+        traintuple = client.wait(traintuple)
+        assert traintuple.status == Status.failed

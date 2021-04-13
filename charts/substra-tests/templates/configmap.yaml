@@ -6,6 +6,7 @@ data:
   values.yaml: |
     options:
       enable_intermediate_model_removal: False
+      enable_model_download: True
     nodes:
       - name: 'node-1'
         msp_id: 'MyOrg1MSP'

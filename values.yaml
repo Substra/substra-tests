@@ -1,5 +1,6 @@
 options:
   enable_intermediate_model_removal: False
+  enable_model_download: True
   # minikube: True
 nodes:
   - name: 'node-1'
