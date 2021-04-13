@@ -11,7 +11,10 @@ def zip_folder(path, destination=None):
             for f in files:
                 abspath = os.path.join(root, f)
                 archive_path = os.path.relpath(abspath, start=path)
-                zf.write(abspath, arcname=archive_path)
+                info = zipfile.ZipInfo.from_file(abspath, arcname=archive_path)
+                info.date_time = (1980, 1, 1, 0, 0, 0)
+                with open(abspath) as src:
+                    zf.writestr(info, src.read())
     return destination
 
 
