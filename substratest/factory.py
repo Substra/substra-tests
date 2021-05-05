@@ -16,7 +16,7 @@ from . import utils, assets
 
 DEFAULT_DATA_SAMPLE_FILENAME = 'data.csv'
 
-DEFAULT_SUBSTRATOOLS_VERSION = '0.7.0-minimal'
+DEFAULT_SUBSTRATOOLS_VERSION = '0.8.0-minimal'
 
 DEFAULT_OPENER_SCRIPT = f"""
 import csv
@@ -78,7 +78,7 @@ DEFAULT_ALGO_SCRIPT = f"""
 import json
 import substratools as tools
 class TestAlgo(tools.Algo):
-    def train(self, X, y, models, rank):
+    def train(self, X, y, models, rank, metadata):
         print(f'Train, get X: {{X}}, y: {{y}}, models: {{models}}')
 
         ratio = sum(y) / sum(X)
@@ -94,8 +94,12 @@ class TestAlgo(tools.Algo):
         print(f'Train, return {{res}}')
         return res
 
-    def predict(self, X, model):
-        res = [x * model['value'] for x in X]
+    def predict(self, X, model, metadata):
+        if metadata and metadata.get('factor'):
+            factor = int(metadata['factor'])
+        else:
+            factor = 1
+        res = [x * model['value'] * factor for x in X]
         print(f'Predict, get X: {{X}}, model: {{model}}, return {{res}}')
         return res
 
@@ -115,7 +119,7 @@ DEFAULT_AGGREGATE_ALGO_SCRIPT = f"""
 import json
 import substratools as tools
 class TestAggregateAlgo(tools.AggregateAlgo):
-    def aggregate(self, models, rank):
+    def aggregate(self, models, rank, metadata):
         print(f'Aggregate models: {{models}}')
         values = [m['value'] for m in models]
         avg = sum(values) / len(values)
@@ -138,7 +142,7 @@ DEFAULT_COMPOSITE_ALGO_SCRIPT = f"""
 import json
 import substratools as tools
 class TestCompositeAlgo(tools.CompositeAlgo):
-    def train(self, X, y, head_model, trunk_model, rank):
+    def train(self, X, y, head_model, trunk_model, rank, metadata):
 
         print(f'Composite algo train X: {{X}}, y: {{y}}, head_model: {{head_model}}, trunk_model: {{trunk_model}}')
 
@@ -160,10 +164,14 @@ class TestCompositeAlgo(tools.CompositeAlgo):
         print(f'Composite algo train head, trunk result: {{res}}')
         return res
 
-    def predict(self, X, head_model, trunk_model):
+    def predict(self, X, head_model, trunk_model, metadata):
         print(f'Composite algo predict X: {{X}}, head_model: {{head_model}}, trunk_model: {{trunk_model}}')
         ratio_sum = head_model['value'] + trunk_model['value']
-        res = [x * ratio_sum for x in X]
+        if metadata and metadata.get('factor'):
+            factor = int(metadata['factor'])
+        else:
+            factor = 1
+        res = [x * ratio_sum * factor for x in X]
         print(f'Composite algo predict result: {{res}}')
         return res
 

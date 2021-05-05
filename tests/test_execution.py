@@ -356,6 +356,7 @@ def test_aggregate_composite_traintuples(factory, network, clients, default_data
                 dataset=dataset,
                 data_samples=[dataset.train_data_sample_keys[0 + round_]],
                 permissions=Permissions(public=False, authorized_ids=[c.node_id for c in clients]),
+                metadata={'factor': 2, "why": "to increase the output"},
                 **kwargs,
             )
             t = clients[0].add_composite_traintuple(spec)
@@ -367,6 +368,7 @@ def test_aggregate_composite_traintuples(factory, network, clients, default_data
             algo=aggregate_algo,
             worker=aggregate_worker,
             traintuples=composite_traintuples,
+            metadata={'factor': 2, "why": "to increase the output"},
         )
         aggregatetuple = clients[0].add_aggregatetuple(spec)
         aggregatetuple = clients[0].wait(aggregatetuple)
@@ -380,10 +382,11 @@ def test_aggregate_composite_traintuples(factory, network, clients, default_data
         spec = factory.create_testtuple(
             objective=objective,
             traintuple=traintuple,
+            metadata={'factor': 2, "why": "to increase the output"},
         )
         testtuple = clients[0].add_testtuple(spec)
         testtuple = clients[0].wait(testtuple)
-        assert testtuple.dataset.perf == 32
+        assert testtuple.dataset.perf == 84
 
     if network.options.enable_model_download:
         # Optional (if "enable_model_download" is True): ensure we can export out-models.
@@ -412,6 +415,7 @@ def test_aggregate_composite_traintuples(factory, network, clients, default_data
             algo=algo,
             dataset=dataset,
             data_samples=dataset.train_data_sample_keys,
+            metadata={'factor': 2, "why": "to increase the output"},
         )
         traintuple = client.add_traintuple(spec)
         traintuple = client.wait(traintuple)

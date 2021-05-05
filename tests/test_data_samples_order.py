@@ -25,7 +25,7 @@ TEMPLATE_ALGO_SCRIPT = """
 import json
 import substratools as tools
 class TestAlgo(tools.Algo):
-    def train(self, X, y, models, rank):
+    def train(self, X, y, models, rank, metadata):
         # Check that the order of X is the same as the one passed to add_traintuple
         X_data_sample_keys = [folder.split('/')[-1] for folder in X]
         assert X_data_sample_keys == {data_sample_keys}, data_sample_keys
@@ -39,7 +39,7 @@ class TestAlgo(tools.Algo):
 
         return [0, 1], [0, 2]
 
-    def predict(self, X, model):
+    def predict(self, X, model, metadata):
         # Check that the order of X is the same as the one passed to add_testtuple
         predict_data_sample_keys = [folder.split('/')[-1] for folder in X]
         assert predict_data_sample_keys == {predict_data_sample_keys}, predict_data_sample_keys
@@ -59,7 +59,7 @@ TEMPLATE_COMPOSITE_ALGO_SCRIPT = """
 import json
 import substratools as tools
 class TestCompositeAlgo(tools.CompositeAlgo):
-    def train(self, X, y, head_model, trunk_model, rank):
+    def train(self, X, y, head_model, trunk_model, rank, metadata):
         # Check that the order of X is the same as the one passed to add_traintuple
         X_data_sample_keys = [folder.split('/')[-1] for folder in X]
         assert X_data_sample_keys == {data_sample_keys}, data_sample_keys
@@ -73,7 +73,7 @@ class TestCompositeAlgo(tools.CompositeAlgo):
 
         return [0, 1], [0, 2]
 
-    def predict(self, X, head_model, trunk_model):
+    def predict(self, X, head_model, trunk_model, metadata):
         # Check that the order of X is the same as the one passed to add_testtuple
         predict_data_sample_keys = [folder.split('/')[-1] for folder in X]
         assert predict_data_sample_keys == {predict_data_sample_keys}, predict_data_sample_keys
