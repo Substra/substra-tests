@@ -599,7 +599,6 @@ if __name__ == '__main__':
 """
 
 @pytest.mark.slow
-@pytest.mark.remote_only
 def test_compute_plan_local_folder(factory, client, default_dataset, default_objective_1):
     data_sample_1, data_sample_2, _, _ = default_dataset.train_data_sample_keys
 
