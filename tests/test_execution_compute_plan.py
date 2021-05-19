@@ -8,7 +8,7 @@ from substratest import assets
 
 
 @pytest.mark.remote_only
-def test_compute_plan(factory, client_1, client_2, default_dataset_1, default_dataset_2, default_objective_1):
+def test_compute_plan_simple(factory, client_1, client_2, default_dataset_1, default_dataset_2, default_objective_1):
     """Execution of a compute plan containing multiple traintuples:
     - 1 traintuple executed on node 1
     - 1 traintuple executed on node 2
@@ -518,7 +518,7 @@ def test_execution_compute_plan_canceled(factory, client, default_dataset):
 
 @pytest.mark.slow
 @pytest.mark.remote_only
-def test_compute_plan_no_batching(factory, client, default_dataset, default_objective):
+def test_compute_plan_no_batching(factory, client, default_dataset):
     data_sample_1, data_sample_2, _, _ = default_dataset.train_data_sample_keys
 
     spec = factory.create_algo()
@@ -553,3 +553,82 @@ def test_compute_plan_no_batching(factory, client, default_dataset, default_obje
     traintuples = client.list_compute_plan_traintuples(cp.key)
     assert len(traintuples) == 2
     assert all([tuple_.status == models.Status.done for tuple_ in traintuples])
+
+
+
+LOCAL_FOLDER_ALGO_SCRIPT = f"""
+import json
+import substratools as tools
+import os
+class TestAlgo(tools.Algo):
+    def train(self, X, y, models, rank):
+        state_file = "/sandbox/local/state.json"
+        state = None
+
+        if os.path.exists(state_file):
+            with open(state_file, "r") as f:
+                state = json.load(f)
+        else:
+            state = {{ "factor": 0 }}
+
+        state["factor"] += 1
+
+        with open(state_file, "w") as f:
+            json.dump(state, f)
+
+        res = {{'value': state["factor"] * 2 }}
+
+        print(f'Train, return {{res}}')
+        return res
+
+    def predict(self, X, model):
+        res = [x * model['value'] for x in X]
+        print(f'Predict, get X: {{X}}, model: {{model}}, return {{res}}')
+        return res
+
+    def load_model(self, path):
+        with open(path) as f:
+            return json.load(f)
+
+    def save_model(self, model, path):
+        with open(path, 'w') as f:
+            return json.dump(model, f)
+
+if __name__ == '__main__':
+    tools.algo.execute(TestAlgo())
+"""
+
+@pytest.mark.slow
+def test_compute_plan_local_folder(factory, client, default_dataset, default_objective_1):
+    data_sample_1, data_sample_2, _, _ = default_dataset.train_data_sample_keys
+
+    spec = factory.create_algo(py_script=LOCAL_FOLDER_ALGO_SCRIPT)
+    algo = client.add_algo(spec)
+    cp_spec = factory.create_compute_plan()
+
+    # Traintuple 1
+    traintuple_spec_1 = cp_spec.add_traintuple(
+        algo=algo,
+        dataset=default_dataset,
+        data_samples=[data_sample_1],
+    )
+
+    # Traintuple 2
+    traintuple_spec_2 = cp_spec.add_traintuple(
+        algo=algo,
+        dataset=default_dataset,
+        data_samples=[data_sample_2],
+        in_models=[traintuple_spec_1],
+    )
+
+    # Testtuple
+    cp_spec.add_testtuple(
+        objective=default_objective_1,
+        traintuple_spec=traintuple_spec_2
+    )
+
+    cp_added = client.add_compute_plan(cp_spec, auto_batching=False)
+    cp = client.wait(cp_added)
+
+    testtuples = client.list_compute_plan_testtuples(cp.key)
+    assert testtuples[0].dataset.perf == 20
