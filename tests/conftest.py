@@ -257,6 +257,9 @@ def client_1(network):
 @pytest.fixture
 def client_2(network):
     """Client fixture (second node)."""
+    if len(network.clients) < 2:
+        pytest.skip('Not enough nodes to run this test')
+
     return network.clients[1]
 
 

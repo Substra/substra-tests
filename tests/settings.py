@@ -11,7 +11,7 @@ SUBSTRA_TESTS_CONFIG_FILEPATH = os.getenv('SUBSTRA_TESTS_CONFIG_FILEPATH', DEFAU
 
 DEFAULT_NETWORK_LOCAL_CONFIGURATION_PATH = os.path.join(CURRENT_DIR, '../', 'local-backend-values.yaml')
 
-MIN_NODES = 2
+MIN_NODES = 1
 
 
 @dataclasses.dataclass(frozen=True)
