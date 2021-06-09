@@ -1,11 +1,12 @@
 """Substra tester package."""
-from . import utils, factory
+from . import utils, factory, assets
 from .factory import AssetsFactory
 from .client import Client
 
 __all__ = [
-    'factory',
-    'utils',
+    'assets',
     'AssetsFactory',
     'Client',
+    'factory',
+    'utils',
 ]

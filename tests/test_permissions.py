@@ -5,29 +5,34 @@ import pytest
 import substratest as sbt
 from substratest.factory import Permissions
 from . import settings
-from .conftest import client_1, client_2
 
 MSP_IDS = settings.MSP_IDS
+
 
 @pytest.fixture
 def public():
     return Permissions(public=True, authorized_ids=[])
 
+
 @pytest.fixture
 def private():
     return Permissions(public=False, authorized_ids=[])
+
 
 @pytest.fixture
 def all_nodes():
     return Permissions(public=False, authorized_ids=MSP_IDS)
 
+
 @pytest.fixture
 def node_1_only(client_1):
     return Permissions(public=False, authorized_ids=[client_1.node_id])
 
+
 @pytest.fixture
 def node_2_only(client_2):
     return Permissions(public=False, authorized_ids=[client_2.node_id])
+
 
 @pytest.fixture
 def nodes_1_and_2_only(client_1, client_2):

@@ -1,7 +1,6 @@
 import pytest
 
 from substra.sdk import models
-from substratest import assets
 from substratest.factory import Permissions
 
 

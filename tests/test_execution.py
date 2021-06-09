@@ -6,8 +6,6 @@ from substra.sdk.models import Status
 import substratest as sbt
 from substratest.factory import Permissions
 
-from substratest import assets
-
 
 @pytest.mark.slow
 def test_tuples_execution_on_same_node(factory, network, client, default_dataset, default_objective):
@@ -394,15 +392,16 @@ def test_aggregate_composite_traintuples(factory, network, clients, default_data
             assert clients[0].download_trunk_model_from_composite_traintuple(tuple.key) == b'{"value": 2.8}'
 
     if network.options.enable_intermediate_model_removal:
-        # Optional (if "enable_intermediate_model_removal" is True): ensure the aggregatetuple of round 1 has been deleted.
+        # Optional (if "enable_intermediate_model_removal" is True): ensure the aggregatetuple of round 1 has been
+        # deleted.
         #
         # We do this by creating a new traintuple that depends on the deleted aggregatatuple, and ensuring that starting
         # the traintuple fails.
         #
-        # Ideally it would be better to try to do a request "as a backend" to get the deleted model. This would be closer
-        # to what we want to test and would also check that this request is correctly handled when the model has been
-        # deleted. Here, we cannot know for sure the failure reason. Unfortunately this cannot be done now as the
-        # username/password are not available in the settings files.
+        # Ideally it would be better to try to do a request "as a backend" to get the deleted model. This would be
+        # closer to what we want to test and would also check that this request is correctly handled when the model
+        # has been deleted. Here, we cannot know for sure the failure reason. Unfortunately this cannot be done now
+        # as the username/password are not available in the settings files.
 
         client = clients[0]
         dataset = default_datasets[0]

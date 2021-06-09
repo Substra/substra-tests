@@ -41,7 +41,7 @@ def test_describe_dataset(factory, client):
 
 def test_add_duplicate_dataset(factory, client):
     spec = factory.create_dataset()
-    dataset = client.add_dataset(spec)
+    client.add_dataset(spec)
 
     # does not raise
     client.add_dataset(spec)

@@ -4,8 +4,6 @@ from substra.sdk import models
 import substratest as sbt
 from substratest.factory import Permissions
 
-from substratest import assets
-
 
 @pytest.mark.remote_only
 def test_compute_plan_simple(factory, client_1, client_2, default_dataset_1, default_dataset_2, default_objective_1):
@@ -392,6 +390,7 @@ def test_compute_plan_aggregate_composite_traintuples(factory, clients, default_
     for tuple in composite_traintuples:
         assert len(tuple.out_trunk_model.permissions.process.authorized_ids) == len(clients)
 
+
 @pytest.mark.slow
 @pytest.mark.remote_only
 def test_compute_plan_remove_intermediary_model(factory, client, default_dataset, default_objective):
@@ -555,7 +554,6 @@ def test_compute_plan_no_batching(factory, client, default_dataset):
     assert all([tuple_.status == models.Status.done for tuple_ in traintuples])
 
 
-
 LOCAL_FOLDER_ALGO_SCRIPT = f"""
 import json
 import substratools as tools
@@ -596,7 +594,8 @@ class TestAlgo(tools.Algo):
 
 if __name__ == '__main__':
     tools.algo.execute(TestAlgo())
-"""
+"""  # noqa
+
 
 @pytest.mark.slow
 def test_compute_plan_local_folder(factory, client, default_dataset, default_objective_1):
