@@ -10,25 +10,52 @@ on:
   schedule:
     - cron: '0 0 * * *' # every day at midnight
 
+env:
+  GCP_SERVICE_ACCOUNT: "e2e-tests@connect-314908.iam.gserviceaccount.com"
+  GCP_SERVICE_ACCOUNT_KEY: "ci/keys/connect-314908-3902714646d9.json.gpg"
+
 jobs:
   test:
     name: Local tests
     runs-on: ubuntu-latest
     env:
-      SUBSTRA_GIT_REPO: https://github.com/SubstraFoundation/substra.git
       SUBSTRA_BRANCH: master
     steps:
-      - uses: actions/checkout@v2
+      - name: checkout connect-tests
+        uses: actions/checkout@v2
+
+      - name: checkout connect SDK
+        uses: actions/checkout@v2
+        with:
+          repository: owkin/substra
+          path: substra
+          token: ${{ secrets.OWLFRED_PAT }}
+          ref: ${{ env.SUBSTRA_BRANCH }}
+
+      - name: Open GCP key
+        env:
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+        run: gpg --quiet --batch --yes --decrypt --passphrase="$GPG_PASSPHRASE" --output ./ci/keys/gcp_sa_key.json "${GCP_SERVICE_ACCOUNT_KEY}"
+
+      - name: Docker login
+        run: |
+          gcloud auth activate-service-account "${GCP_SERVICE_ACCOUNT}" --key-file=./ci/keys/gcp_sa_key.json
+          gcloud auth configure-docker 'gcr.io'
+
       - uses: actions/setup-python@v2
         with:
           python-version: 3.7
+
       - name: Install tools
         run: pip install flake8
+
       - name: Lint
-        run: flake8
+        run: flake8 --exclude ./substra
+
       - name: Install requirements
         run: |
-          pip install --no-cache-dir "git+${SUBSTRA_GIT_REPO}@${SUBSTRA_BRANCH}"
+          pip install --no-cache-dir ./substra
           pip install --no-cache-dir -r requirements.txt
+
       - name: Test
         run: make test-local

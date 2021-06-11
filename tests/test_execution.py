@@ -140,7 +140,7 @@ def test_traintuple_execution_failure(factory, client, default_dataset_1):
         data_samples=default_dataset_1.train_data_sample_keys,
     )
     if client.debug:
-        with pytest.raises(substra.sdk.backends.local.compute.spawner.ExecutionError):
+        with pytest.raises(substra.sdk.backends.local.compute.spawner.base.ExecutionError):
             traintuple = client.add_traintuple(spec)
     else:
         traintuple = client.add_traintuple(spec)
@@ -162,7 +162,7 @@ def test_composite_traintuple_execution_failure(factory, client, default_dataset
         data_samples=default_dataset.train_data_sample_keys,
     )
     if client.debug:
-        with pytest.raises(substra.sdk.backends.local.compute.spawner.ExecutionError):
+        with pytest.raises(substra.sdk.backends.local.compute.spawner.base.ExecutionError):
             composite_traintuple = client.add_composite_traintuple(spec)
     else:
         composite_traintuple = client.add_composite_traintuple(spec)
@@ -197,7 +197,7 @@ def test_aggregatetuple_execution_failure(factory, client, default_dataset):
         worker=client.node_id,
     )
     if client.debug:
-        with pytest.raises(substra.sdk.backends.local.compute.spawner.ExecutionError):
+        with pytest.raises(substra.sdk.backends.local.compute.spawner.base.ExecutionError):
             aggregatetuple = client.add_aggregatetuple(spec)
     else:
         aggregatetuple = client.add_aggregatetuple(spec)

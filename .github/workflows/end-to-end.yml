@@ -2,11 +2,17 @@ name: End to end tests
 
 on:
   schedule:
-    - cron: '0 0 * * *' # every day at midnight
+    - cron: "0 0 * * *" # every day at midnight
+
+env:
+  GCP_PROJECT: "connect-314908"
+  GCP_SERVICE_ACCOUNT: "e2e-tests@connect-314908.iam.gserviceaccount.com"
+  GCP_SERVICE_ACCOUNT_KEY: "ci/keys/connect-314908-3902714646d9.json.gpg"
+  GCP_SSH_SECRET: "projects/101637030044/secrets/connect-e2e-deploy-key/versions/2"
 
 jobs:
   test:
-    if: github.repository == 'SubstraFoundation/substra-tests' # Prevent the test from running on forks
+    if: github.repository == 'owkin/connect-tests' # Prevent the test from running on forks
     name: Tests
     runs-on: ubuntu-latest
     steps:
@@ -15,15 +21,17 @@ jobs:
         name: Set up python
         with:
           python-version: 3.7
+      - name: Install python requirements
+        run: pip install -r ci/requirements.txt
       - uses: azure/setup-helm@v1
         with:
-            version: 'v3.2.3'
+          version: "v3.2.3"
       - uses: azure/setup-kubectl@v1
         with:
-            version: 'latest'
+          version: "latest"
       - name: Install Skaffold
         run: |
-          curl -Lo skaffold https://storage.googleapis.com/skaffold/releases/v1.20.0/skaffold-linux-amd64
+          curl -Lo skaffold https://storage.googleapis.com/skaffold/releases/v1.24.1/skaffold-linux-amd64
           chmod +x ./skaffold
           sudo mv ./skaffold /usr/local/bin/skaffold
           skaffold version
@@ -31,35 +39,37 @@ jobs:
         run: pip install pyyaml
       - name: Open GCP key
         env:
-          SECRET_KEY: ${{ secrets.GCLOUD_ENC }}
-        run: gpg --quiet --batch --yes --decrypt --passphrase="$SECRET_KEY" --output ci/keys/substra-208412-3be0df12d87a.json ci/keys/substra-208412-3be0df12d87a.json.gpg
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+        run: gpg --quiet --batch --yes --decrypt --passphrase="$GPG_PASSPHRASE" --output ci/keys/gcp_sa_key.json "${GCP_SERVICE_ACCOUNT_KEY}"
       - name: Test
         run: |
           RANDOM_ID=$(LC_CTYPE=C tr -dc 'a-z0-9' < /dev/urandom | head -c 4)
-          CLUSTER_NAME="substra-tests-${RANDOM_ID}-$(date -u +'%Y-%m-%d-%Hh%M')"
+          CLUSTER_NAME="connect-tests-${RANDOM_ID}-$(date -u +'%Y-%m-%d-%Hh%M')"
           cd ci/
-          python -u ./run-ci.py --keys-directory=./keys/ --cluster-name=${CLUSTER_NAME}
+          python -u ./run-ci.py --gcp-keys-directory=./keys/ --gcp-key-filename=gcp_sa_key.json --cluster-name=${CLUSTER_NAME} --git-use-token --git-clone-method=https
+        env:
+          GIT_TOKEN: ${{ secrets.OWLFRED_PAT }}
       - name: Slack Notification
         if: ${{ success() }}
         uses: rtCamp/action-slack-notify@v2
         env:
-          SLACK_COLOR: '#159e39'
+          SLACK_COLOR: "#159e39"
           SLACK_ICON: https://github.com/SubstraFoundation/substra/blob/master/substra-logo.svg
-          SLACK_TITLE: Substra CI e2e Success
-          SLACK_USERNAME: Substra CI
+          SLACK_TITLE: Connect CI e2e Success
+          SLACK_USERNAME: Connect CI
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
-          SLACK_MESSAGE: ":white_check_mark: Workflow succeeded, <https://github.com/SubstraFoundation/substra-tests/actions/runs/${{ github.run_id }}|run/${{ github.run_id }}>"
+          SLACK_MESSAGE: ":white_check_mark: Workflow succeeded, <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|run/${{ github.run_id }}>"
           MSG_MINIMAL: True
           SLACK_FOOTER: ""
       - name: Slack Notification
         if: ${{ failure() }}
         uses: rtCamp/action-slack-notify@v2
         env:
-          SLACK_COLOR: '#eb4a15'
+          SLACK_COLOR: "#eb4a15"
           SLACK_ICON: https://github.com/SubstraFoundation/substra/blob/master/substra-logo.svg
-          SLACK_TITLE: Substra CI e2e Failure
-          SLACK_USERNAME: Substra CI
+          SLACK_TITLE: Connect CI e2e Failure
+          SLACK_USERNAME: Connect CI
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
-          SLACK_MESSAGE: ":x: Workflow failed, <https://github.com/SubstraFoundation/substra-tests/actions/runs/${{ github.run_id }}|run/${{ github.run_id }}>"
+          SLACK_MESSAGE: ":x: Workflow failed, <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|run/${{ github.run_id }}>"
           MSG_MINIMAL: True
           SLACK_FOOTER: ""

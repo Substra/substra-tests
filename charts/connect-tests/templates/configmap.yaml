@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ template "substra-tests.fullname" . }}-configmap
+  name: {{ template "connect-tests.fullname" . }}-configmap
 data:
   values.yaml: |
     options:

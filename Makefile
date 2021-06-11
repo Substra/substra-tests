@@ -1,7 +1,7 @@
 override CWD := $(shell basename $(shell pwd))
 DOCKER_IMG := $(CWD)
 DOCKER_TAG := latest
-SUBSTRA_GIT_REPO := https://github.com/SubstraFoundation/substra.git
+SUBSTRA_GIT_REPO := https://github.com/owkin/substra.git
 SUBSTRA_BRANCH := master
 PARALLELISM := 5
 

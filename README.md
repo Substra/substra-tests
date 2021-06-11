@@ -1,4 +1,4 @@
-# substra-tests [![End to end tests](https://github.com/SubstraFoundation/substra-tests/workflows/End%20to%20end%20tests/badge.svg)](https://github.com/SubstraFoundation/substra-tests/actions?query=workflow%3A%22End+to+end+tests%22) [![Python](https://github.com/SubstraFoundation/substra-tests/workflows/Python/badge.svg)](https://github.com/SubstraFoundation/substra-tests/actions?query=workflow%3APython)
+# substra-tests [![End to end tests](https://github.com/owkin/connect-tests/actions/workflows/end-to-end.yml/badge.svg)](https://github.com/owkin/connect-tests/actions/workflows/end-to-end.yml) [![Python](https://github.com/owkin/connect-tests/actions/workflows/python.yml/badge.svg)](https://github.com/owkin/connect-tests/actions/workflows/python.yml)
 
 Substra end-to-end (e2e) tests
 

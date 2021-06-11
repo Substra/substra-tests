@@ -16,24 +16,21 @@ apiVersion: skaffold/v1beta13
 kind: Config
 build:
   artifacts:
-    - image: substrafoundation/substra-tests
+    - image: substrafoundation/connect-tests
       context: .
       docker:
         dockerfile: docker/substra-tests/Dockerfile
-        buildArgs:
-          SUBSTRA_GIT_REPO: https://github.com/SubstraFoundation/substra.git
-          SUBSTRA_GIT_REF: master
 deploy:
   statusCheckDeadlineSeconds: 300
   helm:
     releases:
-      - name: substra-tests
-        chartPath: charts/substra-tests
-        namespace: substra-tests
+      - name: connect-tests
+        chartPath: charts/connect-tests
+        namespace: connect-tests
         imageStrategy:
           helm: {}
         values:
-          image: substrafoundation/substra-tests
+          image: substrafoundation/connect-tests
     flags:
       install: ["--create-namespace"]
 

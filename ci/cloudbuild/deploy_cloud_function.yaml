@@ -1,0 +1,43 @@
+---
+steps:
+  - name: "gcr.io/cloud-builders/git"
+    secretEnv: ["SSH_KEY"]
+    entrypoint: "bash"
+    args:
+      - -c
+      - |
+        echo -n "$$SSH_KEY" > /root/.ssh/id_rsa
+        chmod 400 /root/.ssh/id_rsa
+        cp known_hosts.github /root/.ssh/known_hosts
+    volumes:
+      - name: "ssh"
+        path: /root/.ssh
+  - name: "gcr.io/cloud-builders/git"
+    args:
+      - "clone"
+      - "git@github.com:${_GIT_REPOSITORY}"
+      - "tests"
+      - "--depth=1"
+      - "--branch=${_BRANCH}"
+    volumes:
+      - name: "ssh"
+        path: /root/.ssh
+  - name: 'gcr.io/cloud-builders/gcloud'
+    args:
+      - functions
+      - deploy
+      - clean-tests-ci-deployment
+      - --trigger-topic=clean-tests
+      - --runtime=python37
+      - --entry-point=clean_cluster
+    dir: 'tests/ci/cluster_cleaning_function'
+
+substitutions:
+  _GIT_REPOSITORY: "SubstraFoundation/substra-tests.git"
+  _BRANCH: "master"
+  _SSH_KEY_SECRET: "projects/602744764353/secrets/connect-e2e-deploy-key/versions/3"
+timeout: 1200s
+availableSecrets:
+  secretManager:
+    - versionName: ${_SSH_KEY_SECRET}
+      env: "SSH_KEY"

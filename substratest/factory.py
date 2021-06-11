@@ -15,7 +15,7 @@ from . import utils
 
 DEFAULT_DATA_SAMPLE_FILENAME = 'data.csv'
 
-DEFAULT_SUBSTRATOOLS_VERSION = '0.7.0-minimal'
+DEFAULT_SUBSTRATOOLS_VERSION = '0.8.0-minimal'
 
 DEFAULT_OPENER_SCRIPT = f"""
 import csv
@@ -195,13 +195,13 @@ INVALID_COMPOSITE_ALGO_SCRIPT = DEFAULT_COMPOSITE_ALGO_SCRIPT.replace('train', '
 INVALID_AGGREGATE_ALGO_SCRIPT = DEFAULT_AGGREGATE_ALGO_SCRIPT.replace('aggregate', 'etagergga')
 
 DEFAULT_METRICS_DOCKERFILE = f"""
-FROM substrafoundation/substra-tools:{DEFAULT_SUBSTRATOOLS_VERSION}
+FROM gcr.io/connect-314908/connect-tools:{DEFAULT_SUBSTRATOOLS_VERSION}
 COPY metrics.py .
 ENTRYPOINT ["python3", "metrics.py"]
 """
 
 DEFAULT_ALGO_DOCKERFILE = f"""
-FROM substrafoundation/substra-tools:{DEFAULT_SUBSTRATOOLS_VERSION}
+FROM gcr.io/connect-314908/connect-tools:{DEFAULT_SUBSTRATOOLS_VERSION}
 COPY algo.py .
 ENTRYPOINT ["python3", "algo.py"]
 """

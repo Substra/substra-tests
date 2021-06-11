@@ -1,0 +1,49 @@
+---
+steps:
+  - name: "gcr.io/cloud-builders/git"
+    secretEnv: ["SSH_KEY"]
+    entrypoint: "bash"
+    args:
+      - -c
+      - |
+        echo -n "$$SSH_KEY" > /root/.ssh/id_rsa
+        chmod 400 /root/.ssh/id_rsa
+        cp known_hosts.github /root/.ssh/known_hosts
+    volumes:
+      - name: "ssh"
+        path: /root/.ssh
+
+  - name: "gcr.io/cloud-builders/git"
+    args:
+      - "clone"
+      - "git@github.com:${_GIT_REPOSITORY}"
+      - "hlf_k8s"
+      - "--depth=1"
+      - "--branch=${_BRANCH}"
+    volumes:
+      - name: "ssh"
+        path: /root/.ssh
+
+  - name: "gcr.io/kaniko-project/executor:v1.3.0"
+    args:
+      - --destination=eu.gcr.io/$PROJECT_ID/${_IMAGE}:ci-${_COMMIT}
+      - --cache=true
+      - --dockerfile=hlf_k8s/images/${_IMAGE}/Dockerfile
+      - --context=hlf_k8s
+      - --cache-ttl=${_KANIKO_CACHE_TTL}
+
+tags:
+  - ${_BUILD_TAG}
+substitutions:
+  _BUILD_TAG: "connect-tests"
+  _IMAGE: "connect-hlf-k8s"
+  _COMMIT: "HEAD"
+  _BRANCH: "master"
+  _KANIKO_CACHE_TTL: "168h"
+  _GIT_REPOSITORY: "SubstraFoundation/hlf-k8s.git"
+  _SSH_KEY_SECRET: "projects/602744764353/secrets/connect-e2e-deploy-key/versions/3"
+timeout: 1200s
+availableSecrets:
+  secretManager:
+    - versionName: ${_SSH_KEY_SECRET}
+      env: "SSH_KEY"
