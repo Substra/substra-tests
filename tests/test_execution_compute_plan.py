@@ -164,6 +164,10 @@ def test_compute_plan_single_client_success(factory, client, default_dataset, de
     cp_added = client.add_compute_plan(cp_spec)
     cp = client.wait(cp_added)
 
+    assert cp.status == "done"
+    assert cp.failed_tuple.key == ""
+    assert cp.failed_tuple.type == ""
+
     # All the train/test tuples should succeed
     for t in client.list_compute_plan_traintuples(cp.key) + client.list_compute_plan_testtuples(cp.key):
         assert t.status == models.Status.done
@@ -307,9 +311,14 @@ def test_compute_plan_single_client_failure(factory, client, default_dataset, de
     traintuples = client.list_compute_plan_traintuples(cp.key)
     testtuples = client.list_compute_plan_testtuples(cp.key)
 
+    assert cp.status == "failed"
+    assert cp.failed_tuple.type == "traintuple"
+
     # All the train/test tuples should be marked either as failed or canceled
     for t in traintuples + testtuples:
         assert t.status in [models.Status.failed, models.Status.canceled]
+        if t.status == models.Status.failed:
+            assert cp.failed_tuple.key == t.key
 
 
 @pytest.mark.slow

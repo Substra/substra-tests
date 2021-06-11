@@ -73,6 +73,12 @@ make test-local
 
 Some tests are skipped in this mode as they need the remote backend to run.
 
+Use `--local` option to run a single test with `pytest`.
+
+```
+pytest --local tests/test_execution_compute_plan.py::test_compute_plan_single_client_success
+```
+
 # Test design guidelines
 
 When adding or modifying tests, please follow these guidelines:
