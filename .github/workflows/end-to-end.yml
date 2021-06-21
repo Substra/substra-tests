@@ -2,7 +2,7 @@ name: End to end tests
 
 on:
   schedule:
-    - cron: "0 0 * * *" # every day at midnight
+    - cron: "0 0 * * 2-6" # every Tuesday to Saturday at midnight
 
 env:
   GCP_PROJECT: "connect-314908"
