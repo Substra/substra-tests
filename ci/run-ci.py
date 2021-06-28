@@ -175,7 +175,8 @@ def call_output(cmd: str, print_cmd: bool = True, no_stderr: bool = False) -> st
     else:
         stderr = subprocess.STDOUT
 
-    return subprocess.check_output([cmd], shell=True, stderr=stderr).decode().strip()
+    res = subprocess.check_output([cmd], shell=True, stderr=stderr)
+    return res.decode().strip()
 
 
 def cluster_name_format(value: str) -> str:
@@ -762,12 +763,24 @@ def patch_values_file(cfg: Config, repo: Repository, value_file: str) -> None:
 
     if repo == cfg.repos.backend:
         data["celeryworker"]["concurrency"] = cfg.backend_celery_concurrency
+        data["backend"]["kaniko"]["dockerConfigSecretName"] = ""  # remove docker-config secret
     if repo == cfg.repos.hlf_k8s:
         if "chaincodes" in data:
             data["chaincodes"][0]["image"][
                 "repository"
             ] = f"eu.gcr.io/{cfg.gcp.project}/connect-chaincode"
             data["chaincodes"][0]["image"]["tag"] = f"ci-{cfg.repos.chaincode.commit}"
+
+        # remove docker-config secret
+        if "fabric-tools" in data and "pullImageSecret" in data["fabric-tools"]["image"]:
+            del data["fabric-tools"]["image"]["pullImageSecret"]
+        if "image" in data["hlf-peer"] and "pullImageSecret" in data["hlf-peer"]["image"]:
+            del data["hlf-peer"]["image"]["pullImageSecret"]
+        if "chaincodes" in data:
+            if "pullImageSecret" in data["chaincodes"][0]["image"]:
+                del data["chaincodes"][0]["image"]["pullImageSecret"]
+            if "pullImageSecret" in data["chaincodes"][1]["image"]:
+                del data["chaincodes"][1]["image"]["pullImageSecret"]
 
     with open(value_file, "w") as file:
         yaml.dump(data, file)
