@@ -12,7 +12,7 @@ import time
 import urllib.error
 import urllib.request
 from dataclasses import dataclass, field
-from typing import Any, Dict, List
+from typing import Any, Dict, List, TextIO
 
 import yaml
 
@@ -20,6 +20,7 @@ CLUSTER_NAME_ALLOWED_PREFIX = "connect-tests"
 DIR = os.path.dirname(os.path.realpath(__file__))
 RUN_TAG = "".join(random.choice(string.ascii_letters + "0123456789") for _ in range(10))
 SOURCE_DIR = os.path.realpath(os.path.join(DIR, "src", RUN_TAG))
+LOG_DIR = os.path.realpath(os.path.join(DIR, "logs", RUN_TAG))
 
 
 @dataclass()
@@ -129,7 +130,7 @@ class Config:
     def is_ci_runner(self):
         # In a GH action the CI env variable is always set to `true`
         ci = os.environ.get("CI", default="false")
-        return True if ci == "true" else False
+        return ci == "true"
 
     def __str__(self):
         out = (
@@ -152,7 +153,9 @@ class Config:
         return out
 
 
-def call(cmd: str, print_cmd: bool = True, secrets: List[str] = None) -> int:
+def call(
+    cmd: str, print_cmd: bool = True, secrets: List[str] = None, stdout: TextIO = None,
+) -> int:
     if not secrets:
         secrets = []
 
@@ -163,7 +166,7 @@ def call(cmd: str, print_cmd: bool = True, secrets: List[str] = None) -> int:
             printed_cmd = printed_cmd.replace(secret, "****")
 
         print(printed_cmd)
-    return subprocess.check_call([cmd], shell=True)
+    return subprocess.check_call([cmd], shell=True, stdout=stdout, stderr=stdout)
 
 
 def call_output(cmd: str, print_cmd: bool = True, no_stderr: bool = False) -> str:
@@ -372,9 +375,7 @@ def gcloud_get_project() -> str:
 def gcloud_get_auth_token() -> str:
     try:
         token = call_output(
-            "gcloud auth print-access-token",
-            print_cmd=False,
-            no_stderr=True,
+            "gcloud auth print-access-token", print_cmd=False, no_stderr=True,
         )
     except subprocess.CalledProcessError as exc:
         raise Exception(
@@ -688,7 +689,9 @@ def deploy_all(cfg: Config) -> None:
         if repo in [cfg.repos.chaincode, cfg.repos.sdk]:
             continue
 
-        wait = repo != cfg.repos.hlf_k8s  # don't wait for hlf-k8s deployment to complete
+        wait = (
+            repo != cfg.repos.hlf_k8s
+        )  # don't wait for hlf-k8s deployment to complete
         deploy(cfg, repo, wait)
 
 
@@ -763,7 +766,9 @@ def patch_values_file(cfg: Config, repo: Repository, value_file: str) -> None:
 
     if repo == cfg.repos.backend:
         data["celeryworker"]["concurrency"] = cfg.backend_celery_concurrency
-        data["backend"]["kaniko"]["dockerConfigSecretName"] = ""  # remove docker-config secret
+        data["backend"]["kaniko"][
+            "dockerConfigSecretName"
+        ] = ""  # remove docker-config secret
     if repo == cfg.repos.hlf_k8s:
         if "chaincodes" in data:
             data["chaincodes"][0]["image"][
@@ -772,9 +777,15 @@ def patch_values_file(cfg: Config, repo: Repository, value_file: str) -> None:
             data["chaincodes"][0]["image"]["tag"] = f"ci-{cfg.repos.chaincode.commit}"
 
         # remove docker-config secret
-        if "fabric-tools" in data and "pullImageSecret" in data["fabric-tools"]["image"]:
+        if (
+            "fabric-tools" in data and
+            "pullImageSecret" in data["fabric-tools"]["image"]
+        ):
             del data["fabric-tools"]["image"]["pullImageSecret"]
-        if "image" in data["hlf-peer"] and "pullImageSecret" in data["hlf-peer"]["image"]:
+        if (
+            "image" in data["hlf-peer"] and
+            "pullImageSecret" in data["hlf-peer"]["image"]
+        ):
             del data["hlf-peer"]["image"]["pullImageSecret"]
         if "chaincodes" in data:
             if "pullImageSecret" in data["chaincodes"][0]["image"]:
@@ -784,6 +795,61 @@ def patch_values_file(cfg: Config, repo: Repository, value_file: str) -> None:
 
     with open(value_file, "w") as file:
         yaml.dump(data, file)
+
+
+def retrieve_logs(cfg: GCPConfig) -> None:
+    if os.path.exists(LOG_DIR):
+        shutil.rmtree(LOG_DIR)
+
+    os.makedirs(LOG_DIR)
+
+    print(f"\n# Retrieve logs in {LOG_DIR}")
+
+    orgs = ["org-1", "org-2"]
+    for org in orgs:
+        retrieve_logs_single_org(cfg, org)
+
+
+def retrieve_logs_single_org(cfg: GCPConfig, namespace: str) -> None:
+    ns_log_dir = os.path.join(LOG_DIR, namespace)
+    if os.path.exists(ns_log_dir):
+        shutil.rmtree(ns_log_dir)
+    os.makedirs(ns_log_dir)
+
+    backend_pod = call_output(
+        cmd=(
+            f"kubectl --context {cfg.kube_context} get pod -n {namespace}"
+            " -l app.kubernetes.io/name=substra-backend-server -o name"
+        )
+    )
+
+    backend_log_path = os.path.join(ns_log_dir, "backend-server")
+    with open(backend_log_path, "w") as f:
+        try:
+            call(
+                cmd=f"kubectl --context {cfg.kube_context} logs -n {namespace} {backend_pod}",
+                stdout=f,
+            )
+        except subprocess.CalledProcessError:
+            # If we can't retrieve the logs of this pod we still want to get the logs of the others
+            print(f"Could not retrieve logs for server pod {backend_pod}")
+
+    worker_pod = call_output(
+        cmd=(
+            f"kubectl --context {cfg.kube_context} get pod -n {namespace}"
+            " -l app.kubernetes.io/name=substra-backend-worker -o name"
+        )
+    )
+
+    worker_log_path = os.path.join(ns_log_dir, "backend-worker")
+    with open(worker_log_path, "w") as f:
+        try:
+            call(
+                cmd=f"kubectl --context {cfg.kube_context} logs -n {namespace} {worker_pod}",
+                stdout=f,
+            )
+        except subprocess.CalledProcessError:
+            print(f"Could not retrieve logs for worker pod {worker_pod}")
 
 
 def run_tests(cfg: Config) -> bool:
@@ -837,6 +903,7 @@ def main() -> None:
     config = arg_parse()
     current_project = None
     permissions_validated = False
+    app_deployed = False
 
     try:
         if config.is_ci_runner:
@@ -853,13 +920,18 @@ def main() -> None:
         config.gcp = get_kube_context(config.gcp)
         setup_helm()
         deploy_all(config)
+        app_deployed = True
         is_success = run_tests(config)
         print("Completed test run:")
         print(config)
+        # We delete the log dir here because we want to keep the log dir if something happens
+        shutil.rmtree(LOG_DIR)
 
     except Exception as ex:
         print(f"FATAL: {ex}")
         logging.exception(ex)
+        if app_deployed:
+            retrieve_logs(config.gcp)
         is_success = False
 
     finally:

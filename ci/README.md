@@ -40,6 +40,8 @@ This script performs the following operations:
 - Run the full _connect-tests_ test suite
 - Destroy the cluster
 
+If the workflows fail, it will also retrieve the logs from the backend-server and backend-worker pods.
+
 ### Automatic cluster deletion
    We ensure the GKE cluster always gets destroyed at the end of the execution of this script.
 
