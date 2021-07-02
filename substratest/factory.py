@@ -274,6 +274,30 @@ class DataSampleSpec(_Spec):
                                  os.path.basename(self.path))
 
 
+class DataSampleBatchSpec(_Spec):
+    paths: typing.List[str]
+    test_only: bool
+    data_manager_keys: typing.List[str]
+
+    @classmethod
+    def from_data_sample_specs(cls, specs: typing.List[DataSampleSpec]):
+
+        def _all_equal(iterator):
+            iterator = iter(iterator)
+            first = next(iterator)
+            return all(first == x for x in iterator)
+
+        assert len(specs)
+        assert _all_equal([s.test_only for s in specs])
+        assert _all_equal([s.data_manager_keys for s in specs])
+
+        return cls(
+            paths=[s.path for s in specs],
+            test_only=specs[0].test_only,
+            data_manager_keys=specs[0].data_manager_keys,
+        )
+
+
 class DatasetSpec(_Spec):
     name: str
     data_opener: str

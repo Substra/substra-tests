@@ -38,6 +38,10 @@ class Client:
         key = self._client.add_data_sample(spec.dict(), *args, **kwargs)
         return key
 
+    def add_data_samples(self, spec, *args, **kwargs):
+        keys = self._client.add_data_samples(spec.dict(), *args, **kwargs)
+        return keys
+
     def add_dataset(self, spec, *args, **kwargs):
         key = self._client.add_dataset(spec.dict(), *args, **kwargs)
         return self._client.get_dataset(key)
