@@ -3,6 +3,7 @@ name: End to end tests
 on:
   schedule:
     - cron: "0 0 * * 2-6" # every Tuesday to Saturday at midnight
+  workflow_dispatch:
 
 env:
   GCP_PROJECT: "connect-314908"
