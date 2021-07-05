@@ -925,7 +925,8 @@ def main() -> None:
         print("Completed test run:")
         print(config)
         # We delete the log dir here because we want to keep the log dir if something happens
-        shutil.rmtree(LOG_DIR)
+        if os.path.exists(LOG_DIR):
+            shutil.rmtree(LOG_DIR)
 
     except Exception as ex:
         print(f"FATAL: {ex}")
