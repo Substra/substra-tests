@@ -21,6 +21,7 @@ DIR = os.path.dirname(os.path.realpath(__file__))
 RUN_TAG = "".join(random.choice(string.ascii_letters + "0123456789") for _ in range(10))
 SOURCE_DIR = os.path.realpath(os.path.join(DIR, "src", RUN_TAG))
 LOG_DIR = os.path.realpath(os.path.join(DIR, "logs", RUN_TAG))
+KNOWN_HOST_FILE_PATH = os.path.join(DIR, "cloudbuild", "known_host.tgz")
 
 
 @dataclass()
@@ -625,7 +626,7 @@ def build_image(cfg: Config, tag: str, image: str, repo: Repository) -> str:
 
     cmd = (
         f"gcloud builds submit "
-        "cloudbuild/known_host.tgz "
+        f"{KNOWN_HOST_FILE_PATH} "
         f"--config={config_file} "
         f"--async "
         f"--project={cfg.gcp.project} "
