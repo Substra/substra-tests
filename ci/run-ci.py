@@ -853,7 +853,7 @@ def retrieve_logs_single_org(cfg: GCPConfig, namespace: str) -> None:
             print(f"Could not retrieve logs for worker pod {worker_pod}")
 
 
-def run_tests(cfg: Config) -> bool:
+def run_tests(cfg: Config):
     print("# Wait for the connect-tests pod to be ready")
     substra_tests_pod = call_output(
         f"kubectl --context {cfg.gcp.kube_context} get pods -n connect-tests | grep connect-tests"
@@ -880,7 +880,7 @@ def run_tests(cfg: Config) -> bool:
         )
     except subprocess.CalledProcessError:
         print("FATAL: could not log in onto the image registry")
-        return False
+        raise
 
     print("\n# Run tests")
 
@@ -896,7 +896,7 @@ def run_tests(cfg: Config) -> bool:
         print(
             "FATAL: `make test-remote` completed with a non-zero exit code. Did some test(s) fail?"
         )
-        return False
+        raise
 
 
 def main() -> None:
@@ -922,12 +922,10 @@ def main() -> None:
         setup_helm()
         deploy_all(config)
         app_deployed = True
-        is_success = run_tests(config)
+        run_tests(config)
         print("Completed test run:")
         print(config)
-        # We delete the log dir here because we want to keep the log dir if something happens
-        if os.path.exists(LOG_DIR):
-            shutil.rmtree(LOG_DIR)
+        is_success = True
 
     except Exception as ex:
         print(f"FATAL: {ex}")
