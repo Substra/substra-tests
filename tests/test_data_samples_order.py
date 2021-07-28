@@ -1,5 +1,10 @@
 import pytest
 
+from substra.sdk.models import Status
+
+import substratest as sbt
+from substratest.factory import DEFAULT_DATA_SAMPLE_FILENAME
+
 
 OPENER_SCRIPT = """
 import json
@@ -222,3 +227,76 @@ def test_composite_traintuple_data_samples_relative_order(factory, client, datas
 
     # Assert order is correct in the objective. If not, wait() will fail.
     client.wait(testtuple)
+
+
+@pytest.mark.slow
+def test_execution_data_sample_values(factory, network, client):
+    """Check data samples order is preserved when adding data samples by batch."""
+    batch_size = 10
+    spec = factory.create_dataset(
+        py_script=f"""
+import json
+import os
+import substratools as tools
+class TestOpener(tools.Opener):
+    def get_X(self, folders):
+        res = []
+        for folder in folders:
+            path = os.path.join(folder, '{DEFAULT_DATA_SAMPLE_FILENAME}')
+            with open(path, 'r') as f:
+                res.append(int(f.read()))
+        return res
+    def get_y(self, folders):
+        return folders
+    def fake_X(self, n_samples=None):
+        return
+    def fake_y(self, n_samples=None):
+        return
+    def get_predictions(self, path):
+        return 0
+    def save_predictions(self, y_pred, path):
+        with open(path, 'w') as f:
+            return json.dump(y_pred, f)
+"""
+    )
+    dataset = client.add_dataset(spec)
+    specs = [
+        factory.create_data_sample(content=str(idx), datasets=[dataset])
+        for idx in range(batch_size)
+    ]
+    spec = sbt.factory.DataSampleBatchSpec.from_data_sample_specs(specs)
+    keys = client.add_data_samples(spec)
+    assert len(keys) == batch_size
+
+    spec = factory.create_algo(
+        py_script=f"""
+import json
+import substratools as tools
+import os
+class TestAlgo(tools.Algo):
+    def train(self, X, y, models, rank):
+        assert X == list(range({batch_size})), X
+        return 0
+    def predict(self, X, model):
+        return 1
+    def load_model(self, path):
+        with open(path) as f:
+            return json.load(f)
+    def save_model(self, model, path):
+        with open(path, 'w') as f:
+            return json.dump(model, f)
+
+if __name__ == '__main__':
+    tools.algo.execute(TestAlgo())
+"""
+    )
+    algo = client.add_algo(spec)
+
+    spec = factory.create_traintuple(
+        algo=algo,
+        dataset=dataset,
+        data_samples=keys,
+    )
+    traintuple = client.add_traintuple(spec)
+    traintuple = client.wait(traintuple)
+    assert traintuple.status == Status.done

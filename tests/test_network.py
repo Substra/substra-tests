@@ -79,17 +79,19 @@ def test_add_data_sample(factory, client):
 
 
 def test_add_data_samples_in_batch(factory, client):
+    batch_size = 5
     spec = factory.create_dataset()
     dataset = client.add_dataset(spec)
 
     specs = [
         factory.create_data_sample(test_only=True, datasets=[dataset])
-        for _ in range(5)
+        for _ in range(batch_size)
     ]
 
     spec = sbt.factory.DataSampleBatchSpec.from_data_sample_specs(specs)
 
-    _ = client.add_data_samples(spec)
+    keys = client.add_data_samples(spec)
+    assert len(keys) == batch_size
 
 
 def test_link_dataset_with_datasamples(factory, client):
