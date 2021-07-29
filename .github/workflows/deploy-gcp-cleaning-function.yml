@@ -32,4 +32,19 @@ jobs:
           gcloud builds submit ci/cloudbuild/known_host.tgz \
             --config=ci/cloudbuild/deploy_cloud_function.yaml \
             --project="${GCP_PROJECT}" \
-            --substitutions="_BRANCH=master,_GIT_REPOSITORY=${GITHUB_REPOSITORY}.git,_SSH_KEY_SECRET=${GCP_SSH_SECRET}"
+            --async \
+            --format json \
+            --substitutions="_BRANCH=master,_GIT_REPOSITORY=${GITHUB_REPOSITORY}.git,_SSH_KEY_SECRET=${GCP_SSH_SECRET}" \
+            | jq -r .id > build_id
+
+          while [ "$(gcloud builds describe $(cat build_id) --format json | jq -r .status)" = "WORKING" ]
+          do
+            echo "Build in progress"
+            sleep 10
+          done
+
+          if [ "$(gcloud builds describe $(cat build_id) --format json | jq -r .status)" != "SUCCESS" ]; then
+            echo "The Build failed"
+            exit 1
+          fi
+            echo "The Build succeeded"
