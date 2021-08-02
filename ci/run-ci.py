@@ -126,6 +126,7 @@ class Config:
     backend_celery_concurrency: int = 4
     tests_concurrency: int = 5
     tests_future_timeout: int = 400
+    tests_make_command: str = "test-remote"
 
     @property
     def is_ci_runner(self):
@@ -146,8 +147,8 @@ class Config:
             f"BACKEND_CELERY_CONCURRENCY\t= {self.backend_celery_concurrency}\n"
             f"TESTS_CONCURRENCY\t\t= {self.tests_concurrency}\n"
             f"TESTS_FUTURE_TIMEOUT\t\t= {self.tests_future_timeout}\n"
+            f"TESTS_MAKE_COMMAND\t\t= {self.tests_make_command}\n"
         )
-
         if self.is_ci_runner:
             out += f"KEYS_DIR\t\t\t= {self.gcp.service_account.key_dir}\n"
 
@@ -301,6 +302,12 @@ def arg_parse() -> Config:
         help="In e2e-tests, the number of seconds to wait for a training task to complete",
     )
     parser.add_argument(
+        "--tests-make-command",
+        type=str,
+        default=config.tests_make_command,
+        help="Override the make command to execute the tests",
+    )
+    parser.add_argument(
         "--git-clone-method",
         type=str,
         default=config.git.clone_method,
@@ -347,6 +354,7 @@ def arg_parse() -> Config:
     config.backend_celery_concurrency = args["backend_celery_concurrency"]
     config.tests_concurrency = args["tests_concurrency"]
     config.tests_future_timeout = args["tests_future_timeout"]
+    config.tests_make_command = args["tests_make_command"]
 
     print("💃💃💃\n")
     print(config)
@@ -889,12 +897,12 @@ def run_tests(cfg: Config):
         call(
             f"kubectl --context {cfg.gcp.kube_context} exec {substra_tests_pod} -n connect-tests -- "
             f"env SUBSTRA_TESTS_FUTURE_TIMEOUT={cfg.tests_future_timeout} "
-            f"make test-remote PARALLELISM={cfg.tests_concurrency}"
+            f"make {cfg.tests_make_command} PARALLELISM={cfg.tests_concurrency}"
         )
         return True
     except subprocess.CalledProcessError:
         print(
-            "FATAL: `make test-remote` completed with a non-zero exit code. Did some test(s) fail?"
+            f"FATAL: `make {cfg.tests_make_command}` completed with a non-zero exit code. Did some test(s) fail?"
         )
         raise
 
