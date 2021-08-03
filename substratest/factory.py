@@ -15,7 +15,9 @@ from . import utils
 
 DEFAULT_DATA_SAMPLE_FILENAME = 'data.csv'
 
-DEFAULT_SUBSTRATOOLS_VERSION = '0.8.0-minimal'
+DEFAULT_TOOLS_VERSION = '0.8.0'
+DEFAULT_TOOLS_BASE_IMAGE = 'gcr.io/connect-314908/connect-tools'
+DEFAULT_TOOLS_IMAGE = f'{DEFAULT_TOOLS_BASE_IMAGE}:{DEFAULT_TOOLS_VERSION}-minimal'
 
 DEFAULT_OPENER_SCRIPT = f"""
 import csv
@@ -195,13 +197,13 @@ INVALID_COMPOSITE_ALGO_SCRIPT = DEFAULT_COMPOSITE_ALGO_SCRIPT.replace('train', '
 INVALID_AGGREGATE_ALGO_SCRIPT = DEFAULT_AGGREGATE_ALGO_SCRIPT.replace('aggregate', 'etagergga')
 
 DEFAULT_METRICS_DOCKERFILE = f"""
-FROM gcr.io/connect-314908/connect-tools:{DEFAULT_SUBSTRATOOLS_VERSION}
+FROM {DEFAULT_TOOLS_IMAGE}
 COPY metrics.py .
 ENTRYPOINT ["python3", "metrics.py"]
 """
 
 DEFAULT_ALGO_DOCKERFILE = f"""
-FROM gcr.io/connect-314908/connect-tools:{DEFAULT_SUBSTRATOOLS_VERSION}
+FROM {DEFAULT_TOOLS_IMAGE}
 COPY algo.py .
 ENTRYPOINT ["python3", "algo.py"]
 """
@@ -608,6 +610,7 @@ class AssetsFactory:
                          data_samples=None,
                          permissions=None,
                          metadata=None,
+                         dockerfile=None,
                          py_script=None):
         if py_script is None:
             py_script = DEFAULT_METRICS_SCRIPT
@@ -622,10 +625,12 @@ class AssetsFactory:
         with open(description_path, 'w') as f:
             f.write(description_content)
 
+        dockerfile = dockerfile or DEFAULT_METRICS_DOCKERFILE
+
         metrics_zip = utils.create_archive(
             tmpdir / 'metrics',
             ('metrics.py', py_script),
-            ('Dockerfile', DEFAULT_METRICS_DOCKERFILE),
+            ('Dockerfile', dockerfile),
         )
 
         data_samples = data_samples or []
@@ -641,7 +646,7 @@ class AssetsFactory:
             test_data_manager_key=dataset.key if dataset else None,
         )
 
-    def _create_algo(self, py_script, permissions=None, metadata=None):
+    def _create_algo(self, py_script, dockerfile=None, permissions=None, metadata=None):
         idx = self._algo_counter.inc()
         tmpdir = self._workdir / f'algo-{idx}'
         tmpdir.mkdir()
@@ -654,10 +659,12 @@ class AssetsFactory:
 
         algo_content = py_script
 
+        dockerfile = dockerfile or DEFAULT_ALGO_DOCKERFILE
+
         algo_zip = utils.create_archive(
             tmpdir / 'algo',
             ('algo.py', algo_content),
-            ('Dockerfile', DEFAULT_ALGO_DOCKERFILE),
+            ('Dockerfile', dockerfile),
         )
 
         return AlgoSpec(
@@ -668,23 +675,29 @@ class AssetsFactory:
             metadata=metadata,
         )
 
-    def create_algo(self, py_script=None, permissions=None, metadata=None):
+    def create_algo(self, py_script=None, permissions=None, metadata=None,
+                    dockerfile=None):
         return self._create_algo(
             py_script or DEFAULT_ALGO_SCRIPT,
+            dockerfile=dockerfile,
             permissions=permissions,
             metadata=metadata,
         )
 
-    def create_aggregate_algo(self, py_script=None, permissions=None, metadata=None):
+    def create_aggregate_algo(self, py_script=None, permissions=None, metadata=None,
+                              dockerfile=None):
         return self._create_algo(
             py_script or DEFAULT_AGGREGATE_ALGO_SCRIPT,
+            dockerfile=dockerfile,
             permissions=permissions,
             metadata=metadata,
         )
 
-    def create_composite_algo(self, py_script=None, permissions=None, metadata=None):
+    def create_composite_algo(self, py_script=None, permissions=None, metadata=None,
+                              dockerfile=None):
         return self._create_algo(
             py_script or DEFAULT_COMPOSITE_ALGO_SCRIPT,
+            dockerfile=dockerfile,
             permissions=permissions,
             metadata=metadata,
         )

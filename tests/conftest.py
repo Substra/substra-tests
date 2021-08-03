@@ -34,6 +34,9 @@ def pytest_configure(config):
     config.addinivalue_line(
         "markers", "remote_only: marks tests as remote backend only (deselect with '-m \"not remote_only\"')",
     )
+    config.addinivalue_line(
+        "markers", "workflows: marks tests as part of a production workflow (deselect with '-m \"not workflows\"')",
+    )
 
 
 def pytest_addoption(parser):

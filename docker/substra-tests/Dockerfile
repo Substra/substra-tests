@@ -16,5 +16,7 @@ RUN pip install ./substra
 
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
+COPY requirements-workflows.txt .
+RUN pip install --no-cache-dir -r requirements-workflows.txt
 
 COPY . .

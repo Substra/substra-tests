@@ -126,7 +126,7 @@ class Config:
     backend_celery_concurrency: int = 4
     tests_concurrency: int = 5
     tests_future_timeout: int = 400
-    tests_make_command: str = "test-remote"
+    tests_make_command: str = "test-ci"
 
     @property
     def is_ci_runner(self):
