@@ -37,14 +37,14 @@ jobs:
             --substitutions="_BRANCH=master,_GIT_REPOSITORY=${GITHUB_REPOSITORY}.git,_SSH_KEY_SECRET=${GCP_SSH_SECRET}" \
             | jq -r .id > build_id
 
-          while [ "$(gcloud builds describe $(cat build_id) --format json | jq -r .status)" = "WORKING" ]
+          while gcloud builds describe $(cat build_id) --project="${GCP_PROJECT}" --format json | jq -r .status | grep -q -e "WORKING" -e "QUEUED"
           do
             echo "Build in progress"
             sleep 10
           done
 
-          if [ "$(gcloud builds describe $(cat build_id) --format json | jq -r .status)" != "SUCCESS" ]; then
+          if [ "$(gcloud builds describe $(cat build_id) --project="${GCP_PROJECT}" --format json | jq -r .status)" != "SUCCESS" ]; then
             echo "The Build failed"
             exit 1
           fi
-            echo "The Build succeeded"
+          echo "The Build succeeded"
