@@ -11,6 +11,9 @@ from ci.config import GCPConfig
 from ci.call import call, call_output
 
 
+SERVER_LABEL, WORKER_LABEL = "server=true", "worker=true"
+
+
 def gcloud_login(cfg: GCPConfig) -> None:
     print("# Log into Google Cloud")
     call(
@@ -79,7 +82,7 @@ def gcloud_create_cluster_async(cfg: GCPConfig) -> None:
         f"gcloud container clusters create {cfg.cluster.name} "
         f"--machine-type {cfg.cluster.machine_type} "
         f"--service-account {cfg.service_account.name} "
-        f"--num-nodes=1 "
+        f"--num-nodes={cfg.nodes} "
         f"--zone={cfg.cluster.zone} "
         f"--project={cfg.project} "
         f"--enable-ip-alias "
@@ -163,6 +166,43 @@ def gcloud_wait_for_cluster(cfg: GCPConfig) -> None:
 
         print(".", end="", flush=True)
         time.sleep(5)
+
+
+def gcloud_label_nodes(cfg: GCPConfig) -> None:
+    print("\n# Label nodes")
+    data = json.loads(call_output(
+        cmd=f"kubectl --context {cfg.kube_context} get nodes -A -o json",
+        print_cmd=False,
+    ))
+    nodes = [node["metadata"]["name"] for node in data["items"]]
+    first_node, *other_nodes = nodes
+    # label first node for server
+    call(
+        cmd=(
+            f"kubectl --context {cfg.kube_context} "
+            f"label nodes {first_node} {SERVER_LABEL}"
+        ),
+    )
+    # label other nodes for worker (or first node in case of single node)
+    for node in (other_nodes or [first_node]):
+        call(
+            cmd=(
+                f"kubectl --context {cfg.kube_context} "
+                f"label nodes {node} {WORKER_LABEL}"
+            ),
+        )
+
+
+def gcloud_print_nodes(cfg: GCPConfig):
+    print("******* Backend server and worker nodes *******")
+    print(call_output(
+        cmd=(
+            f"kubectl --context {cfg.kube_context} get pods -A "
+            "-l 'app.kubernetes.io/name in (substra-backend-server,substra-backend-worker)' "
+            "-o custom-columns='pod:metadata.name,node:spec.nodeName'"
+        ),
+        print_cmd=False,
+    ))
 
 
 @dataclass()

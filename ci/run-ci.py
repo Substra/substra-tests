@@ -18,6 +18,8 @@ from ci.gcloud import (
     gcloud_delete_disks,
     gcloud_get_kube_context,
     gcloud_wait_for_cluster,
+    gcloud_label_nodes,
+    gcloud_print_nodes,
 )
 from ci.logs import retrieve_logs
 from ci.deploy import deploy_all
@@ -168,6 +170,15 @@ def arg_parse() -> Config:
         action="store_true",
         help="Use a private access token stored in the env var GIT_TOKEN",
     )
+    parser.add_argument(
+        "--nodes",
+        type=int,
+        default=config.gcp.nodes,
+        help=(
+            "Number of cluster nodes (default value is 1). "
+            "If nodes > 1, then worker's replicas = nodes - 1."
+        )
+    )
 
     args = vars(parser.parse_args())
 
@@ -183,6 +194,7 @@ def arg_parse() -> Config:
     config.gcp.service_account.key_file = args["gcp_key_filename"]
     if args["no_cache"]:
         config.gcp.kaniko_cache_ttl = "-1h"
+    config.gcp.nodes = args["nodes"]
 
     # Repo config
     config.repos.tests.ref = args["e2e_tests"]
@@ -229,8 +241,11 @@ def main() -> None:
         gcloud_wait_for_cluster(config.gcp)
         config.gcp = gcloud_get_kube_context(config.gcp)
         setup_helm()
+        gcloud_label_nodes(config.gcp)
         deploy_all(config, SOURCE_DIR)
         app_deployed = True
+        if config.gcp.nodes > 1:
+            gcloud_print_nodes(config.gcp)
         run_tests(config)
         print("Completed test run:")
         print(config)
