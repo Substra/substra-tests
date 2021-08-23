@@ -3,7 +3,7 @@ import time
 
 from ci.config import Config
 from ci.call import call, call_output
-from ci.gcloud import gcloud_get_auth_token
+from ci import gcloud
 
 
 def run_tests(cfg: Config):
@@ -25,7 +25,7 @@ def run_tests(cfg: Config):
 
     try:
         time.sleep(5)
-        token = gcloud_get_auth_token()
+        token = gcloud.get_auth_token()
         call(
             f"kubectl --context {cfg.gcp.kube_context} exec {substra_tests_pod} -n connect-tests -- "
             f"docker login -u oauth2accesstoken -p {token} https://gcr.io",

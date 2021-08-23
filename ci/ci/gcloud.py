@@ -14,7 +14,7 @@ from ci.call import call, call_output
 SERVER_LABEL, WORKER_LABEL = "server=true", "worker=true"
 
 
-def gcloud_login(cfg: GCPConfig) -> None:
+def login(cfg: GCPConfig) -> None:
     print("# Log into Google Cloud")
     call(
         f"gcloud auth activate-service-account {cfg.service_account.name} "
@@ -22,17 +22,17 @@ def gcloud_login(cfg: GCPConfig) -> None:
     )
 
 
-def gcloud_set_project(project: str) -> None:
+def set_project(project: str) -> None:
     print("# Switching GCP project")
     if project is not None:
         call(f"gcloud config set project {project}")
 
 
-def gcloud_get_project() -> str:
+def get_project() -> str:
     return call_output("gcloud config get-value project", print_cmd=False, no_stderr=True)
 
 
-def gcloud_get_auth_token() -> str:
+def get_auth_token() -> str:
     try:
         token = call_output(
             "gcloud auth print-access-token",
@@ -45,8 +45,8 @@ def gcloud_get_auth_token() -> str:
     return token
 
 
-def gcloud_test_permissions(cfg: GCPConfig) -> None:
-    auth_token = gcloud_get_auth_token()
+def test_permissions(cfg: GCPConfig) -> None:
+    auth_token = get_auth_token()
 
     # We validate only two of the 60 permissions required to execute this script
     # to validate that the user is authenticated.
@@ -76,7 +76,7 @@ def gcloud_test_permissions(cfg: GCPConfig) -> None:
         raise Exception("Missing required permissions, have you tried running `gcloud auth login` ?")
 
 
-def gcloud_create_cluster_async(cfg: GCPConfig) -> None:
+def create_cluster_async(cfg: GCPConfig) -> None:
     print("\n# Create GKE cluster")
     cmd = (
         f"gcloud container clusters create {cfg.cluster.name} "
@@ -93,7 +93,7 @@ def gcloud_create_cluster_async(cfg: GCPConfig) -> None:
     call(cmd)
 
 
-def gcloud_get_kube_context(cfg: GCPConfig) -> GCPConfig:
+def get_kube_context(cfg: GCPConfig) -> GCPConfig:
     old_ctx = None
     print("\n# Fetch kubernetes context")
 
@@ -116,8 +116,8 @@ def gcloud_get_kube_context(cfg: GCPConfig) -> GCPConfig:
     return cfg
 
 
-def gcloud_delete_cluster(cfg: GCPConfig) -> None:
-    gcloud_wait_for_cluster(cfg)
+def delete_cluster(cfg: GCPConfig) -> None:
+    wait_for_cluster(cfg)
     print("# Delete cluster")
     cmd = (
         f"yes | gcloud container clusters delete {cfg.cluster.name} --zone "
@@ -126,7 +126,7 @@ def gcloud_delete_cluster(cfg: GCPConfig) -> None:
     call(cmd)
 
 
-def gcloud_delete_disks(cfg: GCPConfig) -> None:
+def delete_disks(cfg: GCPConfig) -> None:
     try:
         # the filter AND is implicit
         disk_filter = f"name~^gke-{cfg.cluster.pvc_volume_name_prefix}-pvc-.* zone~{cfg.cluster.zone}"
@@ -142,7 +142,7 @@ def gcloud_delete_disks(cfg: GCPConfig) -> None:
         print("ERROR: Deletion of the GCP disks failed", ex)
 
 
-def gcloud_wait_for_cluster(cfg: GCPConfig) -> None:
+def wait_for_cluster(cfg: GCPConfig) -> None:
     print("# Waiting for GKE cluster to be ready ...", end="")
 
     while True:
@@ -168,7 +168,7 @@ def gcloud_wait_for_cluster(cfg: GCPConfig) -> None:
         time.sleep(5)
 
 
-def gcloud_label_nodes(cfg: GCPConfig) -> None:
+def label_nodes(cfg: GCPConfig) -> None:
     print("\n# Label nodes")
     data = json.loads(call_output(
         cmd=f"kubectl --context {cfg.kube_context} get nodes -A -o json",
@@ -193,7 +193,7 @@ def gcloud_label_nodes(cfg: GCPConfig) -> None:
         )
 
 
-def gcloud_print_nodes(cfg: GCPConfig):
+def print_nodes(cfg: GCPConfig):
     print("******* Backend server and worker nodes *******")
     print(call_output(
         cmd=(

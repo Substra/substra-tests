@@ -7,20 +7,8 @@ import shutil
 import string
 import sys
 
+from ci import gcloud
 from ci.config import Config
-from ci.gcloud import (
-    gcloud_get_project,
-    gcloud_login,
-    gcloud_set_project,
-    gcloud_test_permissions,
-    gcloud_create_cluster_async,
-    gcloud_delete_cluster,
-    gcloud_delete_disks,
-    gcloud_get_kube_context,
-    gcloud_wait_for_cluster,
-    gcloud_label_nodes,
-    gcloud_print_nodes,
-)
 from ci.logs import retrieve_logs
 from ci.deploy import deploy_all
 from ci.helm import setup_helm
@@ -229,23 +217,23 @@ def main() -> None:
 
     try:
         if config.is_ci_runner:
-            gcloud_login(config.gcp)
+            gcloud.login(config.gcp)
         else:
-            current_project = gcloud_get_project()
-            gcloud_set_project(config.gcp.project)
-            gcloud_test_permissions(config.gcp)
+            current_project = gcloud.get_project()
+            gcloud.set_project(config.gcp.project)
+            gcloud.test_permissions(config.gcp)
         permissions_validated = True
-        gcloud_create_cluster_async(config.gcp)
+        gcloud.create_cluster_async(config.gcp)
         config = clone_repos(config, SOURCE_DIR)
         build_images(config, KNOWN_HOST_FILE_PATH, RUN_TAG, DIR)
-        gcloud_wait_for_cluster(config.gcp)
-        config.gcp = gcloud_get_kube_context(config.gcp)
+        gcloud.wait_for_cluster(config.gcp)
+        config.gcp = gcloud.get_kube_context(config.gcp)
         setup_helm()
-        gcloud_label_nodes(config.gcp)
+        gcloud.label_nodes(config.gcp)
         deploy_all(config, SOURCE_DIR)
         app_deployed = True
         if config.gcp.nodes > 1:
-            gcloud_print_nodes(config.gcp)
+            gcloud.print_nodes(config.gcp)
         run_tests(config)
         print("Completed test run:")
         print(config)
@@ -263,9 +251,9 @@ def main() -> None:
         if os.path.exists(SOURCE_DIR):
             shutil.rmtree(SOURCE_DIR)
         if permissions_validated:
-            gcloud_delete_cluster(config.gcp)
-            gcloud_delete_disks(config.gcp)
-            gcloud_set_project(current_project)
+            gcloud.delete_cluster(config.gcp)
+            gcloud.delete_disks(config.gcp)
+            gcloud.set_project(current_project)
     sys.exit(0 if is_success else 1)
 
 
