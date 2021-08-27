@@ -260,7 +260,7 @@ def test_composite_traintuples_execution(factory, client, default_dataset, defau
 
 
 @pytest.mark.slow
-def test_aggregatetuple(factory, client, default_dataset):
+def test_aggregatetuple(factory, client, default_objective, default_dataset):
     """Execution of aggregatetuple aggregating traintuples."""
 
     number_of_traintuples_to_aggregate = 3
@@ -294,6 +294,15 @@ def test_aggregatetuple(factory, client, default_dataset):
     aggregatetuple = client.wait(aggregatetuple)
     assert aggregatetuple.status == Status.done
     assert len(aggregatetuple.in_models) == number_of_traintuples_to_aggregate
+
+    spec = factory.create_testtuple(
+        objective=default_objective,
+        traintuple=aggregatetuple,
+        dataset=default_dataset,
+        data_samples=default_dataset.test_data_sample_keys,
+    )
+    testtuple = client.add_testtuple(spec)
+    testtuple = client.wait(testtuple)
 
 
 @pytest.mark.slow
@@ -373,7 +382,7 @@ def test_aggregate_composite_traintuples(factory, network, clients, default_data
         previous_aggregatetuple = aggregatetuple
         previous_composite_traintuples = composite_traintuples
 
-    # last round: create associated testtuple
+    # last round: create associated testtuple for composite and aggregate
     for traintuple, objective in zip(previous_composite_traintuples, default_objectives):
         spec = factory.create_testtuple(
             objective=objective,
@@ -381,7 +390,18 @@ def test_aggregate_composite_traintuples(factory, network, clients, default_data
         )
         testtuple = clients[0].add_testtuple(spec)
         testtuple = clients[0].wait(testtuple)
+        # y_true: [20], y_pred: [52.0], result: 32.0
         assert testtuple.dataset.perf == 32
+    spec = factory.create_testtuple(
+        objective=objective,
+        traintuple=previous_aggregatetuple,
+        dataset=default_datasets[0],
+        data_samples=default_datasets[0].test_data_sample_keys,
+    )
+    testtuple = clients[0].add_testtuple(spec)
+    testtuple = clients[0].wait(testtuple)
+    # y_true: [20], y_pred: [28.0], result: 8.0
+    assert testtuple.dataset.perf == 8
 
     if network.options.enable_model_download:
         # Optional (if "enable_model_download" is True): ensure we can export out-models.

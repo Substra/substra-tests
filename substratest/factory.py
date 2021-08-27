@@ -15,7 +15,7 @@ from . import utils
 
 DEFAULT_DATA_SAMPLE_FILENAME = 'data.csv'
 
-DEFAULT_TOOLS_VERSION = '0.8.0'
+DEFAULT_TOOLS_VERSION = '0.9.0'
 DEFAULT_TOOLS_BASE_IMAGE = 'gcr.io/connect-314908/connect-tools'
 DEFAULT_TOOLS_IMAGE = f'{DEFAULT_TOOLS_BASE_IMAGE}:{DEFAULT_TOOLS_VERSION}-minimal'
 
@@ -122,6 +122,10 @@ class TestAggregateAlgo(tools.AggregateAlgo):
         avg = sum(values) / len(values)
         res = {{'value': avg}}
         print(f'Aggregate result: {{res}}')
+        return res
+    def predict(self, X, model):
+        res = [x * model['value'] for x in X]
+        print(f'Predict, get X: {{X}}, model: {{model}}, return {{res}}')
         return res
     def load_model(self, path):
         with open(path) as f:
@@ -439,6 +443,8 @@ class ComputePlanTesttupleSpec(_Spec):
     objective_key: str
     traintuple_id: str
     tag: str
+    data_manager_key: str = None
+    test_data_sample_keys: typing.List[str] = None
     metadata: typing.Dict[str, str] = None
 
 
@@ -523,10 +529,13 @@ class _BaseComputePlanSpec(_Spec, abc.ABC):
         self.composite_traintuples.append(spec)
         return spec
 
-    def add_testtuple(self, objective, traintuple_spec, tag='', metadata=None):
+    def add_testtuple(self, objective, traintuple_spec, tag='', dataset=None,
+                      data_samples=None, metadata=None):
         spec = ComputePlanTesttupleSpec(
             objective_key=objective.key,
             traintuple_id=traintuple_spec.id,
+            data_manager_key=dataset.key if dataset else None,
+            test_data_sample_keys=_get_keys(data_samples),
             tag=tag,
             metadata=metadata,
         )
@@ -772,8 +781,8 @@ class AssetsFactory:
             out_trunk_model_permissions=permissions or DEFAULT_OUT_TRUNK_MODEL_PERMISSIONS,
         )
 
-    def create_testtuple(self, objective=None, traintuple=None, tag=None, dataset=None, data_samples=None,
-                         metadata=None):
+    def create_testtuple(self, objective=None, traintuple=None, tag=None, dataset=None,
+                         data_samples=None, metadata=None):
         return TesttupleSpec(
             objective_key=objective.key if objective else None,
             traintuple_key=traintuple.key if traintuple else None,

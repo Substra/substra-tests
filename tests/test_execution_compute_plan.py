@@ -379,6 +379,12 @@ def test_compute_plan_aggregate_composite_traintuples(factory, clients, default_
             objective=objective,
             traintuple_spec=composite_traintuple_spec,
         )
+    cp_spec.add_testtuple(
+        objective=objective,
+        traintuple_spec=previous_aggregatetuple_spec,
+        dataset=default_datasets[0],
+        data_samples=default_datasets[0].test_data_sample_keys,
+    )
 
     cp_added = clients[0].add_compute_plan(cp_spec)
     cp = clients[0].wait(cp_added)
