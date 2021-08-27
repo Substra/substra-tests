@@ -263,6 +263,7 @@ class DataSampleSpec(_Spec):
         if not minikube:
             destination = tempfile.mkdtemp(dir=destination_folder)
             shutil.move(self.path, destination)
+            os.chmod(destination, 0o777)  # Workaround for kind (https://kind.sigs.k8s.io/)
         else:
             destination = os.path.join(destination_folder, random_uuid()[0:8])
 
