@@ -1,6 +1,7 @@
 import os
 import shutil
 
+import numpy as np
 import torch
 import torch.nn.functional as F
 
@@ -46,6 +47,16 @@ class ModelAggregator(tools.AggregateAlgo):
         model.load_state_dict(model_state_dict)
 
         return model
+
+    def predict(self, X, model):
+        X = torch.FloatTensor(X)
+        model.eval()
+        # add the context manager to reduce computation overhead
+        with torch.no_grad():
+            y_pred = model(X)
+
+        y_pred = y_pred.data.cpu().numpy()
+        return np.argmax(y_pred, axis=1)
 
     def load_model(self, path):
         return torch.load(path)
