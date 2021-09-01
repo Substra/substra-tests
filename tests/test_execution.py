@@ -6,6 +6,8 @@ from substra.sdk.models import Status
 import substratest as sbt
 from substratest.factory import Permissions
 
+from . import settings
+
 
 @pytest.mark.slow
 def test_tuples_execution_on_same_node(factory, network, client, default_dataset, default_objective):
@@ -435,3 +437,34 @@ def test_aggregate_composite_traintuples(factory, network, clients, default_data
         traintuple = client.add_traintuple(spec)
         traintuple = client.wait(traintuple)
         assert traintuple.status == Status.failed
+
+
+@pytest.mark.remote_only
+@pytest.mark.skipif(not settings.HAS_SHARED_PATH, reason='requires a shared path')
+def test_use_data_sample_located_in_shared_path(factory, client, node_cfg, default_objective):
+    spec = factory.create_dataset()
+    dataset = client.add_dataset(spec)
+
+    spec = factory.create_data_sample(datasets=[dataset])
+    spec.move_data_to_server(node_cfg.shared_path, settings.IS_MINIKUBE)
+    data_sample_key = client.add_data_sample(spec, local=False)  # should not raise
+
+    spec = factory.create_algo()
+    algo = client.add_algo(spec)
+
+    spec = factory.create_traintuple(
+        algo=algo,
+        dataset=dataset,
+        data_samples=[data_sample_key],
+    )
+    traintuple = client.add_traintuple(spec)
+    traintuple = client.wait(traintuple)
+    assert traintuple.status == Status.done
+    assert traintuple.out_model is not None
+
+    # create testtuple
+    spec = factory.create_testtuple(objective=default_objective, traintuple=traintuple)
+    testtuple = client.add_testtuple(spec)
+    testtuple = client.wait(testtuple)
+    assert testtuple.status == Status.done
+    assert testtuple.dataset.perf == 2

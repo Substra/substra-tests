@@ -115,17 +115,6 @@ def test_link_dataset_with_datasamples(factory, client):
     assert dataset.train_data_sample_keys == [data_sample_key]
 
 
-@pytest.mark.remote_only
-@pytest.mark.skipif(not settings.HAS_SHARED_PATH, reason='requires a shared path')
-def test_add_data_sample_located_in_shared_path(factory, client, node_cfg):
-    spec = factory.create_dataset()
-    dataset = client.add_dataset(spec)
-
-    spec = factory.create_data_sample(test_only=True, datasets=[dataset])
-    spec.move_data_to_server(node_cfg.shared_path, settings.IS_MINIKUBE)
-    client.add_data_sample(spec, local=False)  # should not raise
-
-
 @pytest.mark.skip(reason='may fill up disk as shared folder is not cleanup')
 @pytest.mark.parametrize('filesize', [1, 10, 100, 1000])  # in mega
 def test_add_data_sample_path_big_files(filesize, factory, client, node_cfg):
