@@ -180,7 +180,7 @@ def label_nodes(cfg: GCPConfig) -> None:
     call(
         cmd=(
             f"kubectl --context {cfg.kube_context} "
-            f"label nodes {first_node} {SERVER_LABEL}"
+            f"label nodes {first_node} {SERVER_LABEL} --overwrite"
         ),
     )
     # label other nodes for worker (or first node in case of single node)
@@ -188,7 +188,7 @@ def label_nodes(cfg: GCPConfig) -> None:
         call(
             cmd=(
                 f"kubectl --context {cfg.kube_context} "
-                f"label nodes {node} {WORKER_LABEL}"
+                f"label nodes {node} {WORKER_LABEL} --overwrite"
             ),
         )
 

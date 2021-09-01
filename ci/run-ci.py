@@ -63,6 +63,15 @@ def arg_parse() -> Config:
         help="The prefix name if the GKE kubernetes cluster to create",
     )
     parser.add_argument(
+        "--no-cleanup",
+        action="store_true",
+        help="Do not delete the GKE k8s cluster nor volumes at the end of tests",
+    )
+    parser.add_argument(
+        "--use-cluster",
+        help="Skip cluster creation, and instead connect to the cluster of this name",
+    )
+    parser.add_argument(
         "-K",
         "--gcp-keys-directory",
         type=str,
@@ -170,14 +179,20 @@ def arg_parse() -> Config:
 
     args = vars(parser.parse_args())
 
-    # GCP Config
-    cluster_name = args["cluster_name"]
-    # Add RUN_TAG to cluster name to make it non-deterministic in case of retry
-    cluster_name += f"-{RUN_TAG[:40-len(cluster_name)-1]}"
-    config.gcp.cluster.name = cluster_name.lower()  # Make it lower for gcloud compatibility
+    config.gcp.create_cluster = not args["use_cluster"]
+    if config.gcp.create_cluster:
+        cluster_name = args["cluster_name"]
+        # Add RUN_TAG to cluster name to make it non-deterministic in case of retry
+        cluster_name += f"-{RUN_TAG[:40-len(cluster_name)-1]}"
+        config.gcp.cluster.name = cluster_name.lower()  # Make it lower for gcloud compatibility
+    else:
+        config.gcp.cluster.name = args["use_cluster"]
+
     # Only the 18 first characters are taken into account
-    config.gcp.cluster.pvc_volume_name_prefix = cluster_name[:18].lower()
+    config.gcp.cluster.pvc_volume_name_prefix = config.gcp.cluster.name[:18].lower()
     config.gcp.cluster.machine_type = args["machine_type"]
+    config.gcp.no_cleanup = args["no_cleanup"]
+
     config.gcp.service_account.key_dir = args["gcp_keys_directory"]
     config.gcp.service_account.key_file = args["gcp_key_filename"]
     if args["no_cache"]:
@@ -223,7 +238,8 @@ def main() -> None:
             gcloud.set_project(config.gcp.project)
             gcloud.test_permissions(config.gcp)
         permissions_validated = True
-        gcloud.create_cluster_async(config.gcp)
+        if config.gcp.create_cluster:
+            gcloud.create_cluster_async(config.gcp)
         config = clone_repos(config, SOURCE_DIR)
         build_images(config, KNOWN_HOST_FILE_PATH, RUN_TAG, DIR)
         gcloud.wait_for_cluster(config.gcp)
@@ -247,13 +263,16 @@ def main() -> None:
         is_success = False
 
     finally:
-        print("\n# Perform final teardown")
-        if os.path.exists(SOURCE_DIR):
-            shutil.rmtree(SOURCE_DIR)
-        if permissions_validated:
-            gcloud.delete_cluster(config.gcp)
-            gcloud.delete_disks(config.gcp)
-            gcloud.set_project(current_project)
+        if config.gcp.no_cleanup:
+            print(f"Skipping teardown of cluster {config.gcp.cluster.name}")
+        else:
+            print("\n# Perform final teardown")
+            if os.path.exists(SOURCE_DIR):
+                shutil.rmtree(SOURCE_DIR)
+            if permissions_validated:
+                gcloud.delete_cluster(config.gcp)
+                gcloud.delete_disks(config.gcp)
+                gcloud.set_project(current_project)
     sys.exit(0 if is_success else 1)
 
 

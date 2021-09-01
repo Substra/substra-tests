@@ -46,6 +46,8 @@ class GCPConfig:
     project: str = "connect-314908"
     kaniko_cache_ttl: str = "168h"  # A week
     ssh_key_secret: str = "projects/101637030044/secrets/connect-e2e-deploy-key/versions/2"
+    no_cleanup: bool = False
+    create_cluster: bool = True
     nodes: int = 1
 
 
