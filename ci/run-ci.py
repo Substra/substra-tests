@@ -264,16 +264,21 @@ def main() -> None:
         is_success = False
 
     finally:
+        if os.path.exists(SOURCE_DIR):
+            shutil.rmtree(SOURCE_DIR)
+
         if config.gcp.no_cleanup:
-            print(f"Skipping teardown of cluster {config.gcp.cluster.name}")
+            print(
+                f"Skipping teardown of cluster {config.gcp.cluster.name}. \n",
+                "⚠️💸 DON'T FORGET TO RUN cleanup.py WHEN YOU'RE DONE 💸⚠️"
+            )
         else:
             print("\n# Perform final teardown")
-            if os.path.exists(SOURCE_DIR):
-                shutil.rmtree(SOURCE_DIR)
             if permissions_validated:
                 gcloud.delete_cluster(config.gcp)
                 gcloud.delete_disks(config.gcp)
                 gcloud.set_project(current_project)
+
     sys.exit(0 if is_success else 1)
 
 
