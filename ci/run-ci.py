@@ -153,7 +153,7 @@ def arg_parse() -> Config:
         "--tests-make-command",
         type=str,
         default=config.tests_make_command,
-        help="Override the make command to execute the tests",
+        help="Override the make command to execute the tests, If set to \"\", no test will be run.",
     )
     parser.add_argument(
         "--git-clone-method",
@@ -250,8 +250,9 @@ def main() -> None:
         app_deployed = True
         if config.gcp.nodes > 1:
             gcloud.print_nodes(config.gcp)
-        run_tests(config)
-        print("Completed test run:")
+        if config.tests_make_command:
+            run_tests(config)
+        print("Completed:")
         print(config)
         is_success = True
 
