@@ -28,7 +28,7 @@ steps:
     args:
       - --destination=eu.gcr.io/$PROJECT_ID/${_IMAGE}:ci-${_COMMIT}
       - --cache=true
-      - --dockerfile=hlf_k8s/images/${_IMAGE}/Dockerfile
+      - --dockerfile=hlf_k8s/docker/${_IMAGE}/Dockerfile
       - --context=hlf_k8s
       - --cache-ttl=${_KANIKO_CACHE_TTL}
 
