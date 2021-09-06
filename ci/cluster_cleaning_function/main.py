@@ -1,14 +1,17 @@
 import datetime
 import base64
 import json
+from pprint import pprint
+from google.auth.environment_vars import PROJECT
 import requests
 
 from google.cloud.container_v1 import ClusterManagerClient
+from googleapiclient import discovery
 
-zone = "europe-west4-a"
-project_id = "connect-314908"
-cluster_prefix = "connect-tests"
-max_hours = 24
+ZONE = "europe-west4-a"
+PROJECT_ID = "connect-314908"
+CLUSTER_PREFIX = "connect-tests"
+MAX_HOURS = 24
 
 text_from_type = {
     "success": "*:white_check_mark:* CLUSTER REMOVED:\n",
@@ -39,6 +42,31 @@ def format_to_slack(data):
     return json.dumps(res)
 
 
+def delete_disks(cluster_name: str):
+    service = discovery.build("compute", "v1")
+    formatted_cluster_name = cluster_name[:18].lower()
+    disk_filter = f"name~^gke-{formatted_cluster_name}-pvc-.* zone~{ZONE}"
+    disks_to_delete = []
+
+    req = service.disks().list(project=PROJECT_ID, zone=ZONE, filter=disk_filter)
+    while req is not None:
+        res = req.execute()
+
+        for disk in res["items"]:
+            disks_to_delete.append(disk.get("name"))
+
+        req = service.disks().list_next(previous_request=req, previous_response=res)
+
+    for disk_name in disks_to_delete:
+        deletion_request = service.disks().delete(project=PROJECT, zone=ZONE, disk=disk_name)
+        deletion_response = deletion_request.execute()
+
+        if deletion_response["error"]:
+            pprint(deletion_response["error"])
+        else:
+            print(f"Successfully deleted {disk_name}")
+
+
 def clean_cluster(event, context):
 
     # Handle pub/sub message
@@ -56,12 +84,12 @@ def clean_cluster(event, context):
 
     # List clusters
     cluster_manager_client = ClusterManagerClient()
-    clusters_list = cluster_manager_client.list_clusters(project_id=project_id, zone=zone)
-    test_clusters = list(filter(lambda c: c.name.startswith(cluster_prefix), clusters_list.clusters))
+    clusters_list = cluster_manager_client.list_clusters(project_id=PROJECT_ID, zone=ZONE)
+    test_clusters = list(filter(lambda c: c.name.startswith(CLUSTER_PREFIX), clusters_list.clusters))
     list_clusters = "\n".join(list(map(lambda c: c.name, test_clusters)))
 
     list_result = (
-        f'Found {len(test_clusters)} clusters with a name starting with "{cluster_prefix}":\n' f"{list_clusters}"
+        f'Found {len(test_clusters)} clusters with a name starting with "{CLUSTER_PREFIX}":\n' f"{list_clusters}"
     )
     print(list_result)
 
@@ -69,7 +97,7 @@ def clean_cluster(event, context):
         list_clusters = "\n\t\t- " + "\n\t\t- ".join(list(map(lambda c: f"*{c.name}*", test_clusters)))
 
     slack_list_result = (
-        f"Found *{len(test_clusters)}* clusters with a name starting with *{cluster_prefix}*" f"{list_clusters}"
+        f"Found *{len(test_clusters)}* clusters with a name starting with *{CLUSTER_PREFIX}*" f"{list_clusters}"
     )
     data["message"] = slack_list_result
 
@@ -79,10 +107,11 @@ def clean_cluster(event, context):
         age_hours = (datetime.datetime.utcnow() - start).total_seconds() // 3600
 
         print(f'"{cluster.name}" is {int(age_hours)} hours old. ', end="")
-        if age_hours >= max_hours:
+        if age_hours >= MAX_HOURS:
             print("Destroying.")
             try:
-                cluster_manager_client.delete_cluster(project_id=project_id, zone=zone, cluster_id=cluster.name)
+                cluster_manager_client.delete_cluster(project_id=PROJECT_ID, zone=ZONE, cluster_id=cluster.name)
+                delete_disks(cluster.name)
             except Exception:
                 data["error"].append(f"*{cluster.name}*")
             else:
