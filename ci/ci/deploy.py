@@ -1,7 +1,7 @@
 import json
 import os
 
-from ci.config import Config, Repository
+from ci.config import Config, OrchestratorMode, Repository
 from ci.call import call
 
 import yaml
@@ -11,8 +11,9 @@ def deploy_all(cfg: Config, source_dir: str) -> None:
     print("\n# Deploy helm charts")
 
     for repo in cfg.repos.get_all():
-        # Chaincode does not need to be deployed
-        if repo in [cfg.repos.chaincode, cfg.repos.sdk]:
+        if repo == cfg.repos.sdk:
+            continue
+        if cfg.orchestrator_mode == OrchestratorMode.STANDALONE and repo == cfg.repos.hlf_k8s:
             continue
 
         wait = repo != cfg.repos.hlf_k8s  # don't wait for hlf-k8s deployment to complete
@@ -28,9 +29,13 @@ def _deploy(cfg: Config, repo: Repository, source_dir: str, wait=True) -> None:
     if repo == cfg.repos.hlf_k8s:
         call(f"KUBE_CONTEXT={cfg.gcp.kube_context} {path}/examples/dev-secrets.sh create")
 
+    skaffold_profile = ""
+    if repo.skaffold_profile:
+        skaffold_profile = f"--profile {repo.skaffold_profile}"
+
     call(
         f"cd {path} && skaffold deploy --kube-context={cfg.gcp.kube_context} "
-        f'-f=skaffold.yaml -a={artifacts_file} --status-check={"true" if wait else "false"}'
+        f'-f=skaffold.yaml -a={artifacts_file} --status-check={"true" if wait else "false"} {skaffold_profile}'
     )
 
 
@@ -43,7 +48,6 @@ def _create_build_artifacts(cfg: Config, repo: Repository, source_dir: str) -> s
         tags = {"builds": []}
 
         for image in repo.images:
-
             tag = f"eu.gcr.io/{cfg.gcp.project}/{image}:ci-{repo.commit}"
 
             if image == "connect-tests":
@@ -95,8 +99,8 @@ def _patch_values_file(cfg: Config, repo: Repository, value_file: str) -> None:
         data["backend"]["kaniko"]["dockerConfigSecretName"] = ""  # remove docker-config secret
     if repo == cfg.repos.hlf_k8s:
         if "chaincodes" in data:
-            data["chaincodes"][0]["image"]["repository"] = f"eu.gcr.io/{cfg.gcp.project}/connect-chaincode"
-            data["chaincodes"][0]["image"]["tag"] = f"ci-{cfg.repos.chaincode.commit}"
+            data["chaincodes"][0]["image"]["repository"] = f"eu.gcr.io/{cfg.gcp.project}/orchestrator-chaincode"
+            data["chaincodes"][0]["image"]["tag"] = f"ci-{cfg.repos.orchestrator.commit}"
 
         # remove docker-config secret
         if "fabric-tools" in data and "pullImageSecret" in data["fabric-tools"]["image"]:

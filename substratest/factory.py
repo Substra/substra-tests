@@ -214,7 +214,7 @@ ENTRYPOINT ["python3", "algo.py"]
 
 
 def random_uuid():
-    return uuid.uuid4().hex
+    return str(uuid.uuid4())
 
 
 def _shorten_name(name):
@@ -244,11 +244,12 @@ class Permissions(pydantic.BaseModel):
 
 
 class PrivatePermissions(pydantic.BaseModel):
+    public: bool
     authorized_ids: typing.List[str]
 
 
 DEFAULT_PERMISSIONS = Permissions(public=True, authorized_ids=[])
-DEFAULT_OUT_TRUNK_MODEL_PERMISSIONS = PrivatePermissions(authorized_ids=[])
+DEFAULT_OUT_TRUNK_MODEL_PERMISSIONS = PrivatePermissions(public=False, authorized_ids=[])
 SERVER_MEDIA_PATH = '/var/substra/servermedias/'
 
 
@@ -782,8 +783,8 @@ class AssetsFactory:
             out_trunk_model_permissions=permissions or DEFAULT_OUT_TRUNK_MODEL_PERMISSIONS,
         )
 
-    def create_testtuple(self, objective=None, traintuple=None, tag=None, dataset=None,
-                         data_samples=None, metadata=None):
+    def create_testtuple(self, objective=None, traintuple=None, tag=None, dataset=None, data_samples=None,
+                         metadata=None):
         return TesttupleSpec(
             objective_key=objective.key if objective else None,
             traintuple_key=traintuple.key if traintuple else None,

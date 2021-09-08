@@ -2,7 +2,6 @@ import substra
 
 import pytest
 
-import substratest as sbt
 from substratest.factory import Permissions
 from . import settings
 
@@ -159,9 +158,9 @@ def test_merge_permissions(permissions_1, permissions_2, expected_permissions,
     )
     traintuple = client_1.add_traintuple(spec)
     traintuple = client_1.wait(traintuple)
-    assert traintuple.out_model is not None
-    assert traintuple.dataset.worker == client_1.node_id
-    tuple_permissions = traintuple.permissions.process
+    assert traintuple.train.models is not None
+    assert traintuple.worker == client_1.node_id
+    tuple_permissions = traintuple.train.model_permissions.process
     assert tuple_permissions.public == expected_permissions.public
     assert set(tuple_permissions.authorized_ids) == set(expected_permissions.authorized_ids)
 
@@ -252,8 +251,11 @@ def test_permissions_model_process(
     traintuple_1 = client_1.add_traintuple(spec)
     traintuple_1 = client_1.wait(traintuple_1)
 
-    assert not traintuple_1.permissions.process.public
-    assert traintuple_1.permissions.process.authorized_ids == [client_1.node_id] + client_1_permissions.authorized_ids
+    print(spec)
+
+    assert not traintuple_1.train.model_permissions.process.public
+    assert set(traintuple_1.train.model_permissions.process.authorized_ids) == set(
+        [client_1.node_id] + client_1_permissions.authorized_ids)
 
     spec = factory.create_traintuple(
         algo=algo_2,
@@ -262,13 +264,13 @@ def test_permissions_model_process(
         traintuples=[traintuple_1]
     )
 
-    traintuple_2 = client_2.add_traintuple(spec)
-
     if expected_success:
+        traintuple_2 = client_2.add_traintuple(spec)
+
         client_2.wait(traintuple_2)
     else:
-        with pytest.raises(sbt.errors.FutureFailureError):
-            client_2.wait(traintuple_2)
+        with pytest.raises(substra.exceptions.AuthorizationError):
+            traintuple_2 = client_2.add_traintuple(spec)
 
 
 @pytest.mark.remote_only  # no check on permissions with the local backend
@@ -379,5 +381,5 @@ def test_permissions_denied_head_model_process(factory, client_1, client_2):
         head_traintuple=composite_traintuple_1,
         trunk_traintuple=composite_traintuple_1,
     )
-    with pytest.raises(substra.exceptions.InvalidRequest):
+    with pytest.raises(substra.exceptions.AuthorizationError):
         client_2.add_composite_traintuple(spec)

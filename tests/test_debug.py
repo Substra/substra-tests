@@ -1,7 +1,19 @@
 import pytest
+import docker
 
 from substra.sdk import models
 from substratest.factory import Permissions
+
+
+def docker_available() -> bool:
+    try:
+        docker.from_env()
+        return True
+    except Exception:
+        return False
+
+
+pytestmark = pytest.mark.skipif(not docker_available(), reason="requires docker")
 
 
 @pytest.mark.remote_only
@@ -20,7 +32,7 @@ def test_execution_debug(client, debug_client, factory, default_dataset, default
     )
     traintuple = debug_client.add_traintuple(spec)
     assert traintuple.status == models.Status.done
-    assert traintuple.out_model is not None
+    assert len(traintuple.train.models) != 0
 
     # Add the testtuple
     spec = factory.create_testtuple(
@@ -30,7 +42,7 @@ def test_execution_debug(client, debug_client, factory, default_dataset, default
     )
     testtuple = debug_client.add_testtuple(spec)
     assert testtuple.status == models.Status.done
-    assert testtuple.dataset.perf == 3
+    assert testtuple.test.perf == 3
 
 
 @pytest.mark.remote_only

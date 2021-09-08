@@ -15,7 +15,7 @@ def pytest_report_header(config):
     """Print network configuration in pytest header to help configuration debugging."""
     cfg = settings.load()
     messages = [
-        f"tests run uuid: {TESTS_RUN_UUID}'",
+        f"tests run uuid: {TESTS_RUN_UUID}",
         f"substra network configuration loaded from: '{cfg.path}'",
         "substra network setup:",
     ]

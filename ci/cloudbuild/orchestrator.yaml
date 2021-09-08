@@ -17,7 +17,7 @@ steps:
     args:
       - "clone"
       - "git@github.com:${_GIT_REPOSITORY}"
-      - "chaincode"
+      - "orchestrator"
       - "--depth=1"
       - "--branch=${_BRANCH}"
     volumes:
@@ -28,19 +28,19 @@ steps:
     args:
       - --destination=eu.gcr.io/$PROJECT_ID/${_IMAGE}:ci-${_COMMIT}
       - --cache=true
-      - --dockerfile=chaincode/Dockerfile
-      - --context=chaincode
+      - --dockerfile=orchestrator/docker/${_IMAGE}/Dockerfile
+      - --context=orchestrator
       - --cache-ttl=${_KANIKO_CACHE_TTL}
 
 tags:
   - ${_BUILD_TAG}
 substitutions:
   _BUILD_TAG: "connect-tests"
-  _IMAGE: "substra-chaincode"
+  _IMAGE: "orchestrator"
   _COMMIT: "HEAD"
   _BRANCH: "master"
   _KANIKO_CACHE_TTL: "168h"
-  _GIT_REPOSITORY: "SubstraFoundation/substra-chaincode.git"
+  _GIT_REPOSITORY: "SubstraFoundation/orchestrator.git"
   _SSH_KEY_SECRET: "projects/602744764353/secrets/connect-e2e-deploy-key/versions/3"
 timeout: 1200s
 availableSecrets:

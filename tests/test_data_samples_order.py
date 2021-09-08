@@ -33,11 +33,11 @@ class TestAlgo(tools.Algo):
     def train(self, X, y, models, rank):
         # Check that the order of X is the same as the one passed to add_traintuple
         X_data_sample_keys = [folder.split('/')[-1] for folder in X]
-        assert X_data_sample_keys == {data_sample_keys}, data_sample_keys
+        assert X_data_sample_keys == {data_sample_keys}, X_data_sample_keys
 
         # Check that the order of y is the same as the one passed to add_traintuple
         y_data_sample_keys = [folder.split('/')[-1] for folder in y]
-        assert y_data_sample_keys == {data_sample_keys}, data_sample_keys
+        assert y_data_sample_keys == {data_sample_keys}, y_data_sample_keys
 
         # Check that the order of X is the same as the order of y
         assert X_data_sample_keys == y_data_sample_keys
@@ -67,11 +67,11 @@ class TestCompositeAlgo(tools.CompositeAlgo):
     def train(self, X, y, head_model, trunk_model, rank):
         # Check that the order of X is the same as the one passed to add_traintuple
         X_data_sample_keys = [folder.split('/')[-1] for folder in X]
-        assert X_data_sample_keys == {data_sample_keys}, data_sample_keys
+        assert X_data_sample_keys == {data_sample_keys}, X_data_sample_keys
 
         # Check that the order of y is the same as the one passed to add_traintuple
         y_data_sample_keys = [folder.split('/')[-1] for folder in y]
-        assert y_data_sample_keys == {data_sample_keys}, data_sample_keys
+        assert y_data_sample_keys == {data_sample_keys}, y_data_sample_keys
 
         # Check that the order of X is the same as the order of y
         assert X_data_sample_keys == y_data_sample_keys
@@ -177,7 +177,7 @@ def test_traintuple_data_samples_relative_order(factory, client, dataset):
     # Ensure the order of the data sample keys is correct at 2 levels: :
     #  1. In the returned traintuple
     #  2. In the train method of the algo. If the order is incorrect, wait() will fail.
-    assert traintuple.dataset.data_sample_keys == data_sample_keys
+    assert traintuple.train.data_sample_keys == data_sample_keys
     client.wait(traintuple)
 
     testtuple_spec = factory.create_testtuple(objective=objective,
@@ -216,7 +216,7 @@ def test_composite_traintuple_data_samples_relative_order(factory, client, datas
     # Ensure the order of the data sample keys is correct at 2 levels: :
     #  1. In the returned composite traintuple
     #  2. In the train method of the algo. If the order is incorrect, wait() will fail.
-    assert composite_traintuple.dataset.data_sample_keys == data_sample_keys
+    assert composite_traintuple.composite.data_sample_keys == data_sample_keys
     client.wait(composite_traintuple)
 
     testtuple_spec = factory.create_testtuple(objective=objective,

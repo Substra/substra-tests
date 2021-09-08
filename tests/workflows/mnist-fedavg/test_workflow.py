@@ -223,8 +223,8 @@ class _Inputs(pydantic.BaseModel):
     """Inputs objects required to launch a FL pipeline on a Connect Network."""
     # XXX datasets must have the same order as the clients fixture
     datasets: typing.List[_InputsSubset]
-    composite_algo: sb.sdk.models.CompositeAlgo = None
-    aggregate_algo: sb.sdk.models.AggregateAlgo = None
+    composite_algo: sb.sdk.models.Algo = None
+    aggregate_algo: sb.sdk.models.Algo = None
 
 
 @pytest.fixture
@@ -351,16 +351,16 @@ def test_mnist(factory, inputs, clients):
 
     # display all testtuples performances
     testtuples = client.list_compute_plan_testtuples(cp.key)
-    testtuples = sorted(testtuples, key=lambda x: (x.rank, x.dataset.worker))
+    testtuples = sorted(testtuples, key=lambda x: (x.rank, x.worker))
     for testtuple in testtuples:
         print(
-            f"testtuple({testtuple.dataset.worker}) - {testtuple.rank} "
-            f"perf: {testtuple.dataset.perf}"
+            f"testtuple({testtuple.worker}) - {testtuple.rank} "
+            f"perf: {testtuple.test.perf}"
         )
     # check perf is as good as expected: after 20 rounds we expect a performance of
     # around 0.86. To avoid a flaky test a lower performance is expected.
     mininum_expected_perf = 0.85
     assert all([
-        testtuple.dataset.perf > mininum_expected_perf
+        testtuple.test.perf > mininum_expected_perf
         for testtuple in testtuples[-_NB_ORGS:]
     ])

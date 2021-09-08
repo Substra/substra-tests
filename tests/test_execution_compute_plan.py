@@ -53,7 +53,6 @@ def test_compute_plan_simple(factory, client_1, client_2, default_dataset_1, def
 
     # submit compute plan and wait for it to complete
     cp_added = client_1.add_compute_plan(cp_spec)
-    id_to_key = cp_added.id_to_key
 
     cp = client_1.wait(cp_added)
     assert cp.tag == 'foo'
@@ -71,12 +70,12 @@ def test_compute_plan_simple(factory, client_1, client_2, default_dataset_1, def
 
     traintuple_1, traintuple_2, traintuple_3 = traintuples
 
-    assert len(traintuple_3.in_models) == 2
+    assert len(traintuple_3.parent_task_keys) == 2
 
     for t in testtuples:
         assert t.status == models.Status.done
 
-    testtuple = testtuples[0]
+    testtuple = client_1.get_testtuple(testtuples[0].key)
 
     # check tuples metadata
     assert traintuple_1.metadata == {}
@@ -91,14 +90,14 @@ def test_compute_plan_simple(factory, client_1, client_2, default_dataset_1, def
     assert testtuple.rank == traintuple_3.rank
 
     # check testtuple perf
-    assert testtuple.dataset.perf == 4
+    assert testtuple.test.perf == 4
 
     # XXX as the first two tuples have the same rank, there is currently no way to know
     #     which one will be returned first
-    workers_rank_0 = set([traintuple_1.dataset.worker, traintuple_2.dataset.worker])
+    workers_rank_0 = set([traintuple_1.worker, traintuple_2.worker])
     assert workers_rank_0 == set([client_1.node_id, client_2.node_id])
-    assert traintuple_3.dataset.worker == client_1.node_id
-    assert testtuple.dataset.worker == client_1.node_id
+    assert traintuple_3.worker == client_1.node_id
+    assert testtuple.worker == client_1.node_id
 
     # check mapping
     traintuple_id_1 = traintuple_spec_1.traintuple_id
@@ -106,9 +105,9 @@ def test_compute_plan_simple(factory, client_1, client_2, default_dataset_1, def
     traintuple_id_3 = traintuple_spec_3.traintuple_id
     generated_ids = [traintuple_id_1, traintuple_id_2, traintuple_id_3]
     rank_0_traintuple_keys = [traintuple_1.key, traintuple_2.key]
-    assert set(generated_ids) == set(id_to_key.keys())
-    assert set(rank_0_traintuple_keys) == set([id_to_key[traintuple_id_1], id_to_key[traintuple_id_2]])
-    assert traintuple_3.key == id_to_key[traintuple_id_3]
+    assert set(generated_ids) == set([traintuple_id_1, traintuple_id_2, traintuple_id_3])
+    assert set(rank_0_traintuple_keys) == set([traintuple_id_1, traintuple_id_2])
+    assert traintuple_3.key == traintuple_id_3
 
 
 @pytest.mark.slow
@@ -164,9 +163,7 @@ def test_compute_plan_single_client_success(factory, client, default_dataset, de
     cp_added = client.add_compute_plan(cp_spec)
     cp = client.wait(cp_added)
 
-    assert cp.status == "done"
-    assert cp.failed_tuple.key == ""
-    assert cp.failed_tuple.type == ""
+    assert cp.status == "PLAN_STATUS_DONE"
 
     # All the train/test tuples should succeed
     for t in client.list_compute_plan_traintuples(cp.key) + client.list_compute_plan_testtuples(cp.key):
@@ -308,17 +305,8 @@ def test_compute_plan_single_client_failure(factory, client, default_dataset, de
     cp_added = client.add_compute_plan(cp_spec)
     cp = client.wait(cp_added, raises=False)
 
-    traintuples = client.list_compute_plan_traintuples(cp.key)
-    testtuples = client.list_compute_plan_testtuples(cp.key)
-
-    assert cp.status == "failed"
-    assert cp.failed_tuple.type == "traintuple"
-
-    # All the train/test tuples should be marked either as failed or canceled
-    for t in traintuples + testtuples:
-        assert t.status in [models.Status.failed, models.Status.canceled]
-        if t.status == models.Status.failed:
-            assert cp.failed_tuple.key == t.key
+    assert cp.status == "PLAN_STATUS_FAILED"
+    assert cp.failed_task.category == "TASK_TRAIN"
 
 
 @pytest.mark.slow
@@ -393,17 +381,27 @@ def test_compute_plan_aggregate_composite_traintuples(factory, clients, default_
     aggregatetuples = clients[0].list_compute_plan_aggregatetuples(cp.key)
     testtuples = clients[0].list_compute_plan_testtuples(cp.key)
 
+    for task in composite_traintuple_specs:
+        remote_task = clients[0].get_composite_traintuple(task.id)
+        if task.in_head_model_id:
+            assert task.in_head_model_id in remote_task.parent_task_keys
+        if task.in_trunk_model_id:
+            assert task.in_trunk_model_id in remote_task.parent_task_keys
+
     tuples = traintuples + composite_traintuples + aggregatetuples + testtuples
     for t in tuples:
-        assert t.status == models.Status.done
+        assert t.status == models.Status.done, t
 
     # Check tuples metadata
     for tuple in composite_traintuples + aggregatetuples:
         assert tuple.metadata == {'foo': 'bar'}
 
     # Check that permissions were correctly set
-    for tuple in composite_traintuples:
-        assert len(tuple.out_trunk_model.permissions.process.authorized_ids) == len(clients)
+    for task in composite_traintuples:
+        task = clients[0].get_composite_traintuple(task.key)
+        trunks = [model for model in task.composite.models if model.category == models.ModelType.simple]
+        for trunk in trunks:
+            assert len(trunk.permissions.process.authorized_ids) == len(clients)
 
 
 @pytest.mark.slow
@@ -520,10 +518,10 @@ def test_execution_compute_plan_canceled(factory, client, default_dataset):
     assert first_traintuple.status == models.Status.done
 
     cp = client.cancel_compute_plan(cp.key)
-    assert cp.status == models.Status.canceled
+    assert cp.status == models.ComputePlanStatus.canceled
 
     cp = client.wait(cp, raises=False)
-    assert cp.status == models.Status.canceled
+    assert cp.status == models.ComputePlanStatus.canceled
 
     # check that the status of the done tuple as not been updated
     first_traintuple = [t for t in client.list_compute_plan_traintuples(cp.key) if t.rank == 0][0]
@@ -645,4 +643,6 @@ def test_compute_plan_local_folder(factory, client, default_dataset, default_obj
     cp = client.wait(cp_added)
 
     testtuples = client.list_compute_plan_testtuples(cp.key)
-    assert testtuples[0].dataset.perf == 20
+    # performance is retrieved only on get, not list
+    testtuple = client.get_testtuple(testtuples[0].key)
+    assert testtuple.test.perf == 20

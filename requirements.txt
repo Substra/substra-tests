@@ -1,3 +1,4 @@
+docker==5.0.0
 pytest==5.2.1
 dataclasses==0.7;python_version<"3.7"
 pydantic==1.8.2

@@ -49,10 +49,7 @@ def _wait_for_builds(cfg: GCPConfig, tag: str, images: List[str]) -> None:
     print("\n# Waiting for builds to complete ...", end="")
     do_wait = True
     while do_wait:
-        build_list = call_output(
-            f'gcloud builds list --filter="tags={tag}" --project={cfg.project}',
-            print_cmd=False,
-        )
+        build_list = call_output(f'gcloud builds list --filter="tags={tag}" --project={cfg.project}', print_cmd=False,)
 
         builds = build_list.split("\n")[1:]
 

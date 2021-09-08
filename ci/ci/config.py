@@ -1,6 +1,15 @@
 import os
 from dataclasses import dataclass, field
 from typing import List
+from enum import Enum
+
+
+class OrchestratorMode(Enum):
+    DISTRIBUTED = "distributed"
+    STANDALONE = "standalone"
+
+    def __str__(self):
+        return str(self.value)
 
 
 @dataclass()
@@ -9,6 +18,7 @@ class Repository:
     repo_name: str = ""
     commit: str = ""
     skaffold_artifact: str = ""
+    skaffold_profile: str = None
     # ref can be eiher a branch or a tag
     ref: str = "master"
     # In order to build them we need a list of the docker images in the repo
@@ -24,7 +34,7 @@ class Repository:
 class GCPConfigCluster:
     name: str = ""
     pvc_volume_name_prefix: str = ""
-    machine_type: str = "n1-standard-8"
+    machine_type: str = "n1-standard-16"
     kube_context: str = ""
     # Zone must be specific (e.g. "europe-west1-b" and not "europe-west1")
     # or else several kubernetes nodes will be created instead of just one,
@@ -61,9 +71,7 @@ class GitConfig:
 @dataclass()
 class Repositories:
     tests: Repository = Repository(
-        name="tests",
-        repo_name="owkin/connect-tests.git",
-        images=["connect-tests"],
+        name="tests", repo_name="owkin/connect-tests.git", images=["connect-tests"],
     )
     backend: Repository = Repository(
         name="backend",
@@ -72,22 +80,19 @@ class Repositories:
         skaffold_artifact="substra-backend",
     )
     sdk: Repository = Repository(
-        name="sdk",
-        repo_name="owkin/substra.git",
-    )
-    chaincode: Repository = Repository(
-        name="chaincode",
-        repo_name="owkin/connect-chaincode.git",
-        images=["connect-chaincode"],
+        name="sdk", repo_name="owkin/substra.git",
     )
     hlf_k8s: Repository = Repository(
-        name="hlf_k8s",
-        repo_name="owkin/connect-hlf-k8s.git",
-        images=["fabric-tools", "fabric-peer"],
+        name="hlf_k8s", repo_name="owkin/connect-hlf-k8s.git", images=["fabric-tools", "fabric-peer"],
+    )
+    orchestrator: Repository = Repository(
+        name="orchestrator",
+        repo_name="owkin/orchestrator.git",
+        images=["chaincode", "forwarder", "server", "rabbitmq-operator"],
     )
 
     def get_all(self) -> List[Repository]:
-        return [self.tests, self.backend, self.sdk, self.chaincode, self.hlf_k8s]
+        return [self.tests, self.backend, self.sdk, self.hlf_k8s, self.orchestrator]
 
 
 @dataclass()
@@ -99,6 +104,7 @@ class Config:
     tests_concurrency: int = 5
     tests_future_timeout: int = 400
     tests_make_command: str = "test-ci"
+    orchestrator_mode: OrchestratorMode = OrchestratorMode.DISTRIBUTED
 
     @property
     def is_ci_runner(self):
@@ -113,13 +119,14 @@ class Config:
             f"E2E_TESTS_BRANCH\t\t= {self.repos.tests.ref}\n"
             f"SDK_BRANCH\t\t\t= {self.repos.sdk.ref}\n"
             f"BACKEND_BRANCH\t\t\t= {self.repos.backend.ref}\n"
-            f"CHAINCODE_BRANCH\t\t= {self.repos.chaincode.ref}\n"
             f"HLF_K8S_BRANCH\t\t\t= {self.repos.hlf_k8s.ref}\n"
+            f"ORCHESTRATOR_BRANCH\t\t= {self.repos.orchestrator.ref}\n"
             f"KANIKO_CACHE_TTL\t\t= {self.gcp.kaniko_cache_ttl}\n"
             f"BACKEND_CELERY_CONCURRENCY\t= {self.backend_celery_concurrency}\n"
             f"TESTS_CONCURRENCY\t\t= {self.tests_concurrency}\n"
             f"TESTS_FUTURE_TIMEOUT\t\t= {self.tests_future_timeout}\n"
             f"TESTS_MAKE_COMMAND\t\t= {self.tests_make_command}\n"
+            f"ORCHESTRATOR_MODE\t\t= {self.orchestrator_mode}\n"
         )
         if self.is_ci_runner:
             out += f"KEYS_DIR\t\t\t= {self.gcp.service_account.key_dir}\n"

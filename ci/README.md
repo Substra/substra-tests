@@ -32,7 +32,7 @@ This script performs the following operations:
 - Clone all the connect repositories:
     - [hlf-k8s](https://github.com/owkin/connect-hlf-k8s)
     - [connect-backend](https://github.com/owkin/connect-backend)
-    - [connect-chaincode](https://github.com/owkin/connect-chaincode)
+    - [orchestrator](https://github.com/owkin/orchestrator)
     - [connect-tests](https://github.com/owkin/connect-tests)
 - Build the docker images from these repositories using Google Cloud Builds
 - Deploy all the services using the Skaffold files in the repositories

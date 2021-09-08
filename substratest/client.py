@@ -3,7 +3,7 @@ import tempfile
 import time
 
 import substra
-from substra.sdk.models import Status
+from substra.sdk.models import Status, ComputePlanStatus, ModelType
 
 from . import errors, cfg
 
@@ -171,7 +171,10 @@ class Client:
         with tempfile.TemporaryDirectory() as tmp:
             self._client.download_trunk_model_from_composite_traintuple(composite_traintuple_key, tmp)
             tuple = self.get_composite_traintuple(composite_traintuple_key)
-            path = os.path.join(tmp, f'model_{tuple.out_trunk_model.out_model.key}')
+            for model in tuple.composite.models:
+                if model.category == ModelType.simple:
+                    model_key = model.key
+            path = os.path.join(tmp, f'model_{model_key}')
             with open(path, 'rb') as f:
                 return f.read()
 
@@ -231,7 +234,13 @@ class Client:
         key = asset.key
 
         tstart = time.time()
-        while asset.status not in [Status.done.value, Status.failed.value, Status.canceled.value]:
+        while asset.status not in [
+                Status.done.value,
+                Status.failed.value,
+                Status.canceled.value,
+                ComputePlanStatus.done.value,
+                ComputePlanStatus.failed.value,
+                ComputePlanStatus.canceled.value]:
             if time.time() - tstart > timeout:
                 raise errors.FutureTimeoutError(f'Future timeout on {asset}')
 

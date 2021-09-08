@@ -8,7 +8,7 @@ import string
 import sys
 
 from ci import gcloud
-from ci.config import Config
+from ci.config import Config, OrchestratorMode
 from ci.logs import retrieve_logs
 from ci.deploy import deploy_all
 from ci.helm import setup_helm
@@ -50,10 +50,7 @@ def arg_parse() -> Config:
 
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--machine-type",
-        type=str,
-        default=config.gcp.cluster.machine_type,
-        help="The GKE machine type to use",
+        "--machine-type", type=str, default=config.gcp.cluster.machine_type, help="The GKE machine type to use",
     )
     parser.add_argument(
         "-N",
@@ -111,25 +108,17 @@ def arg_parse() -> Config:
         metavar="GIT_BRANCH",
     )
     parser.add_argument(
-        "--chaincode",
-        "--connect-chaincode",
-        "--substra-chaincode",
+        "--hlf-k8s", type=str, default=config.repos.hlf_k8s.ref, help="hlf-k8s branch or tag", metavar="GIT_BRANCH",
+    )
+    parser.add_argument(
+        "--orchestrator",
         type=str,
-        default=config.repos.chaincode.ref,
-        help="chaincode branch or tag",
+        default=config.repos.orchestrator.ref,
+        help="orchestrator branch or tag",
         metavar="GIT_BRANCH",
     )
     parser.add_argument(
-        "--hlf-k8s",
-        type=str,
-        default=config.repos.hlf_k8s.ref,
-        help="hlf-k8s branch or tag",
-        metavar="GIT_BRANCH",
-    )
-    parser.add_argument(
-        "--no-cache",
-        action="store_true",
-        help="Use this option to disable kaniko caching",
+        "--no-cache", action="store_true", help="Use this option to disable kaniko caching",
     )
     parser.add_argument(
         "--backend-celery-concurrency",
@@ -138,10 +127,7 @@ def arg_parse() -> Config:
         help="The backend worker task concurrency",
     )
     parser.add_argument(
-        "--tests-concurrency",
-        type=int,
-        default=config.tests_concurrency,
-        help="The number of parallel test runners",
+        "--tests-concurrency", type=int, default=config.tests_concurrency, help="The number of parallel test runners",
     )
     parser.add_argument(
         "--tests-future-timeout",
@@ -163,18 +149,20 @@ def arg_parse() -> Config:
         help="Method used to clone repositories",
     )
     parser.add_argument(
-        "--git-use-token",
-        action="store_true",
-        help="Use a private access token stored in the env var GIT_TOKEN",
+        "--orchestrator-mode",
+        type=OrchestratorMode,
+        choices=list(OrchestratorMode),
+        default=config.orchestrator_mode,
+        help="Mode of the orchestrator used to run the tests",
+    )
+    parser.add_argument(
+        "--git-use-token", action="store_true", help="Use a private access token stored in the env var GIT_TOKEN",
     )
     parser.add_argument(
         "--nodes",
         type=int,
         default=config.gcp.nodes,
-        help=(
-            "Number of cluster nodes (default value is 1). "
-            "If nodes > 1, then worker's replicas = nodes - 1."
-        )
+        help=("Number of cluster nodes (default value is 1). " "If nodes > 1, then worker's replicas = nodes - 1."),
     )
 
     args = vars(parser.parse_args())
@@ -203,8 +191,8 @@ def arg_parse() -> Config:
     config.repos.tests.ref = args["e2e_tests"]
     config.repos.sdk.ref = args["sdk"]
     config.repos.backend.ref = args["backend"]
-    config.repos.chaincode.ref = args["chaincode"]
     config.repos.hlf_k8s.ref = args["hlf_k8s"]
+    config.repos.orchestrator.ref = args["orchestrator"]
 
     # Git config
     config.git.clone_method = args["git_clone_method"]
@@ -217,6 +205,12 @@ def arg_parse() -> Config:
     config.tests_concurrency = args["tests_concurrency"]
     config.tests_future_timeout = args["tests_future_timeout"]
     config.tests_make_command = args["tests_make_command"]
+    config.orchestrator_mode = args["orchestrator_mode"]
+
+    # Skaffold profile
+    if config.orchestrator_mode == OrchestratorMode.DISTRIBUTED:
+        config.repos.backend.skaffold_profile = "distributed"
+        config.repos.orchestrator.skaffold_profile = "distributed"
 
     print("💃💃💃\n")
     print(config)
