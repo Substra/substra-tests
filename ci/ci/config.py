@@ -88,7 +88,8 @@ class Repositories:
     orchestrator: Repository = Repository(
         name="orchestrator",
         repo_name="owkin/orchestrator.git",
-        images=["chaincode", "forwarder", "server", "rabbitmq-operator"],
+        images=["orchestrator-chaincode", "orchestrator-forwarder",
+                "orchestrator-server", "orchestrator-rabbitmq-operator"],
     )
 
     def get_all(self) -> List[Repository]:
