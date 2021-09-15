@@ -12,9 +12,9 @@ env:
   GCP_SSH_SECRET: "projects/101637030044/secrets/connect-e2e-deploy-key/versions/2"
 
 jobs:
-  test:
+  test-distributed:
     if: github.repository == 'owkin/connect-tests' # Prevent the test from running on forks
-    name: Tests
+    name: Tests Distributed
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -47,7 +47,7 @@ jobs:
           RANDOM_ID=$(LC_CTYPE=C tr -dc 'a-z0-9' < /dev/urandom | head -c 4)
           CLUSTER_NAME="connect-tests-${RANDOM_ID}-$(date -u +'%Y-%m-%d-%Hh%M')"
           cd ci/
-          python -u ./run-ci.py --gcp-keys-directory=./keys/ --gcp-key-filename=gcp_sa_key.json --cluster-name=${CLUSTER_NAME} --git-use-token --git-clone-method=https
+          python -u ./run-ci.py --gcp-keys-directory=./keys/ --gcp-key-filename=gcp_sa_key.json --cluster-name=${CLUSTER_NAME} --git-use-token --git-clone-method=https --orchestrator-mode distributed
         env:
           GIT_TOKEN: ${{ secrets.OWLFRED_PAT }}
       - name: Slack Notification
@@ -56,7 +56,7 @@ jobs:
         env:
           SLACK_COLOR: "#159e39"
           SLACK_ICON: https://github.com/SubstraFoundation/substra/blob/master/substra-logo.svg
-          SLACK_TITLE: Connect CI e2e Success
+          SLACK_TITLE: Connect CI Distributed e2e Success
           SLACK_USERNAME: Connect CI
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
           SLACK_MESSAGE: ":white_check_mark: Workflow succeeded, <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|run/${{ github.run_id }}>"
@@ -68,7 +68,76 @@ jobs:
         env:
           SLACK_COLOR: "#eb4a15"
           SLACK_ICON: https://github.com/SubstraFoundation/substra/blob/master/substra-logo.svg
-          SLACK_TITLE: Connect CI e2e Failure
+          SLACK_TITLE: Connect CI Distributed e2e Failure
+          SLACK_USERNAME: Connect CI
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+          SLACK_MESSAGE: ":x: Workflow failed, <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|run/${{ github.run_id }}>"
+          MSG_MINIMAL: True
+          SLACK_FOOTER: ""
+      - name: Upload pod logs
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v2
+        with:
+          name: pod-logs
+          path: ci/logs
+          retention-days: 5
+  test-standalone:
+    if: github.repository == 'owkin/connect-tests' # Prevent the test from running on forks
+    name: Tests Centralized
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+        name: Set up python
+        with:
+          python-version: 3.7
+      - name: Install python requirements
+        run: pip install -r ci/requirements.txt
+      - uses: azure/setup-helm@v1
+        with:
+          version: "v3.2.3"
+      - uses: azure/setup-kubectl@v1
+        with:
+          version: "latest"
+      - name: Install Skaffold
+        run: |
+          curl -Lo skaffold https://storage.googleapis.com/skaffold/releases/v1.24.1/skaffold-linux-amd64
+          chmod +x ./skaffold
+          sudo mv ./skaffold /usr/local/bin/skaffold
+          skaffold version
+      - name: Install tools
+        run: pip install pyyaml
+      - name: Open GCP key
+        env:
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+        run: gpg --quiet --batch --yes --decrypt --passphrase="$GPG_PASSPHRASE" --output ci/keys/gcp_sa_key.json "${GCP_SERVICE_ACCOUNT_KEY}"
+      - name: Test
+        run: |
+          RANDOM_ID=$(LC_CTYPE=C tr -dc 'a-z0-9' < /dev/urandom | head -c 4)
+          CLUSTER_NAME="connect-tests-${RANDOM_ID}-$(date -u +'%Y-%m-%d-%Hh%M')"
+          cd ci/
+          python -u ./run-ci.py --gcp-keys-directory=./keys/ --gcp-key-filename=gcp_sa_key.json --cluster-name=${CLUSTER_NAME} --git-use-token --git-clone-method=https --orchestrator-mode standalone
+        env:
+          GIT_TOKEN: ${{ secrets.OWLFRED_PAT }}
+      - name: Slack Notification
+        if: ${{ success() }}
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_COLOR: "#159e39"
+          SLACK_ICON: https://github.com/SubstraFoundation/substra/blob/master/substra-logo.svg
+          SLACK_TITLE: Connect CI Centralized e2e Success
+          SLACK_USERNAME: Connect CI
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+          SLACK_MESSAGE: ":white_check_mark: Workflow succeeded, <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|run/${{ github.run_id }}>"
+          MSG_MINIMAL: True
+          SLACK_FOOTER: ""
+      - name: Slack Notification
+        if: ${{ failure() }}
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_COLOR: "#eb4a15"
+          SLACK_ICON: https://github.com/SubstraFoundation/substra/blob/master/substra-logo.svg
+          SLACK_TITLE: Connect CI Centralized e2e Failure
           SLACK_USERNAME: Connect CI
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
           SLACK_MESSAGE: ":x: Workflow failed, <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|run/${{ github.run_id }}>"
