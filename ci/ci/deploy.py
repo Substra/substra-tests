@@ -97,6 +97,8 @@ def _patch_values_file(cfg: Config, repo: Repository, value_file: str) -> None:
         data["celeryworker"]["replicaCount"] = max(1, cfg.gcp.nodes - 1)
         data["celeryworker"]["concurrency"] = cfg.backend_celery_concurrency
         data["backend"]["kaniko"]["dockerConfigSecretName"] = ""  # remove docker-config secret
+        for elt in data["registry"]["prepopulate"]:
+            elt["dockerConfigSecretName"] = ""  # remove docker-config secret
     if repo == cfg.repos.hlf_k8s:
         if "chaincodes" in data:
             data["chaincodes"][0]["image"]["repository"] = f"eu.gcr.io/{cfg.gcp.project}/orchestrator-chaincode"
