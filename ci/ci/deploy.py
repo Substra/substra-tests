@@ -104,6 +104,10 @@ def _patch_values_file(cfg: Config, repo: Repository, value_file: str) -> None:
             data["chaincodes"][0]["image"]["repository"] = f"eu.gcr.io/{cfg.gcp.project}/orchestrator-chaincode"
             data["chaincodes"][0]["image"]["tag"] = f"ci-{cfg.repos.orchestrator.commit}"
 
+            data["chaincodes"][0]["init"]["image"][
+                "repository"] = f"eu.gcr.io/{cfg.gcp.project}/orchestrator-chaincode-init"
+            data["chaincodes"][0]["init"]["image"]["tag"] = f"ci-{cfg.repos.orchestrator.commit}"
+
         # remove docker-config secret
         if "fabric-tools" in data and "pullImageSecret" in data["fabric-tools"]["image"]:
             del data["fabric-tools"]["image"]["pullImageSecret"]

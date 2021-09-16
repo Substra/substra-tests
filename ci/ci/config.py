@@ -88,7 +88,7 @@ class Repositories:
     orchestrator: Repository = Repository(
         name="orchestrator",
         repo_name="owkin/orchestrator.git",
-        images=["orchestrator-chaincode", "orchestrator-forwarder",
+        images=["orchestrator-chaincode", "orchestrator-chaincode-init", "orchestrator-forwarder",
                 "orchestrator-server", "orchestrator-rabbitmq-operator"],
     )
 
