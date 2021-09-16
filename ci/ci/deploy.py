@@ -26,9 +26,6 @@ def _deploy(cfg: Config, repo: Repository, source_dir: str, wait=True) -> None:
 
     path = os.path.dirname(skaffold_file)
 
-    if repo == cfg.repos.hlf_k8s:
-        call(f"KUBE_CONTEXT={cfg.gcp.kube_context} {path}/examples/dev-secrets.sh create")
-
     skaffold_profile = ""
     if repo.skaffold_profile:
         skaffold_profile = f"--profile {repo.skaffold_profile}"
@@ -68,7 +65,7 @@ def _patch_skaffold_file(cfg: Config, repo: Repository, source_dir: str) -> str:
 
     repo_dir = os.path.join(source_dir, repo.name)
 
-    skaffold_file = os.path.join(repo_dir, "skaffold.yaml")
+    skaffold_file = os.path.join(repo_dir, repo.skaffold_dir, repo.skaffold_filename)
 
     with open(skaffold_file) as file:
         data = yaml.load(file, Loader=yaml.FullLoader)
@@ -76,8 +73,11 @@ def _patch_skaffold_file(cfg: Config, repo: Repository, source_dir: str) -> str:
     values_files = []
 
     for release in data["deploy"]["helm"]["releases"]:
-        if release["chartPath"].startswith("charts/"):
-            release["chartPath"] = os.path.join(repo_dir, release["chartPath"])
+        # use 2-orgs-policy-any instead of 2-orgs-policy-any-no-ca provided with root skaffold file
+        # which means that chartPath is not properly defined like the one in the root dir of hlf-k8s
+        # the aim is to test also hlf-ca certificates generation in distributed mode
+        if release["chartPath"].startswith("charts/") or release["chartPath"].startswith("../../charts/"):
+            release["chartPath"] = os.path.join(repo_dir, release["chartPath"].replace('../../', ''))
         if "valuesFiles" in release:
             values_files.extend(release["valuesFiles"])
 
@@ -85,7 +85,9 @@ def _patch_skaffold_file(cfg: Config, repo: Repository, source_dir: str) -> str:
         yaml.dump(data, file)
 
     for values_file in values_files:
-        _patch_values_file(cfg, repo, os.path.join(repo_dir, values_file))
+        _patch_values_file(cfg, repo, os.path.join(repo_dir,
+                                                   repo.skaffold_dir,
+                                                   values_file))
     return skaffold_file
 
 

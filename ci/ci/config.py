@@ -19,6 +19,8 @@ class Repository:
     commit: str = ""
     skaffold_artifact: str = ""
     skaffold_profile: str = None
+    skaffold_dir: str = ""
+    skaffold_filename: str = "skaffold.yaml"
     # ref can be eiher a branch or a tag
     ref: str = "master"
     # In order to build them we need a list of the docker images in the repo
@@ -83,7 +85,12 @@ class Repositories:
         name="sdk", repo_name="owkin/substra.git",
     )
     hlf_k8s: Repository = Repository(
-        name="hlf_k8s", repo_name="owkin/connect-hlf-k8s.git", images=["fabric-tools", "fabric-peer"],
+        name="hlf_k8s",
+        repo_name="owkin/connect-hlf-k8s.git",
+        images=["fabric-tools", "fabric-peer"],
+        # use 2-orgs-policy-any instead of 2-orgs-policy-any-no-ca provided with root skaffold file
+        # the aim is to test also hlf-ca certificates generation in distributed mode
+        skaffold_dir="examples/2-orgs-policy-any/",
     )
     orchestrator: Repository = Repository(
         name="orchestrator",
