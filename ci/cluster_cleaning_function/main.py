@@ -43,7 +43,7 @@ def format_to_slack(data):
 
 
 def delete_disks(cluster_name: str):
-    service = discovery.build("compute", "v1")
+    service = discovery.build("compute", "v1", cache_discovery=False)
     formatted_cluster_name = cluster_name[:18].lower()
     disk_filter = f"name~^gke-{formatted_cluster_name}-pvc-.* zone~{ZONE}"
     disks_to_delete = []
