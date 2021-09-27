@@ -254,7 +254,7 @@ def main() -> None:
         print(f"FATAL: {ex}")
         logging.exception(ex)
         if app_deployed:
-            retrieve_logs(config.gcp, LOG_DIR)
+            retrieve_logs(config, LOG_DIR)
         is_success = False
 
     finally:
