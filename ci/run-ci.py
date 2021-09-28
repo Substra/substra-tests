@@ -162,7 +162,7 @@ def arg_parse() -> Config:
         "--nodes",
         type=int,
         default=config.gcp.nodes,
-        help=("Number of cluster nodes (default value is 1). " "If nodes > 1, then worker's replicas = nodes - 1."),
+        help=("Number of cluster nodes (default value is 1). " "set the worker replicas to the same number."),
     )
 
     args = vars(parser.parse_args())
