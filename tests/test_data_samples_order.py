@@ -3,7 +3,7 @@ import pytest
 from substra.sdk.models import Status
 
 import substratest as sbt
-from substratest.factory import DEFAULT_DATA_SAMPLE_FILENAME
+from substratest.factory import DEFAULT_DATA_SAMPLE_FILENAME, AlgoCategory
 
 
 OPENER_SCRIPT = """
@@ -158,7 +158,7 @@ def test_traintuple_data_samples_relative_order(factory, client, dataset):
     algo_script = TEMPLATE_ALGO_SCRIPT.format(data_sample_keys=data_sample_keys,
                                               predict_data_sample_keys=data_sample_keys[:2],
                                               models=None)
-    algo_spec = factory.create_algo(py_script=algo_script)
+    algo_spec = factory.create_algo(category=AlgoCategory.simple, py_script=algo_script)
     algo = client.add_algo(algo_spec)
 
     objective_script = TEMPLATE_OBJECTIVE_SCRIPT.format(data_sample_keys=data_sample_keys[:2])
@@ -198,8 +198,8 @@ def test_composite_traintuple_data_samples_relative_order(factory, client, datas
     composite_algo_script = TEMPLATE_COMPOSITE_ALGO_SCRIPT.format(data_sample_keys=data_sample_keys,
                                                                   predict_data_sample_keys=data_sample_keys[:2],
                                                                   models=None)
-    algo_spec = factory.create_composite_algo(py_script=composite_algo_script)
-    composite_algo = client.add_composite_algo(algo_spec)
+    algo_spec = factory.create_algo(AlgoCategory.composite, py_script=composite_algo_script)
+    composite_algo = client.add_algo(algo_spec)
 
     objective_script = TEMPLATE_OBJECTIVE_SCRIPT.format(data_sample_keys=data_sample_keys[:2])
     objective_spec = factory.create_objective(dataset=dataset,
@@ -269,6 +269,7 @@ class TestOpener(tools.Opener):
     assert len(keys) == batch_size
 
     spec = factory.create_algo(
+        category=AlgoCategory.simple,
         py_script=f"""
 import json
 import substratools as tools

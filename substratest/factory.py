@@ -10,6 +10,7 @@ import uuid
 import pydantic
 
 from substra.sdk import models
+from substra.sdk.schemas import AlgoCategory
 from . import utils
 
 
@@ -335,24 +336,20 @@ class ObjectiveSpec(_Spec):
     permissions: Permissions = None
 
 
-class _AlgoSpec(_Spec):
+DEFAULT_ALGO_SCRIPTS = {
+    AlgoCategory.simple: DEFAULT_ALGO_SCRIPT,
+    AlgoCategory.composite: DEFAULT_COMPOSITE_ALGO_SCRIPT,
+    AlgoCategory.aggregate: DEFAULT_AGGREGATE_ALGO_SCRIPT,
+}
+
+
+class AlgoSpec(_Spec):
     name: str
+    category: AlgoCategory
     description: str
     file: str
     metadata: typing.Dict[str, str] = None
     permissions: Permissions = None
-
-
-class AlgoSpec(_AlgoSpec):
-    pass
-
-
-class AggregateAlgoSpec(_AlgoSpec):
-    pass
-
-
-class CompositeAlgoSpec(_AlgoSpec):
-    pass
 
 
 class TraintupleSpec(_Spec):
@@ -657,7 +654,7 @@ class AssetsFactory:
             test_data_manager_key=dataset.key if dataset else None,
         )
 
-    def _create_algo(self, py_script, dockerfile=None, permissions=None, metadata=None):
+    def create_algo(self, category, py_script=None, dockerfile=None, permissions=None, metadata=None):
         idx = self._algo_counter.inc()
         tmpdir = self._workdir / f'algo-{idx}'
         tmpdir.mkdir()
@@ -668,7 +665,10 @@ class AssetsFactory:
         with open(description_path, 'w') as f:
             f.write(description_content)
 
-        algo_content = py_script
+        try:
+            algo_content = py_script or DEFAULT_ALGO_SCRIPTS[category]
+        except KeyError:
+            raise Exception('Invalid algo category', category)
 
         dockerfile = dockerfile or DEFAULT_ALGO_DOCKERFILE
 
@@ -679,37 +679,11 @@ class AssetsFactory:
         )
 
         return AlgoSpec(
+            category=category,
             name=name,
             description=str(description_path),
             file=str(algo_zip),
             permissions=permissions or DEFAULT_PERMISSIONS,
-            metadata=metadata,
-        )
-
-    def create_algo(self, py_script=None, permissions=None, metadata=None,
-                    dockerfile=None):
-        return self._create_algo(
-            py_script or DEFAULT_ALGO_SCRIPT,
-            dockerfile=dockerfile,
-            permissions=permissions,
-            metadata=metadata,
-        )
-
-    def create_aggregate_algo(self, py_script=None, permissions=None, metadata=None,
-                              dockerfile=None):
-        return self._create_algo(
-            py_script or DEFAULT_AGGREGATE_ALGO_SCRIPT,
-            dockerfile=dockerfile,
-            permissions=permissions,
-            metadata=metadata,
-        )
-
-    def create_composite_algo(self, py_script=None, permissions=None, metadata=None,
-                              dockerfile=None):
-        return self._create_algo(
-            py_script or DEFAULT_COMPOSITE_ALGO_SCRIPT,
-            dockerfile=dockerfile,
-            permissions=permissions,
             metadata=metadata,
         )
 

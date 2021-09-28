@@ -2,7 +2,7 @@ import substra
 
 import pytest
 
-from substratest.factory import Permissions
+from substratest.factory import AlgoCategory, Permissions
 from . import settings
 
 MSP_IDS = settings.MSP_IDS
@@ -147,7 +147,7 @@ def test_merge_permissions(permissions_1, permissions_2, expected_permissions,
     train_data_sample_1 = client_1.add_data_sample(spec)
 
     # add algo on node 2
-    spec = factory.create_algo(permissions=permissions_2)
+    spec = factory.create_algo(category=AlgoCategory.simple, permissions=permissions_2)
     algo_2 = client_2.add_algo(spec)
 
     # add traintuple from node 2
@@ -180,7 +180,7 @@ def test_permissions_denied_process(factory, client_1, client_2):
 
     # setup algo
 
-    spec = factory.create_algo(permissions=Permissions(public=False, authorized_ids=[]))
+    spec = factory.create_algo(category=AlgoCategory.simple, permissions=Permissions(public=False, authorized_ids=[]))
     algo_2 = client_2.add_algo(spec)
 
     # traintuples
@@ -236,7 +236,7 @@ def test_permissions_model_process(
         datasets.append(client.get_dataset(dataset.key))
 
         # algo
-        spec = factory.create_algo(permissions=permissions)
+        spec = factory.create_algo(category=AlgoCategory.simple, permissions=permissions)
         algos.append(client.add_algo(spec))
 
     dataset_1, dataset_2 = datasets
@@ -318,7 +318,7 @@ def test_merge_permissions_denied_process(factory, clients):
         objective_1 = client_1.add_objective(spec)
 
         # add algo on node 2
-        spec = factory.create_algo(permissions=permissions_2)
+        spec = factory.create_algo(category=AlgoCategory.simple, permissions=permissions_2)
         algo_2 = client_2.add_algo(spec)
 
         # add traintuple from node 2
@@ -362,8 +362,8 @@ def test_permissions_denied_head_model_process(factory, client_1, client_2):
 
     # setup algo
 
-    spec = factory.create_composite_algo()
-    composite_algo = client_1.add_composite_algo(spec)
+    spec = factory.create_algo(category=AlgoCategory.composite)
+    composite_algo = client_1.add_algo(spec)
 
     # composite traintuples
 

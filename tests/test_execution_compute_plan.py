@@ -2,7 +2,7 @@ import pytest
 import substra
 from substra.sdk import models
 import substratest as sbt
-from substratest.factory import Permissions
+from substratest.factory import AlgoCategory, Permissions
 
 
 @pytest.mark.remote_only
@@ -14,7 +14,7 @@ def test_compute_plan_simple(factory, client_1, client_2, default_dataset_1, def
     - 1 testtuple executed on node 1 depending on the last traintuple
     """
 
-    spec = factory.create_algo()
+    spec = factory.create_algo(AlgoCategory.simple)
     algo_2 = client_2.add_algo(spec)
 
     # create compute plan
@@ -122,7 +122,7 @@ def test_compute_plan_single_client_success(factory, client, default_dataset, de
 
     data_sample_1, data_sample_2, data_sample_3, _ = default_dataset.train_data_sample_keys
 
-    spec = factory.create_algo()
+    spec = factory.create_algo(AlgoCategory.simple)
     algo = client.add_algo(spec)
 
     cp_spec = factory.create_compute_plan()
@@ -179,7 +179,7 @@ def test_compute_plan_update(factory, client, default_dataset, default_objective
 
     data_sample_1, data_sample_2, data_sample_3, _ = default_dataset.train_data_sample_keys
 
-    spec = factory.create_algo()
+    spec = factory.create_algo(AlgoCategory.simple)
     algo = client.add_algo(spec)
 
     # Create a compute plan with traintuple + testtuple
@@ -264,7 +264,7 @@ def test_compute_plan_single_client_failure(factory, client, default_dataset, de
 
     data_sample_1, data_sample_2, data_sample_3, _ = default_dataset.train_data_sample_keys
 
-    spec = factory.create_algo(py_script=sbt.factory.INVALID_ALGO_SCRIPT)
+    spec = factory.create_algo(category=AlgoCategory.simple, py_script=sbt.factory.INVALID_ALGO_SCRIPT)
     algo = client.add_algo(spec)
 
     cp_spec = factory.create_compute_plan()
@@ -318,10 +318,10 @@ def test_compute_plan_aggregate_composite_traintuples(factory, clients, default_
     number_of_rounds = 2
 
     # register algos on first node
-    spec = factory.create_composite_algo()
-    composite_algo = clients[0].add_composite_algo(spec)
-    spec = factory.create_aggregate_algo()
-    aggregate_algo = clients[0].add_aggregate_algo(spec)
+    spec = factory.create_algo(AlgoCategory.composite)
+    composite_algo = clients[0].add_algo(spec)
+    spec = factory.create_algo(AlgoCategory.aggregate)
+    aggregate_algo = clients[0].add_algo(spec)
 
     # launch execution
     previous_aggregatetuple_spec = None
@@ -415,7 +415,7 @@ def test_compute_plan_remove_intermediary_model(factory, client, default_dataset
     data_sample_1, data_sample_2, data_sample_3, _ = default_dataset.train_data_sample_keys
 
     # register algo
-    spec = factory.create_algo()
+    spec = factory.create_algo(AlgoCategory.simple)
     algo = client.add_algo(spec)
 
     # create a compute plan with clean_model activate
@@ -458,7 +458,7 @@ def test_compute_plan_remove_intermediary_model(factory, client, default_dataset
 
 
 def test_compute_plan_circular_dependency_failure(factory, client, default_dataset):
-    spec = factory.create_algo()
+    spec = factory.create_algo(AlgoCategory.simple)
     algo = client.add_algo(spec)
 
     cp_spec = factory.create_compute_plan()
@@ -496,7 +496,7 @@ def test_execution_compute_plan_canceled(factory, client, default_dataset):
 
     data_sample_key = default_dataset.train_data_sample_keys[0]
 
-    spec = factory.create_algo()
+    spec = factory.create_algo(AlgoCategory.simple)
     algo = client.add_algo(spec)
 
     cp_spec = factory.create_compute_plan()
@@ -533,7 +533,7 @@ def test_execution_compute_plan_canceled(factory, client, default_dataset):
 def test_compute_plan_no_batching(factory, client, default_dataset):
     data_sample_1, data_sample_2, _, _ = default_dataset.train_data_sample_keys
 
-    spec = factory.create_algo()
+    spec = factory.create_algo(AlgoCategory.simple)
     algo = client.add_algo(spec)
 
     # Create a compute plan
@@ -614,7 +614,7 @@ if __name__ == '__main__':
 def test_compute_plan_local_folder(factory, client, default_dataset, default_objective_1):
     data_sample_1, data_sample_2, _, _ = default_dataset.train_data_sample_keys
 
-    spec = factory.create_algo(py_script=LOCAL_FOLDER_ALGO_SCRIPT)
+    spec = factory.create_algo(category=AlgoCategory.simple, py_script=LOCAL_FOLDER_ALGO_SCRIPT)
     algo = client.add_algo(spec)
     cp_spec = factory.create_compute_plan()
 

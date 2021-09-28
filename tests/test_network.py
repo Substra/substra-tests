@@ -5,6 +5,7 @@ import substra
 import pytest
 
 import substratest as sbt
+from substratest.factory import AlgoCategory
 from . import settings
 
 
@@ -149,62 +150,56 @@ def test_add_objective(factory, client):
     assert dataset.objective_key == objective.key
 
 
-@pytest.mark.parametrize('asset_name', [
-    'dataset',
-    'objective',
-    'algo',
-    'aggregate_algo',
-    'composite_algo',
+@pytest.mark.parametrize('asset_name,params', [
+    ('dataset', {}),
+    ('objective', {}),
+    ('algo', {'category': AlgoCategory.simple}),
 ])
 @pytest.mark.parametrize('metadata,metadata_output', [
     ({'foo': 'bar'}, {'foo': 'bar'}),
     (None, {}),
     ({}, {}),
 ])
-def test_asset_with_metadata(factory, client, asset_name, metadata, metadata_output):
+def test_asset_with_metadata(factory, client, asset_name, params, metadata, metadata_output):
     create_spec = getattr(factory, f"create_{asset_name}")
     add_asset = getattr(client, f"add_{asset_name}")
 
-    spec = create_spec(metadata=metadata)
+    spec_params = {}
+    spec_params.update(params)
+    spec_params.update({'metadata': metadata})
+    spec = create_spec(**spec_params)
     asset = add_asset(spec)
 
     assert asset.metadata == metadata_output
 
 
-@pytest.mark.parametrize('asset_name', [
-    'dataset',
-    'objective',
-    'algo',
-    'aggregate_algo',
-    'composite_algo',
+@pytest.mark.parametrize('asset_name,params', [
+    ('dataset', {}),
+    ('objective', {}),
+    ('algo', {'category': AlgoCategory.simple}),
 ])
 @pytest.mark.parametrize('metadata', [
     {'foo' * 40: "bar"},
     {"foo": 'bar' * 40},
 ])
-def test_asset_with_invalid_metadata(factory, client, asset_name, metadata):
+def test_asset_with_invalid_metadata(factory, client, asset_name, params, metadata):
     create_spec = getattr(factory, f"create_{asset_name}")
     add_asset = getattr(client, f"add_{asset_name}")
 
-    spec = create_spec(metadata=metadata)
+    spec_params = {}
+    spec_params.update(params)
+    spec_params.update({'metadata': metadata})
+    spec = create_spec(**spec_params)
 
     with pytest.raises(substra.exceptions.InvalidRequest):
         add_asset(spec)
 
 
 def test_add_algo(factory, client):
-    spec = factory.create_algo()
+    spec = factory.create_algo(category=AlgoCategory.simple)
     algo = client.add_algo(spec)
 
     algo_copy = client.get_algo(algo.key)
-    assert algo == algo_copy
-
-
-def test_add_composite_algo(factory, client):
-    spec = factory.create_composite_algo()
-    algo = client.add_composite_algo(spec)
-
-    algo_copy = client.get_composite_algo(algo.key)
     assert algo == algo_copy
 
 
@@ -219,21 +214,11 @@ def test_list_nodes(client, network):
 
 
 def test_query_algos(factory, client):
-    spec = factory.create_algo()
+    spec = factory.create_algo(category=AlgoCategory.simple)
     algo = client.add_algo(spec)
 
-    spec = factory.create_composite_algo()
-    compo_algo = client.add_composite_algo(spec)
-
-    # check the created composite algo is not returned when listing algos
     algo_keys = [a.key for a in client.list_algo()]
     assert algo.key in algo_keys
-    assert compo_algo.key not in algo_keys
-
-    # check the created algo is not returned when listing composite algos
-    compo_algo_keys = [a.key for a in client.list_composite_algo()]
-    assert compo_algo.key in compo_algo_keys
-    assert algo.key not in compo_algo_keys
 
 
 @pytest.mark.parametrize(

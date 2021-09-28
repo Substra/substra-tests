@@ -54,14 +54,6 @@ class Client:
         key = self._client.add_algo(spec.dict(), *args, **kwargs)
         return self._client.get_algo(key)
 
-    def add_aggregate_algo(self, spec, *args, **kwargs):
-        key = self._client.add_aggregate_algo(spec.dict(), *args, **kwargs)
-        return self._client.get_aggregate_algo(key)
-
-    def add_composite_algo(self, spec, *args, **kwargs):
-        key = self._client.add_composite_algo(spec.dict(), *args, **kwargs)
-        return self._client.get_composite_algo(key)
-
     def add_traintuple(self, spec, *args, **kwargs):
         key = self._client.add_traintuple(spec.dict(), *args, **kwargs)
         return self._client.get_traintuple(key)
@@ -101,18 +93,6 @@ class Client:
 
     def list_algo(self, *args, **kwargs):
         return self._client.list_algo(*args, **kwargs)
-
-    def get_aggregate_algo(self, *args, **kwargs):
-        return self._client.get_aggregate_algo(*args, **kwargs)
-
-    def list_aggregate_algo(self, *args, **kwargs):
-        return self._client.list_aggregate_algo(*args, **kwargs)
-
-    def get_composite_algo(self, *args, **kwargs):
-        return self._client.get_composite_algo(*args, **kwargs)
-
-    def list_composite_algo(self, *args, **kwargs):
-        return self._client.list_composite_algo(*args, **kwargs)
 
     def get_dataset(self, *args, **kwargs):
         return self._client.get_dataset(*args, **kwargs)

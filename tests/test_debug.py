@@ -2,7 +2,7 @@ import pytest
 import docker
 
 from substra.sdk import models
-from substratest.factory import Permissions
+from substratest.factory import AlgoCategory, Permissions
 
 
 def docker_available() -> bool:
@@ -20,7 +20,7 @@ pytestmark = pytest.mark.skipif(not docker_available(), reason="requires docker"
 @pytest.mark.slow
 def test_execution_debug(client, debug_client, factory, default_dataset, default_objective):
 
-    spec = factory.create_algo()
+    spec = factory.create_algo(AlgoCategory.simple)
     algo = client.add_algo(spec)
 
     #  Add the traintuple
@@ -56,10 +56,10 @@ def test_debug_compute_plan_aggregate_composite(client, debug_client, factory, d
     number_of_rounds = 2
 
     # register algos on first node
-    spec = factory.create_composite_algo()
-    composite_algo = client.add_composite_algo(spec)
-    spec = factory.create_aggregate_algo()
-    aggregate_algo = client.add_aggregate_algo(spec)
+    spec = factory.create_algo(AlgoCategory.composite)
+    composite_algo = client.add_algo(spec)
+    spec = factory.create_algo(AlgoCategory.aggregate)
+    aggregate_algo = client.add_algo(spec)
 
     # launch execution
     previous_aggregatetuple_spec = None

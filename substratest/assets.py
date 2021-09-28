@@ -3,9 +3,7 @@ import enum
 
 class AssetType(enum.Enum):
     algo = enum.auto()
-    aggregate_algo = enum.auto()
     aggregatetuple = enum.auto()
-    composite_algo = enum.auto()
     composite_traintuple = enum.auto()
     data_sample = enum.auto()
     dataset = enum.auto()

@@ -8,6 +8,7 @@ import pytest
 
 import substra as sb
 import substratest as sbt
+from substratest.factory import AlgoCategory
 
 # extra requirements located in requirements-workflows.txt
 try:
@@ -278,17 +279,19 @@ def inputs(datasamples_folders, factory, clients):
         res.train_data_sample_keys = train_keys
 
     client = clients[0]
-    spec = factory.create_composite_algo(
+    spec = factory.create_algo(
+        AlgoCategory.composite,
         py_script=_COMPOSITE_ALGO.open().read(),
         dockerfile=_ALGO_DOCKERFILE,
     )
-    results.composite_algo = client.add_composite_algo(spec)
+    results.composite_algo = client.add_algo(spec)
 
-    spec = factory.create_aggregate_algo(
+    spec = factory.create_algo(
+        AlgoCategory.aggregate,
         py_script=_AGGREGATE_ALGO.open().read(),
         dockerfile=_ALGO_DOCKERFILE,
     )
-    results.aggregate_algo = client.add_aggregate_algo(spec)
+    results.aggregate_algo = client.add_algo(spec)
 
     return results
 

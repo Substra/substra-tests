@@ -4,7 +4,7 @@ import substra
 from substra.sdk.models import Status
 
 import substratest as sbt
-from substratest.factory import Permissions
+from substratest.factory import AlgoCategory, Permissions
 
 from . import settings
 
@@ -13,7 +13,7 @@ from . import settings
 def test_tuples_execution_on_same_node(factory, network, client, default_dataset, default_objective):
     """Execution of a traintuple, a following testtuple and a following traintuple."""
 
-    spec = factory.create_algo()
+    spec = factory.create_algo(AlgoCategory.simple)
     algo = client.add_algo(spec)
 
     # create traintuple
@@ -63,7 +63,7 @@ def test_federated_learning_workflow(factory, client, default_datasets):
     """Test federated learning workflow on each node."""
 
     # create test environment
-    spec = factory.create_algo()
+    spec = factory.create_algo(AlgoCategory.simple)
     algo = client.add_algo(spec)
 
     # create 1 traintuple per dataset and chain them
@@ -105,7 +105,7 @@ def test_tuples_execution_on_different_nodes(factory, client_1, client_2, defaul
     """Execution of a traintuple on node 1 and the following testtuple on node 2."""
     # add test data samples / dataset / objective on node 1
 
-    spec = factory.create_algo()
+    spec = factory.create_algo(AlgoCategory.simple)
     algo_2 = client_2.add_algo(spec)
 
     # add traintuple on node 2; should execute on node 2 (dataset located on node 2)
@@ -133,7 +133,7 @@ def test_tuples_execution_on_different_nodes(factory, client_1, client_2, defaul
 def test_traintuple_execution_failure(factory, client, default_dataset_1):
     """Invalid algo script is causing traintuple failure."""
 
-    spec = factory.create_algo(py_script=sbt.factory.INVALID_ALGO_SCRIPT)
+    spec = factory.create_algo(category=AlgoCategory.simple, py_script=sbt.factory.INVALID_ALGO_SCRIPT)
     algo = client.add_algo(spec)
 
     spec = factory.create_traintuple(
@@ -155,8 +155,8 @@ def test_traintuple_execution_failure(factory, client, default_dataset_1):
 def test_composite_traintuple_execution_failure(factory, client, default_dataset):
     """Invalid composite algo script is causing traintuple failure."""
 
-    spec = factory.create_composite_algo(py_script=sbt.factory.INVALID_COMPOSITE_ALGO_SCRIPT)
-    algo = client.add_composite_algo(spec)
+    spec = factory.create_algo(AlgoCategory.composite, py_script=sbt.factory.INVALID_COMPOSITE_ALGO_SCRIPT)
+    algo = client.add_algo(spec)
 
     spec = factory.create_composite_traintuple(
         algo=algo,
@@ -177,11 +177,11 @@ def test_composite_traintuple_execution_failure(factory, client, default_dataset
 def test_aggregatetuple_execution_failure(factory, client, default_dataset):
     """Invalid algo script is causing traintuple failure."""
 
-    spec = factory.create_composite_algo()
-    composite_algo = client.add_composite_algo(spec)
+    spec = factory.create_algo(AlgoCategory.composite)
+    composite_algo = client.add_algo(spec)
 
-    spec = factory.create_aggregate_algo(py_script=sbt.factory.INVALID_AGGREGATE_ALGO_SCRIPT)
-    aggregate_algo = client.add_aggregate_algo(spec)
+    spec = factory.create_algo(AlgoCategory.aggregate, py_script=sbt.factory.INVALID_AGGREGATE_ALGO_SCRIPT)
+    aggregate_algo = client.add_algo(spec)
 
     composite_traintuples = []
     for i in [0, 1]:
@@ -214,8 +214,8 @@ def test_aggregatetuple_execution_failure(factory, client, default_dataset):
 def test_composite_traintuples_execution(factory, client, default_dataset, default_objective):
     """Execution of composite traintuples."""
 
-    spec = factory.create_composite_algo()
-    algo = client.add_composite_algo(spec)
+    spec = factory.create_algo(AlgoCategory.composite)
+    algo = client.add_algo(spec)
 
     # first composite traintuple
     spec = factory.create_composite_traintuple(
@@ -264,7 +264,7 @@ def test_aggregatetuple(factory, client, default_objective, default_dataset):
 
     train_data_sample_keys = default_dataset.train_data_sample_keys[:number_of_traintuples_to_aggregate]
 
-    spec = factory.create_algo()
+    spec = factory.create_algo(AlgoCategory.simple)
     algo = client.add_algo(spec)
 
     # add traintuples
@@ -279,8 +279,8 @@ def test_aggregatetuple(factory, client, default_objective, default_dataset):
         traintuple = client.wait(traintuple)
         traintuples.append(traintuple)
 
-    spec = factory.create_aggregate_algo()
-    aggregate_algo = client.add_aggregate_algo(spec)
+    spec = factory.create_algo(AlgoCategory.aggregate)
+    aggregate_algo = client.add_algo(spec)
 
     spec = factory.create_aggregatetuple(
         algo=aggregate_algo,
@@ -336,10 +336,10 @@ def test_aggregate_composite_traintuples(factory, network, clients, default_data
     number_of_rounds = 2
 
     # register algos on first node
-    spec = factory.create_composite_algo()
-    composite_algo = clients[0].add_composite_algo(spec)
-    spec = factory.create_aggregate_algo()
-    aggregate_algo = clients[0].add_aggregate_algo(spec)
+    spec = factory.create_algo(AlgoCategory.composite)
+    composite_algo = clients[0].add_algo(spec)
+    spec = factory.create_algo(AlgoCategory.aggregate)
+    aggregate_algo = clients[0].add_algo(spec)
 
     # launch execution
     previous_aggregatetuple = None
@@ -445,7 +445,7 @@ def test_use_data_sample_located_in_shared_path(factory, client, node_cfg, defau
     spec.move_data_to_server(node_cfg.shared_path, settings.IS_MINIKUBE)
     data_sample_key = client.add_data_sample(spec, local=False)  # should not raise
 
-    spec = factory.create_algo()
+    spec = factory.create_algo(AlgoCategory.simple)
     algo = client.add_algo(spec)
 
     spec = factory.create_traintuple(
