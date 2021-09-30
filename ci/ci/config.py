@@ -112,7 +112,7 @@ class Config:
     tests_concurrency: int = 5
     tests_future_timeout: int = 400
     tests_make_command: str = "test-ci"
-    orchestrator_mode: OrchestratorMode = OrchestratorMode.DISTRIBUTED
+    orchestrator_mode: OrchestratorMode = OrchestratorMode.STANDALONE
 
     @property
     def is_ci_runner(self):
