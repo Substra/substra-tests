@@ -573,7 +573,7 @@ import substratools as tools
 import os
 class TestAlgo(tools.Algo):
     def train(self, X, y, models, rank):
-        state_file = "/sandbox/local/state.json"
+        state_file = os.path.join(self.compute_plan_path + "/state.json")
         state = None
 
         if os.path.exists(state_file):
