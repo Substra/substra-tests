@@ -46,9 +46,9 @@ class Client:
         key = self._client.add_dataset(spec.dict(), *args, **kwargs)
         return self._client.get_dataset(key)
 
-    def add_objective(self, spec, *args, **kwargs):
-        key = self._client.add_objective(spec.dict(), *args, **kwargs)
-        return self._client.get_objective(key)
+    def add_metric(self, spec, *args, **kwargs):
+        key = self._client.add_metric(spec.dict(), *args, **kwargs)
+        return self._client.get_metric(key)
 
     def add_algo(self, spec, *args, **kwargs):
         key = self._client.add_algo(spec.dict(), *args, **kwargs)
@@ -100,11 +100,11 @@ class Client:
     def list_dataset(self, *args, **kwargs):
         return self._client.list_dataset(*args, **kwargs)
 
-    def get_objective(self, *args, **kwargs):
-        return self._client.get_objective(*args, **kwargs)
+    def get_metric(self, *args, **kwargs):
+        return self._client.get_metric(*args, **kwargs)
 
-    def list_objective(self, *args, **kwargs):
-        return self._client.list_objective(*args, **kwargs)
+    def list_metric(self, *args, **kwargs):
+        return self._client.list_metric(*args, **kwargs)
 
     def get_traintuple(self, *args, **kwargs):
         return self._client.get_traintuple(*args, **kwargs)
@@ -163,11 +163,6 @@ class Client:
 
     def cancel_compute_plan(self, *args, **kwargs):
         return self._client.cancel_compute_plan(*args, **kwargs)
-
-    def link_dataset_with_objective(self, dataset, objective):
-        self._client.link_dataset_with_objective(dataset.key, objective.key)
-        # XXX do not return anything as currently the chaincode simply returns the
-        #     updated dataset key
 
     def link_dataset_with_data_samples(self, dataset, data_samples):
         self._client.link_dataset_with_data_samples(dataset.key, data_samples)

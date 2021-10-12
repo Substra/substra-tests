@@ -7,7 +7,7 @@ class AssetType(enum.Enum):
     composite_traintuple = enum.auto()
     data_sample = enum.auto()
     dataset = enum.auto()
-    objective = enum.auto()
+    metric = enum.auto()
     node = enum.auto()
     testtuple = enum.auto()
     traintuple = enum.auto()

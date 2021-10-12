@@ -216,7 +216,7 @@ class _InputsSubset(pydantic.BaseModel):
     One subset per org.
     """
     dataset: sb.sdk.models.Dataset = None
-    objective: sb.sdk.models.Objective = None
+    metric: sb.sdk.models.Metric = None
     train_data_sample_keys: typing.List[str] = []
 
 
@@ -230,7 +230,7 @@ class _Inputs(pydantic.BaseModel):
 
 @pytest.fixture
 def inputs(datasamples_folders, factory, clients):
-    """Register for each orgs substra inputs (dataset, datasamples and objective)."""
+    """Register for each orgs substra inputs (dataset, datasamples and metric)."""
     results = _Inputs(datasets=[_InputsSubset() for _ in range(_NB_ORGS)])
 
     batch_size = 100
@@ -264,13 +264,13 @@ def inputs(datasamples_folders, factory, clients):
 
         # XXX is it required to link dataset with datasamples ?
 
-        spec = factory.create_objective(
+        spec = factory.create_metric(
             res.dataset,
             data_samples=test_keys,
             dockerfile=_METRICS_DOCKERFILE,
             py_script=_METRICS.open().read(),
         )
-        res.objective = client.add_objective(spec)
+        res.metric = client.add_metric(spec)
 
         # refresh dataset (to be up-to-date with added samples)
         res.dataset = client.get_dataset(res.dataset.key)
@@ -346,7 +346,7 @@ def test_mnist(factory, inputs, clients):
             for idx, org_inputs in enumerate(inputs.datasets):
                 cp_spec.add_testtuple(
                     traintuple_spec=composite_specs[idx],
-                    objective=org_inputs.objective,
+                    metric=org_inputs.metric,
                 )
 
     cp = client.add_compute_plan(cp_spec)
@@ -358,12 +358,12 @@ def test_mnist(factory, inputs, clients):
     for testtuple in testtuples:
         print(
             f"testtuple({testtuple.worker}) - {testtuple.rank} "
-            f"perf: {testtuple.test.perf}"
+            f"perf: {list(testtuple.test.perfs.values())[0]}"
         )
     # check perf is as good as expected: after 20 rounds we expect a performance of
     # around 0.86. To avoid a flaky test a lower performance is expected.
     mininum_expected_perf = 0.85
     assert all([
-        testtuple.test.perf > mininum_expected_perf
+        list(testtuple.test.perfs.values())[0] > mininum_expected_perf
         for testtuple in testtuples[-_NB_ORGS:]
     ])

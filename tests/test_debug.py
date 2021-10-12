@@ -18,7 +18,7 @@ pytestmark = pytest.mark.skipif(not docker_available(), reason="requires docker"
 
 @pytest.mark.remote_only
 @pytest.mark.slow
-def test_execution_debug(client, debug_client, factory, default_dataset, default_objective):
+def test_execution_debug(client, debug_client, factory, default_dataset, default_metric):
 
     spec = factory.create_algo(AlgoCategory.simple)
     algo = client.add_algo(spec)
@@ -36,18 +36,19 @@ def test_execution_debug(client, debug_client, factory, default_dataset, default
 
     # Add the testtuple
     spec = factory.create_testtuple(
-        objective=default_objective,
+        metrics=[default_metric],
         traintuple=traintuple,
-        data_samples=default_dataset.test_data_sample_keys[0],
+        dataset=default_dataset,
+        data_samples=[default_dataset.test_data_sample_keys[0]],
     )
     testtuple = debug_client.add_testtuple(spec)
     assert testtuple.status == models.Status.done
-    assert testtuple.test.perf == 3
+    assert list(testtuple.test.perfs.values())[0] == 3
 
 
 @pytest.mark.remote_only
 @pytest.mark.slow
-def test_debug_compute_plan_aggregate_composite(client, debug_client, factory, default_datasets, default_objectives):
+def test_debug_compute_plan_aggregate_composite(client, debug_client, factory, default_datasets, default_metrics):
     """
     Debug / Compute plan version of the
     `test_aggregate_composite_traintuples` method from `test_execution.py`
@@ -98,9 +99,12 @@ def test_debug_compute_plan_aggregate_composite(client, debug_client, factory, d
         previous_composite_traintuple_specs = composite_traintuple_specs
 
     # last round: create associated testtuple
-    for composite_traintuple_spec, objective in zip(previous_composite_traintuple_specs, default_objectives):
+    for composite_traintuple_spec, dataset, metric in zip(
+            previous_composite_traintuple_specs, default_datasets, default_metrics):
         cp_spec.add_testtuple(
-            objective=objective,
+            metrics=[metric],
+            dataset=dataset,
+            data_samples=dataset.test_data_sample_keys,
             traintuple_spec=composite_traintuple_spec,
         )
 

@@ -136,11 +136,11 @@ def test_merge_permissions(permissions_1, permissions_2, expected_permissions,
                            factory, client_1, client_2):
     """Test merge permissions from dataset and algo asset located on different nodes.
 
-    - dataset and objectives located on node 1
+    - dataset and metrics located on node 1
     - algo located on node 2
     - traintuple created on node 2
     """
-    # add train data samples / dataset / objective on node 1
+    # add train data samples / dataset / metric on node 1
     spec = factory.create_dataset(permissions=permissions_1)
     dataset_1 = client_1.add_dataset(spec)
     spec = factory.create_data_sample(test_only=False, datasets=[dataset_1])
@@ -278,7 +278,7 @@ def test_permissions_model_process(
 def test_merge_permissions_denied_process(factory, clients):
     """Test to process asset with merged permissions from 2 other nodes
 
-    - dataset and objectives located on node 1
+    - dataset and metrics located on node 1
     - algo located on node 2
     - traintuple created on node 2
     - failed attempt to create testtuple using this traintuple from node 3
@@ -297,7 +297,7 @@ def test_merge_permissions_denied_process(factory, clients):
     )]
     for permissions_1, permissions_2 in permissions_list:
 
-        # add train data samples / dataset / objective on node 1
+        # add train data samples / dataset / metric on node 1
         spec = factory.create_dataset(permissions=permissions_1)
         dataset_1 = client_1.add_dataset(spec)
         spec = factory.create_data_sample(
@@ -309,13 +309,9 @@ def test_merge_permissions_denied_process(factory, clients):
             test_only=True,
             datasets=[dataset_1],
         )
-        test_data_sample_1 = client_1.add_data_sample(spec)
-        spec = factory.create_objective(
-            dataset=dataset_1,
-            data_samples=[test_data_sample_1],
-            permissions=permissions_1,
-        )
-        objective_1 = client_1.add_objective(spec)
+        _ = client_1.add_data_sample(spec)
+        spec = factory.create_metric(permissions=permissions_1)
+        metric_1 = client_1.add_metric(spec)
 
         # add algo on node 2
         spec = factory.create_algo(category=AlgoCategory.simple, permissions=permissions_2)
@@ -332,8 +328,10 @@ def test_merge_permissions_denied_process(factory, clients):
 
         # failed to add testtuple from node 3
         spec = factory.create_testtuple(
-            objective=objective_1,
+            metrics=[metric_1],
             traintuple=traintuple_2,
+            dataset=dataset_1,
+            data_samples=dataset_1.test_data_sample_keys,
         )
 
         with pytest.raises(substra.exceptions.AuthorizationError):

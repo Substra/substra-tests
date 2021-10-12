@@ -77,23 +77,23 @@ class _DataEnv:
 
     Represents all the assets that have been added before the tests.
     """
-    def __init__(self, datasets=None, objectives=None):
+    def __init__(self, datasets=None, metrics=None):
         self._datasets = datasets or []
-        self._objectives = objectives or []
+        self._metrics = metrics or []
 
     @property
     def datasets(self):
         return self._datasets
 
     @property
-    def objectives(self):
-        return self._objectives
+    def metrics(self):
+        return self._metrics
 
     def filter_by(self, node_id):
         datasets = [d for d in self._datasets if d.owner == node_id]
-        objectives = [o for o in self._objectives if o.owner == node_id]
+        metrics = [o for o in self._metrics if o.owner == node_id]
 
-        return _DataEnv(objectives=objectives, datasets=datasets)
+        return _DataEnv(metrics=metrics, datasets=datasets)
 
 
 @dataclasses.dataclass
@@ -151,7 +151,7 @@ def default_data_env(network):
     - 4 train data samples
     - 1 test data sample
     - 1 dataset
-    - 1 objective
+    - 1 metric
 
     Network must started outside of the tests environment and the network is kept
     alive while running all tests.
@@ -162,8 +162,8 @@ def default_data_env(network):
 
     with sbt.AssetsFactory(name=factory_name) as f:
         datasets = []
-        objectives = []
-        for client in network.clients:
+        metrics = []
+        for index, client in enumerate(network.clients):
 
             # create dataset
             spec = f.create_dataset()
@@ -176,18 +176,18 @@ def default_data_env(network):
 
             # create test data sample
             spec = f.create_data_sample(datasets=[dataset], test_only=True)
-            test_data_sample = client.add_data_sample(spec)
+            _ = client.add_data_sample(spec)
 
             # reload datasets (to ensure they are properly linked with the created data samples)
             dataset = client.get_dataset(dataset.key)
             datasets.append(dataset)
 
-            # create objective
-            spec = f.create_objective(dataset=dataset, data_samples=[test_data_sample])
-            objective = client.add_objective(spec)
-            objectives.append(objective)
+            # create metric
+            spec = f.create_metric(offset=index)
+            metric = client.add_metric(spec)
+            metrics.append(metric)
 
-        assets = _DataEnv(datasets=datasets, objectives=objectives)
+        assets = _DataEnv(datasets=datasets, metrics=metrics)
         yield assets
 
 
@@ -210,9 +210,9 @@ def default_dataset_1(data_env_1):
 
 
 @pytest.fixture
-def default_objective_1(data_env_1):
-    """Fixture with pre-existing objective in first node."""
-    return data_env_1.objectives[0]
+def default_metric_1(data_env_1):
+    """Fixture with pre-existing metric in first node."""
+    return data_env_1.metrics[0]
 
 
 @pytest.fixture
@@ -222,9 +222,9 @@ def default_dataset_2(data_env_2):
 
 
 @pytest.fixture
-def default_objective_2(data_env_2):
-    """Fixture with pre-existing objective in second node."""
-    return data_env_2.objectives[0]
+def default_metric_2(data_env_2):
+    """Fixture with pre-existing metric in second node."""
+    return data_env_2.metrics[0]
 
 
 @pytest.fixture
@@ -234,9 +234,9 @@ def default_dataset(default_dataset_1):
 
 
 @pytest.fixture
-def default_objective(default_objective_1):
-    """Fixture with pre-existing objective in first node."""
-    return default_objective_1
+def default_metric(default_metric_1):
+    """Fixture with pre-existing metric in first node."""
+    return default_metric_1
 
 
 @pytest.fixture
@@ -246,9 +246,9 @@ def default_datasets(default_data_env):
 
 
 @pytest.fixture
-def default_objectives(default_data_env):
-    """Fixture with pre-existing objectives."""
-    return default_data_env.objectives
+def default_metrics(default_data_env):
+    """Fixture with pre-existing metrics."""
+    return default_data_env.metrics
 
 
 @pytest.fixture

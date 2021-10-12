@@ -2,6 +2,7 @@ import abc
 import os
 import pathlib
 import shutil
+import string
 import tempfile
 import typing
 import uuid
@@ -64,17 +65,17 @@ class TestOpener(tools.Opener):
             return json.dump(y_pred, f)
 """
 
-DEFAULT_METRICS_SCRIPT = f"""
+TEMPLATED_DEFAULT_METRICS_SCRIPT = string.Template("""
 import json
 import substratools as tools
 class TestMetrics(tools.Metrics):
     def score(self, y_true, y_pred):
         res = sum(y_pred) - sum(y_true)
         print(f'metrics, y_true: {{y_true}}, y_pred: {{y_pred}}, result: {{res}}')
-        return res
+        return res + $offset
 if __name__ == '__main__':
     tools.metrics.execute(TestMetrics())
-"""  # noqa
+""")  # noqa
 
 DEFAULT_ALGO_SCRIPT = f"""
 import json
@@ -314,7 +315,6 @@ class DatasetSpec(_Spec):
     description: str
     metadata: typing.Dict[str, str] = None
     permissions: Permissions = None
-    objective_key: str = None
 
     def read_opener(self):
         with open(self.data_opener, 'rb') as f:
@@ -325,13 +325,11 @@ class DatasetSpec(_Spec):
             return f.read()
 
 
-class ObjectiveSpec(_Spec):
+class MetricSpec(_Spec):
     name: str
     description: str
-    metrics_name: str
-    metrics: str
-    test_data_sample_keys: typing.List[str]
-    test_data_manager_key: str = None
+    name: str
+    file: str
     metadata: typing.Dict[str, str] = None
     permissions: Permissions = None
 
@@ -387,7 +385,7 @@ class CompositeTraintupleSpec(_Spec):
 
 
 class TesttupleSpec(_Spec):
-    objective_key: str
+    metric_keys: typing.List[str]
     traintuple_key: str
     tag: str = None
     data_manager_key: str = None
@@ -439,7 +437,7 @@ class ComputePlanCompositeTraintupleSpec(_Spec):
 
 
 class ComputePlanTesttupleSpec(_Spec):
-    objective_key: str
+    metric_keys: typing.List[str]
     traintuple_id: str
     tag: str
     data_manager_key: str = None
@@ -528,12 +526,11 @@ class _BaseComputePlanSpec(_Spec, abc.ABC):
         self.composite_traintuples.append(spec)
         return spec
 
-    def add_testtuple(self, objective, traintuple_spec, tag='', dataset=None,
-                      data_samples=None, metadata=None):
+    def add_testtuple(self, metrics, traintuple_spec, dataset, data_samples, tag='', metadata=None):
         spec = ComputePlanTesttupleSpec(
-            objective_key=objective.key,
+            metric_keys=[metric.key for metric in metrics],
             traintuple_id=traintuple_spec.id,
-            data_manager_key=dataset.key if dataset else None,
+            data_manager_key=dataset.key,
             test_data_sample_keys=_get_keys(data_samples),
             tag=tag,
             metadata=metadata,
@@ -557,7 +554,7 @@ class AssetsFactory:
     def __init__(self, name):
         self._data_sample_counter = Counter()
         self._dataset_counter = Counter()
-        self._objective_counter = Counter()
+        self._metric_counter = Counter()
         self._algo_counter = Counter()
         self._workdir = pathlib.Path(tempfile.mkdtemp(prefix='/tmp/'))
         self._uuid = name
@@ -588,7 +585,7 @@ class AssetsFactory:
             data_manager_keys=[d.key for d in datasets],
         )
 
-    def create_dataset(self, objective=None, permissions=None, metadata=None, py_script=None):
+    def create_dataset(self, permissions=None, metadata=None, py_script=None):
         idx = self._dataset_counter.inc()
         tmpdir = self._workdir / f'dataset-{idx}'
         tmpdir.mkdir()
@@ -609,24 +606,22 @@ class AssetsFactory:
             type='Test',
             metadata=metadata,
             description=str(description_path),
-            objective_key=objective.key if objective else None,
             permissions=permissions or DEFAULT_PERMISSIONS,
         )
 
-    def create_objective(self,
-                         dataset=None,
-                         data_samples=None,
-                         permissions=None,
-                         metadata=None,
-                         dockerfile=None,
-                         py_script=None):
+    def create_metric(self,
+                      permissions=None,
+                      metadata=None,
+                      dockerfile=None,
+                      py_script=None,
+                      offset=0):
         if py_script is None:
-            py_script = DEFAULT_METRICS_SCRIPT
+            py_script = TEMPLATED_DEFAULT_METRICS_SCRIPT.substitute(offset=offset)
 
-        idx = self._objective_counter.inc()
-        tmpdir = self._workdir / f'objective-{idx}'
+        idx = self._metric_counter.inc()
+        tmpdir = self._workdir / f'metric-{idx}'
         tmpdir.mkdir()
-        name = _shorten_name(f'{self._uuid} - Objective {idx}')
+        name = _shorten_name(f'{self._uuid} - Metric {idx}')
 
         description_path = tmpdir / 'description.md'
         description_content = name
@@ -641,17 +636,12 @@ class AssetsFactory:
             ('Dockerfile', dockerfile),
         )
 
-        data_samples = data_samples or []
-
-        return ObjectiveSpec(
+        return MetricSpec(
             name=name,
             description=str(description_path),
-            metrics_name='test metrics',
-            metrics=str(metrics_zip),
+            file=str(metrics_zip),
             metadata=metadata,
             permissions=permissions or DEFAULT_PERMISSIONS,
-            test_data_sample_keys=_get_keys(data_samples),
-            test_data_manager_key=dataset.key if dataset else None,
         )
 
     def create_algo(self, category, py_script=None, dockerfile=None, permissions=None, metadata=None):
@@ -757,12 +747,12 @@ class AssetsFactory:
             out_trunk_model_permissions=permissions or DEFAULT_OUT_TRUNK_MODEL_PERMISSIONS,
         )
 
-    def create_testtuple(self, objective=None, traintuple=None, tag=None, dataset=None, data_samples=None,
+    def create_testtuple(self, metrics, traintuple, dataset, data_samples, tag=None,
                          metadata=None):
         return TesttupleSpec(
-            objective_key=objective.key if objective else None,
-            traintuple_key=traintuple.key if traintuple else None,
-            data_manager_key=dataset.key if dataset else None,
+            metric_keys=[metric.key for metric in metrics],
+            traintuple_key=traintuple.key,
+            data_manager_key=dataset.key,
             test_data_sample_keys=_get_keys(data_samples),
             tag=tag,
             metadata=metadata,

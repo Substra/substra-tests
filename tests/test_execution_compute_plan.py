@@ -6,12 +6,12 @@ from substratest.factory import AlgoCategory, Permissions
 
 
 @pytest.mark.remote_only
-def test_compute_plan_simple(factory, client_1, client_2, default_dataset_1, default_dataset_2, default_objective_1):
+def test_compute_plan_simple(factory, client_1, client_2, default_dataset_1, default_dataset_2, default_metrics):
     """Execution of a compute plan containing multiple traintuples:
     - 1 traintuple executed on node 1
     - 1 traintuple executed on node 2
     - 1 traintuple executed on node 1 depending on previous traintuples
-    - 1 testtuple executed on node 1 depending on the last traintuple
+    - 1 testtuple executed on node 1 depending on the last traintuple and on multiple metrics
     """
 
     spec = factory.create_algo(AlgoCategory.simple)
@@ -46,8 +46,10 @@ def test_compute_plan_simple(factory, client_1, client_2, default_dataset_1, def
     )
 
     cp_spec.add_testtuple(
-        objective=default_objective_1,
+        metrics=default_metrics,
         traintuple_spec=traintuple_spec_3,
+        dataset=default_dataset_1,
+        data_samples=default_dataset_1.test_data_sample_keys,
         metadata={'foo': 'bar'},
     )
 
@@ -89,8 +91,9 @@ def test_compute_plan_simple(factory, client_1, client_2, default_dataset_1, def
     assert traintuple_3.rank == 1
     assert testtuple.rank == traintuple_3.rank
 
-    # check testtuple perf
-    assert testtuple.test.perf == 4
+    # check testtuple perfs
+    assert len(testtuple.test.perfs) == len(default_metrics)
+    assert set(testtuple.test.perfs.values()) == {4, 5, }
 
     # XXX as the first two tuples have the same rank, there is currently no way to know
     #     which one will be returned first
@@ -111,7 +114,7 @@ def test_compute_plan_simple(factory, client_1, client_2, default_dataset_1, def
 
 
 @pytest.mark.slow
-def test_compute_plan_single_client_success(factory, client, default_dataset, default_objective):
+def test_compute_plan_single_client_success(factory, client, default_dataset, default_metric):
     """A compute plan with 3 traintuples and 3 associated testtuples"""
 
     # Create a compute plan with 3 steps:
@@ -133,8 +136,10 @@ def test_compute_plan_single_client_success(factory, client, default_dataset, de
         data_samples=[data_sample_1]
     )
     cp_spec.add_testtuple(
-        objective=default_objective,
-        traintuple_spec=traintuple_spec_1
+        metrics=[default_metric],
+        traintuple_spec=traintuple_spec_1,
+        dataset=default_dataset,
+        data_samples=default_dataset.test_data_sample_keys,
     )
 
     traintuple_spec_2 = cp_spec.add_traintuple(
@@ -144,7 +149,9 @@ def test_compute_plan_single_client_success(factory, client, default_dataset, de
         in_models=[traintuple_spec_1]
     )
     cp_spec.add_testtuple(
-        objective=default_objective,
+        metrics=[default_metric],
+        dataset=default_dataset,
+        data_samples=default_dataset.test_data_sample_keys,
         traintuple_spec=traintuple_spec_2
     )
 
@@ -155,8 +162,10 @@ def test_compute_plan_single_client_success(factory, client, default_dataset, de
         in_models=[traintuple_spec_2]
     )
     cp_spec.add_testtuple(
-        objective=default_objective,
-        traintuple_spec=traintuple_spec_3
+        metrics=[default_metric],
+        traintuple_spec=traintuple_spec_3,
+        dataset=default_dataset,
+        data_samples=default_dataset.test_data_sample_keys,
     )
 
     # Submit compute plan and wait for it to complete
@@ -171,7 +180,7 @@ def test_compute_plan_single_client_success(factory, client, default_dataset, de
 
 
 @pytest.mark.slow
-def test_compute_plan_update(factory, client, default_dataset, default_objective):
+def test_compute_plan_update(factory, client, default_dataset, default_metric):
     """A compute plan with 3 traintuples and 3 associated testtuples.
 
     This is done by sending 3 requests (one create and two updates).
@@ -191,8 +200,10 @@ def test_compute_plan_update(factory, client, default_dataset, default_objective
         data_samples=[data_sample_1]
     )
     cp_spec.add_testtuple(
-        objective=default_objective,
-        traintuple_spec=traintuple_spec_1
+        metrics=[default_metric],
+        traintuple_spec=traintuple_spec_1,
+        dataset=default_dataset,
+        data_samples=default_dataset.test_data_sample_keys,
     )
     cp = client.add_compute_plan(cp_spec, auto_batching=True, batch_size=1)
 
@@ -207,9 +218,11 @@ def test_compute_plan_update(factory, client, default_dataset, default_objective
         metadata={"foo": "bar"},
     )
     cp_spec.add_testtuple(
-        objective=default_objective,
+        metrics=[default_metric],
         traintuple_spec=traintuple_spec_2,
         metadata={"foo": "bar"},
+        dataset=default_dataset,
+        data_samples=default_dataset.test_data_sample_keys,
     )
     cp = client.update_compute_plan(cp_spec, auto_batching=True, batch_size=1)
 
@@ -228,8 +241,10 @@ def test_compute_plan_update(factory, client, default_dataset, default_objective
 
     cp_spec = factory.update_compute_plan(cp)
     cp_spec.add_testtuple(
-        objective=default_objective,
-        traintuple_spec=traintuple_spec_3
+        metrics=[default_metric],
+        traintuple_spec=traintuple_spec_3,
+        dataset=default_dataset,
+        data_samples=default_dataset.test_data_sample_keys,
     )
     cp = client.update_compute_plan(cp_spec)
 
@@ -250,7 +265,7 @@ def test_compute_plan_update(factory, client, default_dataset, default_objective
 
 @pytest.mark.slow
 @pytest.mark.remote_only
-def test_compute_plan_single_client_failure(factory, client, default_dataset, default_objective):
+def test_compute_plan_single_client_failure(factory, client, default_dataset, default_metric):
     """In a compute plan with 3 traintuples, failing the root traintuple
     should cancel its descendents and the associated testtuples"""
 
@@ -275,8 +290,10 @@ def test_compute_plan_single_client_failure(factory, client, default_dataset, de
         data_samples=[data_sample_1]
     )
     cp_spec.add_testtuple(
-        objective=default_objective,
+        metrics=[default_metric],
         traintuple_spec=traintuple_spec_1,
+        dataset=default_dataset,
+        data_samples=default_dataset.test_data_sample_keys,
     )
 
     traintuple_spec_2 = cp_spec.add_traintuple(
@@ -286,8 +303,10 @@ def test_compute_plan_single_client_failure(factory, client, default_dataset, de
         in_models=[traintuple_spec_1]
     )
     cp_spec.add_testtuple(
-        objective=default_objective,
+        metrics=[default_metric],
         traintuple_spec=traintuple_spec_2,
+        dataset=default_dataset,
+        data_samples=default_dataset.test_data_sample_keys,
     )
 
     traintuple_spec_3 = cp_spec.add_traintuple(
@@ -297,8 +316,10 @@ def test_compute_plan_single_client_failure(factory, client, default_dataset, de
         in_models=[traintuple_spec_2]
     )
     cp_spec.add_testtuple(
-        objective=default_objective,
+        metrics=[default_metric],
         traintuple_spec=traintuple_spec_3,
+        dataset=default_dataset,
+        data_samples=default_dataset.test_data_sample_keys,
     )
 
     # Submit compute plan and wait for it to complete
@@ -310,7 +331,7 @@ def test_compute_plan_single_client_failure(factory, client, default_dataset, de
 
 
 @pytest.mark.slow
-def test_compute_plan_aggregate_composite_traintuples(factory, clients, default_datasets, default_objectives):
+def test_compute_plan_aggregate_composite_traintuples(factory, clients, default_datasets, default_metrics):
     """
     Compute plan version of the `test_aggregate_composite_traintuples` method from `test_execution.py`
     """
@@ -362,13 +383,16 @@ def test_compute_plan_aggregate_composite_traintuples(factory, clients, default_
         previous_composite_traintuple_specs = composite_traintuple_specs
 
     # last round: create associated testtuple
-    for composite_traintuple_spec, objective in zip(previous_composite_traintuple_specs, default_objectives):
+    for composite_traintuple, dataset, metric in zip(
+            previous_composite_traintuple_specs, default_datasets, default_metrics):
         cp_spec.add_testtuple(
-            objective=objective,
-            traintuple_spec=composite_traintuple_spec,
+            metrics=[metric],
+            dataset=dataset,
+            data_samples=dataset.test_data_sample_keys,
+            traintuple_spec=composite_traintuple,
         )
     cp_spec.add_testtuple(
-        objective=objective,
+        metrics=[metric],
         traintuple_spec=previous_aggregatetuple_spec,
         dataset=default_datasets[0],
         data_samples=default_datasets[0].test_data_sample_keys,
@@ -406,7 +430,7 @@ def test_compute_plan_aggregate_composite_traintuples(factory, clients, default_
 
 @pytest.mark.slow
 @pytest.mark.remote_only
-def test_compute_plan_remove_intermediary_model(factory, client, default_dataset, default_objective):
+def test_compute_plan_remove_intermediary_model(factory, client, default_dataset, default_metric):
     """
     Create a simple compute plan with clean_models at true, see it done and
     create a traintuple on a intermediary model. Expect it to fail at the
@@ -427,8 +451,10 @@ def test_compute_plan_remove_intermediary_model(factory, client, default_dataset
         data_samples=[data_sample_1]
     )
     cp_spec.add_testtuple(
-        objective=default_objective,
+        metrics=[default_metric],
         traintuple_spec=traintuple_spec_1,
+        dataset=default_dataset,
+        data_samples=default_dataset.test_data_sample_keys,
     )
 
     traintuple_spec_2 = cp_spec.add_traintuple(
@@ -438,8 +464,10 @@ def test_compute_plan_remove_intermediary_model(factory, client, default_dataset
         in_models=[traintuple_spec_1]
     )
     cp_spec.add_testtuple(
-        objective=default_objective,
+        metrics=[default_metric],
         traintuple_spec=traintuple_spec_2,
+        dataset=default_dataset,
+        data_samples=default_dataset.test_data_sample_keys,
     )
 
     cp_added = client.add_compute_plan(cp_spec)
@@ -611,7 +639,7 @@ if __name__ == '__main__':
 
 
 @pytest.mark.slow
-def test_compute_plan_local_folder(factory, client, default_dataset, default_objective_1):
+def test_compute_plan_local_folder(factory, client, default_dataset, default_metric_1):
     data_sample_1, data_sample_2, _, _ = default_dataset.train_data_sample_keys
 
     spec = factory.create_algo(category=AlgoCategory.simple, py_script=LOCAL_FOLDER_ALGO_SCRIPT)
@@ -635,7 +663,9 @@ def test_compute_plan_local_folder(factory, client, default_dataset, default_obj
 
     # Testtuple
     cp_spec.add_testtuple(
-        objective=default_objective_1,
+        metrics=[default_metric_1],
+        dataset=default_dataset,
+        data_samples=default_dataset.test_data_sample_keys,
         traintuple_spec=traintuple_spec_2
     )
 
@@ -645,4 +675,4 @@ def test_compute_plan_local_folder(factory, client, default_dataset, default_obj
     testtuples = client.list_compute_plan_testtuples(cp.key)
     # performance is retrieved only on get, not list
     testtuple = client.get_testtuple(testtuples[0].key)
-    assert testtuple.test.perf == 20
+    assert list(testtuple.test.perfs.values())[0] == 20

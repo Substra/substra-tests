@@ -48,26 +48,6 @@ def test_add_duplicate_dataset(factory, client):
     client.add_dataset(spec)
 
 
-def test_link_dataset_with_objective(factory, client):
-    spec = factory.create_objective()
-    objective_1 = client.add_objective(spec)
-
-    spec = factory.create_objective()
-    objective_2 = client.add_objective(spec)
-
-    spec = factory.create_dataset()
-    dataset = client.add_dataset(spec)
-
-    # link dataset with objective
-    client.link_dataset_with_objective(dataset, objective_1)
-    dataset = client.get_dataset(dataset.key)
-    assert dataset.objective_key == objective_1.key
-
-    # ensure an existing dataset cannot be linked to more than one objective
-    with pytest.raises(substra.exceptions.InvalidRequest):
-        client.link_dataset_with_objective(dataset, objective_2)
-
-
 def test_add_data_sample(factory, client):
     spec = factory.create_dataset()
     dataset = client.add_dataset(spec)
@@ -128,31 +108,16 @@ def test_add_data_sample_path_big_files(filesize, factory, client, node_cfg):
     client.add_data_sample(spec, local=False)  # should not raise
 
 
-def test_add_objective(factory, client):
-    spec = factory.create_dataset()
-    dataset = client.add_dataset(spec)
-
-    spec = factory.create_data_sample(test_only=True, datasets=[dataset])
-    data_sample = client.add_data_sample(spec)
-
-    spec = factory.create_objective(dataset=dataset, data_samples=[data_sample])
-    objective = client.add_objective(spec)
-    objective_copy = client.get_objective(objective.key)
-    assert objective == objective_copy
-
-    # check dataset has been linked with the objective after objective creation
-    dataset = client.get_dataset(dataset.key)
-    assert dataset.objective_key == objective.key
-
-    # add a new dataset and ensure it is linked with the created objective
-    spec = factory.create_dataset(objective=objective)
-    dataset = client.add_dataset(spec)
-    assert dataset.objective_key == objective.key
+def test_add_metric(factory, client):
+    spec = factory.create_metric()
+    metric = client.add_metric(spec)
+    metric_copy = client.get_metric(metric.key)
+    assert metric == metric_copy
 
 
 @pytest.mark.parametrize('asset_name,params', [
     ('dataset', {}),
-    ('objective', {}),
+    ('metric', {}),
     ('algo', {'category': AlgoCategory.simple}),
 ])
 @pytest.mark.parametrize('metadata,metadata_output', [
@@ -175,7 +140,7 @@ def test_asset_with_metadata(factory, client, asset_name, params, metadata, meta
 
 @pytest.mark.parametrize('asset_name,params', [
     ('dataset', {}),
-    ('objective', {}),
+    ('metric', {}),
     ('algo', {'category': AlgoCategory.simple}),
 ])
 @pytest.mark.parametrize('metadata', [

@@ -103,7 +103,7 @@ if __name__ == '__main__':
     tools.algo.execute(TestCompositeAlgo())
 """
 
-TEMPLATE_OBJECTIVE_SCRIPT = """
+TEMPLATE_METRIC_SCRIPT = """
 import substratools as tools
 class Metrics(tools.Metrics):
     def score(self, y_true, y_pred):
@@ -152,7 +152,6 @@ def dataset(factory, client):
 
 def test_traintuple_data_samples_relative_order(factory, client, dataset):
     data_sample_keys = _shuffle(dataset.train_data_sample_keys)
-    test_data_sample_keys = dataset.test_data_sample_keys
 
     # Format TEMPLATE_ALGO_SCRIPT with current data_sample_keys
     algo_script = TEMPLATE_ALGO_SCRIPT.format(data_sample_keys=data_sample_keys,
@@ -161,11 +160,9 @@ def test_traintuple_data_samples_relative_order(factory, client, dataset):
     algo_spec = factory.create_algo(category=AlgoCategory.simple, py_script=algo_script)
     algo = client.add_algo(algo_spec)
 
-    objective_script = TEMPLATE_OBJECTIVE_SCRIPT.format(data_sample_keys=data_sample_keys[:2])
-    objective_spec = factory.create_objective(dataset=dataset,
-                                              data_samples=test_data_sample_keys,
-                                              py_script=objective_script)
-    objective = client.add_objective(objective_spec)
+    metric_script = TEMPLATE_METRIC_SCRIPT.format(data_sample_keys=data_sample_keys[:2])
+    metric_spec = factory.create_metric(py_script=metric_script)
+    metric = client.add_metric(metric_spec)
 
     traintuple_spec = factory.create_traintuple(
         algo=algo,
@@ -180,19 +177,18 @@ def test_traintuple_data_samples_relative_order(factory, client, dataset):
     assert traintuple.train.data_sample_keys == data_sample_keys
     client.wait(traintuple)
 
-    testtuple_spec = factory.create_testtuple(objective=objective,
+    testtuple_spec = factory.create_testtuple(metrics=[metric],
                                               traintuple=traintuple,
                                               dataset=dataset,
                                               data_samples=data_sample_keys[:2])
     testtuple = client.add_testtuple(testtuple_spec)
 
-    # Assert order is correct in the objective. If not, wait() will fail.
+    # Assert order is correct in the metric. If not, wait() will fail.
     client.wait(testtuple)
 
 
 def test_composite_traintuple_data_samples_relative_order(factory, client, dataset):
     data_sample_keys = _shuffle(dataset.train_data_sample_keys)
-    test_data_sample_keys = dataset.test_data_sample_keys
 
     # Format TEMPLATE_COMPOSITE_ALGO_SCRIPT with current data_sample_keys
     composite_algo_script = TEMPLATE_COMPOSITE_ALGO_SCRIPT.format(data_sample_keys=data_sample_keys,
@@ -201,11 +197,9 @@ def test_composite_traintuple_data_samples_relative_order(factory, client, datas
     algo_spec = factory.create_algo(AlgoCategory.composite, py_script=composite_algo_script)
     composite_algo = client.add_algo(algo_spec)
 
-    objective_script = TEMPLATE_OBJECTIVE_SCRIPT.format(data_sample_keys=data_sample_keys[:2])
-    objective_spec = factory.create_objective(dataset=dataset,
-                                              data_samples=test_data_sample_keys,
-                                              py_script=objective_script)
-    objective = client.add_objective(objective_spec)
+    metric_script = TEMPLATE_METRIC_SCRIPT.format(data_sample_keys=data_sample_keys[:2])
+    metric_spec = factory.create_metric(py_script=metric_script)
+    metric = client.add_metric(metric_spec)
 
     traintuple_spec = factory.create_composite_traintuple(
         algo=composite_algo,
@@ -219,13 +213,13 @@ def test_composite_traintuple_data_samples_relative_order(factory, client, datas
     assert composite_traintuple.composite.data_sample_keys == data_sample_keys
     client.wait(composite_traintuple)
 
-    testtuple_spec = factory.create_testtuple(objective=objective,
+    testtuple_spec = factory.create_testtuple(metrics=[metric],
                                               traintuple=composite_traintuple,
                                               dataset=dataset,
                                               data_samples=data_sample_keys[:2])
     testtuple = client.add_testtuple(testtuple_spec)
 
-    # Assert order is correct in the objective. If not, wait() will fail.
+    # Assert order is correct in the metric. If not, wait() will fail.
     client.wait(testtuple)
 
 

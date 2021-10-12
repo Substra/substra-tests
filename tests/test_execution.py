@@ -10,7 +10,7 @@ from . import settings
 
 
 @pytest.mark.slow
-def test_tuples_execution_on_same_node(factory, network, client, default_dataset, default_objective):
+def test_tuples_execution_on_same_node(factory, network, client, default_dataset, default_metric):
     """Execution of a traintuple, a following testtuple and a following traintuple."""
 
     spec = factory.create_algo(AlgoCategory.simple)
@@ -37,11 +37,16 @@ def test_tuples_execution_on_same_node(factory, network, client, default_dataset
     client.add_traintuple(spec)
 
     # create testtuple
-    spec = factory.create_testtuple(objective=default_objective, traintuple=traintuple)
+    spec = factory.create_testtuple(
+        metrics=[default_metric],
+        traintuple=traintuple,
+        dataset=default_dataset,
+        data_samples=default_dataset.test_data_sample_keys,
+    )
     testtuple = client.add_testtuple(spec)
     testtuple = client.wait(testtuple)
     assert testtuple.status == Status.done
-    assert testtuple.test.perf == 2
+    assert list(testtuple.test.perfs.values())[0] == 2
 
     # add a traintuple depending on first traintuple
     spec = factory.create_traintuple(
@@ -101,9 +106,10 @@ def test_federated_learning_workflow(factory, client, default_datasets):
 
 @pytest.mark.slow
 @pytest.mark.remote_only
-def test_tuples_execution_on_different_nodes(factory, client_1, client_2, default_objective_1, default_dataset_2):
+def test_tuples_execution_on_different_nodes(factory, client_1, client_2, default_metric_1,
+                                             default_dataset_1, default_dataset_2):
     """Execution of a traintuple on node 1 and the following testtuple on node 2."""
-    # add test data samples / dataset / objective on node 1
+    # add test data samples / dataset / metric on node 1
 
     spec = factory.create_algo(AlgoCategory.simple)
     algo_2 = client_2.add_algo(spec)
@@ -120,13 +126,18 @@ def test_tuples_execution_on_different_nodes(factory, client_1, client_2, defaul
     assert len(traintuple.train.models) != 0
     assert traintuple.worker == client_2.node_id
 
-    # add testtuple; should execute on node 1 (objective dataset is located on node 1)
-    spec = factory.create_testtuple(objective=default_objective_1, traintuple=traintuple)
+    # add testtuple; should execute on node 1 (default_dataset_1 is located on node 1)
+    spec = factory.create_testtuple(
+        metrics=[default_metric_1],
+        traintuple=traintuple,
+        dataset=default_dataset_1,
+        data_samples=default_dataset_1.test_data_sample_keys,
+    )
     testtuple = client_1.add_testtuple(spec)
     testtuple = client_1.wait(testtuple)
     assert testtuple.status == Status.done
     assert testtuple.worker == client_1.node_id
-    assert testtuple.test.perf == 2
+    assert list(testtuple.test.perfs.values())[0] == 2
 
 
 @pytest.mark.slow
@@ -211,7 +222,7 @@ def test_aggregatetuple_execution_failure(factory, client, default_dataset):
 
 
 @pytest.mark.slow
-def test_composite_traintuples_execution(factory, client, default_dataset, default_objective):
+def test_composite_traintuples_execution(factory, client, default_dataset, default_metric):
     """Execution of composite traintuples."""
 
     spec = factory.create_algo(AlgoCategory.composite)
@@ -242,11 +253,16 @@ def test_composite_traintuples_execution(factory, client, default_dataset, defau
     assert len(composite_traintuple_2.composite.models) == 2
 
     # add a 'composite' testtuple
-    spec = factory.create_testtuple(objective=default_objective, traintuple=composite_traintuple_2)
+    spec = factory.create_testtuple(
+        metrics=[default_metric],
+        traintuple=composite_traintuple_2,
+        dataset=default_dataset,
+        data_samples=default_dataset.test_data_sample_keys,
+    )
     testtuple = client.add_testtuple(spec)
     testtuple = client.wait(testtuple)
     assert testtuple.status == Status.done
-    assert testtuple.test.perf == 32
+    assert list(testtuple.test.perfs.values())[0] == 32
 
     # list composite traintuple
     composite_traintuples = client.list_composite_traintuple()
@@ -257,7 +273,7 @@ def test_composite_traintuples_execution(factory, client, default_dataset, defau
 
 
 @pytest.mark.slow
-def test_aggregatetuple(factory, client, default_objective, default_dataset):
+def test_aggregatetuple(factory, client, default_metric, default_dataset):
     """Execution of aggregatetuple aggregating traintuples."""
 
     number_of_traintuples_to_aggregate = 3
@@ -293,7 +309,7 @@ def test_aggregatetuple(factory, client, default_objective, default_dataset):
     assert len(aggregatetuple.parent_task_keys) == number_of_traintuples_to_aggregate
 
     spec = factory.create_testtuple(
-        objective=default_objective,
+        metrics=[default_metric],
         traintuple=aggregatetuple,
         dataset=default_dataset,
         data_samples=default_dataset.test_data_sample_keys,
@@ -303,7 +319,7 @@ def test_aggregatetuple(factory, client, default_objective, default_dataset):
 
 
 @pytest.mark.slow
-def test_aggregate_composite_traintuples(factory, network, clients, default_datasets, default_objectives):
+def test_aggregate_composite_traintuples(factory, network, clients, default_datasets, default_metrics):
     """Do 2 rounds of composite traintuples aggregations on multiple nodes.
 
     Compute plan details:
@@ -380,18 +396,21 @@ def test_aggregate_composite_traintuples(factory, network, clients, default_data
         previous_composite_traintuples = composite_traintuples
 
     # last round: create associated testtuple for composite and aggregate
-    for traintuple, objective in zip(previous_composite_traintuples, default_objectives):
+    for index, (traintuple, metric, dataset) in enumerate(zip(
+            previous_composite_traintuples, default_metrics, default_datasets)):
         spec = factory.create_testtuple(
-            objective=objective,
+            metrics=[metric],
             traintuple=traintuple,
+            dataset=dataset,
+            data_samples=dataset.test_data_sample_keys,
         )
         testtuple = clients[0].add_testtuple(spec)
         testtuple = clients[0].wait(testtuple)
         # y_true: [20], y_pred: [52.0], result: 32.0
-        assert testtuple.test.perf == 32
+        assert list(testtuple.test.perfs.values())[0] == 32 + index
 
     spec = factory.create_testtuple(
-        objective=objective,
+        metrics=[default_metrics[0]],
         traintuple=previous_aggregatetuple,
         dataset=default_datasets[0],
         data_samples=default_datasets[0].test_data_sample_keys,
@@ -399,7 +418,7 @@ def test_aggregate_composite_traintuples(factory, network, clients, default_data
     testtuple = clients[0].add_testtuple(spec)
     testtuple = clients[0].wait(testtuple)
     # y_true: [20], y_pred: [28.0], result: 8.0
-    assert testtuple.test.perf == 8
+    assert list(testtuple.test.perfs.values())[0] == 8
 
     if network.options.enable_model_download:
         # Optional (if "enable_model_download" is True): ensure we can export out-models.
@@ -437,7 +456,7 @@ def test_aggregate_composite_traintuples(factory, network, clients, default_data
 
 @pytest.mark.remote_only
 @pytest.mark.skipif(not settings.HAS_SHARED_PATH, reason='requires a shared path')
-def test_use_data_sample_located_in_shared_path(factory, client, node_cfg, default_objective):
+def test_use_data_sample_located_in_shared_path(factory, client, node_cfg, default_metric):
     spec = factory.create_dataset()
     dataset = client.add_dataset(spec)
 
@@ -459,8 +478,13 @@ def test_use_data_sample_located_in_shared_path(factory, client, node_cfg, defau
     assert len(traintuple.train.models) == 1
 
     # create testtuple
-    spec = factory.create_testtuple(objective=default_objective, traintuple=traintuple)
+    spec = factory.create_testtuple(
+        metrics=[default_metric],
+        traintuple=traintuple,
+        dataset=dataset,
+        data_samples=[data_sample_key],
+    )
     testtuple = client.add_testtuple(spec)
     testtuple = client.wait(testtuple)
     assert testtuple.status == Status.done
-    assert testtuple.test.perf == 2
+    assert list(testtuple.test.perfs.values())[0] == 2
