@@ -265,8 +265,6 @@ def inputs(datasamples_folders, factory, clients):
         # XXX is it required to link dataset with datasamples ?
 
         spec = factory.create_metric(
-            res.dataset,
-            data_samples=test_keys,
             dockerfile=_METRICS_DOCKERFILE,
             py_script=_METRICS.open().read(),
         )
@@ -346,7 +344,9 @@ def test_mnist(factory, inputs, clients):
             for idx, org_inputs in enumerate(inputs.datasets):
                 cp_spec.add_testtuple(
                     traintuple_spec=composite_specs[idx],
-                    metric=org_inputs.metric,
+                    metrics=[org_inputs.metric],
+                    dataset=org_inputs.dataset,
+                    data_samples=org_inputs.dataset.test_data_sample_keys,
                 )
 
     cp = client.add_compute_plan(cp_spec)
