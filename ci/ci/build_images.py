@@ -1,8 +1,9 @@
 import os
 import time
-from typing import List
+import json
+from typing import Dict
 
-from ci.config import Config, GCPConfig, Repository
+from ci.config import Config, Repository
 from ci.call import call_output
 
 
@@ -15,8 +16,8 @@ def build_images(cfg: Config, known_host_file_path: str, run_tag: str, dir: str)
         for image in repo.images:
             build_id = _build_image(cfg, tag, image, repo, known_host_file_path, dir)
             images[build_id] = image
-
-    _wait_for_builds(cfg.gcp, tag, images)
+    print(f"{len(images)} queued under the tag {tag}")
+    _wait_for_builds(cfg, tag, images, repo, known_host_file_path, dir)
 
 
 def _build_image(cfg: Config, tag: str, image: str, repo: Repository, known_host_file_path: str, dir: str) -> str:
@@ -37,41 +38,68 @@ def _build_image(cfg: Config, tag: str, image: str, repo: Repository, known_host
         f"_SSH_KEY_SECRET={cfg.gcp.ssh_key_secret}{extra_substitutions}"
     )
 
-    output = call_output(cmd)
-    print(output)
+    output = call_output(cmd, print_cmd=False)
 
     build_id = output.split("\n")[-1].split(" ")[0]
 
     return build_id
 
 
-def _wait_for_builds(cfg: GCPConfig, tag: str, images: List[str]) -> None:
+def _wait_for_builds(
+    cfg: Config,
+    tag: str,
+    images: Dict[str, str],
+    repo: Repository,
+    known_host_file_path: str,
+    dir: str,
+) -> None:
     print("\n# Waiting for builds to complete ...", end="")
+
+    max_retries_per_image = 5
+    retries = {}
+
     do_wait = True
     while do_wait:
-        build_list = call_output(f'gcloud builds list --filter="tags={tag}" --project={cfg.project}', print_cmd=False,)
+        builds = json.loads(
+            call_output(
+                f'gcloud builds list --format=json --filter="tags={tag}" --project={cfg.gcp.project}',
+                print_cmd=False,
+            )
+        )
 
-        builds = build_list.split("\n")[1:]
+        nb_successful = 0
+        nb_abandoned = 0
+        nb_retried = 0
+        for b in builds:
+            if b["id"] in images:
+                if b["status"] == "FAILURE":
+                    image = images[b["id"]]
+                    if retries.get(image, 0) < max_retries_per_image:
+                        retries[image] = retries.get(image, 0) + 1
+                        new_id = _build_image(cfg, tag, image, repo, known_host_file_path, dir)
+                        images[new_id] = images.pop(b["id"])
+                        nb_retried += 1
+                    else:
+                        nb_abandoned += 1
+                elif b["status"] == "SUCCESS":
+                    nb_successful += 1
+                elif b["status"] in ["TIMEOUT", "CANCELLED"]:
+                    nb_abandoned += 1
 
-        num_builds = len(builds)
-        num_success = build_list.count("SUCCESS")
-        num_failed = build_list.count("TIMEOUT") + build_list.count("CANCELLED") + build_list.count("FAIL")
-
-        do_wait = num_builds != (num_success + num_failed)
+        do_wait = len(images) != (nb_successful + nb_abandoned)
 
         time.sleep(5)
-        print(".", end="", flush=True)
+        print("R" if nb_retried else ".", end="", flush=True)
 
     print("done.")
 
-    if num_failed:
+    if nb_abandoned:
         print("FATAL: One or more builds failed. See logs for more details")
         for build in builds:
-            if "TIMEOUT" in build or "CANCELLED" in build or "FAIL" in build:
-                build_id = build.split(" ")[0]
-                image = images[build_id]
+            if build["id"] in images and build["status"] in ["TIMEOUT", "CANCELLED", "FAILURE"]:
+                image = images[build["id"]]
                 print(
                     f"- [{image}]: "
-                    f"https://console.cloud.google.com/cloud-build/builds/{build_id}?project={cfg.project}"
+                    f'https://console.cloud.google.com/cloud-build/builds/{build["id"]}?project={cfg.gcp.project}'
                 )
         raise Exception("docker image build(s) failed.")
