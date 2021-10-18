@@ -128,7 +128,7 @@ def clean_cluster(event, context):
     ):
 
         response = requests.post(
-            "https://hooks.slack.com/services/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",
+            "https://hooks.slack.com/services/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",
             data=format_to_slack(data),
         )
 
