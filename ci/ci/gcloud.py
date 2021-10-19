@@ -152,7 +152,8 @@ def wait_for_cluster(cfg: GCPConfig) -> None:
         )
 
         try:
-            status = output.split("\n")[1].split(" ")[-1]
+            cluster_info = list(filter(lambda l: cfg.cluster.name in l, output.splitlines()))[0]
+            status = cluster_info.split(" ")[-1]
             if status not in ["RUNNING", "PROVISIONING"]:
                 raise Exception(f"Unknown status {status}")
         except Exception as ex:
