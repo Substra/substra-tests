@@ -63,6 +63,13 @@ jobs:
         env:
           GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
         run: gpg --quiet --batch --yes --decrypt --passphrase="$GPG_PASSPHRASE" --output ci/keys/gcp_sa_key.json "${GCP_SERVICE_ACCOUNT_KEY}"
+      - name: Workflow inputs
+        run: |
+          echo "connect-tests ${{ github.event.inputs.connectTests }}"
+          echo "substra ${{ github.event.inputs.substra }}"
+          echo "connect-backend ${{ github.event.inputs.connectBackend }}"
+          echo "hlf-k8s ${{ github.event.inputs.connectHlfK8s }}"
+          echo "orchestrator ${{ github.event.inputs.orchestrator }}"
       - name: Test
         run: |
           RANDOM_ID=$(LC_CTYPE=C tr -dc 'a-z0-9' < /dev/urandom | head -c 4)
@@ -132,6 +139,13 @@ jobs:
         env:
           GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
         run: gpg --quiet --batch --yes --decrypt --passphrase="$GPG_PASSPHRASE" --output ci/keys/gcp_sa_key.json "${GCP_SERVICE_ACCOUNT_KEY}"
+      - name: Workflow inputs
+        run: |
+          echo "connect-tests ${{ github.event.inputs.connectTests }}"
+          echo "substra ${{ github.event.inputs.substra }}"
+          echo "connect-backend ${{ github.event.inputs.connectBackend }}"
+          echo "hlf-k8s ${{ github.event.inputs.connectHlfK8s }}"
+          echo "orchestrator ${{ github.event.inputs.orchestrator }}"
       - name: Test
         run: |
           RANDOM_ID=$(LC_CTYPE=C tr -dc 'a-z0-9' < /dev/urandom | head -c 4)
