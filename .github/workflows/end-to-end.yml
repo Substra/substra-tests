@@ -4,6 +4,26 @@ on:
   schedule:
     - cron: "0 0 * * 2-6" # every Tuesday to Saturday at midnight
   workflow_dispatch:
+    connectTests:
+        description: 'Git branch or commit to use for connect-tests'
+        required: true
+        default: 'master'
+    connectHlfK8s:
+        description: 'Git branch or commit to use for connect-hlf-k8s'
+        required: true
+        default: 'master'
+    orchestrator:
+        description: 'Git branch or commit to use for orchestrator'
+        required: true
+        default: 'master'
+    connectBackend:
+        description: 'Git branch or commit to use for connect-backend'
+        required: true
+        default: 'master'
+    substra:
+        description: 'Git branch or commit to use for substra sdk'
+        required: true
+        default: 'master'
 
 env:
   GCP_PROJECT: "connect-314908"
@@ -47,11 +67,11 @@ jobs:
           RANDOM_ID=$(LC_CTYPE=C tr -dc 'a-z0-9' < /dev/urandom | head -c 4)
           CLUSTER_NAME="connect-tests-${RANDOM_ID}-$(date -u +'%Y-%m-%d-%Hh%M')"
           cd ci/
-          python -u ./run-ci.py --gcp-keys-directory=./keys/ --gcp-key-filename=gcp_sa_key.json --cluster-name=${CLUSTER_NAME} --git-use-token --git-clone-method=https --orchestrator-mode distributed
+          python -u ./run-ci.py --gcp-keys-directory=./keys/ --gcp-key-filename=gcp_sa_key.json --cluster-name=${CLUSTER_NAME} --git-use-token --git-clone-method=https --orchestrator-mode distributed --connect-tests ${{ github.event.inputs.connectTests }} --substra ${{ github.event.inputs.substra }} --connect-backend ${{ github.event.inputs.connectBackend }} --hlf-k8s ${{ github.event.inputs.connectHlfK8s }} --orchestrator ${{ github.event.inputs.orchestrator }}
         env:
           GIT_TOKEN: ${{ secrets.OWLFRED_PAT }}
       - name: Slack Notification
-        if: ${{ success() }}
+        if: ${{ success() && github.event_name == 'schedule' }}
         uses: rtCamp/action-slack-notify@v2
         env:
           SLACK_COLOR: "#159e39"
@@ -63,7 +83,7 @@ jobs:
           MSG_MINIMAL: True
           SLACK_FOOTER: ""
       - name: Slack Notification
-        if: ${{ failure() }}
+        if: ${{ failure() && github.event_name == 'schedule' }}
         uses: rtCamp/action-slack-notify@v2
         env:
           SLACK_COLOR: "#eb4a15"
@@ -116,11 +136,11 @@ jobs:
           RANDOM_ID=$(LC_CTYPE=C tr -dc 'a-z0-9' < /dev/urandom | head -c 4)
           CLUSTER_NAME="connect-tests-${RANDOM_ID}-$(date -u +'%Y-%m-%d-%Hh%M')"
           cd ci/
-          python -u ./run-ci.py --gcp-keys-directory=./keys/ --gcp-key-filename=gcp_sa_key.json --cluster-name=${CLUSTER_NAME} --git-use-token --git-clone-method=https --orchestrator-mode standalone
+          python -u ./run-ci.py --gcp-keys-directory=./keys/ --gcp-key-filename=gcp_sa_key.json --cluster-name=${CLUSTER_NAME} --git-use-token --git-clone-method=https --orchestrator-mode standalone --connect-tests ${{ github.event.inputs.connectTests }} --substra ${{ github.event.inputs.substra }} --connect-backend ${{ github.event.inputs.connectBackend }} --hlf-k8s ${{ github.event.inputs.connectHlfK8s }} --orchestrator ${{ github.event.inputs.orchestrator }}
         env:
           GIT_TOKEN: ${{ secrets.OWLFRED_PAT }}
       - name: Slack Notification
-        if: ${{ success() }}
+        if: ${{ success() && github.event_name == 'schedule' }}
         uses: rtCamp/action-slack-notify@v2
         env:
           SLACK_COLOR: "#159e39"
@@ -132,7 +152,7 @@ jobs:
           MSG_MINIMAL: True
           SLACK_FOOTER: ""
       - name: Slack Notification
-        if: ${{ failure() }}
+        if: ${{ failure() && github.event_name == 'schedule' }}
         uses: rtCamp/action-slack-notify@v2
         env:
           SLACK_COLOR: "#eb4a15"
