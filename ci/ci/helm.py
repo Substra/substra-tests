@@ -10,3 +10,4 @@ def setup_helm() -> None:
     call("helm repo add owkin https://owkin.github.io/charts")
     call("helm repo add bitnami https://charts.bitnami.com/bitnami")
     call("helm repo add twuni https://helm.twun.io")
+    call("helm repo add couchdb https://apache.github.io/couchdb-helm")
