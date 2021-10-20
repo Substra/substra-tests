@@ -5,25 +5,25 @@ on:
     - cron: "0 0 * * 2-6" # every Tuesday to Saturday at midnight
   workflow_dispatch:
     connectTests:
-        description: 'Git branch or commit to use for connect-tests'
-        required: true
-        default: 'master'
+      description: 'Git branch or commit to use for connect-tests'
+      required: true
+      default: 'master'
     connectHlfK8s:
-        description: 'Git branch or commit to use for connect-hlf-k8s'
-        required: true
-        default: 'master'
+      description: 'Git branch or commit to use for connect-hlf-k8s'
+      required: true
+      default: 'master'
     orchestrator:
-        description: 'Git branch or commit to use for orchestrator'
-        required: true
-        default: 'master'
+      description: 'Git branch or commit to use for orchestrator'
+      required: true
+      default: 'master'
     connectBackend:
-        description: 'Git branch or commit to use for connect-backend'
-        required: true
-        default: 'master'
+      description: 'Git branch or commit to use for connect-backend'
+      required: true
+      default: 'master'
     substra:
-        description: 'Git branch or commit to use for substra sdk'
-        required: true
-        default: 'master'
+      description: 'Git branch or commit to use for substra sdk'
+      required: true
+      default: 'master'
 
 env:
   GCP_PROJECT: "connect-314908"
