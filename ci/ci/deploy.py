@@ -1,5 +1,6 @@
 import json
 import os
+from typing import List
 
 from ci.config import Config, OrchestratorMode, Repository
 from ci.call import call
@@ -14,10 +15,16 @@ def deploy_all(cfg: Config, source_dir: str) -> None:
         if repo == cfg.repos.sdk:
             continue
         if cfg.orchestrator_mode == OrchestratorMode.STANDALONE and repo == cfg.repos.hlf_k8s:
+            _create_namespaces(cfg, ["org-1", "org-2"])
             continue
 
         wait = repo != cfg.repos.hlf_k8s  # don't wait for hlf-k8s deployment to complete
         _deploy(cfg, repo, source_dir, wait)
+
+
+def _create_namespaces(cfg: Config, namespaces: List[str]) -> None:
+    for namespace in namespaces:
+        call(f"kubectl --context {cfg.gcp.kube_context} create namespace {namespace}")
 
 
 def _deploy(cfg: Config, repo: Repository, source_dir: str, wait=True) -> None:

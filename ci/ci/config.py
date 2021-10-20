@@ -100,7 +100,7 @@ class Repositories:
     )
 
     def get_all(self) -> List[Repository]:
-        return [self.tests, self.backend, self.sdk, self.hlf_k8s, self.orchestrator]
+        return [self.hlf_k8s, self.orchestrator, self.backend, self.sdk, self.tests]
 
 
 @dataclass()

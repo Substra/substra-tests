@@ -147,7 +147,8 @@ def wait_for_cluster(cfg: GCPConfig) -> None:
 
     while True:
         output = call_output(
-            f'gcloud container clusters list --filter="name={cfg.cluster.name}" --project {cfg.project}',
+            f'gcloud container clusters list --filter="name={cfg.cluster.name}" --project {cfg.project} '
+            f'--zone={cfg.cluster.zone}',
             print_cmd=False,
         )
 
