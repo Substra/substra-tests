@@ -72,8 +72,7 @@ jobs:
           echo "orchestrator ${{ github.event.inputs.orchestrator }}"
       - name: Test
         run: |
-          RANDOM_ID=$(head -c 4 <(LC_CTYPE=C tr -dc 'a-z0-9' < /dev/urandom))
-          CLUSTER_NAME="connect-tests-${RANDOM_ID}-$(date -u +'%Y-%m-%d-%Hh%M')"
+          CLUSTER_NAME="connect-tests-$(date -u +'%Y-%m-%d-%Hh%M')"
           cd ci/
           python -u ./run-ci.py --gcp-keys-directory=./keys/ --gcp-key-filename=gcp_sa_key.json --cluster-name=${CLUSTER_NAME} --git-use-token --git-clone-method=https --orchestrator-mode distributed --connect-tests ${{ github.event.inputs.connectTests }} --substra ${{ github.event.inputs.substra }} --connect-backend ${{ github.event.inputs.connectBackend }} --hlf-k8s ${{ github.event.inputs.connectHlfK8s }} --orchestrator ${{ github.event.inputs.orchestrator }}
         env:
@@ -148,8 +147,7 @@ jobs:
           echo "orchestrator ${{ github.event.inputs.orchestrator }}"
       - name: Test
         run: |
-          RANDOM_ID=$(head -c 4 <(LC_CTYPE=C tr -dc 'a-z0-9' < /dev/urandom))
-          CLUSTER_NAME="connect-tests-${RANDOM_ID}-$(date -u +'%Y-%m-%d-%Hh%M')"
+          CLUSTER_NAME="connect-tests-$(date -u +'%Y-%m-%d-%Hh%M')"
           cd ci/
           python -u ./run-ci.py --gcp-keys-directory=./keys/ --gcp-key-filename=gcp_sa_key.json --cluster-name=${CLUSTER_NAME} --git-use-token --git-clone-method=https --orchestrator-mode standalone --connect-tests ${{ github.event.inputs.connectTests }} --substra ${{ github.event.inputs.substra }} --connect-backend ${{ github.event.inputs.connectBackend }} --hlf-k8s ${{ github.event.inputs.connectHlfK8s }} --orchestrator ${{ github.event.inputs.orchestrator }}
         env:
