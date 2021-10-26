@@ -69,6 +69,8 @@ def test_compute_plan_simple(factory, client_1, client_2, default_dataset_1, def
     # check all tuples are done and check they have been executed on the expected node
     for t in traintuples:
         assert t.status == models.Status.done
+        assert t.start_date is not None
+        assert t.end_date is not None
 
     traintuple_1, traintuple_2, traintuple_3 = traintuples
 
