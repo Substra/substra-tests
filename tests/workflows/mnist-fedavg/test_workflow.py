@@ -266,7 +266,7 @@ def inputs(datasamples_folders, factory, clients):
 
         spec = factory.create_metric(
             dockerfile=_METRICS_DOCKERFILE,
-            py_script=_METRICS.open().read(),
+            py_script=_METRICS.open().read()
         )
         res.metric = client.add_metric(spec)
 

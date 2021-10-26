@@ -18,8 +18,11 @@ from . import utils
 DEFAULT_DATA_SAMPLE_FILENAME = 'data.csv'
 
 DEFAULT_TOOLS_VERSION = '0.9.0'
-DEFAULT_TOOLS_BASE_IMAGE = 'gcr.io/connect-314908/connect-tools'
+DEFAULT_TOOLS_BASE_IMAGE = 'owkin/connect-tools'
 DEFAULT_TOOLS_IMAGE = f'{DEFAULT_TOOLS_BASE_IMAGE}:{DEFAULT_TOOLS_VERSION}-minimal'
+
+DEFAULT_TOOLS_BASE_IMAGE_GCR = 'gcr.io/connect-314908/connect-tools'
+DEFAULT_TOOLS_IMAGE_GCR = f'{DEFAULT_TOOLS_BASE_IMAGE_GCR}:{DEFAULT_TOOLS_VERSION}-minimal'
 
 DEFAULT_OPENER_SCRIPT = f"""
 import csv
@@ -202,17 +205,15 @@ INVALID_ALGO_SCRIPT = DEFAULT_ALGO_SCRIPT.replace('train', 'naitr')
 INVALID_COMPOSITE_ALGO_SCRIPT = DEFAULT_COMPOSITE_ALGO_SCRIPT.replace('train', 'naitr')
 INVALID_AGGREGATE_ALGO_SCRIPT = DEFAULT_AGGREGATE_ALGO_SCRIPT.replace('aggregate', 'etagergga')
 
-DEFAULT_METRICS_DOCKERFILE = f"""
-FROM {DEFAULT_TOOLS_IMAGE}
-COPY metrics.py .
-ENTRYPOINT ["python3", "metrics.py"]
-"""
 
-DEFAULT_ALGO_DOCKERFILE = f"""
-FROM {DEFAULT_TOOLS_IMAGE}
-COPY algo.py .
-ENTRYPOINT ["python3", "algo.py"]
-"""
+def default_algo_dockerfile(local=False):
+    default_tools_image = DEFAULT_TOOLS_IMAGE_GCR if local else DEFAULT_TOOLS_IMAGE
+    return f'FROM {default_tools_image}\nCOPY algo.py .\nENTRYPOINT ["python3", "algo.py"]\n'
+
+
+def default_metrics_dockerfile(local=False):
+    default_tools_image = DEFAULT_TOOLS_IMAGE_GCR if local else DEFAULT_TOOLS_IMAGE
+    return f'FROM {default_tools_image}\nCOPY metrics.py .\nENTRYPOINT ["python3", "metrics.py"]\n'
 
 
 def random_uuid():
@@ -614,7 +615,8 @@ class AssetsFactory:
                       metadata=None,
                       dockerfile=None,
                       py_script=None,
-                      offset=0):
+                      offset=0,
+                      local=False):
         if py_script is None:
             py_script = TEMPLATED_DEFAULT_METRICS_SCRIPT.substitute(offset=offset)
 
@@ -628,7 +630,7 @@ class AssetsFactory:
         with open(description_path, 'w') as f:
             f.write(description_content)
 
-        dockerfile = dockerfile or DEFAULT_METRICS_DOCKERFILE
+        dockerfile = dockerfile or default_metrics_dockerfile(local)
 
         metrics_zip = utils.create_archive(
             tmpdir / 'metrics',
@@ -644,7 +646,7 @@ class AssetsFactory:
             permissions=permissions or DEFAULT_PERMISSIONS,
         )
 
-    def create_algo(self, category, py_script=None, dockerfile=None, permissions=None, metadata=None):
+    def create_algo(self, category, py_script=None, dockerfile=None, permissions=None, metadata=None, local=False):
         idx = self._algo_counter.inc()
         tmpdir = self._workdir / f'algo-{idx}'
         tmpdir.mkdir()
@@ -660,7 +662,7 @@ class AssetsFactory:
         except KeyError:
             raise Exception('Invalid algo category', category)
 
-        dockerfile = dockerfile or DEFAULT_ALGO_DOCKERFILE
+        dockerfile = dockerfile or default_algo_dockerfile(local)
 
         algo_zip = utils.create_archive(
             tmpdir / 'algo',

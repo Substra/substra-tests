@@ -18,9 +18,9 @@ pytestmark = pytest.mark.skipif(not docker_available(), reason="requires docker"
 
 @pytest.mark.remote_only
 @pytest.mark.slow
-def test_execution_debug(client, debug_client, factory, default_dataset, default_metric):
+def test_execution_debug(client, debug_client, factory, default_dataset, default_metric_local):
 
-    spec = factory.create_algo(AlgoCategory.simple)
+    spec = factory.create_algo(AlgoCategory.simple, local=True)
     algo = client.add_algo(spec)
 
     #  Add the traintuple
@@ -36,7 +36,7 @@ def test_execution_debug(client, debug_client, factory, default_dataset, default
 
     # Add the testtuple
     spec = factory.create_testtuple(
-        metrics=[default_metric],
+        metrics=[default_metric_local],
         traintuple=traintuple,
         dataset=default_dataset,
         data_samples=[default_dataset.test_data_sample_keys[0]],
@@ -48,7 +48,7 @@ def test_execution_debug(client, debug_client, factory, default_dataset, default
 
 @pytest.mark.remote_only
 @pytest.mark.slow
-def test_debug_compute_plan_aggregate_composite(client, debug_client, factory, default_datasets, default_metrics):
+def test_debug_compute_plan_aggregate_composite(client, debug_client, factory, default_datasets, default_metrics_local):
     """
     Debug / Compute plan version of the
     `test_aggregate_composite_traintuples` method from `test_execution.py`
@@ -57,9 +57,9 @@ def test_debug_compute_plan_aggregate_composite(client, debug_client, factory, d
     number_of_rounds = 2
 
     # register algos on first node
-    spec = factory.create_algo(AlgoCategory.composite)
+    spec = factory.create_algo(AlgoCategory.composite, local=True)
     composite_algo = client.add_algo(spec)
-    spec = factory.create_algo(AlgoCategory.aggregate)
+    spec = factory.create_algo(AlgoCategory.aggregate, local=True)
     aggregate_algo = client.add_algo(spec)
 
     # launch execution
@@ -100,7 +100,7 @@ def test_debug_compute_plan_aggregate_composite(client, debug_client, factory, d
 
     # last round: create associated testtuple
     for composite_traintuple_spec, dataset, metric in zip(
-            previous_composite_traintuple_specs, default_datasets, default_metrics):
+            previous_composite_traintuple_specs, default_datasets, default_metrics_local):
         cp_spec.add_testtuple(
             metrics=[metric],
             dataset=dataset,

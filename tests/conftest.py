@@ -77,9 +77,10 @@ class _DataEnv:
 
     Represents all the assets that have been added before the tests.
     """
-    def __init__(self, datasets=None, metrics=None):
+    def __init__(self, datasets=None, metrics=None, metrics_local=None):
         self._datasets = datasets or []
         self._metrics = metrics or []
+        self._metrics_local = metrics_local or []
 
     @property
     def datasets(self):
@@ -89,11 +90,16 @@ class _DataEnv:
     def metrics(self):
         return self._metrics
 
+    @property
+    def metrics_local(self):
+        return self._metrics_local
+
     def filter_by(self, node_id):
         datasets = [d for d in self._datasets if d.owner == node_id]
         metrics = [o for o in self._metrics if o.owner == node_id]
+        metrics_local = [o for o in self._metrics_local if o.owner == node_id]
 
-        return _DataEnv(metrics=metrics, datasets=datasets)
+        return _DataEnv(metrics=metrics, metrics_local=metrics_local, datasets=datasets)
 
 
 @dataclasses.dataclass
@@ -163,6 +169,7 @@ def default_data_env(network):
     with sbt.AssetsFactory(name=factory_name) as f:
         datasets = []
         metrics = []
+        metrics_local = []
         for index, client in enumerate(network.clients):
 
             # create dataset
@@ -187,7 +194,11 @@ def default_data_env(network):
             metric = client.add_metric(spec)
             metrics.append(metric)
 
-        assets = _DataEnv(datasets=datasets, metrics=metrics)
+            spec_local = f.create_metric(offset=index, local=True)
+            metric_local = client.add_metric(spec_local)
+            metrics_local.append(metric_local)
+
+        assets = _DataEnv(datasets=datasets, metrics=metrics, metrics_local=metrics_local)
         yield assets
 
 
@@ -216,6 +227,12 @@ def default_metric_1(data_env_1):
 
 
 @pytest.fixture
+def default_metric_1_local(data_env_1):
+    """Fixture with pre-existing metric in first node."""
+    return data_env_1.metrics_local[0]
+
+
+@pytest.fixture
 def default_dataset_2(data_env_2):
     """Fixture with pre-existing dataset in second node."""
     return data_env_2.datasets[0]
@@ -225,6 +242,12 @@ def default_dataset_2(data_env_2):
 def default_metric_2(data_env_2):
     """Fixture with pre-existing metric in second node."""
     return data_env_2.metrics[0]
+
+
+@pytest.fixture
+def default_metric_2_local(data_env_2):
+    """Fixture with pre-existing metric in second node."""
+    return data_env_2.metrics_local[0]
 
 
 @pytest.fixture
@@ -240,6 +263,12 @@ def default_metric(default_metric_1):
 
 
 @pytest.fixture
+def default_metric_local(default_metric_1_local):
+    """Fixture with pre-existing metric in first node."""
+    return default_metric_1_local
+
+
+@pytest.fixture
 def default_datasets(default_data_env):
     """Fixture with pre-existing datasets."""
     return default_data_env.datasets
@@ -249,6 +278,12 @@ def default_datasets(default_data_env):
 def default_metrics(default_data_env):
     """Fixture with pre-existing metrics."""
     return default_data_env.metrics
+
+
+@pytest.fixture
+def default_metrics_local(default_data_env):
+    """Fixture with pre-existing metrics."""
+    return default_data_env.metrics_local
 
 
 @pytest.fixture

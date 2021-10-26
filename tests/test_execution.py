@@ -10,10 +10,10 @@ from . import settings
 
 
 @pytest.mark.slow
-def test_tuples_execution_on_same_node(factory, network, client, default_dataset, default_metric):
+def test_tuples_execution_on_same_node(factory, network, client, default_dataset, default_metric, default_metric_local):
     """Execution of a traintuple, a following testtuple and a following traintuple."""
 
-    spec = factory.create_algo(AlgoCategory.simple)
+    spec = factory.create_algo(AlgoCategory.simple, local=client.debug)
     algo = client.add_algo(spec)
 
     # create traintuple
@@ -38,7 +38,7 @@ def test_tuples_execution_on_same_node(factory, network, client, default_dataset
 
     # create testtuple
     spec = factory.create_testtuple(
-        metrics=[default_metric],
+        metrics=[default_metric_local] if client.debug else [default_metric],
         traintuple=traintuple,
         dataset=default_dataset,
         data_samples=default_dataset.test_data_sample_keys,
@@ -68,7 +68,7 @@ def test_federated_learning_workflow(factory, client, default_datasets):
     """Test federated learning workflow on each node."""
 
     # create test environment
-    spec = factory.create_algo(AlgoCategory.simple)
+    spec = factory.create_algo(AlgoCategory.simple, local=client.debug)
     algo = client.add_algo(spec)
 
     # create 1 traintuple per dataset and chain them
@@ -111,7 +111,7 @@ def test_tuples_execution_on_different_nodes(factory, client_1, client_2, defaul
     """Execution of a traintuple on node 1 and the following testtuple on node 2."""
     # add test data samples / dataset / metric on node 1
 
-    spec = factory.create_algo(AlgoCategory.simple)
+    spec = factory.create_algo(AlgoCategory.simple, local=client_2.debug)
     algo_2 = client_2.add_algo(spec)
 
     # add traintuple on node 2; should execute on node 2 (dataset located on node 2)
@@ -144,7 +144,8 @@ def test_tuples_execution_on_different_nodes(factory, client_1, client_2, defaul
 def test_traintuple_execution_failure(factory, client, default_dataset_1):
     """Invalid algo script is causing traintuple failure."""
 
-    spec = factory.create_algo(category=AlgoCategory.simple, py_script=sbt.factory.INVALID_ALGO_SCRIPT)
+    spec = factory.create_algo(category=AlgoCategory.simple, py_script=sbt.factory.INVALID_ALGO_SCRIPT,
+                               local=client.debug)
     algo = client.add_algo(spec)
 
     spec = factory.create_traintuple(
@@ -166,7 +167,8 @@ def test_traintuple_execution_failure(factory, client, default_dataset_1):
 def test_composite_traintuple_execution_failure(factory, client, default_dataset):
     """Invalid composite algo script is causing traintuple failure."""
 
-    spec = factory.create_algo(AlgoCategory.composite, py_script=sbt.factory.INVALID_COMPOSITE_ALGO_SCRIPT)
+    spec = factory.create_algo(AlgoCategory.composite, py_script=sbt.factory.INVALID_COMPOSITE_ALGO_SCRIPT,
+                               local=client.debug)
     algo = client.add_algo(spec)
 
     spec = factory.create_composite_traintuple(
@@ -188,10 +190,11 @@ def test_composite_traintuple_execution_failure(factory, client, default_dataset
 def test_aggregatetuple_execution_failure(factory, client, default_dataset):
     """Invalid algo script is causing traintuple failure."""
 
-    spec = factory.create_algo(AlgoCategory.composite)
+    spec = factory.create_algo(AlgoCategory.composite, local=client.debug)
     composite_algo = client.add_algo(spec)
 
-    spec = factory.create_algo(AlgoCategory.aggregate, py_script=sbt.factory.INVALID_AGGREGATE_ALGO_SCRIPT)
+    spec = factory.create_algo(AlgoCategory.aggregate, py_script=sbt.factory.INVALID_AGGREGATE_ALGO_SCRIPT,
+                               local=client.debug)
     aggregate_algo = client.add_algo(spec)
 
     composite_traintuples = []
@@ -222,10 +225,10 @@ def test_aggregatetuple_execution_failure(factory, client, default_dataset):
 
 
 @pytest.mark.slow
-def test_composite_traintuples_execution(factory, client, default_dataset, default_metric):
+def test_composite_traintuples_execution(factory, client, default_dataset, default_metric, default_metric_local):
     """Execution of composite traintuples."""
 
-    spec = factory.create_algo(AlgoCategory.composite)
+    spec = factory.create_algo(AlgoCategory.composite, local=client.debug)
     algo = client.add_algo(spec)
 
     # first composite traintuple
@@ -254,7 +257,7 @@ def test_composite_traintuples_execution(factory, client, default_dataset, defau
 
     # add a 'composite' testtuple
     spec = factory.create_testtuple(
-        metrics=[default_metric],
+        metrics=[default_metric_local] if client.debug else [default_metric],
         traintuple=composite_traintuple_2,
         dataset=default_dataset,
         data_samples=default_dataset.test_data_sample_keys,
@@ -273,14 +276,14 @@ def test_composite_traintuples_execution(factory, client, default_dataset, defau
 
 
 @pytest.mark.slow
-def test_aggregatetuple(factory, client, default_metric, default_dataset):
+def test_aggregatetuple(factory, client, default_metric, default_metric_local, default_dataset):
     """Execution of aggregatetuple aggregating traintuples."""
 
     number_of_traintuples_to_aggregate = 3
 
     train_data_sample_keys = default_dataset.train_data_sample_keys[:number_of_traintuples_to_aggregate]
 
-    spec = factory.create_algo(AlgoCategory.simple)
+    spec = factory.create_algo(AlgoCategory.simple, local=client.debug)
     algo = client.add_algo(spec)
 
     # add traintuples
@@ -295,7 +298,7 @@ def test_aggregatetuple(factory, client, default_metric, default_dataset):
         traintuple = client.wait(traintuple)
         traintuples.append(traintuple)
 
-    spec = factory.create_algo(AlgoCategory.aggregate)
+    spec = factory.create_algo(AlgoCategory.aggregate, local=client.debug)
     aggregate_algo = client.add_algo(spec)
 
     spec = factory.create_aggregatetuple(
@@ -309,7 +312,7 @@ def test_aggregatetuple(factory, client, default_metric, default_dataset):
     assert len(aggregatetuple.parent_task_keys) == number_of_traintuples_to_aggregate
 
     spec = factory.create_testtuple(
-        metrics=[default_metric],
+        metrics=[default_metric_local] if client.debug else [default_metric],
         traintuple=aggregatetuple,
         dataset=default_dataset,
         data_samples=default_dataset.test_data_sample_keys,
@@ -319,7 +322,8 @@ def test_aggregatetuple(factory, client, default_metric, default_dataset):
 
 
 @pytest.mark.slow
-def test_aggregate_composite_traintuples(factory, network, clients, default_datasets, default_metrics):
+def test_aggregate_composite_traintuples(factory, network, clients, default_datasets, default_metrics,
+                                         default_metrics_local):
     """Do 2 rounds of composite traintuples aggregations on multiple nodes.
 
     Compute plan details:
@@ -352,9 +356,9 @@ def test_aggregate_composite_traintuples(factory, network, clients, default_data
     number_of_rounds = 2
 
     # register algos on first node
-    spec = factory.create_algo(AlgoCategory.composite)
+    spec = factory.create_algo(AlgoCategory.composite, local=clients[0].debug)
     composite_algo = clients[0].add_algo(spec)
-    spec = factory.create_algo(AlgoCategory.aggregate)
+    spec = factory.create_algo(AlgoCategory.aggregate, local=clients[0].debug)
     aggregate_algo = clients[0].add_algo(spec)
 
     # launch execution
@@ -396,10 +400,10 @@ def test_aggregate_composite_traintuples(factory, network, clients, default_data
         previous_composite_traintuples = composite_traintuples
 
     # last round: create associated testtuple for composite and aggregate
-    for index, (traintuple, metric, dataset) in enumerate(zip(
-            previous_composite_traintuples, default_metrics, default_datasets)):
+    for index, (traintuple, metric, metric_local, dataset) in enumerate(zip(
+            previous_composite_traintuples, default_metrics, default_metrics_local, default_datasets)):
         spec = factory.create_testtuple(
-            metrics=[metric],
+            metrics=[metric_local] if clients[0].debug else [metric],
             traintuple=traintuple,
             dataset=dataset,
             data_samples=dataset.test_data_sample_keys,
@@ -410,7 +414,7 @@ def test_aggregate_composite_traintuples(factory, network, clients, default_data
         assert list(testtuple.test.perfs.values())[0] == 32 + index
 
     spec = factory.create_testtuple(
-        metrics=[default_metrics[0]],
+        metrics=[default_metrics_local[0]] if clients[0].debug else [default_metrics[0]],
         traintuple=previous_aggregatetuple,
         dataset=default_datasets[0],
         data_samples=default_datasets[0].test_data_sample_keys,
@@ -456,7 +460,7 @@ def test_aggregate_composite_traintuples(factory, network, clients, default_data
 
 @pytest.mark.remote_only
 @pytest.mark.skipif(not settings.HAS_SHARED_PATH, reason='requires a shared path')
-def test_use_data_sample_located_in_shared_path(factory, client, node_cfg, default_metric):
+def test_use_data_sample_located_in_shared_path(factory, client, node_cfg, default_metric, default_metric_local):
     spec = factory.create_dataset()
     dataset = client.add_dataset(spec)
 
@@ -464,7 +468,7 @@ def test_use_data_sample_located_in_shared_path(factory, client, node_cfg, defau
     spec.move_data_to_server(node_cfg.shared_path, settings.IS_MINIKUBE)
     data_sample_key = client.add_data_sample(spec, local=False)  # should not raise
 
-    spec = factory.create_algo(AlgoCategory.simple)
+    spec = factory.create_algo(AlgoCategory.simple, local=client.debug)
     algo = client.add_algo(spec)
 
     spec = factory.create_traintuple(
@@ -479,7 +483,7 @@ def test_use_data_sample_located_in_shared_path(factory, client, node_cfg, defau
 
     # create testtuple
     spec = factory.create_testtuple(
-        metrics=[default_metric],
+        metrics=[default_metric_local] if client.debug else [default_metric],
         traintuple=traintuple,
         dataset=dataset,
         data_samples=[data_sample_key],
