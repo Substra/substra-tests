@@ -222,10 +222,10 @@ class Client:
             time.sleep(cfg.FUTURE_POLLING_PERIOD)
             asset = getter(key)
 
-        if raises and asset.status == Status.failed.value:
+        if raises and asset.status in (Status.failed.value, ComputePlanStatus.failed.value):
             raise errors.FutureFailureError(f'Future execution failed on {asset}')
 
-        if raises and asset.status == Status.canceled.value:
+        if raises and asset.status in (Status.canceled.value, ComputePlanStatus.canceled.value):
             raise errors.FutureFailureError(f'Future execution canceled on {asset}')
 
         return asset
