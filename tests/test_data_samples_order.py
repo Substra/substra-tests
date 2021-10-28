@@ -157,11 +157,11 @@ def test_traintuple_data_samples_relative_order(factory, client, dataset):
     algo_script = TEMPLATE_ALGO_SCRIPT.format(data_sample_keys=data_sample_keys,
                                               predict_data_sample_keys=data_sample_keys[:2],
                                               models=None)
-    algo_spec = factory.create_algo(category=AlgoCategory.simple, py_script=algo_script, local=client.debug)
+    algo_spec = factory.create_algo(category=AlgoCategory.simple, py_script=algo_script)
     algo = client.add_algo(algo_spec)
 
     metric_script = TEMPLATE_METRIC_SCRIPT.format(data_sample_keys=data_sample_keys[:2])
-    metric_spec = factory.create_metric(py_script=metric_script, local=client.debug)
+    metric_spec = factory.create_metric(py_script=metric_script)
     metric = client.add_metric(metric_spec)
 
     traintuple_spec = factory.create_traintuple(
@@ -194,11 +194,11 @@ def test_composite_traintuple_data_samples_relative_order(factory, client, datas
     composite_algo_script = TEMPLATE_COMPOSITE_ALGO_SCRIPT.format(data_sample_keys=data_sample_keys,
                                                                   predict_data_sample_keys=data_sample_keys[:2],
                                                                   models=None)
-    algo_spec = factory.create_algo(AlgoCategory.composite, py_script=composite_algo_script, local=client.debug)
+    algo_spec = factory.create_algo(AlgoCategory.composite, py_script=composite_algo_script)
     composite_algo = client.add_algo(algo_spec)
 
     metric_script = TEMPLATE_METRIC_SCRIPT.format(data_sample_keys=data_sample_keys[:2])
-    metric_spec = factory.create_metric(py_script=metric_script, local=client.debug)
+    metric_spec = factory.create_metric(py_script=metric_script)
     metric = client.add_metric(metric_spec)
 
     traintuple_spec = factory.create_composite_traintuple(
@@ -264,7 +264,6 @@ class TestOpener(tools.Opener):
 
     spec = factory.create_algo(
         category=AlgoCategory.simple,
-        local=client.debug,
         py_script=f"""
 import json
 import substratools as tools

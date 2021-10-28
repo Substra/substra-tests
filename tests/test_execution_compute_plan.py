@@ -14,7 +14,7 @@ def test_compute_plan_simple(factory, client_1, client_2, default_dataset_1, def
     - 1 testtuple executed on node 1 depending on the last traintuple and on multiple metrics
     """
 
-    spec = factory.create_algo(AlgoCategory.simple, local=client_2.debug)
+    spec = factory.create_algo(AlgoCategory.simple)
     algo_2 = client_2.add_algo(spec)
 
     # create compute plan
@@ -118,7 +118,7 @@ def test_compute_plan_simple(factory, client_1, client_2, default_dataset_1, def
 
 
 @pytest.mark.slow
-def test_compute_plan_single_client_success(factory, client, default_dataset, default_metric, default_metric_local):
+def test_compute_plan_single_client_success(factory, client, default_dataset, default_metric):
     """A compute plan with 3 traintuples and 3 associated testtuples"""
 
     # Create a compute plan with 3 steps:
@@ -129,7 +129,7 @@ def test_compute_plan_single_client_success(factory, client, default_dataset, de
 
     data_sample_1, data_sample_2, data_sample_3, _ = default_dataset.train_data_sample_keys
 
-    spec = factory.create_algo(AlgoCategory.simple, local=client.debug)
+    spec = factory.create_algo(AlgoCategory.simple)
     algo = client.add_algo(spec)
 
     cp_spec = factory.create_compute_plan()
@@ -140,7 +140,7 @@ def test_compute_plan_single_client_success(factory, client, default_dataset, de
         data_samples=[data_sample_1]
     )
     cp_spec.add_testtuple(
-        metrics=[default_metric_local] if client.debug else [default_metric],
+        metrics=[default_metric],
         traintuple_spec=traintuple_spec_1,
         dataset=default_dataset,
         data_samples=default_dataset.test_data_sample_keys,
@@ -153,7 +153,7 @@ def test_compute_plan_single_client_success(factory, client, default_dataset, de
         in_models=[traintuple_spec_1]
     )
     cp_spec.add_testtuple(
-        metrics=[default_metric_local] if client.debug else [default_metric],
+        metrics=[default_metric],
         dataset=default_dataset,
         data_samples=default_dataset.test_data_sample_keys,
         traintuple_spec=traintuple_spec_2
@@ -166,7 +166,7 @@ def test_compute_plan_single_client_success(factory, client, default_dataset, de
         in_models=[traintuple_spec_2]
     )
     cp_spec.add_testtuple(
-        metrics=[default_metric_local] if client.debug else [default_metric],
+        metrics=[default_metric],
         traintuple_spec=traintuple_spec_3,
         dataset=default_dataset,
         data_samples=default_dataset.test_data_sample_keys,
@@ -184,7 +184,7 @@ def test_compute_plan_single_client_success(factory, client, default_dataset, de
 
 
 @pytest.mark.slow
-def test_compute_plan_update(factory, client, default_dataset, default_metric, default_metric_local):
+def test_compute_plan_update(factory, client, default_dataset, default_metric):
     """A compute plan with 3 traintuples and 3 associated testtuples.
 
     This is done by sending 3 requests (one create and two updates).
@@ -192,7 +192,7 @@ def test_compute_plan_update(factory, client, default_dataset, default_metric, d
 
     data_sample_1, data_sample_2, data_sample_3, _ = default_dataset.train_data_sample_keys
 
-    spec = factory.create_algo(AlgoCategory.simple, local=client.debug)
+    spec = factory.create_algo(AlgoCategory.simple)
     algo = client.add_algo(spec)
 
     # Create a compute plan with traintuple + testtuple
@@ -204,7 +204,7 @@ def test_compute_plan_update(factory, client, default_dataset, default_metric, d
         data_samples=[data_sample_1]
     )
     cp_spec.add_testtuple(
-        metrics=[default_metric_local] if client.debug else [default_metric],
+        metrics=[default_metric],
         traintuple_spec=traintuple_spec_1,
         dataset=default_dataset,
         data_samples=default_dataset.test_data_sample_keys,
@@ -222,7 +222,7 @@ def test_compute_plan_update(factory, client, default_dataset, default_metric, d
         metadata={"foo": "bar"},
     )
     cp_spec.add_testtuple(
-        metrics=[default_metric_local] if client.debug else [default_metric],
+        metrics=[default_metric],
         traintuple_spec=traintuple_spec_2,
         metadata={"foo": "bar"},
         dataset=default_dataset,
@@ -245,7 +245,7 @@ def test_compute_plan_update(factory, client, default_dataset, default_metric, d
 
     cp_spec = factory.update_compute_plan(cp)
     cp_spec.add_testtuple(
-        metrics=[default_metric_local] if client.debug else [default_metric],
+        metrics=[default_metric],
         traintuple_spec=traintuple_spec_3,
         dataset=default_dataset,
         data_samples=default_dataset.test_data_sample_keys,
@@ -283,8 +283,7 @@ def test_compute_plan_single_client_failure(factory, client, default_dataset, de
 
     data_sample_1, data_sample_2, data_sample_3, _ = default_dataset.train_data_sample_keys
 
-    spec = factory.create_algo(category=AlgoCategory.simple, py_script=sbt.factory.INVALID_ALGO_SCRIPT,
-                               local=client.debug)
+    spec = factory.create_algo(category=AlgoCategory.simple, py_script=sbt.factory.INVALID_ALGO_SCRIPT)
     algo = client.add_algo(spec)
 
     cp_spec = factory.create_compute_plan()
@@ -336,8 +335,7 @@ def test_compute_plan_single_client_failure(factory, client, default_dataset, de
 
 
 @pytest.mark.slow
-def test_compute_plan_aggregate_composite_traintuples(factory, clients, default_datasets, default_metrics,
-                                                      default_metrics_local):
+def test_compute_plan_aggregate_composite_traintuples(factory, clients, default_datasets, default_metrics):
     """
     Compute plan version of the `test_aggregate_composite_traintuples` method from `test_execution.py`
     """
@@ -345,9 +343,9 @@ def test_compute_plan_aggregate_composite_traintuples(factory, clients, default_
     number_of_rounds = 2
 
     # register algos on first node
-    spec = factory.create_algo(AlgoCategory.composite, local=clients[0].debug)
+    spec = factory.create_algo(AlgoCategory.composite)
     composite_algo = clients[0].add_algo(spec)
-    spec = factory.create_algo(AlgoCategory.aggregate, local=clients[0].debug)
+    spec = factory.create_algo(AlgoCategory.aggregate)
     aggregate_algo = clients[0].add_algo(spec)
 
     # launch execution
@@ -389,16 +387,16 @@ def test_compute_plan_aggregate_composite_traintuples(factory, clients, default_
         previous_composite_traintuple_specs = composite_traintuple_specs
 
     # last round: create associated testtuple
-    for composite_traintuple, dataset, metric, metric_local in zip(
-            previous_composite_traintuple_specs, default_datasets, default_metrics, default_metrics_local):
+    for composite_traintuple, dataset, metric in zip(
+            previous_composite_traintuple_specs, default_datasets, default_metrics):
         cp_spec.add_testtuple(
-            metrics=[metric_local] if clients[0].debug else [metric],
+            metrics=[metric],
             dataset=dataset,
             data_samples=dataset.test_data_sample_keys,
             traintuple_spec=composite_traintuple,
         )
     cp_spec.add_testtuple(
-        metrics=[metric_local] if clients[0].debug else [metric],
+        metrics=[metric],
         traintuple_spec=previous_aggregatetuple_spec,
         dataset=default_datasets[0],
         data_samples=default_datasets[0].test_data_sample_keys,
@@ -445,7 +443,7 @@ def test_compute_plan_remove_intermediary_model(factory, client, default_dataset
     data_sample_1, data_sample_2, data_sample_3, _ = default_dataset.train_data_sample_keys
 
     # register algo
-    spec = factory.create_algo(AlgoCategory.simple, local=client.debug)
+    spec = factory.create_algo(AlgoCategory.simple)
     algo = client.add_algo(spec)
 
     # create a compute plan with clean_model activate
@@ -493,7 +491,7 @@ def test_compute_plan_remove_intermediary_model(factory, client, default_dataset
 
 
 def test_compute_plan_circular_dependency_failure(factory, client, default_dataset):
-    spec = factory.create_algo(AlgoCategory.simple, local=client.debug)
+    spec = factory.create_algo(AlgoCategory.simple)
     algo = client.add_algo(spec)
 
     cp_spec = factory.create_compute_plan()
@@ -531,7 +529,7 @@ def test_execution_compute_plan_canceled(factory, client, default_dataset):
 
     data_sample_key = default_dataset.train_data_sample_keys[0]
 
-    spec = factory.create_algo(AlgoCategory.simple, local=client.debug)
+    spec = factory.create_algo(AlgoCategory.simple)
     algo = client.add_algo(spec)
 
     cp_spec = factory.create_compute_plan()
@@ -568,7 +566,7 @@ def test_execution_compute_plan_canceled(factory, client, default_dataset):
 def test_compute_plan_no_batching(factory, client, default_dataset):
     data_sample_1, data_sample_2, _, _ = default_dataset.train_data_sample_keys
 
-    spec = factory.create_algo(AlgoCategory.simple, local=client.debug)
+    spec = factory.create_algo(AlgoCategory.simple)
     algo = client.add_algo(spec)
 
     # Create a compute plan
@@ -646,11 +644,10 @@ if __name__ == '__main__':
 
 
 @pytest.mark.slow
-def test_compute_plan_local_folder(factory, client, default_dataset, default_metric_1, default_metric_1_local):
+def test_compute_plan_local_folder(factory, client, default_dataset, default_metric_1):
     data_sample_1, data_sample_2, _, _ = default_dataset.train_data_sample_keys
 
-    spec = factory.create_algo(category=AlgoCategory.simple, py_script=LOCAL_FOLDER_ALGO_SCRIPT,
-                               local=client.debug)
+    spec = factory.create_algo(category=AlgoCategory.simple, py_script=LOCAL_FOLDER_ALGO_SCRIPT)
     algo = client.add_algo(spec)
     cp_spec = factory.create_compute_plan()
 
@@ -671,7 +668,7 @@ def test_compute_plan_local_folder(factory, client, default_dataset, default_met
 
     # Testtuple
     cp_spec.add_testtuple(
-        metrics=[default_metric_1_local] if client.debug else [default_metric_1],
+        metrics=[default_metric_1],
         dataset=default_dataset,
         data_samples=default_dataset.test_data_sample_keys,
         traintuple_spec=traintuple_spec_2

@@ -44,7 +44,7 @@ _NB_ORGS = 2
 
 # this image is built and pushed by the connect-tools repository
 _IMAGE = (
-    f"{sbt.factory.DEFAULT_TOOLS_BASE_IMAGE}:"
+    f"{sbt.factory.DEFAULT_TOOLS_BASE_IMAGE_GCR}:"
     f"{sbt.factory.DEFAULT_TOOLS_VERSION}-workflows"
 )
 

@@ -18,14 +18,17 @@ pytestmark = pytest.mark.skipif(not docker_available(), reason="requires docker"
 
 @pytest.mark.remote_only
 @pytest.mark.slow
-def test_execution_debug(client, debug_client, factory, default_dataset, default_metric_local):
+def test_execution_debug(client, debug_client, debug_factory, default_dataset):
 
-    spec = factory.create_algo(AlgoCategory.simple, local=True)
+    spec = debug_factory.create_algo(AlgoCategory.simple)
     algo = client.add_algo(spec)
+
+    metric_spec = debug_factory.create_metric()
+    metric = client.add_metric(metric_spec)
 
     #  Add the traintuple
     # create traintuple
-    spec = factory.create_traintuple(
+    spec = debug_factory.create_traintuple(
         algo=algo,
         dataset=default_dataset,
         data_samples=default_dataset.train_data_sample_keys[0],
@@ -35,8 +38,8 @@ def test_execution_debug(client, debug_client, factory, default_dataset, default
     assert len(traintuple.train.models) != 0
 
     # Add the testtuple
-    spec = factory.create_testtuple(
-        metrics=[default_metric_local],
+    spec = debug_factory.create_testtuple(
+        metrics=[metric],
         traintuple=traintuple,
         dataset=default_dataset,
         data_samples=[default_dataset.test_data_sample_keys[0]],
@@ -48,7 +51,7 @@ def test_execution_debug(client, debug_client, factory, default_dataset, default
 
 @pytest.mark.remote_only
 @pytest.mark.slow
-def test_debug_compute_plan_aggregate_composite(client, debug_client, factory, default_datasets, default_metrics_local):
+def test_debug_compute_plan_aggregate_composite(network, client, debug_client, debug_factory, default_datasets):
     """
     Debug / Compute plan version of the
     `test_aggregate_composite_traintuples` method from `test_execution.py`
@@ -57,16 +60,16 @@ def test_debug_compute_plan_aggregate_composite(client, debug_client, factory, d
     number_of_rounds = 2
 
     # register algos on first node
-    spec = factory.create_algo(AlgoCategory.composite, local=True)
+    spec = debug_factory.create_algo(AlgoCategory.composite)
     composite_algo = client.add_algo(spec)
-    spec = factory.create_algo(AlgoCategory.aggregate, local=True)
+    spec = debug_factory.create_algo(AlgoCategory.aggregate)
     aggregate_algo = client.add_algo(spec)
 
     # launch execution
     previous_aggregatetuple_spec = None
     previous_composite_traintuple_specs = []
 
-    cp_spec = factory.create_compute_plan()
+    cp_spec = debug_factory.create_compute_plan()
 
     for round_ in range(number_of_rounds):
         # create composite traintuple on each node
@@ -98,9 +101,16 @@ def test_debug_compute_plan_aggregate_composite(client, debug_client, factory, d
         previous_aggregatetuple_spec = spec
         previous_composite_traintuple_specs = composite_traintuple_specs
 
+    metrics = []
+    for index, client in enumerate(network.clients):
+        # create metric
+        spec = debug_factory.create_metric(offset=index)
+        metric = client.add_metric(spec)
+        metrics.append(metric)
+
     # last round: create associated testtuple
     for composite_traintuple_spec, dataset, metric in zip(
-            previous_composite_traintuple_specs, default_datasets, default_metrics_local):
+            previous_composite_traintuple_specs, default_datasets, metrics):
         cp_spec.add_testtuple(
             metrics=[metric],
             dataset=dataset,

@@ -206,11 +206,15 @@ INVALID_COMPOSITE_ALGO_SCRIPT = DEFAULT_COMPOSITE_ALGO_SCRIPT.replace('train', '
 INVALID_AGGREGATE_ALGO_SCRIPT = DEFAULT_AGGREGATE_ALGO_SCRIPT.replace('aggregate', 'etagergga')
 
 
+# We need to adapt the image base name base on the fact that we run the cp in the docker context (debug)
+# or the kaniko pod (remote) to be able to pull the image
 def default_algo_dockerfile(local=False):
     default_tools_image = DEFAULT_TOOLS_IMAGE_GCR if local else DEFAULT_TOOLS_IMAGE
     return f'FROM {default_tools_image}\nCOPY algo.py .\nENTRYPOINT ["python3", "algo.py"]\n'
 
 
+# We need to adapt the image base name base on the fact that we run the cp in the docker context (debug)
+# or the kaniko pod (remote) to be able to pull the image
 def default_metrics_dockerfile(local=False):
     default_tools_image = DEFAULT_TOOLS_IMAGE_GCR if local else DEFAULT_TOOLS_IMAGE
     return f'FROM {default_tools_image}\nCOPY metrics.py .\nENTRYPOINT ["python3", "metrics.py"]\n'
@@ -552,13 +556,14 @@ class UpdateComputePlanSpec(_BaseComputePlanSpec):
 
 class AssetsFactory:
 
-    def __init__(self, name):
+    def __init__(self, name, client_debug_local=False):
         self._data_sample_counter = Counter()
         self._dataset_counter = Counter()
         self._metric_counter = Counter()
         self._algo_counter = Counter()
         self._workdir = pathlib.Path(tempfile.mkdtemp(prefix='/tmp/'))
         self._uuid = name
+        self._client_debug_local = client_debug_local
 
     def __enter__(self):
         return self
@@ -615,8 +620,7 @@ class AssetsFactory:
                       metadata=None,
                       dockerfile=None,
                       py_script=None,
-                      offset=0,
-                      local=False):
+                      offset=0):
         if py_script is None:
             py_script = TEMPLATED_DEFAULT_METRICS_SCRIPT.substitute(offset=offset)
 
@@ -630,7 +634,7 @@ class AssetsFactory:
         with open(description_path, 'w') as f:
             f.write(description_content)
 
-        dockerfile = dockerfile or default_metrics_dockerfile(local)
+        dockerfile = dockerfile or default_metrics_dockerfile(self._client_debug_local)
 
         metrics_zip = utils.create_archive(
             tmpdir / 'metrics',
@@ -662,7 +666,7 @@ class AssetsFactory:
         except KeyError:
             raise Exception('Invalid algo category', category)
 
-        dockerfile = dockerfile or default_algo_dockerfile(local)
+        dockerfile = dockerfile or default_algo_dockerfile(self._client_debug_local)
 
         algo_zip = utils.create_archive(
             tmpdir / 'algo',
