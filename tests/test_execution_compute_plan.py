@@ -59,6 +59,8 @@ def test_compute_plan_simple(factory, client_1, client_2, default_dataset_1, def
     cp = client_1.wait(cp_added)
     assert cp.tag == 'foo'
     assert cp.metadata == {"foo": "bar"}
+    assert cp.task_count == cp.done_count == 4
+    assert cp.todo_count == cp.waiting_count == cp.doing_count == cp.canceled_count == cp.failed_count == 0
 
     traintuples = client_1.list_compute_plan_traintuples(cp.key)
     assert len(traintuples) == 3
