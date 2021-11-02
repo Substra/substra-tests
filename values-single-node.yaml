@@ -7,5 +7,5 @@ nodes:
     msp_id: 'MyOrg1MSP'
     address: 'http://substra-backend.node-1.com'
     user: 'node-1'
-    password: 'p@$swr0d44'
+    password: 'p@sswr0d44'
     shared_path: '/tmp/org-1/servermedias'
