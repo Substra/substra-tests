@@ -103,10 +103,10 @@ def _patch_values_file(cfg: Config, repo: Repository, value_file: str) -> None:
         data = yaml.load(file, Loader=yaml.FullLoader)
 
     if repo == cfg.repos.backend:
-        data["celeryworker"]["replicaCount"] = cfg.gcp.nodes
-        data["celeryworker"]["concurrency"] = cfg.backend_celery_concurrency
-        data["backend"]["kaniko"]["dockerConfigSecretName"] = ""  # remove docker-config secret
-        for elt in data["registry"]["prepopulate"]:
+        data["worker"]["replicaCount"] = cfg.gcp.nodes
+        data["worker"]["concurrency"] = cfg.backend_celery_concurrency
+        data["kaniko"]["dockerConfigSecretName"] = ""  # remove docker-config secret
+        for elt in data["containerRegistry"]["prepopulate"]:
             elt["dockerConfigSecretName"] = ""  # remove docker-config secret
     if repo == cfg.repos.hlf_k8s:
         if "chaincodes" in data:
