@@ -18,7 +18,8 @@ def deploy_all(cfg: Config, source_dir: str) -> None:
             _create_namespaces(cfg, ["org-1", "org-2"])
             continue
 
-        wait = repo != cfg.repos.hlf_k8s  # don't wait for hlf-k8s deployment to complete
+        # For some projects don't wait for the deployment to complete
+        wait = repo not in [cfg.repos.hlf_k8s, cfg.repos.orchestrator]
         _deploy(cfg, repo, source_dir, wait)
 
 
@@ -83,8 +84,9 @@ def _patch_skaffold_file(cfg: Config, repo: Repository, source_dir: str) -> str:
         # use 2-orgs-policy-any instead of 2-orgs-policy-any-no-ca provided with root skaffold file
         # which means that chartPath is not properly defined like the one in the root dir of hlf-k8s
         # the aim is to test also hlf-ca certificates generation in distributed mode
-        if release["chartPath"].startswith("charts/") or release["chartPath"].startswith("../../charts/"):
-            release["chartPath"] = os.path.join(repo_dir, release["chartPath"].replace('../../', ''))
+        if (release.get("chartPath", "").startswith("charts/") or
+           release.get("chartPath", "").startswith("../../charts/")):
+            release["chartPath"] = os.path.join(repo_dir, release["chartPath"].replace("../../", ""))
         if "valuesFiles" in release:
             values_files.extend(release["valuesFiles"])
 
