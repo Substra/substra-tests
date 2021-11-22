@@ -690,7 +690,7 @@ class AssetsFactory:
         traintuples = traintuples or []
 
         for t in traintuples:
-            assert isinstance(t, models.Traintuple)
+            assert isinstance(t, (models.Traintuple, models.Aggregatetuple))
 
         return TraintupleSpec(
             algo_key=algo.key if algo else None,
@@ -709,7 +709,7 @@ class AssetsFactory:
         traintuples = traintuples or []
 
         for t in traintuples:
-            assert isinstance(t, (models.Traintuple, models.CompositeTraintuple))
+            assert isinstance(t, (models.Traintuple, models.CompositeTraintuple, models.Aggregatetuple))
 
         return AggregatetupleSpec(
             algo_key=algo.key if algo else None,

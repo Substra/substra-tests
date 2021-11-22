@@ -274,7 +274,7 @@ def test_composite_traintuples_execution(factory, client, default_dataset, defau
 
 @pytest.mark.slow
 def test_aggregatetuple(factory, client, default_metric, default_dataset):
-    """Execution of aggregatetuple aggregating traintuples."""
+    """Execution of aggregatetuple aggregating traintuples. (traintuples -> aggregatetuple)"""
 
     number_of_traintuples_to_aggregate = 3
 
@@ -292,7 +292,6 @@ def test_aggregatetuple(factory, client, default_metric, default_dataset):
             data_samples=[data_sample_key],
         )
         traintuple = client.add_traintuple(spec)
-        traintuple = client.wait(traintuple)
         traintuples.append(traintuple)
 
     spec = factory.create_algo(AlgoCategory.aggregate)
@@ -304,8 +303,6 @@ def test_aggregatetuple(factory, client, default_metric, default_dataset):
         traintuples=traintuples,
     )
     aggregatetuple = client.add_aggregatetuple(spec)
-    aggregatetuple = client.wait(aggregatetuple)
-    assert aggregatetuple.status == Status.done
     assert len(aggregatetuple.parent_task_keys) == number_of_traintuples_to_aggregate
 
     spec = factory.create_testtuple(
@@ -316,6 +313,98 @@ def test_aggregatetuple(factory, client, default_metric, default_dataset):
     )
     testtuple = client.add_testtuple(spec)
     testtuple = client.wait(testtuple)
+
+
+@pytest.mark.slow
+def test_aggregatetuple_chained(factory, client, default_metric, default_dataset):
+    """Execution of 2 chained aggregatetuple (traintuple -> aggregatetuple -> aggregatetuple)."""
+
+    number_of_traintuples_to_aggregate = 1
+
+    train_data_sample_key = default_dataset.train_data_sample_keys[0]
+
+    spec = factory.create_algo(AlgoCategory.simple)
+    algo = client.add_algo(spec)
+
+    # add traintuples
+    spec = factory.create_traintuple(
+        algo=algo,
+        dataset=default_dataset,
+        data_samples=[train_data_sample_key],
+    )
+    traintuple = client.add_traintuple(spec)
+
+    spec = factory.create_algo(AlgoCategory.aggregate)
+    aggregate_algo = client.add_algo(spec)
+
+    # add first layer of aggregatetuples
+    spec = factory.create_aggregatetuple(
+        algo=aggregate_algo,
+        worker=client.node_id,
+        traintuples=[traintuple],
+    )
+
+    aggregatetuple_1 = client.add_aggregatetuple(spec)
+    assert len(aggregatetuple_1.parent_task_keys) == number_of_traintuples_to_aggregate
+
+    # add second layer of aggregatetuple
+    spec = factory.create_aggregatetuple(
+        algo=aggregate_algo,
+        worker=client.node_id,
+        traintuples=[aggregatetuple_1],
+    )
+
+    aggregatetuple_2 = client.add_aggregatetuple(spec)
+    aggregatetuple_2 = client.wait(aggregatetuple_2)
+    assert aggregatetuple_2.status == Status.done
+    assert len(aggregatetuple_2.parent_task_keys) == 1
+
+
+@pytest.mark.slow
+def test_aggregatetuple_traintuple(factory, client, default_metric, default_dataset):
+    """Execution of traintuple after an aggregatetuple (traintuples -> aggregatetuple -> traintuples)"""
+
+    number_of_traintuples = 2
+
+    train_data_sample_keys = default_dataset.train_data_sample_keys[:number_of_traintuples]
+    train_data_sample_key_1 = train_data_sample_keys[0]
+    train_data_sample_key_2 = train_data_sample_keys[1]
+
+    spec = factory.create_algo(AlgoCategory.simple)
+    algo = client.add_algo(spec)
+
+    # add first part of the traintuples
+    spec = factory.create_traintuple(
+        algo=algo,
+        dataset=default_dataset,
+        data_samples=[train_data_sample_key_1],
+    )
+    traintuple_1 = client.add_traintuple(spec)
+
+    spec = factory.create_algo(AlgoCategory.aggregate)
+    aggregate_algo = client.add_algo(spec)
+
+    # add aggregatetuple
+    spec = factory.create_aggregatetuple(
+        algo=aggregate_algo,
+        worker=client.node_id,
+        traintuples=[traintuple_1],
+    )
+    aggregatetuple = client.add_aggregatetuple(spec)
+    assert len(aggregatetuple.parent_task_keys) == 1
+
+    # add second part of the traintuples
+    spec = factory.create_traintuple(
+        algo=algo,
+        dataset=default_dataset,
+        data_samples=[train_data_sample_key_2],
+        traintuples=[aggregatetuple],
+    )
+
+    traintuple_2 = client.add_traintuple(spec)
+    traintuple_2 = client.wait(traintuple_2)
+
+    assert traintuple_2.status == Status.done
 
 
 @pytest.mark.slow
