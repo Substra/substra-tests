@@ -8,6 +8,7 @@ from substra.sdk.models import Status, ComputePlanStatus, ModelType
 from . import errors, cfg
 
 DATASET_DOWNLOAD_FILENAME = 'opener.py'
+ALGO_DOWNLOAD_FILENAME = 'algo.tar.gz'
 
 _get_methods = {
     'Traintuple': 'get_traintuple',
@@ -137,6 +138,13 @@ class Client:
         with tempfile.TemporaryDirectory() as tmp:
             self._client.download_dataset(key, tmp)
             path = os.path.join(tmp, DATASET_DOWNLOAD_FILENAME)
+            with open(path, 'rb') as f:
+                return f.read()
+
+    def download_algo(self, key):
+        with tempfile.TemporaryDirectory() as tmp:
+            self._client.download_algo(key, tmp)
+            path = os.path.join(tmp, ALGO_DOWNLOAD_FILENAME)
             with open(path, 'rb') as f:
                 return f.read()
 

@@ -32,6 +32,17 @@ def test_download_opener(factory, client):
     assert content == spec.read_opener()
 
 
+@pytest.mark.parametrize('category', [AlgoCategory.simple, AlgoCategory.aggregate, AlgoCategory.composite])
+def test_download_algo(factory, client, category):
+    spec = factory.create_algo(category)
+    algo = client.add_algo(spec)
+
+    content = client.download_algo(algo.key)
+    with open(spec.file, 'rb') as f:
+        expected_content = f.read()
+    assert content == expected_content
+
+
 def test_describe_dataset(factory, client):
     spec = factory.create_dataset()
     dataset = client.add_dataset(spec)
