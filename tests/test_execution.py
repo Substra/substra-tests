@@ -577,3 +577,44 @@ def test_use_data_sample_located_in_shared_path(factory, client, node_cfg, defau
     testtuple = client.wait(testtuple)
     assert testtuple.status == Status.done
     assert list(testtuple.test.perfs.values())[0] == 2
+
+
+def test_user_creates_model_folder(factory, client, default_dataset):
+    """Check that the model folder is not overwritten by connect"""
+    dockerfile = f'FROM {factory.default_tools_image}\nCOPY algo.py .\nRUN mkdir model\n' + \
+        'RUN echo \'{"name":"Jane"}\' >> model/model\nENTRYPOINT ["python3", "algo.py"]\n'
+    algo_script = f"""
+import json
+import substratools as tools
+from pathlib import Path
+class TestAlgo(tools.Algo):
+    def train(self, X, y, models, rank):
+        model_path = Path.cwd() / 'model' / 'model'
+        assert model_path.is_file()
+        loaded = json.loads(model_path.read_text())
+        assert loaded == {{'name':'Jane'}}
+        return dict()
+
+    def predict(self, X, model):
+        return None
+
+    def load_model(self, path):
+        with open(path) as f:
+            return json.load(f)
+
+    def save_model(self, model, path):
+        with open(path, 'w') as f:
+            return json.dump(model, f)
+
+if __name__ == '__main__':
+    tools.algo.execute(TestAlgo())
+"""  # noqa
+    spec = factory.create_algo(AlgoCategory.simple, py_script=algo_script, dockerfile=dockerfile)
+    algo = client.add_algo(spec)
+    spec = factory.create_traintuple(
+        algo=algo,
+        dataset=default_dataset,
+        data_samples=default_dataset.train_data_sample_keys,
+    )
+    traintuple = client.add_traintuple(spec)
+    client.wait(traintuple)
