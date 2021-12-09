@@ -618,3 +618,49 @@ if __name__ == '__main__':
     )
     traintuple = client.add_traintuple(spec)
     client.wait(traintuple)
+
+
+WRITE_TO_HOME_DIRECTORY_ALGO = f"""
+import json
+import substratools as tools
+class TestAlgo(tools.Algo):
+    def train(self, X, y, models, rank):
+
+        from pathlib import Path
+        with open(f"{{str(Path.home())}}/foo", "w") as f:
+            f.write("test")
+
+        return {{'value': 42 }}
+
+    def predict(self, X, model):
+        res = [x * model['value'] for x in X]
+        print(f'Predict, get X: {{X}}, model: {{model}}, return {{res}}')
+        return res
+
+    def load_model(self, path):
+        with open(path) as f:
+            return json.load(f)
+
+    def save_model(self, model, path):
+        with open(path, 'w') as f:
+            return json.dump(model, f)
+
+if __name__ == '__main__':
+    tools.algo.execute(TestAlgo())
+"""  # noqa
+
+
+def test_write_to_home_directory(factory, client, default_dataset):
+    """The algo writes to the home directory (~/foo)"""
+
+    spec = factory.create_algo(AlgoCategory.simple, WRITE_TO_HOME_DIRECTORY_ALGO)
+    algo = client.add_algo(spec)
+    spec = factory.create_traintuple(
+        algo=algo,
+        dataset=default_dataset,
+        data_samples=default_dataset.train_data_sample_keys,
+    )
+    traintuple = client.add_traintuple(spec)
+    traintuple = client.wait(traintuple)
+
+    assert traintuple.status == Status.done
