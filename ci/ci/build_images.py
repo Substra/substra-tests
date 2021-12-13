@@ -1,9 +1,9 @@
 import os
 import time
 import json
-from typing import Dict
+from typing import Dict, Tuple
 
-from ci.config import Config, Repository
+from ci.config import Config, Repository, Image
 from ci.call import call_output
 
 
@@ -12,20 +12,36 @@ def build_images(cfg: Config, known_host_file_path: str, run_tag: str, dir: str)
     images = {}
 
     print("# Queue docker image builds")
-    for repo in cfg.repos.get_all():
+    for repo in cfg.get_repos():
         for image in repo.images:
             build_id = _build_image(cfg, tag, image, repo, known_host_file_path, dir)
-            images[build_id] = image
-    print(f"{len(images)} queued under the tag {tag}")
-    _wait_for_builds(cfg, tag, images, repo, known_host_file_path, dir)
+            images[build_id] = (repo, image)
+    print(f"{len(images)} image builds queued under the tag {tag}")
+    _wait_for_builds(cfg, tag, images, known_host_file_path, dir)
 
 
-def _build_image(cfg: Config, tag: str, image: str, repo: Repository, known_host_file_path: str, dir: str) -> str:
+def _build_image(
+    cfg: Config,
+    tag: str,
+    image: Image,
+    repo: Repository,
+    known_host_file_path: str,
+    dir: str
+) -> str:
     config_file = os.path.join(dir, f"cloudbuild/{repo.name}.yaml")
 
-    extra_substitutions = ""
+    substitutions = {
+        "BUILD_TAG": tag,
+        "IMAGE": image.name,
+        "GIT_REPOSITORY": repo.repo_name,
+        "BRANCH": repo.ref,
+        "COMMIT": repo.commit,
+        "KANIKO_CACHE_ENABLED": str(image.kaniko_cache).lower(),
+        "KANIKO_CACHE_TTL": cfg.gcp.kaniko_cache_ttl,
+        "SSH_KEY_SECRET": cfg.gcp.ssh_key_secret,
+    }
     if repo == cfg.repos.tests:
-        extra_substitutions = f",_SUBSTRA_GIT_COMMIT={cfg.repos.sdk.commit}"
+        substitutions["SUBSTRA_GIT_COMMIT"] = cfg.repos.sdk.commit
 
     cmd = (
         f"gcloud builds submit "
@@ -33,9 +49,7 @@ def _build_image(cfg: Config, tag: str, image: str, repo: Repository, known_host
         f"--config={config_file} "
         f"--async "
         f"--project={cfg.gcp.project} "
-        f"--substitutions=_BUILD_TAG={tag},_IMAGE={image},_BRANCH={repo.ref},_COMMIT={repo.commit},"
-        f"_KANIKO_CACHE_TTL={cfg.gcp.kaniko_cache_ttl},_GIT_REPOSITORY={repo.repo_name},"
-        f"_SSH_KEY_SECRET={cfg.gcp.ssh_key_secret}{extra_substitutions}"
+        f"--substitutions=" + ",".join([f"_{k}={v}" for k, v in substitutions.items()])
     )
 
     output = call_output(cmd, print_cmd=False)
@@ -48,8 +62,7 @@ def _build_image(cfg: Config, tag: str, image: str, repo: Repository, known_host
 def _wait_for_builds(
     cfg: Config,
     tag: str,
-    images: Dict[str, str],
-    repo: Repository,
+    images: Dict[str, Tuple[Repository, Image]],
     known_host_file_path: str,
     dir: str,
 ) -> None:
@@ -73,9 +86,9 @@ def _wait_for_builds(
         for b in builds:
             if b["id"] in images:
                 if b["status"] == "FAILURE":
-                    image = images[b["id"]]
-                    if retries.get(image, 0) < max_retries_per_image:
-                        retries[image] = retries.get(image, 0) + 1
+                    repo, image = images[b["id"]]
+                    if retries.get(f"{repo.name}/{image.name}", 0) < max_retries_per_image:
+                        retries[f"{repo.name}/{image.name}"] = retries.get(f"{repo.name}/{image.name}", 0) + 1
                         new_id = _build_image(cfg, tag, image, repo, known_host_file_path, dir)
                         images[new_id] = images.pop(b["id"])
                         nb_retried += 1
@@ -97,9 +110,9 @@ def _wait_for_builds(
         print("FATAL: One or more builds failed. See logs for more details")
         for build in builds:
             if build["id"] in images and build["status"] in ["TIMEOUT", "CANCELLED", "FAILURE"]:
-                image = images[build["id"]]
+                repo, image = images[build["id"]]
                 print(
-                    f"- [{image}]: "
+                    f"- [{image.name}]: "
                     f'https://console.cloud.google.com/cloud-build/builds/{build["id"]}?project={cfg.gcp.project}'
                 )
         raise Exception("docker image build(s) failed.")

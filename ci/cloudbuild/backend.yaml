@@ -27,7 +27,7 @@ steps:
   - name: "gcr.io/kaniko-project/executor:v1.3.0"
     args:
       - --destination=eu.gcr.io/$PROJECT_ID/${_IMAGE}:ci-${_COMMIT}
-      - --cache=true
+      - --cache=${_KANIKO_CACHE_ENABLED}
       - --dockerfile=backend/docker/substra-backend/Dockerfile
       - --context=backend
       - --cache-ttl=${_KANIKO_CACHE_TTL}
@@ -39,6 +39,7 @@ substitutions:
   _IMAGE: "connect-backend"
   _COMMIT: "HEAD"
   _BRANCH: "master"
+  _KANIKO_CACHE_ENABLED: "true"
   _KANIKO_CACHE_TTL: "168h"
   _GIT_REPOSITORY: "SubstraFoundation/substra-backend.git"
   _SSH_KEY_SECRET: "projects/602744764353/secrets/connect-e2e-deploy-key/versions/3"

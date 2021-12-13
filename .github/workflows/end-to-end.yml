@@ -21,6 +21,10 @@ on:
         description: "Git branch or commit to use for connect-backend"
         required: true
         default: "master"
+      connectFrontend:
+        description: "Git branch or commit to use for connect-frontend"
+        required: true
+        default: "master"
       substra:
         description: "Git branch or commit to use for substra sdk"
         required: true
@@ -34,6 +38,7 @@ env:
   DEFAULT_CONNECT_TESTS: "master"
   DEFAULT_CONNECT_SDK: "master"
   DEFAULT_CONNECT_BACKEND: "master"
+  DEFAULT_CONNECT_FRONTEND: "master"
   DEFAULT_HLF_K8S: "master"
   DEFAULT_ORCHESTRATOR: "master"
 
@@ -73,6 +78,7 @@ jobs:
           echo "CONNECT_TESTS=${{ github.event.inputs.connectTests || env.DEFAULT_CONNECT_TESTS }}" >> $GITHUB_ENV
           echo "CONNECT_SDK=${{ github.event.inputs.substra || env.DEFAULT_CONNECT_SDK }}" >> $GITHUB_ENV
           echo "CONNECT_BACKEND=${{ github.event.inputs.connectBackend || env.DEFAULT_CONNECT_BACKEND }}" >> $GITHUB_ENV
+          echo "CONNECT_FRONTEND=${{ github.event.inputs.connectFrontend || env.DEFAULT_CONNECT_FRONTEND }}" >> $GITHUB_ENV
           echo "HLF_K8S=${{ github.event.inputs.connectHlfK8s || env.DEFAULT_HLF_K8S }}" >> $GITHUB_ENV
           echo "ORCHESTRATOR=${{ github.event.inputs.orchestrator || env.DEFAULT_ORCHESTRATOR }}" >> $GITHUB_ENV
       - name: Workflow inputs
@@ -80,49 +86,44 @@ jobs:
           echo "connect-tests ${{ env.CONNECT_TESTS }}"
           echo "substra ${{ env.CONNECT_SDK }}"
           echo "connect-backend ${{ env.CONNECT_BACKEND }}"
+          echo "connect-frontend ${{ env.CONNECT_FRONTEND }}"
           echo "hlf-k8s ${{ env.HFL_K8S }}"
           echo "orchestrator ${{ env.ORCHESTRATOR }}"
       - name: Test
         run: |
           CLUSTER_NAME="connect-tests-$(date -u +'%Y-%m-%d-%Hh%M')"
           cd ci/
-          python -u ./run-ci.py --gcp-keys-directory=./keys/ --gcp-key-filename=gcp_sa_key.json --cluster-name=${CLUSTER_NAME} --git-use-token --git-clone-method=https --orchestrator-mode distributed --connect-tests ${{ env.CONNECT_TESTS }} --substra ${{ env.CONNECT_SDK }} --connect-backend ${{ env.CONNECT_BACKEND }} --hlf-k8s ${{ env.HLF_K8S }} --orchestrator ${{ env.ORCHESTRATOR }}
+          python -u ./run-ci.py \
+            --gcp-keys-directory=./keys/ --gcp-key-filename=gcp_sa_key.json \
+            --cluster-name=${CLUSTER_NAME} \
+            --git-use-token --git-clone-method=https \
+            --connect-tests ${{ env.CONNECT_TESTS }} \
+            --substra ${{ env.CONNECT_SDK }} \
+            --backend ${{ env.CONNECT_BACKEND }} \
+            --hlf-k8s ${{ env.HLF_K8S }} \
+            --orchestrator ${{ env.ORCHESTRATOR }} \
+            --frontend ${{ env.CONNECT_FRONTEND }} \
+            --orchestrator-mode distributed \
+            --write-summary-to-file ./.slack_message
+        # frontend tests disabled in distributed mode for now
         env:
           GIT_TOKEN: ${{ secrets.OWLFRED_PAT }}
-      - name: Slack Notification
-        if: ${{ success() && github.event_name == 'schedule' }}
-        uses: rtCamp/action-slack-notify@v2
-        env:
-          SLACK_COLOR: "#159e39"
-          SLACK_ICON: https://github.com/SubstraFoundation/substra/blob/master/substra-logo.svg
-          SLACK_TITLE: Connect CI Distributed e2e Success
-          SLACK_USERNAME: Connect CI
-          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
-          SLACK_MESSAGE: ":white_check_mark: Workflow succeeded, <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|run/${{ github.run_id }}>"
-          MSG_MINIMAL: True
-          SLACK_FOOTER: ""
-      - name: Slack Notification
-        if: ${{ failure() && github.event_name == 'schedule' }}
-        uses: rtCamp/action-slack-notify@v2
-        env:
-          SLACK_COLOR: "#eb4a15"
-          SLACK_ICON: https://github.com/SubstraFoundation/substra/blob/master/substra-logo.svg
-          SLACK_TITLE: Connect CI Distributed e2e Failure
-          SLACK_USERNAME: Connect CI
-          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
-          SLACK_MESSAGE: ":x: Workflow failed, <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|run/${{ github.run_id }}>"
-          MSG_MINIMAL: True
-          SLACK_FOOTER: ""
+      - if: github.event_name == 'schedule'
+        name: Send Slack report
+        run: |
+          ci/send-slack-report.py '${{ secrets.SLACK_WEBHOOK }}' ci/.slack_message \
+          --title 'Distributed e2e tests: ${{ job.status }}' \
+          --context 'github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}'
       - name: Upload pod logs
         if: ${{ failure() }}
         uses: actions/upload-artifact@v2
         with:
-          name: pod-logs
+          name: logs-and-screenshots-distributed
           path: ci/logs
           retention-days: 5
   test-standalone:
     if: github.repository == 'owkin/connect-tests' # Prevent the test from running on forks
-    name: Tests Centralized
+    name: Tests Standalone
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -155,6 +156,7 @@ jobs:
           echo "CONNECT_TESTS=${{ github.event.inputs.connectTests || env.DEFAULT_CONNECT_TESTS }}" >> $GITHUB_ENV
           echo "CONNECT_SDK=${{ github.event.inputs.substra || env.DEFAULT_CONNECT_SDK }}" >> $GITHUB_ENV
           echo "CONNECT_BACKEND=${{ github.event.inputs.connectBackend || env.DEFAULT_CONNECT_BACKEND }}" >> $GITHUB_ENV
+          echo "CONNECT_FRONTEND=${{ github.event.inputs.connectFrontend || env.DEFAULT_CONNECT_FRONTEND }}" >> $GITHUB_ENV
           echo "HLF_K8S=${{ github.event.inputs.connectHlfK8s || env.DEFAULT_HLF_K8S }}" >> $GITHUB_ENV
           echo "ORCHESTRATOR=${{ github.event.inputs.orchestrator || env.DEFAULT_ORCHESTRATOR }}" >> $GITHUB_ENV
       - name: Workflow inputs
@@ -162,43 +164,38 @@ jobs:
           echo "connect-tests ${{ env.CONNECT_TESTS }}"
           echo "substra ${{ env.CONNECT_SDK }}"
           echo "connect-backend ${{ env.CONNECT_BACKEND }}"
+          echo "connect-frontend ${{ env.CONNECT_FRONTEND }}"
           echo "hlf-k8s ${{ env.HFL_K8S }}"
           echo "orchestrator ${{ env.ORCHESTRATOR }}"
       - name: Test
         run: |
           CLUSTER_NAME="connect-tests-$(date -u +'%Y-%m-%d-%Hh%M')"
           cd ci/
-          python -u ./run-ci.py --gcp-keys-directory=./keys/ --gcp-key-filename=gcp_sa_key.json --cluster-name=${CLUSTER_NAME} --git-use-token --git-clone-method=https --orchestrator-mode standalone --connect-tests ${{ env.CONNECT_TESTS }} --substra ${{ env.CONNECT_SDK }} --connect-backend ${{ env.CONNECT_BACKEND }} --hlf-k8s ${{ env.HLF_K8S }} --orchestrator ${{ env.ORCHESTRATOR }}
+          python -u ./run-ci.py \
+            --gcp-keys-directory=./keys/ --gcp-key-filename=gcp_sa_key.json \
+            --cluster-name=${CLUSTER_NAME} \
+            --git-use-token --git-clone-method=https \
+            --connect-tests ${{ env.CONNECT_TESTS }} \
+            --substra ${{ env.CONNECT_SDK }} \
+            --backend ${{ env.CONNECT_BACKEND }} \
+            --hlf-k8s ${{ env.HLF_K8S }} \
+            --orchestrator ${{ env.ORCHESTRATOR }} \
+            --frontend ${{ env.CONNECT_FRONTEND }} \
+            --orchestrator-mode standalone \
+            --run-frontend-tests \
+            --write-summary-to-file ./.slack_message
         env:
           GIT_TOKEN: ${{ secrets.OWLFRED_PAT }}
-      - name: Slack Notification
-        if: ${{ success() && github.event_name == 'schedule' }}
-        uses: rtCamp/action-slack-notify@v2
-        env:
-          SLACK_COLOR: "#159e39"
-          SLACK_ICON: https://github.com/SubstraFoundation/substra/blob/master/substra-logo.svg
-          SLACK_TITLE: Connect CI Centralized e2e Success
-          SLACK_USERNAME: Connect CI
-          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
-          SLACK_MESSAGE: ":white_check_mark: Workflow succeeded, <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|run/${{ github.run_id }}>"
-          MSG_MINIMAL: True
-          SLACK_FOOTER: ""
-      - name: Slack Notification
-        if: ${{ failure() && github.event_name == 'schedule' }}
-        uses: rtCamp/action-slack-notify@v2
-        env:
-          SLACK_COLOR: "#eb4a15"
-          SLACK_ICON: https://github.com/SubstraFoundation/substra/blob/master/substra-logo.svg
-          SLACK_TITLE: Connect CI Centralized e2e Failure
-          SLACK_USERNAME: Connect CI
-          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
-          SLACK_MESSAGE: ":x: Workflow failed, <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|run/${{ github.run_id }}>"
-          MSG_MINIMAL: True
-          SLACK_FOOTER: ""
+      - if: github.event_name == 'schedule'
+        name: Send Slack report
+        run: |
+          ci/send-slack-report.py '${{ secrets.SLACK_WEBHOOK }}' ci/.slack_message \
+          --title 'Standalone e2e tests: ${{ job.status }}' \
+          --context 'github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}'
       - name: Upload pod logs
         if: ${{ failure() }}
         uses: actions/upload-artifact@v2
         with:
-          name: pod-logs
+          name: logs-and-screenshots-standalone
           path: ci/logs
           retention-days: 5

@@ -2,25 +2,24 @@ import json
 import os
 from typing import List
 
-from ci.config import Config, OrchestratorMode, Repository
-from ci.call import call
-
 import yaml
+
+from ci.config import Config, Repository
+from ci.call import call
 
 
 def deploy_all(cfg: Config, source_dir: str) -> None:
     print("\n# Deploy helm charts")
 
-    for repo in cfg.repos.get_all():
+    _create_namespaces(cfg, ["org-1", "org-2"])
+
+    for repo in cfg.get_repos():
         if repo == cfg.repos.sdk:
-            continue
-        if cfg.orchestrator_mode == OrchestratorMode.STANDALONE and repo == cfg.repos.hlf_k8s:
-            _create_namespaces(cfg, ["org-1", "org-2"])
             continue
 
         # For some projects don't wait for the deployment to complete
         wait = repo not in [cfg.repos.hlf_k8s, cfg.repos.orchestrator]
-        _deploy(cfg, repo, source_dir, wait)
+        deploy(cfg, repo, source_dir, wait)
 
 
 def _create_namespaces(cfg: Config, namespaces: List[str]) -> None:
@@ -28,9 +27,9 @@ def _create_namespaces(cfg: Config, namespaces: List[str]) -> None:
         call(f"kubectl --context {cfg.gcp.kube_context} create namespace {namespace}")
 
 
-def _deploy(cfg: Config, repo: Repository, source_dir: str, wait=True) -> None:
-    artifacts_file = _create_build_artifacts(cfg, repo, source_dir)
-    skaffold_file = _patch_skaffold_file(cfg, repo, source_dir)
+def deploy(cfg: Config, repo: Repository, source_dir: str, wait=True, repo_subdir: str = "") -> None:
+    artifacts_file = _create_build_artifacts(cfg, repo, source_dir, repo_subdir)
+    skaffold_file = _patch_skaffold_file(cfg, repo, source_dir, repo_subdir)
 
     path = os.path.dirname(skaffold_file)
 
@@ -44,23 +43,26 @@ def _deploy(cfg: Config, repo: Repository, source_dir: str, wait=True) -> None:
     )
 
 
-def _create_build_artifacts(cfg: Config, repo: Repository, source_dir: str) -> str:
+def _create_build_artifacts(cfg: Config, repo: Repository, source_dir: str, repo_subdir: str = "") -> str:
     # Gcloud Build artifacts
 
-    artifacts_file = os.path.join(source_dir, repo.name, "tags.json")
+    artifacts_file = os.path.join(source_dir, repo.name, repo_subdir, "tags.json")
+    images = [i for i in repo.images if i.repo_subdir == repo_subdir]
 
     with open(artifacts_file, "w") as file:
         tags = {"builds": []}
 
-        for image in repo.images:
-            tag = f"eu.gcr.io/{cfg.gcp.project}/{image}:ci-{repo.commit}"
+        for image in images:
 
-            if image == "connect-tests":
+            tag = f"eu.gcr.io/{cfg.gcp.project}/{image.name}:ci-{repo.commit}"
+
+            if image.name == "connect-tests":
                 tag += f"-{cfg.repos.sdk.commit}"
 
-            ref = repo.skaffold_artifact if repo.skaffold_artifact else image
+            ref = repo.skaffold_artifact or image.name
 
-            tags["builds"].append({"imageName": f"substrafoundation/{ref}", "tag": tag})
+            name = f"{image.registry}/{ref}"
+            tags["builds"].append({"imageName": name, "tag": tag})
 
             print(f"Created build artifact for {tag}")
 
@@ -69,9 +71,11 @@ def _create_build_artifacts(cfg: Config, repo: Repository, source_dir: str) -> s
     return artifacts_file
 
 
-def _patch_skaffold_file(cfg: Config, repo: Repository, source_dir: str) -> str:
+def _patch_skaffold_file(cfg: Config, repo: Repository, source_dir: str, repo_subdir: str = "") -> str:
+    # this code will break if the release names are modified
+    # in the skaffold conf of the backend or frontend repos
 
-    repo_dir = os.path.join(source_dir, repo.name)
+    repo_dir = os.path.join(source_dir, repo.name, repo_subdir)
 
     skaffold_file = os.path.join(repo_dir, repo.skaffold_dir, repo.skaffold_filename)
 
@@ -88,19 +92,41 @@ def _patch_skaffold_file(cfg: Config, repo: Repository, source_dir: str) -> str:
            release.get("chartPath", "").startswith("../../charts/")):
             release["chartPath"] = os.path.join(repo_dir, release["chartPath"].replace("../../", ""))
         if "valuesFiles" in release:
-            values_files.extend(release["valuesFiles"])
+            values_files.extend([(release, vf) for vf in release["valuesFiles"]])
+        if repo == cfg.repos.frontend:
+            if "setValues" not in release:
+                release["setValues"] = {}
+            if repo_subdir == "automated-e2e-tests":
+                release["setValues"]["cypress.config.baseUrl"] = (
+                    f'http://frontend-{release["namespace"]}-connect-frontend'
+                    f'.{release["namespace"]}.svc.cluster.local'
+                )
+                release["setValues"]["cypress.config.env.BACKEND_API_URL"] = (
+                    f'http://backend-{release["namespace"]}-substra-backend-server'
+                    f'.{release["namespace"]}.svc.cluster.local:8000'
+                )
+                release["setValues"]["cypress.screenshotsPvc.enabled"] = True
+                release["setValues"]["cypress.screenshotsPvc.retrieverEnabled"] = True
+            else:
+                release["setValues"]["api.url"] = (
+                    f'http://backend-{release["namespace"]}-substra-backend-server'
+                    f'.{release["namespace"]}.svc.cluster.local:8000'
+                )
 
     with open(skaffold_file, "w") as file:
         yaml.dump(data, file)
 
-    for values_file in values_files:
-        _patch_values_file(cfg, repo, os.path.join(repo_dir,
-                                                   repo.skaffold_dir,
-                                                   values_file))
+    for (release, values_file) in values_files:
+        _patch_values_file(
+            cfg,
+            repo,
+            os.path.join(repo_dir, repo.skaffold_dir, values_file),
+            release
+        )
     return skaffold_file
 
 
-def _patch_values_file(cfg: Config, repo: Repository, value_file: str) -> None:
+def _patch_values_file(cfg: Config, repo: Repository, value_file: str, release: dict) -> None:
     with open(value_file) as file:
         data = yaml.load(file, Loader=yaml.FullLoader)
 
@@ -108,8 +134,27 @@ def _patch_values_file(cfg: Config, repo: Repository, value_file: str) -> None:
         data["worker"]["replicaCount"] = cfg.gcp.nodes
         data["worker"]["concurrency"] = cfg.backend_celery_concurrency
         data["kaniko"]["dockerConfigSecretName"] = ""  # remove docker-config secret
+        data["server"]["commonHostDomain"] = "cluster.local"
         for elt in data["containerRegistry"]["prepopulate"]:
             elt["dockerConfigSecretName"] = ""  # remove docker-config secret
+
+        if "extraEnv" not in data:
+            data["extraEnv"] = []
+
+        data["server"]["defaultDomain"] = (
+            f'http://backend-{release["namespace"]}-substra-backend-server'
+            f'.{release["namespace"]}.svc.cluster.local:8000'
+        )
+        allowed_hosts = [
+            f'.{release["namespace"]}',
+            f'.{release["namespace"]}.svc.cluster.local',
+        ]
+        data["config"]["ALLOWED_HOSTS"] = json.dumps(allowed_hosts)
+        allowed_cors_origins = [
+            f'http://frontend-{release["namespace"]}-connect-frontend.{release["namespace"]}.svc.cluster.local'
+        ]
+        data["config"]["CORS_ORIGIN_WHITELIST"] = json.dumps(allowed_cors_origins)
+
     if repo == cfg.repos.hlf_k8s:
         if "chaincodes" in data:
             data["chaincodes"][0]["image"]["repository"] = f"eu.gcr.io/{cfg.gcp.project}/orchestrator-chaincode"

@@ -1,7 +1,9 @@
 import os
 from dataclasses import dataclass, field
-from typing import List
+from typing import List, Optional
 from enum import Enum
+
+_CONNECT_TEST_REGISTRY = "eu.gcr.io/connect-314908"
 
 
 class OrchestratorMode(Enum):
@@ -10,6 +12,14 @@ class OrchestratorMode(Enum):
 
     def __str__(self):
         return str(self.value)
+
+
+@dataclass
+class Image:
+    name: str
+    repo_subdir: str = ""
+    kaniko_cache: bool = True
+    registry: str = "substrafoundation"
 
 
 @dataclass()
@@ -24,7 +34,7 @@ class Repository:
     # ref can be eiher a branch or a tag
     ref: str = "master"
     # In order to build them we need a list of the docker images in the repo
-    images: List[str] = field(default_factory=list)
+    images: List[Image] = field(default_factory=list)
 
     def __eq__(self, o: object) -> bool:
         if isinstance(o, Repository):
@@ -73,21 +83,46 @@ class GitConfig:
 @dataclass()
 class Repositories:
     tests: Repository = Repository(
-        name="tests", repo_name="owkin/connect-tests.git", images=["connect-tests"],
+        name="tests",
+        repo_name="owkin/connect-tests.git",
+        images=[Image("connect-tests")],
     )
     backend: Repository = Repository(
         name="backend",
         repo_name="owkin/connect-backend.git",
-        images=["connect-backend"],
+        images=[Image("connect-backend")],
         skaffold_artifact="substra-backend",
     )
+    frontend: Repository = Repository(
+        name="frontend",
+        repo_name="owkin/connect-frontend.git",
+        images=[
+            Image(
+                "connect-frontend",
+                # We need to use another registry here because the connect-frontend skaffold file uses
+                # "eu.gcr.io/connect-314908/connect-frontend" and not "substra-front/connect-frontend"
+                # in the build.artifacts section.
+                kaniko_cache=False,  # breaks build process if enabled
+                registry=_CONNECT_TEST_REGISTRY
+            ),
+            Image(
+                "connect-frontend-tests",
+                repo_subdir="automated-e2e-tests",
+                registry=_CONNECT_TEST_REGISTRY
+            )
+        ],
+    )
     sdk: Repository = Repository(
-        name="sdk", repo_name="owkin/substra.git",
+        name="sdk",
+        repo_name="owkin/substra.git",
     )
     hlf_k8s: Repository = Repository(
         name="hlf_k8s",
         repo_name="owkin/connect-hlf-k8s.git",
-        images=["fabric-tools", "fabric-peer"],
+        images=[
+            Image("fabric-tools"),
+            Image("fabric-peer")
+        ],
         # use 2-orgs-policy-any instead of 2-orgs-policy-any-no-ca provided with root skaffold file
         # the aim is to test also hlf-ca certificates generation in distributed mode
         skaffold_dir="examples/2-orgs-policy-any/",
@@ -95,12 +130,33 @@ class Repositories:
     orchestrator: Repository = Repository(
         name="orchestrator",
         repo_name="owkin/orchestrator.git",
-        images=["orchestrator-chaincode", "orchestrator-chaincode-init", "orchestrator-forwarder",
-                "orchestrator-server", "orchestrator-rabbitmq-operator"],
+        images=[
+            Image("orchestrator-chaincode"),
+            Image("orchestrator-chaincode-init"),
+            Image("orchestrator-forwarder"),
+            Image("orchestrator-server"),
+            Image("orchestrator-rabbitmq-operator"),
+        ],
     )
 
-    def get_all(self) -> List[Repository]:
-        return [self.hlf_k8s, self.orchestrator, self.backend, self.sdk, self.tests]
+
+@dataclass
+class SdkTestConfig:
+    concurrency: int = 5
+    future_timeout: int = 400
+    make_command: str = "test-ci"
+
+
+@dataclass
+class FrontendTestConfig:
+    namespace: str = "org-1"  # this is set in connect-frontend/automated-e2e-tests/skaffold.yaml
+    enabled: bool = False
+
+
+@dataclass
+class TestConfig:
+    sdk: SdkTestConfig = SdkTestConfig()
+    frontend: FrontendTestConfig = FrontendTestConfig()
 
 
 @dataclass()
@@ -109,10 +165,9 @@ class Config:
     git: GitConfig = GitConfig()
     repos: Repositories = Repositories()
     backend_celery_concurrency: int = 4
-    tests_concurrency: int = 5
-    tests_future_timeout: int = 400
-    tests_make_command: str = "test-ci"
     orchestrator_mode: OrchestratorMode = OrchestratorMode.STANDALONE
+    test: TestConfig = TestConfig()
+    write_summary_to_file: Optional[str] = None
 
     @property
     def is_ci_runner(self):
@@ -127,16 +182,33 @@ class Config:
             f"E2E_TESTS_BRANCH\t\t= {self.repos.tests.ref}\n"
             f"SDK_BRANCH\t\t\t= {self.repos.sdk.ref}\n"
             f"BACKEND_BRANCH\t\t\t= {self.repos.backend.ref}\n"
+            f"FRONTEND_BRANCH\t\t\t= {self.repos.frontend.ref}\n"
             f"HLF_K8S_BRANCH\t\t\t= {self.repos.hlf_k8s.ref}\n"
             f"ORCHESTRATOR_BRANCH\t\t= {self.repos.orchestrator.ref}\n"
             f"KANIKO_CACHE_TTL\t\t= {self.gcp.kaniko_cache_ttl}\n"
             f"BACKEND_CELERY_CONCURRENCY\t= {self.backend_celery_concurrency}\n"
-            f"TESTS_CONCURRENCY\t\t= {self.tests_concurrency}\n"
-            f"TESTS_FUTURE_TIMEOUT\t\t= {self.tests_future_timeout}\n"
-            f"TESTS_MAKE_COMMAND\t\t= {self.tests_make_command}\n"
+            f"SDK_TESTS_CONCURRENCY\t\t= {self.test.sdk.concurrency}\n"
+            f"SDK_TESTS_FUTURE_TIMEOUT\t= {self.test.sdk.future_timeout}\n"
+            f"SDK_TESTS_MAKE_COMMAND\t\t= {self.test.sdk.make_command}\n"
             f"ORCHESTRATOR_MODE\t\t= {self.orchestrator_mode}\n"
         )
         if self.is_ci_runner:
             out += f"KEYS_DIR\t\t\t= {self.gcp.service_account.key_dir}\n"
 
         return out
+
+    def get_repos(self) -> List[Repository]:
+        res = []
+
+        if self.orchestrator_mode == OrchestratorMode.DISTRIBUTED:
+            res.append(self.repos.hlf_k8s)
+
+        res.append(self.repos.orchestrator)
+        res.append(self.repos.backend)
+        res.append(self.repos.sdk)
+        res.append(self.repos.tests)
+
+        if self.test.frontend.enabled:
+            res.append(self.repos.frontend)
+
+        return res

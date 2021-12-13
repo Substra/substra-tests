@@ -27,7 +27,7 @@ steps:
   - name: "gcr.io/kaniko-project/executor:v1.3.0"
     args:
       - --destination=eu.gcr.io/$PROJECT_ID/${_IMAGE}:ci-${_COMMIT}
-      - --cache=true
+      - --cache=${_KANIKO_CACHE_ENABLED}
       - --dockerfile=hlf_k8s/docker/${_IMAGE}/Dockerfile
       - --context=hlf_k8s
       - --cache-ttl=${_KANIKO_CACHE_TTL}
@@ -39,6 +39,7 @@ substitutions:
   _IMAGE: "connect-hlf-k8s"
   _COMMIT: "HEAD"
   _BRANCH: "master"
+  _KANIKO_CACHE_ENABLED: "true"
   _KANIKO_CACHE_TTL: "168h"
   _GIT_REPOSITORY: "SubstraFoundation/hlf-k8s.git"
   _SSH_KEY_SECRET: "projects/602744764353/secrets/connect-e2e-deploy-key/versions/3"

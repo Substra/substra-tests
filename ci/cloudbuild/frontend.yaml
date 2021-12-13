@@ -1,4 +1,3 @@
----
 steps:
   - name: "gcr.io/cloud-builders/git"
     secretEnv: ["SSH_KEY"]
@@ -17,31 +16,31 @@ steps:
     args:
       - "clone"
       - "git@github.com:${_GIT_REPOSITORY}"
-      - "orchestrator"
+      - "connect-frontend"
       - "--depth=1"
       - "--branch=${_BRANCH}"
     volumes:
       - name: "ssh"
         path: /root/.ssh
 
-  - name: "gcr.io/kaniko-project/executor:v1.3.0"
+  - name: "gcr.io/kaniko-project/executor:v1.6.0"
     args:
       - --destination=eu.gcr.io/$PROJECT_ID/${_IMAGE}:ci-${_COMMIT}
       - --cache=${_KANIKO_CACHE_ENABLED}
-      - --dockerfile=orchestrator/docker/${_IMAGE}/Dockerfile
-      - --context=orchestrator
+      - --dockerfile=connect-frontend/docker/${_IMAGE}/Dockerfile
+      - --context=connect-frontend
       - --cache-ttl=${_KANIKO_CACHE_TTL}
 
 tags:
   - ${_BUILD_TAG}
 substitutions:
-  _BUILD_TAG: "connect-tests"
-  _IMAGE: "orchestrator"
+  _BUILD_TAG: "connect-frontend"
+  _IMAGE: "connect-frontend"
   _COMMIT: "HEAD"
-  _BRANCH: "master"
+  _BRANCH: "main"
   _KANIKO_CACHE_ENABLED: "true"
   _KANIKO_CACHE_TTL: "168h"
-  _GIT_REPOSITORY: "SubstraFoundation/orchestrator.git"
+  _GIT_REPOSITORY: "owkin/connect-frontend.git"
   _SSH_KEY_SECRET: "projects/602744764353/secrets/connect-e2e-deploy-key/versions/3"
 timeout: 1200s
 availableSecrets:

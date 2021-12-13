@@ -32,6 +32,7 @@ This script performs the following operations:
 - Clone all the connect repositories:
     - [hlf-k8s](https://github.com/owkin/connect-hlf-k8s)
     - [connect-backend](https://github.com/owkin/connect-backend)
+    - [connect-frontend](https://github.com/owkin/connect-frontend)
     - [orchestrator](https://github.com/owkin/orchestrator)
     - [connect-tests](https://github.com/owkin/connect-tests)
 - Build the docker images from these repositories using Google Cloud Builds

@@ -14,12 +14,12 @@ def clone_repos(cfg: Config, source_dir: str) -> Config:
 
     print(f"\n# Clone repos in {source_dir}")
 
-    for repo in cfg.repos.get_all():
+    for repo in cfg.get_repos():
         repo = _clone_repository(cfg.git, repo, source_dir)
 
     print("\nCommit hashes:\n")
-    for repo in cfg.repos.get_all():
-        print(f"- {repo.repo_name}: \t{repo.commit}")
+    for repo in cfg.get_repos():
+        print(f"- {repo.repo_name:<30} {repo.commit}")
     print("\n")
 
     return cfg

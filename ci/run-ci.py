@@ -14,7 +14,7 @@ from ci.deploy import deploy_all
 from ci.helm import setup_helm
 from ci.git import clone_repos
 from ci.build_images import build_images
-from ci.run_tests import run_tests
+from ci import tests
 
 
 CLUSTER_NAME_ALLOWED_PREFIX = "connect-tests"
@@ -48,7 +48,9 @@ def cluster_name_format(value: str) -> str:
 def arg_parse() -> Config:
     config = Config()
 
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
     parser.add_argument(
         "--machine-type", type=str, default=config.gcp.cluster.machine_type, help="The GKE machine type to use",
     )
@@ -111,6 +113,15 @@ def arg_parse() -> Config:
         "--hlf-k8s", type=str, default=config.repos.hlf_k8s.ref, help="hlf-k8s branch or tag", metavar="GIT_BRANCH",
     )
     parser.add_argument(
+        "--frontend",
+        "--connect-frontend",
+        "--substra-frontend",
+        type=str,
+        default=config.repos.frontend.ref,
+        help="frontend branch or tag",
+        metavar="GIT_BRANCH",
+    )
+    parser.add_argument(
         "--orchestrator",
         type=str,
         default=config.repos.orchestrator.ref,
@@ -127,19 +138,28 @@ def arg_parse() -> Config:
         help="The backend worker task concurrency",
     )
     parser.add_argument(
-        "--tests-concurrency", type=int, default=config.tests_concurrency, help="The number of parallel test runners",
+        "--tests-concurrency",
+        type=int,
+        default=config.test.sdk.concurrency,
+        help="The number of parallel test runners",
     )
     parser.add_argument(
         "--tests-future-timeout",
         type=int,
-        default=config.tests_future_timeout,
+        default=config.test.sdk.future_timeout,
         help="In e2e-tests, the number of seconds to wait for a training task to complete",
     )
     parser.add_argument(
         "--tests-make-command",
         type=str,
-        default=config.tests_make_command,
+        default=config.test.sdk.make_command,
         help="Override the make command to execute the tests, If set to \"\", no test will be run.",
+    )
+
+    parser.add_argument(
+        "--run-frontend-tests",
+        action="store_true",
+        help="Run frontend tests",
     )
     parser.add_argument(
         "--git-clone-method",
@@ -163,6 +183,10 @@ def arg_parse() -> Config:
         type=int,
         default=config.gcp.nodes,
         help=("Number of cluster nodes (default value is 1). " "set the worker replicas to the same number."),
+    )
+    parser.add_argument(
+        "--write-summary-to-file",
+        help="Write a summary of the results to the given filename",
     )
 
     args = vars(parser.parse_args())
@@ -191,6 +215,7 @@ def arg_parse() -> Config:
     config.repos.tests.ref = args["e2e_tests"]
     config.repos.sdk.ref = args["sdk"]
     config.repos.backend.ref = args["backend"]
+    config.repos.frontend.ref = args["frontend"]
     config.repos.hlf_k8s.ref = args["hlf_k8s"]
     config.repos.orchestrator.ref = args["orchestrator"]
 
@@ -202,15 +227,22 @@ def arg_parse() -> Config:
 
     # Tests config
     config.backend_celery_concurrency = args["backend_celery_concurrency"]
-    config.tests_concurrency = args["tests_concurrency"]
-    config.tests_future_timeout = args["tests_future_timeout"]
-    config.tests_make_command = args["tests_make_command"]
+    config.test.sdk.concurrency = args["tests_concurrency"]
+    config.test.sdk.future_timeout = args["tests_future_timeout"]
+    config.test.sdk.make_command = args["tests_make_command"]
+
+    if args["run_frontend_tests"] and not config.test.sdk.make_command:
+        raise Exception("SDK tests are disabled but frontend tests depend on them")
+    config.test.frontend.enabled = args["run_frontend_tests"]
+
     config.orchestrator_mode = args["orchestrator_mode"]
 
     # Skaffold profile
     if config.orchestrator_mode == OrchestratorMode.DISTRIBUTED:
         config.repos.backend.skaffold_profile = "distributed"
         config.repos.orchestrator.skaffold_profile = "distributed"
+
+    config.write_summary_to_file = args.get("write_summary_to_file", None)
 
     print("💃💃💃\n")
     print(config)
@@ -244,11 +276,22 @@ def main() -> None:
         app_deployed = True
         if config.gcp.nodes > 1:
             gcloud.print_nodes(config.gcp)
-        if config.tests_make_command:
-            run_tests(config)
-        print("Completed:")
-        print(config)
-        is_success = True
+
+        test_passed = tests.run(config, SOURCE_DIR)
+
+        if config.write_summary_to_file:
+            with open(config.write_summary_to_file, "w") as fp:
+                for k, v in test_passed.items():
+                    if v is not None:
+                        res = "✅" if v else "❌"
+                    else:
+                        res = "⏭ (skipped)"
+                    fp.write(f"{res} {k}\n")
+
+        is_success = all([t for t in test_passed.values() if t is not None])
+
+        if not is_success and app_deployed:
+            retrieve_logs(config, LOG_DIR)
 
     except Exception as ex:
         print(f"FATAL: {ex}")
@@ -256,6 +299,11 @@ def main() -> None:
         if app_deployed:
             retrieve_logs(config, LOG_DIR)
         is_success = False
+
+        if config.write_summary_to_file:
+            # append mode to preserve test results if any
+            with open(config.write_summary_to_file, "a") as fp:
+                fp.write(f"\n🔴 Failure due to: {ex}")
 
     finally:
         if os.path.exists(SOURCE_DIR):

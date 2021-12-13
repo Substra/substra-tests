@@ -42,7 +42,7 @@ steps:
   - name: "gcr.io/kaniko-project/executor:v1.3.0"
     args:
       - --destination=eu.gcr.io/$PROJECT_ID/${_IMAGE}:ci-${_COMMIT}-${_SUBSTRA_GIT_COMMIT}
-      - --cache=true
+      - --cache=${_KANIKO_CACHE_ENABLED}
       - --dockerfile=tests/docker/substra-tests/Dockerfile
       - --context=tests
       - --cache-ttl=${_KANIKO_CACHE_TTL}
@@ -56,6 +56,7 @@ substitutions:
   _BRANCH: "master"
   _SUBSTRA_GIT_REPO: "git@github.com:owkin/substra.git"
   _SUBSTRA_GIT_COMMIT: "master"
+  _KANIKO_CACHE_ENABLED: "true"
   _KANIKO_CACHE_TTL: "168h"
   _GIT_REPOSITORY: "SubstraFoundation/substra-tests.git"
   _SSH_KEY_SECRET: "projects/602744764353/secrets/connect-e2e-deploy-key/versions/3"
