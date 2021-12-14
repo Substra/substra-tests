@@ -3,19 +3,22 @@ import tempfile
 import time
 
 import substra
-from substra.sdk.models import Status, ComputePlanStatus, ModelType
+from substra.sdk.models import ComputePlanStatus
+from substra.sdk.models import ModelType
+from substra.sdk.models import Status
 
-from . import errors, cfg
+from . import cfg
+from . import errors
 
-DATASET_DOWNLOAD_FILENAME = 'opener.py'
-ALGO_DOWNLOAD_FILENAME = 'algo.tar.gz'
+DATASET_DOWNLOAD_FILENAME = "opener.py"
+ALGO_DOWNLOAD_FILENAME = "algo.tar.gz"
 
 _get_methods = {
-    'Traintuple': 'get_traintuple',
-    'Testtuple': 'get_testtuple',
-    'Aggregatetuple': 'get_aggregatetuple',
-    'CompositeTraintuple': 'get_composite_traintuple',
-    'ComputePlan': 'get_compute_plan'
+    "Traintuple": "get_traintuple",
+    "Testtuple": "get_testtuple",
+    "Aggregatetuple": "get_aggregatetuple",
+    "CompositeTraintuple": "get_composite_traintuple",
+    "ComputePlan": "get_compute_plan",
 }
 
 
@@ -138,21 +141,21 @@ class Client:
         with tempfile.TemporaryDirectory() as tmp:
             self._client.download_dataset(key, tmp)
             path = os.path.join(tmp, DATASET_DOWNLOAD_FILENAME)
-            with open(path, 'rb') as f:
+            with open(path, "rb") as f:
                 return f.read()
 
     def download_algo(self, key):
         with tempfile.TemporaryDirectory() as tmp:
             self._client.download_algo(key, tmp)
             path = os.path.join(tmp, ALGO_DOWNLOAD_FILENAME)
-            with open(path, 'rb') as f:
+            with open(path, "rb") as f:
                 return f.read()
 
     def download_model(self, key):
         with tempfile.TemporaryDirectory() as tmp:
             self._client.download_model(key, tmp)
-            path = os.path.join(tmp, f'model_{key}')
-            with open(path, 'rb') as f:
+            path = os.path.join(tmp, f"model_{key}")
+            with open(path, "rb") as f:
                 return f.read()
 
     def download_trunk_model_from_composite_traintuple(self, composite_traintuple_key):
@@ -162,8 +165,8 @@ class Client:
             for model in tuple.composite.models:
                 if model.category == ModelType.simple:
                     model_key = model.key
-            path = os.path.join(tmp, f'model_{model_key}')
-            with open(path, 'rb') as f:
+            path = os.path.join(tmp, f"model_{model_key}")
+            with open(path, "rb") as f:
                 return f.read()
 
     def describe_dataset(self, key):
@@ -177,7 +180,7 @@ class Client:
 
     def list_compute_plan_traintuples(self, compute_plan_key):
         filters = [
-            f'traintuple:compute_plan_key:{compute_plan_key}',
+            f"traintuple:compute_plan_key:{compute_plan_key}",
         ]
         tuples = self.list_traintuple(filters=filters)
         tuples = sorted(tuples, key=lambda t: t.rank)
@@ -185,7 +188,7 @@ class Client:
 
     def list_compute_plan_composite_traintuples(self, compute_plan_key):
         filters = [
-            f'composite_traintuple:compute_plan_key:{compute_plan_key}',
+            f"composite_traintuple:compute_plan_key:{compute_plan_key}",
         ]
         tuples = self.list_composite_traintuple(filters=filters)
         tuples = sorted(tuples, key=lambda t: t.rank)
@@ -193,7 +196,7 @@ class Client:
 
     def list_compute_plan_aggregatetuples(self, compute_plan_key):
         filters = [
-            f'aggregatetuple:compute_plan_key:{compute_plan_key}',
+            f"aggregatetuple:compute_plan_key:{compute_plan_key}",
         ]
         tuples = self.list_aggregatetuple(filters=filters)
         tuples = sorted(tuples, key=lambda t: t.rank)
@@ -201,7 +204,7 @@ class Client:
 
     def list_compute_plan_testtuples(self, compute_plan_key):
         filters = [
-            f'testtuple:compute_plan_key:{compute_plan_key}',
+            f"testtuple:compute_plan_key:{compute_plan_key}",
         ]
         tuples = self.list_testtuple(filters=filters)
         tuples = sorted(tuples, key=lambda t: t.rank)
@@ -211,29 +214,30 @@ class Client:
         try:
             m = _get_methods[asset.__class__.__name__]
         except KeyError:
-            assert False, 'Future not supported'
+            assert False, "Future not supported"
         getter = getattr(self, m)
 
         key = asset.key
 
         tstart = time.time()
         while asset.status not in [
-                Status.done.value,
-                Status.failed.value,
-                Status.canceled.value,
-                ComputePlanStatus.done.value,
-                ComputePlanStatus.failed.value,
-                ComputePlanStatus.canceled.value]:
+            Status.done.value,
+            Status.failed.value,
+            Status.canceled.value,
+            ComputePlanStatus.done.value,
+            ComputePlanStatus.failed.value,
+            ComputePlanStatus.canceled.value,
+        ]:
             if time.time() - tstart > timeout:
-                raise errors.FutureTimeoutError(f'Future timeout on {asset}')
+                raise errors.FutureTimeoutError(f"Future timeout on {asset}")
 
             time.sleep(cfg.FUTURE_POLLING_PERIOD)
             asset = getter(key)
 
         if raises and asset.status in (Status.failed.value, ComputePlanStatus.failed.value):
-            raise errors.FutureFailureError(f'Future execution failed on {asset}')
+            raise errors.FutureFailureError(f"Future execution failed on {asset}")
 
         if raises and asset.status in (Status.canceled.value, ComputePlanStatus.canceled.value):
-            raise errors.FutureFailureError(f'Future execution canceled on {asset}')
+            raise errors.FutureFailureError(f"Future execution canceled on {asset}")
 
         return asset

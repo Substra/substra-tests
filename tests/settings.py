@@ -2,14 +2,15 @@
 import dataclasses
 import os
 import typing
+
 import yaml
 
 CURRENT_DIR = os.path.dirname(__file__)
 
-DEFAULT_NETWORK_CONFIGURATION_PATH = os.path.join(CURRENT_DIR, '../', 'values.yaml')
-SUBSTRA_TESTS_CONFIG_FILEPATH = os.getenv('SUBSTRA_TESTS_CONFIG_FILEPATH', DEFAULT_NETWORK_CONFIGURATION_PATH)
+DEFAULT_NETWORK_CONFIGURATION_PATH = os.path.join(CURRENT_DIR, "../", "values.yaml")
+SUBSTRA_TESTS_CONFIG_FILEPATH = os.getenv("SUBSTRA_TESTS_CONFIG_FILEPATH", DEFAULT_NETWORK_CONFIGURATION_PATH)
 
-DEFAULT_NETWORK_LOCAL_CONFIGURATION_PATH = os.path.join(CURRENT_DIR, '../', 'local-backend-values.yaml')
+DEFAULT_NETWORK_LOCAL_CONFIGURATION_PATH = os.path.join(CURRENT_DIR, "../", "local-backend-values.yaml")
 
 MIN_NODES = 1
 
@@ -46,12 +47,8 @@ def _load_yaml(path):
     """Load configuration from yaml file."""
     with open(path) as f:
         data = yaml.load(f, Loader=yaml.Loader)
-    nodes = [NodeCfg(**kw) for kw in data['nodes']]
-    return Settings(
-        path=path,
-        nodes=nodes,
-        options=Options(**data['options'])
-    )
+    nodes = [NodeCfg(**kw) for kw in data["nodes"]]
+    return Settings(path=path, nodes=nodes, options=Options(**data["options"]))
 
 
 def load():
@@ -66,7 +63,7 @@ def load():
         return _SETTINGS
 
     s = _load_yaml(SUBSTRA_TESTS_CONFIG_FILEPATH)
-    assert len(s.nodes) >= MIN_NODES, f'not enough nodes: {len(s.nodes)}'
+    assert len(s.nodes) >= MIN_NODES, f"not enough nodes: {len(s.nodes)}"
     _SETTINGS = s
     return _SETTINGS
 

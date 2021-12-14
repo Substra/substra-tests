@@ -1,8 +1,9 @@
+import pytest
 import substra
 
-import pytest
+from substratest.factory import AlgoCategory
+from substratest.factory import Permissions
 
-from substratest.factory import AlgoCategory, Permissions
 from . import settings
 
 MSP_IDS = settings.MSP_IDS
@@ -35,14 +36,11 @@ def node_2_only(client_2):
 
 @pytest.fixture
 def nodes_1_and_2_only(client_1, client_2):
-    return Permissions(public=False, authorized_ids=[
-        client_1.node_id,
-        client_2.node_id
-    ])
+    return Permissions(public=False, authorized_ids=[client_1.node_id, client_2.node_id])
 
 
 @pytest.mark.remote_only  # no check on permissions with the local backend
-@pytest.mark.parametrize('is_public', [True, False])
+@pytest.mark.parametrize("is_public", [True, False])
 def test_permission_creation(is_public, factory, client):
     """Test asset creation with simple permission."""
     permissions = Permissions(public=is_public, authorized_ids=[])
@@ -52,13 +50,16 @@ def test_permission_creation(is_public, factory, client):
 
 
 @pytest.mark.remote_only  # no check on permissions with the local backend
-@pytest.mark.parametrize('permissions', [
-    pytest.lazy_fixture('public'),
-    pytest.lazy_fixture('private'),
-    pytest.lazy_fixture('all_nodes'),
-    pytest.lazy_fixture('node_1_only'),
-    pytest.lazy_fixture('node_2_only'),
-])
+@pytest.mark.parametrize(
+    "permissions",
+    [
+        pytest.lazy_fixture("public"),
+        pytest.lazy_fixture("private"),
+        pytest.lazy_fixture("all_nodes"),
+        pytest.lazy_fixture("node_1_only"),
+        pytest.lazy_fixture("node_2_only"),
+    ],
+)
 def test_get_metadata(permissions, factory, clients):
     """Test get metadata assets with various permissions."""
     clients = clients[:2]
@@ -80,7 +81,7 @@ def test_get_metadata(permissions, factory, clients):
 @pytest.mark.remote_only  # no check on permissions with the local backend
 def test_permission_invalid_node_id(factory, client):
     """Test asset creation with invalid permission."""
-    invalid_node = 'unknown-node'
+    invalid_node = "unknown-node"
     invalid_permissions = Permissions(public=False, authorized_ids=[invalid_node])
     spec = factory.create_dataset(permissions=invalid_permissions)
     with pytest.raises(substra.exceptions.InvalidRequest) as exc:
@@ -89,10 +90,13 @@ def test_permission_invalid_node_id(factory, client):
 
 
 @pytest.mark.remote_only  # no check on permissions with the local backend
-@pytest.mark.parametrize('permissions', [
-    pytest.lazy_fixture('public'),
-    pytest.lazy_fixture('node_2_only'),
-])
+@pytest.mark.parametrize(
+    "permissions",
+    [
+        pytest.lazy_fixture("public"),
+        pytest.lazy_fixture("node_2_only"),
+    ],
+)
 def test_download_asset_access_granted(permissions, factory, client_1, client_2):
     """Test asset can be downloaded by all permitted nodes."""
     spec = factory.create_dataset(permissions=permissions)
@@ -120,20 +124,22 @@ def test_download_asset_access_restricted(factory, client_1, client_2):
 
 
 @pytest.mark.remote_only  # no check on permissions with the local backend
-@pytest.mark.parametrize('permissions_1,permissions_2,expected_permissions', [
-    (
-        pytest.lazy_fixture('node_2_only'),
-        pytest.lazy_fixture('node_1_only'),
-        pytest.lazy_fixture('nodes_1_and_2_only'),
-    ),
-    (
-        pytest.lazy_fixture('public'),
-        pytest.lazy_fixture('node_1_only'),
-        pytest.lazy_fixture('nodes_1_and_2_only'),
-    ),
-])
-def test_merge_permissions(permissions_1, permissions_2, expected_permissions,
-                           factory, client_1, client_2):
+@pytest.mark.parametrize(
+    "permissions_1,permissions_2,expected_permissions",
+    [
+        (
+            pytest.lazy_fixture("node_2_only"),
+            pytest.lazy_fixture("node_1_only"),
+            pytest.lazy_fixture("nodes_1_and_2_only"),
+        ),
+        (
+            pytest.lazy_fixture("public"),
+            pytest.lazy_fixture("node_1_only"),
+            pytest.lazy_fixture("nodes_1_and_2_only"),
+        ),
+    ],
+)
+def test_merge_permissions(permissions_1, permissions_2, expected_permissions, factory, client_1, client_2):
     """Test merge permissions from dataset and algo asset located on different nodes.
 
     - dataset and metrics located on node 1
@@ -200,26 +206,15 @@ def test_permissions_denied_process(factory, client_1, client_2):
 
 @pytest.mark.remote_only  # no check on permissions with the local backend
 @pytest.mark.slow
-@pytest.mark.parametrize('client_1_permissions,client_2_permissions,expected_success', [
-    (
-        pytest.lazy_fixture('private'),
-        pytest.lazy_fixture('private'),
-        False
-    ),
-    (
-        pytest.lazy_fixture('node_2_only'),
-        pytest.lazy_fixture('private'),
-        True
-    ),
-])
+@pytest.mark.parametrize(
+    "client_1_permissions,client_2_permissions,expected_success",
+    [
+        (pytest.lazy_fixture("private"), pytest.lazy_fixture("private"), False),
+        (pytest.lazy_fixture("node_2_only"), pytest.lazy_fixture("private"), True),
+    ],
+)
 def test_permissions_model_process(
-    client_1_permissions,
-    client_2_permissions,
-    expected_success,
-    factory,
-    client_1,
-    client_2,
-    network
+    client_1_permissions, client_2_permissions, expected_success, factory, client_1, client_2, network
 ):
     """Test that a traintuple can/cannot process an in-model depending on permissions."""
     datasets = []
@@ -255,13 +250,11 @@ def test_permissions_model_process(
 
     assert not traintuple_1.train.model_permissions.process.public
     assert set(traintuple_1.train.model_permissions.process.authorized_ids) == set(
-        [client_1.node_id] + client_1_permissions.authorized_ids)
+        [client_1.node_id] + client_1_permissions.authorized_ids
+    )
 
     spec = factory.create_traintuple(
-        algo=algo_2,
-        dataset=dataset_2,
-        data_samples=dataset_2.train_data_sample_keys,
-        traintuples=[traintuple_1]
+        algo=algo_2, dataset=dataset_2, data_samples=dataset_2.train_data_sample_keys, traintuples=[traintuple_1]
     )
 
     if expected_success:
@@ -274,7 +267,7 @@ def test_permissions_model_process(
 
 
 @pytest.mark.remote_only  # no check on permissions with the local backend
-@pytest.mark.skipif(len(MSP_IDS) < 3, reason='requires at least 3 nodes')
+@pytest.mark.skipif(len(MSP_IDS) < 3, reason="requires at least 3 nodes")
 def test_merge_permissions_denied_process(factory, clients):
     """Test to process asset with merged permissions from 2 other nodes
 
@@ -288,13 +281,16 @@ def test_merge_permissions_denied_process(factory, clients):
     client_2 = clients[1]
     client_3 = clients[2]
 
-    permissions_list = [(
-        Permissions(public=False, authorized_ids=[MSP_IDS[1], MSP_IDS[2]]),
-        Permissions(public=False, authorized_ids=[MSP_IDS[0]]),
-    ), (
-        Permissions(public=True, authorized_ids=[]),
-        Permissions(public=False, authorized_ids=[MSP_IDS[0]]),
-    )]
+    permissions_list = [
+        (
+            Permissions(public=False, authorized_ids=[MSP_IDS[1], MSP_IDS[2]]),
+            Permissions(public=False, authorized_ids=[MSP_IDS[0]]),
+        ),
+        (
+            Permissions(public=True, authorized_ids=[]),
+            Permissions(public=False, authorized_ids=[MSP_IDS[0]]),
+        ),
+    ]
     for permissions_1, permissions_2 in permissions_list:
 
         # add train data samples / dataset / metric on node 1

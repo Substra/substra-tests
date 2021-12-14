@@ -3,10 +3,9 @@ import pathlib
 import typing
 
 import pydantic
-
 import pytest
-
 import substra as sb
+
 import substratest as sbt
 from substratest.factory import AlgoCategory
 
@@ -43,10 +42,7 @@ _INPUT_SIZE = 28
 _NB_ORGS = 2
 
 # this image is built and pushed by the connect-tools repository
-_IMAGE = (
-    f"{sbt.factory.DEFAULT_TOOLS_BASE_IMAGE_GCR}:"
-    f"{sbt.factory.DEFAULT_TOOLS_VERSION}-workflows"
-)
+_IMAGE = f"{sbt.factory.DEFAULT_TOOLS_BASE_IMAGE_GCR}:" f"{sbt.factory.DEFAULT_TOOLS_VERSION}-workflows"
 
 _ALGO_DOCKERFILE = f"""
 FROM {_IMAGE}
@@ -114,16 +110,14 @@ def mnist_train_test():
     X_test, y_test = mnist.data[nb_train:], mnist.target[nb_train:]
 
     # Preprocess training data and save it in HDF5 files
-    X_train = X_train.values.reshape(
-        (-1, 1, _INPUT_SIZE, _INPUT_SIZE)).astype(np.float32) / 255.0
+    X_train = X_train.values.reshape((-1, 1, _INPUT_SIZE, _INPUT_SIZE)).astype(np.float32) / 255.0
     y_train = y_train.astype(int)
     with h5py.File(train_data_filepath, "w") as fp:
         fp["X"] = X_train
         fp["y"] = y_train
 
     # Repeat procedure for test data
-    X_test = X_test.values.reshape(
-        (-1, 1, _INPUT_SIZE, _INPUT_SIZE)).astype(np.float32) / 255.0
+    X_test = X_test.values.reshape((-1, 1, _INPUT_SIZE, _INPUT_SIZE)).astype(np.float32) / 255.0
     y_test = y_test.astype(int)
     with h5py.File(test_data_filepath, "w") as fp:
         fp["X"] = X_test
@@ -133,11 +127,11 @@ def mnist_train_test():
 
 
 def _split_into_datasamples(
-        path: pathlib.Path,
-        type_: str,
-        destination: pathlib.Path,
-        nb_samples: int,
-        nb_orgs: int,
+    path: pathlib.Path,
+    type_: str,
+    destination: pathlib.Path,
+    nb_samples: int,
+    nb_orgs: int,
 ):
     """Split h5 file into datasample folders.
 
@@ -185,6 +179,7 @@ def _split_into_datasamples(
 
 class _DatasampleFolders(pydantic.BaseModel):
     """Datasample folders for a single org."""
+
     train: typing.List[str] = []
     test: typing.List[str] = []
 
@@ -199,10 +194,8 @@ def datasamples_folders(tmpdir, mnist_train_test):
 
     # XXX this example is using 700 samples (out of 70k) as it is sufficient to have
     #     a good performance.
-    train_folders = _split_into_datasamples(
-        train_path, "train", tmpdir, nb_samples=500, nb_orgs=_NB_ORGS)
-    test_folders = _split_into_datasamples(
-        test_path, "test", tmpdir, nb_samples=200, nb_orgs=_NB_ORGS)
+    train_folders = _split_into_datasamples(train_path, "train", tmpdir, nb_samples=500, nb_orgs=_NB_ORGS)
+    test_folders = _split_into_datasamples(test_path, "test", tmpdir, nb_samples=200, nb_orgs=_NB_ORGS)
 
     for train, test, folder in zip(train_folders, test_folders, folders):
         folder.train = train
@@ -215,6 +208,7 @@ class _InputsSubset(pydantic.BaseModel):
 
     One subset per org.
     """
+
     dataset: sb.sdk.models.Dataset = None
     metric: sb.sdk.models.Metric = None
     train_data_sample_keys: typing.List[str] = []
@@ -222,6 +216,7 @@ class _InputsSubset(pydantic.BaseModel):
 
 class _Inputs(pydantic.BaseModel):
     """Inputs objects required to launch a FL pipeline on a Connect Network."""
+
     # XXX datasets must have the same order as the clients fixture
     datasets: typing.List[_InputsSubset]
     composite_algo: sb.sdk.models.Algo = None
@@ -238,7 +233,7 @@ def inputs(datasamples_folders, factory, clients):
     def _split_into_chunks(items, size):
         """Yield successive n-sized chunks from lst."""
         for i in range(0, len(items), size):
-            yield items[i:i + size]
+            yield items[i : i + size]
 
     for client, folders, res in zip(clients, datasamples_folders, results.datasets):
         spec = factory.create_dataset(py_script=_OPENER.open().read())
@@ -246,28 +241,29 @@ def inputs(datasamples_folders, factory, clients):
 
         train_keys = []
         for paths in _split_into_chunks(folders.train, batch_size):
-            keys_per_batch = client.add_data_samples(sbt.factory.DataSampleBatchSpec(
-                paths=[str(p) for p in paths],
-                test_only=False,
-                data_manager_keys=[res.dataset.key],
-            ))
+            keys_per_batch = client.add_data_samples(
+                sbt.factory.DataSampleBatchSpec(
+                    paths=[str(p) for p in paths],
+                    test_only=False,
+                    data_manager_keys=[res.dataset.key],
+                )
+            )
             train_keys.extend(keys_per_batch)
 
         test_keys = []
         for paths in _split_into_chunks(folders.test, batch_size):
-            keys_per_batch = client.add_data_samples(sbt.factory.DataSampleBatchSpec(
-                paths=[str(p) for p in paths],
-                test_only=True,
-                data_manager_keys=[res.dataset.key],
-            ))
+            keys_per_batch = client.add_data_samples(
+                sbt.factory.DataSampleBatchSpec(
+                    paths=[str(p) for p in paths],
+                    test_only=True,
+                    data_manager_keys=[res.dataset.key],
+                )
+            )
             test_keys.extend(keys_per_batch)
 
         # XXX is it required to link dataset with datasamples ?
 
-        spec = factory.create_metric(
-            dockerfile=_METRICS_DOCKERFILE,
-            py_script=_METRICS.open().read()
-        )
+        spec = factory.create_metric(dockerfile=_METRICS_DOCKERFILE, py_script=_METRICS.open().read())
         res.metric = client.add_metric(spec)
 
         # refresh dataset (to be up-to-date with added samples)
@@ -304,10 +300,13 @@ def test_mnist(factory, inputs, clients):
 
     aggregate_worker = client.node_id
 
-    trunk_model_perms = [sbt.factory.Permissions(
-        public=False,
-        authorized_ids=[aggregate_worker, c.node_id],
-    ) for c in clients]
+    trunk_model_perms = [
+        sbt.factory.Permissions(
+            public=False,
+            authorized_ids=[aggregate_worker, c.node_id],
+        )
+        for c in clients
+    ]
 
     # emtpy initialization for first round
     composite_specs = [None] * len(inputs.datasets)
@@ -316,22 +315,22 @@ def test_mnist(factory, inputs, clients):
     # At each round all node samples are used by the composite traintuple. This is due
     # to the fact that the algo processes 32 (batch_size) * 50 (num_updates) samples,
     # and that the total amount of samples per node is smaller than this value.
-    assert all(
-        [len(org.dataset.train_data_sample_keys) < _ML_BATCH_SIZE * _ML_NUM_UPDATES
-         for org in inputs.datasets]
-    )
+    assert all([len(org.dataset.train_data_sample_keys) < _ML_BATCH_SIZE * _ML_NUM_UPDATES for org in inputs.datasets])
 
     # next rounds
     for round_idx in range(nb_rounds):
 
-        composite_specs = [cp_spec.add_composite_traintuple(
-            composite_algo=inputs.composite_algo,
-            dataset=org_inputs.dataset,
-            data_samples=org_inputs.train_data_sample_keys,
-            in_head_model=composite_specs[idx],
-            in_trunk_model=aggregate_spec,
-            out_trunk_model_permissions=trunk_model_perms[idx],
-        ) for idx, org_inputs in enumerate(inputs.datasets)]
+        composite_specs = [
+            cp_spec.add_composite_traintuple(
+                composite_algo=inputs.composite_algo,
+                dataset=org_inputs.dataset,
+                data_samples=org_inputs.train_data_sample_keys,
+                in_head_model=composite_specs[idx],
+                in_trunk_model=aggregate_spec,
+                out_trunk_model_permissions=trunk_model_perms[idx],
+            )
+            for idx, org_inputs in enumerate(inputs.datasets)
+        ]
 
         aggregate_spec = cp_spec.add_aggregatetuple(
             aggregate_algo=inputs.aggregate_algo,
@@ -356,14 +355,8 @@ def test_mnist(factory, inputs, clients):
     testtuples = client.list_compute_plan_testtuples(cp.key)
     testtuples = sorted(testtuples, key=lambda x: (x.rank, x.worker))
     for testtuple in testtuples:
-        print(
-            f"testtuple({testtuple.worker}) - {testtuple.rank} "
-            f"perf: {list(testtuple.test.perfs.values())[0]}"
-        )
+        print(f"testtuple({testtuple.worker}) - {testtuple.rank} " f"perf: {list(testtuple.test.perfs.values())[0]}")
     # check perf is as good as expected: after 20 rounds we expect a performance of
     # around 0.86. To avoid a flaky test a lower performance is expected.
     mininum_expected_perf = 0.85
-    assert all([
-        list(testtuple.test.perfs.values())[0] > mininum_expected_perf
-        for testtuple in testtuples[-_NB_ORGS:]
-    ])
+    assert all([list(testtuple.test.perfs.values())[0] > mininum_expected_perf for testtuple in testtuples[-_NB_ORGS:]])

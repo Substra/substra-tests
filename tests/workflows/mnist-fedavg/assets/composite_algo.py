@@ -1,10 +1,10 @@
 import os
 import shutil
+
+import numpy as np
+import substratools as tools
 import torch
 import torch.nn.functional as F
-import numpy as np
-
-import substratools as tools
 
 _INPUT_SAMPLE_SIZE = 21632
 _OUT_SAMPLE_SIZE = 10
@@ -61,7 +61,6 @@ def _fit(model, X, y, batch_size, num_updates, rank):
 
 
 class ModelComp(tools.CompositeAlgo):
-
     def train(self, X, y, head_model, trunk_model, rank):
         torch.manual_seed(_SEED)  # initialize model weights
         torch.use_deterministic_algorithms(True)
@@ -94,8 +93,8 @@ class ModelComp(tools.CompositeAlgo):
         return torch.load(path)
 
     def save_model(self, model, path):
-        torch.save(model, path + '.h5')
-        shutil.move(path + '.h5', path)
+        torch.save(model, path + ".h5")
+        shutil.move(path + ".h5", path)
         assert os.path.isfile(path)
 
     def load_head_model(self, path):
@@ -111,5 +110,5 @@ class ModelComp(tools.CompositeAlgo):
         self.save_model(model, path)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     tools.algo.execute(ModelComp())

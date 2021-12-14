@@ -1,10 +1,10 @@
 import pytest
-
 import substra
 from substra.sdk.models import Status
 
 import substratest as sbt
-from substratest.factory import AlgoCategory, Permissions
+from substratest.factory import AlgoCategory
+from substratest.factory import Permissions
 
 from . import settings
 
@@ -18,10 +18,7 @@ def test_tuples_execution_on_same_node(factory, network, client, default_dataset
 
     # create traintuple
     spec = factory.create_traintuple(
-        algo=algo,
-        dataset=default_dataset,
-        data_samples=default_dataset.train_data_sample_keys,
-        metadata={"foo": "bar"}
+        algo=algo, dataset=default_dataset, data_samples=default_dataset.train_data_sample_keys, metadata={"foo": "bar"}
     )
     traintuple = client.add_traintuple(spec)
     traintuple = client.wait(traintuple)
@@ -54,7 +51,7 @@ def test_tuples_execution_on_same_node(factory, network, client, default_dataset
         dataset=default_dataset,
         data_samples=default_dataset.train_data_sample_keys,
         traintuples=[traintuple],
-        metadata=None
+        metadata=None,
     )
     traintuple = client.add_traintuple(spec)
     traintuple = client.wait(traintuple)
@@ -85,7 +82,7 @@ def test_federated_learning_workflow(factory, client, default_datasets):
             dataset=dataset,
             data_samples=dataset.train_data_sample_keys,
             traintuples=traintuples,
-            tag='foo',
+            tag="foo",
             rank=rank,
             compute_plan_key=compute_plan_key,
         )
@@ -93,21 +90,22 @@ def test_federated_learning_workflow(factory, client, default_datasets):
         traintuple = client.wait(traintuple)
         assert traintuple.status == Status.done
         assert len(traintuple.train.models) != 0
-        assert traintuple.tag == 'foo'
-        assert traintuple.compute_plan_key   # check it is not None or ''
+        assert traintuple.tag == "foo"
+        assert traintuple.compute_plan_key  # check it is not None or ''
 
         rank += 1
         compute_plan_key = traintuple.compute_plan_key
 
     # check a compute plan has been created and its status is at done
     cp = client.get_compute_plan(compute_plan_key)
-    assert cp.status == 'PLAN_STATUS_DONE'
+    assert cp.status == "PLAN_STATUS_DONE"
 
 
 @pytest.mark.slow
 @pytest.mark.remote_only
-def test_tuples_execution_on_different_nodes(factory, client_1, client_2, default_metric_1,
-                                             default_dataset_1, default_dataset_2):
+def test_tuples_execution_on_different_nodes(
+    factory, client_1, client_2, default_metric_1, default_dataset_1, default_dataset_2
+):
     """Execution of a traintuple on node 1 and the following testtuple on node 2."""
     # add test data samples / dataset / metric on node 1
 
@@ -267,9 +265,7 @@ def test_composite_traintuples_execution(factory, client, default_dataset, defau
     # list composite traintuple
     composite_traintuples = client.list_composite_traintuple()
     composite_traintuple_keys = set([t.key for t in composite_traintuples])
-    assert set([composite_traintuple_1.key, composite_traintuple_2.key]).issubset(
-        composite_traintuple_keys
-    )
+    assert set([composite_traintuple_1.key, composite_traintuple_2.key]).issubset(composite_traintuple_keys)
 
 
 @pytest.mark.slow
@@ -457,8 +453,8 @@ def test_aggregate_composite_traintuples(factory, network, clients, default_data
             kwargs = {}
             if previous_aggregatetuple:
                 kwargs = {
-                    'head_traintuple': previous_composite_traintuples[index],
-                    'trunk_traintuple': previous_aggregatetuple,
+                    "head_traintuple": previous_composite_traintuples[index],
+                    "trunk_traintuple": previous_aggregatetuple,
                 }
             spec = factory.create_composite_traintuple(
                 algo=composite_algo,
@@ -485,8 +481,9 @@ def test_aggregate_composite_traintuples(factory, network, clients, default_data
         previous_composite_traintuples = composite_traintuples
 
     # last round: create associated testtuple for composite and aggregate
-    for index, (traintuple, metric, dataset) in enumerate(zip(
-            previous_composite_traintuples, default_metrics, default_datasets)):
+    for index, (traintuple, metric, dataset) in enumerate(
+        zip(previous_composite_traintuples, default_metrics, default_datasets)
+    ):
         spec = factory.create_testtuple(
             metrics=[metric],
             traintuple=traintuple,
@@ -544,7 +541,7 @@ def test_aggregate_composite_traintuples(factory, network, clients, default_data
 
 
 @pytest.mark.remote_only
-@pytest.mark.skipif(not settings.HAS_SHARED_PATH, reason='requires a shared path')
+@pytest.mark.skipif(not settings.HAS_SHARED_PATH, reason="requires a shared path")
 def test_use_data_sample_located_in_shared_path(factory, client, node_cfg, default_metric):
     spec = factory.create_dataset()
     dataset = client.add_dataset(spec)
@@ -581,8 +578,10 @@ def test_use_data_sample_located_in_shared_path(factory, client, node_cfg, defau
 
 def test_user_creates_model_folder(factory, client, default_dataset):
     """Check that the model folder is not overwritten by connect"""
-    dockerfile = f'FROM {factory.default_tools_image}\nCOPY algo.py .\nRUN mkdir model\n' + \
-        'RUN echo \'{"name":"Jane"}\' >> model/model\nENTRYPOINT ["python3", "algo.py"]\n'
+    dockerfile = (
+        f"FROM {factory.default_tools_image}\nCOPY algo.py .\nRUN mkdir model\n"
+        + 'RUN echo \'{"name":"Jane"}\' >> model/model\nENTRYPOINT ["python3", "algo.py"]\n'
+    )
     algo_script = f"""
 import json
 import substratools as tools

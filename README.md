@@ -96,3 +96,15 @@ When adding or modifying tests, please follow these guidelines:
 1. Tests must not use hardcoded network configuration settings/values. Use settings files instead (e.g. `values.yaml`)
 1. Tests should target a substra network with at least 2 organisations
 1. By default, a test must pass on the remote and local backend. If the test is specific to one backend, add the corresponding mark.
+
+## Code formatting
+
+You can opt into auto-formatting of code on pre-commit using [Black](https://github.com/psf/black) and [isort](https://github.com/PyCQA/isort).
+
+This relies on hooks managed by [pre-commit](https://pre-commit.com/), which you can set up as follows.
+
+Install [pre-commit](https://pre-commit.com/), then run:
+
+```sh
+pre-commit install
+```

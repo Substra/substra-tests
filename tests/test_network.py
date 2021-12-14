@@ -1,11 +1,12 @@
 import os
 import uuid
-import substra
 
 import pytest
+import substra
 
 import substratest as sbt
 from substratest.factory import AlgoCategory
+
 from . import settings
 
 
@@ -32,13 +33,13 @@ def test_download_opener(factory, client):
     assert content == spec.read_opener()
 
 
-@pytest.mark.parametrize('category', [AlgoCategory.simple, AlgoCategory.aggregate, AlgoCategory.composite])
+@pytest.mark.parametrize("category", [AlgoCategory.simple, AlgoCategory.aggregate, AlgoCategory.composite])
 def test_download_algo(factory, client, category):
     spec = factory.create_algo(category)
     algo = client.add_algo(spec)
 
     content = client.download_algo(algo.key)
-    with open(spec.file, 'rb') as f:
+    with open(spec.file, "rb") as f:
         expected_content = f.read()
     assert content == expected_content
 
@@ -75,10 +76,7 @@ def test_add_data_samples_in_batch(factory, client):
     spec = factory.create_dataset()
     dataset = client.add_dataset(spec)
 
-    specs = [
-        factory.create_data_sample(test_only=True, datasets=[dataset])
-        for _ in range(batch_size)
-    ]
+    specs = [factory.create_data_sample(test_only=True, datasets=[dataset]) for _ in range(batch_size)]
 
     spec = sbt.factory.DataSampleBatchSpec.from_data_sample_specs(specs)
 
@@ -107,8 +105,8 @@ def test_link_dataset_with_datasamples(factory, client):
     assert dataset.train_data_sample_keys == [data_sample_key]
 
 
-@pytest.mark.skip(reason='may fill up disk as shared folder is not cleanup')
-@pytest.mark.parametrize('filesize', [1, 10, 100, 1000])  # in mega
+@pytest.mark.skip(reason="may fill up disk as shared folder is not cleanup")
+@pytest.mark.parametrize("filesize", [1, 10, 100, 1000])  # in mega
 def test_add_data_sample_path_big_files(filesize, factory, client, node_cfg):
     spec = factory.create_dataset()
     dataset = client.add_dataset(spec)
@@ -126,45 +124,57 @@ def test_add_metric(factory, client):
     assert metric == metric_copy
 
 
-@pytest.mark.parametrize('asset_name,params', [
-    ('dataset', {}),
-    ('metric', {}),
-    ('algo', {'category': AlgoCategory.simple}),
-])
-@pytest.mark.parametrize('metadata,metadata_output', [
-    ({'foo': 'bar'}, {'foo': 'bar'}),
-    (None, {}),
-    ({}, {}),
-])
+@pytest.mark.parametrize(
+    "asset_name,params",
+    [
+        ("dataset", {}),
+        ("metric", {}),
+        ("algo", {"category": AlgoCategory.simple}),
+    ],
+)
+@pytest.mark.parametrize(
+    "metadata,metadata_output",
+    [
+        ({"foo": "bar"}, {"foo": "bar"}),
+        (None, {}),
+        ({}, {}),
+    ],
+)
 def test_asset_with_metadata(factory, client, asset_name, params, metadata, metadata_output):
     create_spec = getattr(factory, f"create_{asset_name}")
     add_asset = getattr(client, f"add_{asset_name}")
 
     spec_params = {}
     spec_params.update(params)
-    spec_params.update({'metadata': metadata})
+    spec_params.update({"metadata": metadata})
     spec = create_spec(**spec_params)
     asset = add_asset(spec)
 
     assert asset.metadata == metadata_output
 
 
-@pytest.mark.parametrize('asset_name,params', [
-    ('dataset', {}),
-    ('metric', {}),
-    ('algo', {'category': AlgoCategory.simple}),
-])
-@pytest.mark.parametrize('metadata', [
-    {'foo' * 40: "bar"},
-    {"foo": 'bar' * 40},
-])
+@pytest.mark.parametrize(
+    "asset_name,params",
+    [
+        ("dataset", {}),
+        ("metric", {}),
+        ("algo", {"category": AlgoCategory.simple}),
+    ],
+)
+@pytest.mark.parametrize(
+    "metadata",
+    [
+        {"foo" * 40: "bar"},
+        {"foo": "bar" * 40},
+    ],
+)
 def test_asset_with_invalid_metadata(factory, client, asset_name, params, metadata):
     create_spec = getattr(factory, f"create_{asset_name}")
     add_asset = getattr(client, f"add_{asset_name}")
 
     spec_params = {}
     spec_params.update(params)
-    spec_params.update({'metadata': metadata})
+    spec_params.update({"metadata": metadata})
     spec = create_spec(**spec_params)
 
     with pytest.raises(substra.exceptions.InvalidRequest):
@@ -198,28 +208,31 @@ def test_query_algos(factory, client):
 
 
 @pytest.mark.parametrize(
-    'asset_type', sbt.assets.AssetType.can_be_listed(),
+    "asset_type",
+    sbt.assets.AssetType.can_be_listed(),
 )
 def test_list_asset(asset_type, client):
     """Simple check that list_asset method can be called without raising errors."""
-    method = getattr(client, f'list_{asset_type.name}')
+    method = getattr(client, f"list_{asset_type.name}")
     method()  # should not raise
 
 
 @pytest.mark.remote_only
 @pytest.mark.parametrize(
-    'asset_type', sbt.assets.AssetType.can_be_get(),
+    "asset_type",
+    sbt.assets.AssetType.can_be_get(),
 )
 def test_error_get_asset_invalid_request(asset_type, client):
-    method = getattr(client, f'get_{asset_type.name}')
+    method = getattr(client, f"get_{asset_type.name}")
     with pytest.raises(substra.exceptions.InvalidRequest):
-        method('invalid-id')
+        method("invalid-id")
 
 
 @pytest.mark.parametrize(
-    'asset_type', sbt.assets.AssetType.can_be_get(),
+    "asset_type",
+    sbt.assets.AssetType.can_be_get(),
 )
 def test_error_get_asset_not_found(asset_type, client):
-    method = getattr(client, f'get_{asset_type.name}')
+    method = getattr(client, f"get_{asset_type.name}")
     with pytest.raises(substra.exceptions.NotFound):
         method(str(uuid.uuid4()))

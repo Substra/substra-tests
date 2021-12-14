@@ -2,10 +2,9 @@ import os
 import shutil
 
 import numpy as np
+import substratools as tools
 import torch
 import torch.nn.functional as F
-
-import substratools as tools
 
 _INPUT_SAMPLE_SIZE = 21632
 _OUT_SAMPLE_SIZE = 10
@@ -62,8 +61,8 @@ class ModelAggregator(tools.AggregateAlgo):
         return torch.load(path)
 
     def save_model(self, model, path):
-        torch.save(model, path + '.h5')
-        shutil.move(path + '.h5', path)
+        torch.save(model, path + ".h5")
+        shutil.move(path + ".h5", path)
         assert os.path.isfile(path)
 
     def load_head_model(self, path):
@@ -79,5 +78,5 @@ class ModelAggregator(tools.AggregateAlgo):
         self.save_model(model, path)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     tools.algo.execute(ModelAggregator())

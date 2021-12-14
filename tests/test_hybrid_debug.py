@@ -1,8 +1,9 @@
-import pytest
 import docker
-
+import pytest
 from substra.sdk import models
-from substratest.factory import AlgoCategory, Permissions
+
+from substratest.factory import AlgoCategory
+from substratest.factory import Permissions
 
 
 def docker_available() -> bool:
@@ -78,8 +79,8 @@ def test_debug_compute_plan_aggregate_composite(network, client, debug_client, d
             kwargs = {}
             if previous_aggregatetuple_spec:
                 kwargs = {
-                    'in_head_model': previous_composite_traintuple_specs[index],
-                    'in_trunk_model': previous_aggregatetuple_spec,
+                    "in_head_model": previous_composite_traintuple_specs[index],
+                    "in_trunk_model": previous_aggregatetuple_spec,
                 }
             spec = cp_spec.add_composite_traintuple(
                 composite_algo=composite_algo,
@@ -110,7 +111,8 @@ def test_debug_compute_plan_aggregate_composite(network, client, debug_client, d
 
     # last round: create associated testtuple
     for composite_traintuple_spec, dataset, metric in zip(
-            previous_composite_traintuple_specs, default_datasets, metrics):
+        previous_composite_traintuple_specs, default_datasets, metrics
+    ):
         cp_spec.add_testtuple(
             metrics=[metric],
             dataset=dataset,

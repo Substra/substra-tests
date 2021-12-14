@@ -5,8 +5,8 @@ import uuid
 import pytest
 
 import substratest as sbt
-from . import settings
 
+from . import settings
 
 TESTS_RUN_UUID = uuid.uuid4().hex  # unique uuid identifying the tests run
 
@@ -26,16 +26,20 @@ def pytest_report_header(config):
 
 def pytest_configure(config):
     config.addinivalue_line(
-        "markers", "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+        "markers",
+        "slow: marks tests as slow (deselect with '-m \"not slow\"')",
     )
     config.addinivalue_line(
-        "markers", "local_only: marks tests as local backend only (deselect with '-m \"not local_only\"')",
+        "markers",
+        "local_only: marks tests as local backend only (deselect with '-m \"not local_only\"')",
     )
     config.addinivalue_line(
-        "markers", "remote_only: marks tests as remote backend only (deselect with '-m \"not remote_only\"')",
+        "markers",
+        "remote_only: marks tests as remote backend only (deselect with '-m \"not remote_only\"')",
     )
     config.addinivalue_line(
-        "markers", "workflows: marks tests as part of a production workflow (deselect with '-m \"not workflows\"')",
+        "markers",
+        "workflows: marks tests as part of a production workflow (deselect with '-m \"not workflows\"')",
     )
 
 
@@ -44,7 +48,7 @@ def pytest_addoption(parser):
     parser.addoption(
         "--local",
         action="store_true",
-        help="Run the tests on the local backend only. Otherwise run the tests only on the remote backend."
+        help="Run the tests on the local backend only. Otherwise run the tests only on the remote backend.",
     )
 
 
@@ -77,6 +81,7 @@ class _DataEnv:
 
     Represents all the assets that have been added before the tests.
     """
+
     def __init__(self, datasets=None, metrics=None):
         self._datasets = datasets or []
         self._metrics = metrics or []
@@ -142,13 +147,16 @@ def network(client_debug_local):
     else:
         # TODO check what enable_intermediate_model_removal does
         cfg = settings.load_local_backend()
-    clients = [sbt.Client(
-        debug=client_debug_local,
-        node_id=n.msp_id,
-        address=n.address,
-        user=n.user,
-        password=n.password,
-    ) for n in cfg.nodes]
+    clients = [
+        sbt.Client(
+            debug=client_debug_local,
+            node_id=n.msp_id,
+            address=n.address,
+            user=n.user,
+            password=n.password,
+        )
+        for n in cfg.nodes
+    ]
     return Network(
         options=cfg.options,
         clients=clients,
@@ -273,7 +281,7 @@ def client_1(network):
 def client_2(network):
     """Client fixture (second node)."""
     if len(network.clients) < 2:
-        pytest.skip('Not enough nodes to run this test')
+        pytest.skip("Not enough nodes to run this test")
 
     return network.clients[1]
 
@@ -311,5 +319,5 @@ def debug_client(client):
         address=node.address,
         user=node.user,
         password=node.password,
-        token=client.token
+        token=client.token,
     )

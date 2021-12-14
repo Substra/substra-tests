@@ -5,3 +5,5 @@ pydantic==1.8.2
 pytest-xdist==1.32.0
 pytest-lazy-fixture==0.6.3
 flake8==3.9.2
+isort==5.10.1
+black==21.12b0

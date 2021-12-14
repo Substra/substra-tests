@@ -1,8 +1,10 @@
 import pytest
 import substra
 from substra.sdk import models
+
 import substratest as sbt
-from substratest.factory import AlgoCategory, Permissions
+from substratest.factory import AlgoCategory
+from substratest.factory import Permissions
 
 
 @pytest.mark.remote_only
@@ -19,7 +21,7 @@ def test_compute_plan_simple(factory, client_1, client_2, default_dataset_1, def
 
     # create compute plan
     cp_spec = factory.create_compute_plan(
-        tag='foo',
+        tag="foo",
         metadata={"foo": "bar"},
     )
 
@@ -50,14 +52,14 @@ def test_compute_plan_simple(factory, client_1, client_2, default_dataset_1, def
         traintuple_spec=traintuple_spec_3,
         dataset=default_dataset_1,
         data_samples=default_dataset_1.test_data_sample_keys,
-        metadata={'foo': 'bar'},
+        metadata={"foo": "bar"},
     )
 
     # submit compute plan and wait for it to complete
     cp_added = client_1.add_compute_plan(cp_spec)
 
     cp = client_1.wait(cp_added)
-    assert cp.tag == 'foo'
+    assert cp.tag == "foo"
     assert cp.metadata == {"foo": "bar"}
     assert cp.task_count == cp.done_count == 4
     assert cp.todo_count == cp.waiting_count == cp.doing_count == cp.canceled_count == cp.failed_count == 0
@@ -97,7 +99,10 @@ def test_compute_plan_simple(factory, client_1, client_2, default_dataset_1, def
 
     # check testtuple perfs
     assert len(testtuple.test.perfs) == len(default_metrics)
-    assert set(testtuple.test.perfs.values()) == {4, 5, }
+    assert set(testtuple.test.perfs.values()) == {
+        4,
+        5,
+    }
 
     # XXX as the first two tuples have the same rank, there is currently no way to know
     #     which one will be returned first
@@ -134,11 +139,7 @@ def test_compute_plan_single_client_success(factory, client, default_dataset, de
 
     cp_spec = factory.create_compute_plan()
 
-    traintuple_spec_1 = cp_spec.add_traintuple(
-        algo=algo,
-        dataset=default_dataset,
-        data_samples=[data_sample_1]
-    )
+    traintuple_spec_1 = cp_spec.add_traintuple(algo=algo, dataset=default_dataset, data_samples=[data_sample_1])
     cp_spec.add_testtuple(
         metrics=[default_metric],
         traintuple_spec=traintuple_spec_1,
@@ -147,23 +148,17 @@ def test_compute_plan_single_client_success(factory, client, default_dataset, de
     )
 
     traintuple_spec_2 = cp_spec.add_traintuple(
-        algo=algo,
-        dataset=default_dataset,
-        data_samples=[data_sample_2],
-        in_models=[traintuple_spec_1]
+        algo=algo, dataset=default_dataset, data_samples=[data_sample_2], in_models=[traintuple_spec_1]
     )
     cp_spec.add_testtuple(
         metrics=[default_metric],
         dataset=default_dataset,
         data_samples=default_dataset.test_data_sample_keys,
-        traintuple_spec=traintuple_spec_2
+        traintuple_spec=traintuple_spec_2,
     )
 
     traintuple_spec_3 = cp_spec.add_traintuple(
-        algo=algo,
-        dataset=default_dataset,
-        data_samples=[data_sample_3],
-        in_models=[traintuple_spec_2]
+        algo=algo, dataset=default_dataset, data_samples=[data_sample_3], in_models=[traintuple_spec_2]
     )
     cp_spec.add_testtuple(
         metrics=[default_metric],
@@ -198,11 +193,7 @@ def test_compute_plan_update(factory, client, default_dataset, default_metric):
     # Create a compute plan with traintuple + testtuple
 
     cp_spec = factory.create_compute_plan()
-    traintuple_spec_1 = cp_spec.add_traintuple(
-        algo=algo,
-        dataset=default_dataset,
-        data_samples=[data_sample_1]
-    )
+    traintuple_spec_1 = cp_spec.add_traintuple(algo=algo, dataset=default_dataset, data_samples=[data_sample_1])
     cp_spec.add_testtuple(
         metrics=[default_metric],
         traintuple_spec=traintuple_spec_1,
@@ -234,10 +225,7 @@ def test_compute_plan_update(factory, client, default_dataset, default_metric):
 
     cp_spec = factory.update_compute_plan(cp)
     traintuple_spec_3 = cp_spec.add_traintuple(
-        algo=algo,
-        dataset=default_dataset,
-        data_samples=[data_sample_3],
-        in_models=[traintuple_spec_2]
+        algo=algo, dataset=default_dataset, data_samples=[data_sample_3], in_models=[traintuple_spec_2]
     )
     cp = client.update_compute_plan(cp_spec)
 
@@ -288,11 +276,7 @@ def test_compute_plan_single_client_failure(factory, client, default_dataset, de
 
     cp_spec = factory.create_compute_plan()
 
-    traintuple_spec_1 = cp_spec.add_traintuple(
-        algo=algo,
-        dataset=default_dataset,
-        data_samples=[data_sample_1]
-    )
+    traintuple_spec_1 = cp_spec.add_traintuple(algo=algo, dataset=default_dataset, data_samples=[data_sample_1])
     cp_spec.add_testtuple(
         metrics=[default_metric],
         traintuple_spec=traintuple_spec_1,
@@ -301,10 +285,7 @@ def test_compute_plan_single_client_failure(factory, client, default_dataset, de
     )
 
     traintuple_spec_2 = cp_spec.add_traintuple(
-        algo=algo,
-        dataset=default_dataset,
-        data_samples=[data_sample_2],
-        in_models=[traintuple_spec_1]
+        algo=algo, dataset=default_dataset, data_samples=[data_sample_2], in_models=[traintuple_spec_1]
     )
     cp_spec.add_testtuple(
         metrics=[default_metric],
@@ -314,10 +295,7 @@ def test_compute_plan_single_client_failure(factory, client, default_dataset, de
     )
 
     traintuple_spec_3 = cp_spec.add_traintuple(
-        algo=algo,
-        dataset=default_dataset,
-        data_samples=[data_sample_3],
-        in_models=[traintuple_spec_2]
+        algo=algo, dataset=default_dataset, data_samples=[data_sample_3], in_models=[traintuple_spec_2]
     )
     cp_spec.add_testtuple(
         metrics=[default_metric],
@@ -361,15 +339,15 @@ def test_compute_plan_aggregate_composite_traintuples(factory, clients, default_
             kwargs = {}
             if previous_aggregatetuple_spec:
                 kwargs = {
-                    'in_head_model': previous_composite_traintuple_specs[index],
-                    'in_trunk_model': previous_aggregatetuple_spec,
+                    "in_head_model": previous_composite_traintuple_specs[index],
+                    "in_trunk_model": previous_aggregatetuple_spec,
                 }
             spec = cp_spec.add_composite_traintuple(
                 composite_algo=composite_algo,
                 dataset=dataset,
                 data_samples=[dataset.train_data_sample_keys[0 + round_]],
                 out_trunk_model_permissions=Permissions(public=False, authorized_ids=[c.node_id for c in clients]),
-                metadata={'foo': 'bar'},
+                metadata={"foo": "bar"},
                 **kwargs,
             )
             composite_traintuple_specs.append(spec)
@@ -379,7 +357,7 @@ def test_compute_plan_aggregate_composite_traintuples(factory, clients, default_
             aggregate_algo=aggregate_algo,
             worker=aggregate_worker,
             in_models=composite_traintuple_specs,
-            metadata={'foo': 'bar'},
+            metadata={"foo": "bar"},
         )
 
         # save state of round
@@ -388,7 +366,8 @@ def test_compute_plan_aggregate_composite_traintuples(factory, clients, default_
 
     # last round: create associated testtuple
     for composite_traintuple, dataset, metric in zip(
-            previous_composite_traintuple_specs, default_datasets, default_metrics):
+        previous_composite_traintuple_specs, default_datasets, default_metrics
+    ):
         cp_spec.add_testtuple(
             metrics=[metric],
             dataset=dataset,
@@ -422,7 +401,7 @@ def test_compute_plan_aggregate_composite_traintuples(factory, clients, default_
 
     # Check tuples metadata
     for tuple in composite_traintuples + aggregatetuples:
-        assert tuple.metadata == {'foo': 'bar'}
+        assert tuple.metadata == {"foo": "bar"}
 
     # Check that permissions were correctly set
     for task in composite_traintuples:
@@ -449,11 +428,7 @@ def test_compute_plan_remove_intermediary_model(factory, client, default_dataset
     # create a compute plan with clean_model activate
     cp_spec = factory.create_compute_plan(clean_models=True)
 
-    traintuple_spec_1 = cp_spec.add_traintuple(
-        algo=algo,
-        dataset=default_dataset,
-        data_samples=[data_sample_1]
-    )
+    traintuple_spec_1 = cp_spec.add_traintuple(algo=algo, dataset=default_dataset, data_samples=[data_sample_1])
     cp_spec.add_testtuple(
         metrics=[default_metric],
         traintuple_spec=traintuple_spec_1,
@@ -462,10 +437,7 @@ def test_compute_plan_remove_intermediary_model(factory, client, default_dataset
     )
 
     traintuple_spec_2 = cp_spec.add_traintuple(
-        algo=algo,
-        dataset=default_dataset,
-        data_samples=[data_sample_2],
-        in_models=[traintuple_spec_1]
+        algo=algo, dataset=default_dataset, data_samples=[data_sample_2], in_models=[traintuple_spec_1]
     )
     cp_spec.add_testtuple(
         metrics=[default_metric],
@@ -481,7 +453,7 @@ def test_compute_plan_remove_intermediary_model(factory, client, default_dataset
         algo=algo,
         dataset=default_dataset,
         data_samples=[data_sample_3],
-        traintuples=client.list_compute_plan_traintuples(cp.key)
+        traintuples=client.list_compute_plan_traintuples(cp.key),
     )
 
     with pytest.raises(substra.exceptions.InvalidRequest) as e:
@@ -497,15 +469,11 @@ def test_compute_plan_circular_dependency_failure(factory, client, default_datas
     cp_spec = factory.create_compute_plan()
 
     traintuple_spec_1 = cp_spec.add_traintuple(
-        dataset=default_dataset,
-        algo=algo,
-        data_samples=default_dataset.train_data_sample_keys
+        dataset=default_dataset, algo=algo, data_samples=default_dataset.train_data_sample_keys
     )
 
     traintuple_spec_2 = cp_spec.add_traintuple(
-        dataset=default_dataset,
-        algo=algo,
-        data_samples=default_dataset.train_data_sample_keys
+        dataset=default_dataset, algo=algo, data_samples=default_dataset.train_data_sample_keys
     )
 
     traintuple_spec_1.in_models_ids.append(traintuple_spec_2.id)
@@ -514,7 +482,7 @@ def test_compute_plan_circular_dependency_failure(factory, client, default_datas
     with pytest.raises(substra.exceptions.InvalidRequest) as e:
         client.add_compute_plan(cp_spec)
 
-    assert 'missing dependency among inModels IDs' in str(e.value)
+    assert "missing dependency among inModels IDs" in str(e.value)
 
 
 @pytest.mark.slow
@@ -539,7 +507,7 @@ def test_execution_compute_plan_canceled(factory, client, default_dataset):
             algo=algo,
             dataset=default_dataset,
             data_samples=[data_sample_key],
-            in_models=[previous_traintuple] if previous_traintuple else None
+            in_models=[previous_traintuple] if previous_traintuple else None,
         )
 
     cp = client.add_compute_plan(cp_spec)
@@ -671,7 +639,7 @@ def test_compute_plan_local_folder(factory, client, default_dataset, default_met
         metrics=[default_metric_1],
         dataset=default_dataset,
         data_samples=default_dataset.test_data_sample_keys,
-        traintuple_spec=traintuple_spec_2
+        traintuple_spec=traintuple_spec_2,
     )
 
     cp_added = client.add_compute_plan(cp_spec, auto_batching=False)

@@ -1,10 +1,9 @@
 import pytest
-
 from substra.sdk.models import Status
 
 import substratest as sbt
-from substratest.factory import DEFAULT_DATA_SAMPLE_FILENAME, AlgoCategory
-
+from substratest.factory import DEFAULT_DATA_SAMPLE_FILENAME
+from substratest.factory import AlgoCategory
 
 OPENER_SCRIPT = """
 import json
@@ -154,9 +153,9 @@ def test_traintuple_data_samples_relative_order(factory, client, dataset):
     data_sample_keys = _shuffle(dataset.train_data_sample_keys)
 
     # Format TEMPLATE_ALGO_SCRIPT with current data_sample_keys
-    algo_script = TEMPLATE_ALGO_SCRIPT.format(data_sample_keys=data_sample_keys,
-                                              predict_data_sample_keys=data_sample_keys[:2],
-                                              models=None)
+    algo_script = TEMPLATE_ALGO_SCRIPT.format(
+        data_sample_keys=data_sample_keys, predict_data_sample_keys=data_sample_keys[:2], models=None
+    )
     algo_spec = factory.create_algo(category=AlgoCategory.simple, py_script=algo_script)
     algo = client.add_algo(algo_spec)
 
@@ -177,10 +176,9 @@ def test_traintuple_data_samples_relative_order(factory, client, dataset):
     assert traintuple.train.data_sample_keys == data_sample_keys
     client.wait(traintuple)
 
-    testtuple_spec = factory.create_testtuple(metrics=[metric],
-                                              traintuple=traintuple,
-                                              dataset=dataset,
-                                              data_samples=data_sample_keys[:2])
+    testtuple_spec = factory.create_testtuple(
+        metrics=[metric], traintuple=traintuple, dataset=dataset, data_samples=data_sample_keys[:2]
+    )
     testtuple = client.add_testtuple(testtuple_spec)
 
     # Assert order is correct in the metric. If not, wait() will fail.
@@ -191,9 +189,9 @@ def test_composite_traintuple_data_samples_relative_order(factory, client, datas
     data_sample_keys = _shuffle(dataset.train_data_sample_keys)
 
     # Format TEMPLATE_COMPOSITE_ALGO_SCRIPT with current data_sample_keys
-    composite_algo_script = TEMPLATE_COMPOSITE_ALGO_SCRIPT.format(data_sample_keys=data_sample_keys,
-                                                                  predict_data_sample_keys=data_sample_keys[:2],
-                                                                  models=None)
+    composite_algo_script = TEMPLATE_COMPOSITE_ALGO_SCRIPT.format(
+        data_sample_keys=data_sample_keys, predict_data_sample_keys=data_sample_keys[:2], models=None
+    )
     algo_spec = factory.create_algo(AlgoCategory.composite, py_script=composite_algo_script)
     composite_algo = client.add_algo(algo_spec)
 
@@ -213,10 +211,9 @@ def test_composite_traintuple_data_samples_relative_order(factory, client, datas
     assert composite_traintuple.composite.data_sample_keys == data_sample_keys
     client.wait(composite_traintuple)
 
-    testtuple_spec = factory.create_testtuple(metrics=[metric],
-                                              traintuple=composite_traintuple,
-                                              dataset=dataset,
-                                              data_samples=data_sample_keys[:2])
+    testtuple_spec = factory.create_testtuple(
+        metrics=[metric], traintuple=composite_traintuple, dataset=dataset, data_samples=data_sample_keys[:2]
+    )
     testtuple = client.add_testtuple(testtuple_spec)
 
     # Assert order is correct in the metric. If not, wait() will fail.
@@ -254,10 +251,7 @@ class TestOpener(tools.Opener):
 """
     )
     dataset = client.add_dataset(spec)
-    specs = [
-        factory.create_data_sample(content=str(idx), datasets=[dataset])
-        for idx in range(batch_size)
-    ]
+    specs = [factory.create_data_sample(content=str(idx), datasets=[dataset]) for idx in range(batch_size)]
     spec = sbt.factory.DataSampleBatchSpec.from_data_sample_specs(specs)
     keys = client.add_data_samples(spec)
     assert len(keys) == batch_size
@@ -283,7 +277,7 @@ class TestAlgo(tools.Algo):
 
 if __name__ == '__main__':
     tools.algo.execute(TestAlgo())
-"""
+""",
     )
     algo = client.add_algo(spec)
 

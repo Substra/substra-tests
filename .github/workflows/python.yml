@@ -20,6 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       SUBSTRA_BRANCH: master
+      SRC_DIRS: substratest tests
     steps:
       - name: checkout connect-tests
         uses: actions/checkout@v2
@@ -47,7 +48,15 @@ jobs:
           python-version: 3.7
 
       - name: Install tools
-        run: pip install flake8==3.9.2
+        run: pip install -r <(egrep "flake|black|isort" requirements.txt)
+
+      - name: Check formatting - Black
+        run: |
+          black --check --diff $SRC_DIRS
+
+      - name: Check formatting - isort
+        run: |
+          isort --check $SRC_DIRS
 
       - name: Lint
         run: flake8 --exclude ./substra

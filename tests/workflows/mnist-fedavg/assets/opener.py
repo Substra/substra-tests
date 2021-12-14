@@ -16,9 +16,7 @@ class NodeOpener(tools.Opener):
                 folder = folder.decode()
             if isinstance(folder, np.str):
                 folder = str(folder)
-            paths += [
-                os.path.join(folder, f) for f in os.listdir(folder) if f[-4:] == ".npy"
-            ]
+            paths += [os.path.join(folder, f) for f in os.listdir(folder) if f[-4:] == ".npy"]
 
         # Load data into a dictionnary
         X_list = []
@@ -37,9 +35,7 @@ class NodeOpener(tools.Opener):
                 folder = folder.decode()
             if isinstance(folder, np.str):
                 folder = str(folder)
-            paths += [
-                os.path.join(folder, f) for f in os.listdir(folder) if f[-4:] == ".csv"
-            ]
+            paths += [os.path.join(folder, f) for f in os.listdir(folder) if f[-4:] == ".csv"]
 
         # Load labels into a dictionnary
         y_list = []
@@ -57,7 +53,7 @@ class NodeOpener(tools.Opener):
 
     def get_predictions(self, path):
         """Load predictions saved into a csv file."""
-        return np.genfromtxt(path, delimiter=',')
+        return np.genfromtxt(path, delimiter=",")
 
     def fake_X(self, n_samples=None):
         """Generate false data."""

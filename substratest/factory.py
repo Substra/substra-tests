@@ -7,22 +7,20 @@ import tempfile
 import typing
 import uuid
 
-
 import pydantic
-
 from substra.sdk import models
 from substra.sdk.schemas import AlgoCategory
+
 from . import utils
 
+DEFAULT_DATA_SAMPLE_FILENAME = "data.csv"
 
-DEFAULT_DATA_SAMPLE_FILENAME = 'data.csv'
+DEFAULT_TOOLS_VERSION = "0.9.1"
+DEFAULT_TOOLS_BASE_IMAGE = "owkin/connect-tools"
+DEFAULT_TOOLS_IMAGE = f"{DEFAULT_TOOLS_BASE_IMAGE}:{DEFAULT_TOOLS_VERSION}-minimal"
 
-DEFAULT_TOOLS_VERSION = '0.9.1'
-DEFAULT_TOOLS_BASE_IMAGE = 'owkin/connect-tools'
-DEFAULT_TOOLS_IMAGE = f'{DEFAULT_TOOLS_BASE_IMAGE}:{DEFAULT_TOOLS_VERSION}-minimal'
-
-DEFAULT_TOOLS_BASE_IMAGE_GCR = 'gcr.io/connect-314908/connect-tools'
-DEFAULT_TOOLS_IMAGE_GCR = f'{DEFAULT_TOOLS_BASE_IMAGE_GCR}:{DEFAULT_TOOLS_VERSION}-minimal'
+DEFAULT_TOOLS_BASE_IMAGE_GCR = "gcr.io/connect-314908/connect-tools"
+DEFAULT_TOOLS_IMAGE_GCR = f"{DEFAULT_TOOLS_BASE_IMAGE_GCR}:{DEFAULT_TOOLS_VERSION}-minimal"
 
 DEFAULT_OPENER_SCRIPT = f"""
 import csv
@@ -68,7 +66,8 @@ class TestOpener(tools.Opener):
             return json.dump(y_pred, f)
 """
 
-TEMPLATED_DEFAULT_METRICS_SCRIPT = string.Template("""
+TEMPLATED_DEFAULT_METRICS_SCRIPT = string.Template(
+    """
 import json
 import substratools as tools
 class TestMetrics(tools.Metrics):
@@ -78,7 +77,8 @@ class TestMetrics(tools.Metrics):
         return res + $offset
 if __name__ == '__main__':
     tools.metrics.execute(TestMetrics())
-""")  # noqa
+"""
+)  # noqa
 
 DEFAULT_ALGO_SCRIPT = f"""
 import json
@@ -201,9 +201,9 @@ if __name__ == '__main__':
     tools.algo.execute(TestCompositeAlgo())
 """  # noqa
 
-INVALID_ALGO_SCRIPT = DEFAULT_ALGO_SCRIPT.replace('train', 'naitr')
-INVALID_COMPOSITE_ALGO_SCRIPT = DEFAULT_COMPOSITE_ALGO_SCRIPT.replace('train', 'naitr')
-INVALID_AGGREGATE_ALGO_SCRIPT = DEFAULT_AGGREGATE_ALGO_SCRIPT.replace('aggregate', 'etagergga')
+INVALID_ALGO_SCRIPT = DEFAULT_ALGO_SCRIPT.replace("train", "naitr")
+INVALID_COMPOSITE_ALGO_SCRIPT = DEFAULT_COMPOSITE_ALGO_SCRIPT.replace("train", "naitr")
+INVALID_AGGREGATE_ALGO_SCRIPT = DEFAULT_AGGREGATE_ALGO_SCRIPT.replace("aggregate", "etagergga")
 
 
 def random_uuid():
@@ -214,7 +214,7 @@ def _shorten_name(name):
     """Format asset name to ensure they match the backend requirements."""
     if len(name) < 100:
         return name
-    return name[:75] + '...' + name[:20]
+    return name[:75] + "..." + name[:20]
 
 
 class Counter:
@@ -228,6 +228,7 @@ class Counter:
 
 class _Spec(pydantic.BaseModel, abc.ABC):
     """Asset specification base class."""
+
     pass
 
 
@@ -243,7 +244,7 @@ class PrivatePermissions(pydantic.BaseModel):
 
 DEFAULT_PERMISSIONS = Permissions(public=True, authorized_ids=[])
 DEFAULT_OUT_TRUNK_MODEL_PERMISSIONS = PrivatePermissions(public=False, authorized_ids=[])
-SERVER_MEDIA_PATH = '/var/substra/servermedias/'
+SERVER_MEDIA_PATH = "/var/substra/servermedias/"
 
 
 class DataSampleSpec(_Spec):
@@ -252,7 +253,7 @@ class DataSampleSpec(_Spec):
     data_manager_keys: typing.List[str]
 
     def move_data_to_server(self, destination_folder, minikube=False):
-        destination_folder = destination_folder if destination_folder.endswith('/') else destination_folder + '/'
+        destination_folder = destination_folder if destination_folder.endswith("/") else destination_folder + "/"
 
         if not minikube:
             destination = tempfile.mkdtemp(dir=destination_folder)
@@ -261,18 +262,21 @@ class DataSampleSpec(_Spec):
         else:
             destination = os.path.join(destination_folder, random_uuid()[0:8])
 
-            minikube_private_key = '~/.minikube/machines/minikube/id_rsa'
-            minikube_ssh = 'docker@$(minikube ip)'
+            minikube_private_key = "~/.minikube/machines/minikube/id_rsa"
+            minikube_ssh = "docker@$(minikube ip)"
 
-            os.system(f'scp -r -i {minikube_private_key} {self.path} {minikube_ssh}:/tmp/')
-            os.system(f'ssh -i {minikube_private_key} -oStrictHostKeyChecking=no {minikube_ssh} '
-                      f'"sudo mkdir -p {destination} && sudo mv /tmp/{os.path.basename(self.path)} {destination}"')
+            os.system(f"scp -r -i {minikube_private_key} {self.path} {minikube_ssh}:/tmp/")
+            os.system(
+                f"ssh -i {minikube_private_key} -oStrictHostKeyChecking=no {minikube_ssh} "
+                f'"sudo mkdir -p {destination} && sudo mv /tmp/{os.path.basename(self.path)} {destination}"'
+            )
 
             # Clean path after copy
             shutil.rmtree(self.path)
 
-        self.path = os.path.join(destination.replace(destination_folder, SERVER_MEDIA_PATH),
-                                 os.path.basename(self.path))
+        self.path = os.path.join(
+            destination.replace(destination_folder, SERVER_MEDIA_PATH), os.path.basename(self.path)
+        )
 
 
 class DataSampleBatchSpec(_Spec):
@@ -282,7 +286,6 @@ class DataSampleBatchSpec(_Spec):
 
     @classmethod
     def from_data_sample_specs(cls, specs: typing.List[DataSampleSpec]):
-
         def _all_equal(iterator):
             iterator = iter(iterator)
             first = next(iterator)
@@ -308,11 +311,11 @@ class DatasetSpec(_Spec):
     permissions: Permissions = None
 
     def read_opener(self):
-        with open(self.data_opener, 'rb') as f:
+        with open(self.data_opener, "rb") as f:
             return f.read()
 
     def read_description(self):
-        with open(self.description, 'r') as f:
+        with open(self.description, "r") as f:
             return f.read()
 
 
@@ -436,14 +439,14 @@ class ComputePlanTesttupleSpec(_Spec):
     metadata: typing.Dict[str, str] = None
 
 
-def _get_key(obj, field='key'):
+def _get_key(obj, field="key"):
     """Get key from asset/spec or key."""
     if isinstance(obj, str):
         return obj
     return getattr(obj, field)
 
 
-def _get_keys(obj, field='key'):
+def _get_keys(obj, field="key"):
     """Get keys from asset/spec or key.
 
     This is particularly useful for data samples to accept as input args a list of keys
@@ -460,7 +463,7 @@ class _BaseComputePlanSpec(_Spec, abc.ABC):
     aggregatetuples: typing.List[ComputePlanAggregatetupleSpec]
     testtuples: typing.List[ComputePlanTesttupleSpec]
 
-    def add_traintuple(self, algo, dataset, data_samples, in_models=None, tag='', metadata=None):
+    def add_traintuple(self, algo, dataset, data_samples, in_models=None, tag="", metadata=None):
         in_models = in_models or []
         spec = ComputePlanTraintupleSpec(
             algo_key=algo.key,
@@ -474,7 +477,7 @@ class _BaseComputePlanSpec(_Spec, abc.ABC):
         self.traintuples.append(spec)
         return spec
 
-    def add_aggregatetuple(self, aggregate_algo, worker, in_models=None, tag='', metadata=None):
+    def add_aggregatetuple(self, aggregate_algo, worker, in_models=None, tag="", metadata=None):
         in_models = in_models or []
 
         for t in in_models:
@@ -491,17 +494,22 @@ class _BaseComputePlanSpec(_Spec, abc.ABC):
         self.aggregatetuples.append(spec)
         return spec
 
-    def add_composite_traintuple(self, composite_algo, dataset=None, data_samples=None,
-                                 in_head_model=None, in_trunk_model=None,
-                                 out_trunk_model_permissions=None, tag='', metadata=None):
+    def add_composite_traintuple(
+        self,
+        composite_algo,
+        dataset=None,
+        data_samples=None,
+        in_head_model=None,
+        in_trunk_model=None,
+        out_trunk_model_permissions=None,
+        tag="",
+        metadata=None,
+    ):
         data_samples = data_samples or []
 
         if in_head_model and in_trunk_model:
             assert isinstance(in_head_model, ComputePlanCompositeTraintupleSpec)
-            assert isinstance(
-                in_trunk_model,
-                (ComputePlanCompositeTraintupleSpec, ComputePlanAggregatetupleSpec)
-            )
+            assert isinstance(in_trunk_model, (ComputePlanCompositeTraintupleSpec, ComputePlanAggregatetupleSpec))
 
         spec = ComputePlanCompositeTraintupleSpec(
             composite_traintuple_id=random_uuid(),
@@ -517,7 +525,7 @@ class _BaseComputePlanSpec(_Spec, abc.ABC):
         self.composite_traintuples.append(spec)
         return spec
 
-    def add_testtuple(self, metrics, traintuple_spec, dataset, data_samples, tag='', metadata=None):
+    def add_testtuple(self, metrics, traintuple_spec, dataset, data_samples, tag="", metadata=None):
         spec = ComputePlanTesttupleSpec(
             metric_keys=[metric.key for metric in metrics],
             traintuple_id=traintuple_spec.id,
@@ -541,13 +549,12 @@ class UpdateComputePlanSpec(_BaseComputePlanSpec):
 
 
 class AssetsFactory:
-
     def __init__(self, name, client_debug_local=False):
         self._data_sample_counter = Counter()
         self._dataset_counter = Counter()
         self._metric_counter = Counter()
         self._algo_counter = Counter()
-        self._workdir = pathlib.Path(tempfile.mkdtemp(prefix='/tmp/'))
+        self._workdir = pathlib.Path(tempfile.mkdtemp(prefix="/tmp/"))
         self._uuid = name
         self._client_debug_local = client_debug_local
 
@@ -575,14 +582,14 @@ class AssetsFactory:
 
     def create_data_sample(self, content=None, datasets=None, test_only=False):
         idx = self._data_sample_counter.inc()
-        tmpdir = self._workdir / f'data-{idx}'
+        tmpdir = self._workdir / f"data-{idx}"
         tmpdir.mkdir()
 
-        content = content or '10,20'
-        content = content.encode('utf-8')
+        content = content or "10,20"
+        content = content.encode("utf-8")
 
         data_filepath = tmpdir / DEFAULT_DATA_SAMPLE_FILENAME
-        with open(data_filepath, 'wb') as f:
+        with open(data_filepath, "wb") as f:
             f.write(content)
 
         datasets = datasets or []
@@ -595,53 +602,48 @@ class AssetsFactory:
 
     def create_dataset(self, permissions=None, metadata=None, py_script=None):
         idx = self._dataset_counter.inc()
-        tmpdir = self._workdir / f'dataset-{idx}'
+        tmpdir = self._workdir / f"dataset-{idx}"
         tmpdir.mkdir()
-        name = _shorten_name(f'{self._uuid} - Dataset {idx}')
+        name = _shorten_name(f"{self._uuid} - Dataset {idx}")
 
-        description_path = tmpdir / 'description.md'
+        description_path = tmpdir / "description.md"
         description_content = name
-        with open(description_path, 'w') as f:
+        with open(description_path, "w") as f:
             f.write(description_content)
 
-        opener_path = tmpdir / 'opener.py'
-        with open(opener_path, 'w') as f:
+        opener_path = tmpdir / "opener.py"
+        with open(opener_path, "w") as f:
             f.write(py_script or DEFAULT_OPENER_SCRIPT)
 
         return DatasetSpec(
             name=name,
             data_opener=str(opener_path),
-            type='Test',
+            type="Test",
             metadata=metadata,
             description=str(description_path),
             permissions=permissions or DEFAULT_PERMISSIONS,
         )
 
-    def create_metric(self,
-                      permissions=None,
-                      metadata=None,
-                      dockerfile=None,
-                      py_script=None,
-                      offset=0):
+    def create_metric(self, permissions=None, metadata=None, dockerfile=None, py_script=None, offset=0):
         if py_script is None:
             py_script = TEMPLATED_DEFAULT_METRICS_SCRIPT.substitute(offset=offset)
 
         idx = self._metric_counter.inc()
-        tmpdir = self._workdir / f'metric-{idx}'
+        tmpdir = self._workdir / f"metric-{idx}"
         tmpdir.mkdir()
-        name = _shorten_name(f'{self._uuid} - Metric {idx}')
+        name = _shorten_name(f"{self._uuid} - Metric {idx}")
 
-        description_path = tmpdir / 'description.md'
+        description_path = tmpdir / "description.md"
         description_content = name
-        with open(description_path, 'w') as f:
+        with open(description_path, "w") as f:
             f.write(description_content)
 
         dockerfile = dockerfile or self.default_metrics_dockerfile
 
         metrics_zip = utils.create_archive(
-            tmpdir / 'metrics',
-            ('metrics.py', py_script),
-            ('Dockerfile', dockerfile),
+            tmpdir / "metrics",
+            ("metrics.py", py_script),
+            ("Dockerfile", dockerfile),
         )
 
         return MetricSpec(
@@ -654,26 +656,26 @@ class AssetsFactory:
 
     def create_algo(self, category, py_script=None, dockerfile=None, permissions=None, metadata=None, local=False):
         idx = self._algo_counter.inc()
-        tmpdir = self._workdir / f'algo-{idx}'
+        tmpdir = self._workdir / f"algo-{idx}"
         tmpdir.mkdir()
-        name = _shorten_name(f'{self._uuid} - Algo {idx}')
+        name = _shorten_name(f"{self._uuid} - Algo {idx}")
 
-        description_path = tmpdir / 'description.md'
+        description_path = tmpdir / "description.md"
         description_content = name
-        with open(description_path, 'w') as f:
+        with open(description_path, "w") as f:
             f.write(description_content)
 
         try:
             algo_content = py_script or DEFAULT_ALGO_SCRIPTS[category]
         except KeyError:
-            raise Exception('Invalid algo category', category)
+            raise Exception("Invalid algo category", category)
 
         dockerfile = dockerfile or self.default_algo_dockerfile
 
         algo_zip = utils.create_archive(
-            tmpdir / 'algo',
-            ('algo.py', algo_content),
-            ('Dockerfile', dockerfile),
+            tmpdir / "algo",
+            ("algo.py", algo_content),
+            ("Dockerfile", dockerfile),
         )
 
         return AlgoSpec(
@@ -685,9 +687,17 @@ class AssetsFactory:
             metadata=metadata,
         )
 
-    def create_traintuple(self, algo=None, dataset=None,
-                          data_samples=None, traintuples=None, tag=None,
-                          compute_plan_key=None, rank=None, metadata=None):
+    def create_traintuple(
+        self,
+        algo=None,
+        dataset=None,
+        data_samples=None,
+        traintuples=None,
+        tag=None,
+        compute_plan_key=None,
+        rank=None,
+        metadata=None,
+    ):
         data_samples = data_samples or []
         traintuples = traintuples or []
 
@@ -705,9 +715,9 @@ class AssetsFactory:
             rank=rank,
         )
 
-    def create_aggregatetuple(self, algo=None, worker=None,
-                              traintuples=None, tag=None, compute_plan_key=None,
-                              rank=None, metadata=None):
+    def create_aggregatetuple(
+        self, algo=None, worker=None, traintuples=None, tag=None, compute_plan_key=None, rank=None, metadata=None
+    ):
         traintuples = traintuples or []
 
         for t in traintuples:
@@ -723,19 +733,24 @@ class AssetsFactory:
             rank=rank,
         )
 
-    def create_composite_traintuple(self, algo=None, dataset=None,
-                                    data_samples=None, head_traintuple=None,
-                                    trunk_traintuple=None, tag=None,
-                                    compute_plan_key=None, rank=None,
-                                    permissions=None, metadata=None):
+    def create_composite_traintuple(
+        self,
+        algo=None,
+        dataset=None,
+        data_samples=None,
+        head_traintuple=None,
+        trunk_traintuple=None,
+        tag=None,
+        compute_plan_key=None,
+        rank=None,
+        permissions=None,
+        metadata=None,
+    ):
         data_samples = data_samples or []
 
         if head_traintuple and trunk_traintuple:
             assert isinstance(head_traintuple, models.CompositeTraintuple)
-            assert isinstance(
-                trunk_traintuple,
-                (models.CompositeTraintuple, models.Aggregatetuple)
-            )
+            assert isinstance(trunk_traintuple, (models.CompositeTraintuple, models.Aggregatetuple))
             in_head_model_key = head_traintuple.key
             in_trunk_model_key = trunk_traintuple.key
         else:
@@ -755,8 +770,7 @@ class AssetsFactory:
             out_trunk_model_permissions=permissions or DEFAULT_OUT_TRUNK_MODEL_PERMISSIONS,
         )
 
-    def create_testtuple(self, metrics, traintuple, dataset, data_samples, tag=None,
-                         metadata=None):
+    def create_testtuple(self, metrics, traintuple, dataset, data_samples, tag=None, metadata=None):
         return TesttupleSpec(
             metric_keys=[metric.key for metric in metrics],
             traintuple_key=traintuple.key,
@@ -766,7 +780,7 @@ class AssetsFactory:
             metadata=metadata,
         )
 
-    def create_compute_plan(self, tag='', clean_models=False, metadata=None):
+    def create_compute_plan(self, tag="", clean_models=False, metadata=None):
         return ComputePlanSpec(
             traintuples=[],
             composite_traintuples=[],
@@ -774,7 +788,7 @@ class AssetsFactory:
             testtuples=[],
             tag=tag,
             metadata=metadata,
-            clean_models=clean_models
+            clean_models=clean_models,
         )
 
     def update_compute_plan(self, compute_plan):
