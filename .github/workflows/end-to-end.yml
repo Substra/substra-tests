@@ -108,7 +108,7 @@ jobs:
         # frontend tests disabled in distributed mode for now
         env:
           GIT_TOKEN: ${{ secrets.OWLFRED_PAT }}
-      - if: github.event_name == 'schedule'
+      - if: always() && github.event_name == 'schedule'
         name: Send Slack report
         run: |
           ci/send-slack-report.py '${{ secrets.SLACK_WEBHOOK }}' ci/.slack_message \
@@ -186,7 +186,7 @@ jobs:
             --write-summary-to-file ./.slack_message
         env:
           GIT_TOKEN: ${{ secrets.OWLFRED_PAT }}
-      - if: github.event_name == 'schedule'
+      - if: always() && github.event_name == 'schedule'
         name: Send Slack report
         run: |
           ci/send-slack-report.py '${{ secrets.SLACK_WEBHOOK }}' ci/.slack_message \
