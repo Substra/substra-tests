@@ -23,6 +23,7 @@ def test_tuples_execution_on_same_node(factory, network, client, default_dataset
     traintuple = client.add_traintuple(spec)
     traintuple = client.wait(traintuple)
     assert traintuple.status == Status.done
+    assert traintuple.error_type is None
     assert traintuple.metadata == {"foo": "bar"}
     assert len(traintuple.train.models) == 1
 
@@ -43,6 +44,7 @@ def test_tuples_execution_on_same_node(factory, network, client, default_dataset
     testtuple = client.add_testtuple(spec)
     testtuple = client.wait(testtuple)
     assert testtuple.status == Status.done
+    assert testtuple.error_type is None
     assert list(testtuple.test.perfs.values())[0] == 2
 
     # add a traintuple depending on first traintuple
@@ -56,6 +58,7 @@ def test_tuples_execution_on_same_node(factory, network, client, default_dataset
     traintuple = client.add_traintuple(spec)
     traintuple = client.wait(traintuple)
     assert traintuple.status == Status.done
+    assert testtuple.error_type is None
     assert traintuple.metadata == {}
     assert len(traintuple.parent_task_keys) == 1
 
@@ -89,6 +92,7 @@ def test_federated_learning_workflow(factory, client, default_datasets):
         traintuple = client.add_traintuple(spec)
         traintuple = client.wait(traintuple)
         assert traintuple.status == Status.done
+        assert traintuple.error_type is None
         assert len(traintuple.train.models) != 0
         assert traintuple.tag == "foo"
         assert traintuple.compute_plan_key  # check it is not None or ''
@@ -121,6 +125,7 @@ def test_tuples_execution_on_different_nodes(
     traintuple = client_1.add_traintuple(spec)
     traintuple = client_1.wait(traintuple)
     assert traintuple.status == Status.done
+    assert traintuple.error_type is None
     assert len(traintuple.train.models) != 0
     assert traintuple.worker == client_2.node_id
 
@@ -134,8 +139,36 @@ def test_tuples_execution_on_different_nodes(
     testtuple = client_1.add_testtuple(spec)
     testtuple = client_1.wait(testtuple)
     assert testtuple.status == Status.done
+    assert testtuple.error_type is None
     assert testtuple.worker == client_1.node_id
     assert list(testtuple.test.perfs.values())[0] == 2
+
+
+@pytest.mark.remote_only
+@pytest.mark.slow
+@pytest.mark.parametrize(
+    "dockerfile",
+    [
+        "INVALID DOCKERFILE",
+        "FROM scratch\nENTRYPOINT invalid_entrypoint_form",
+        'FROM scratch\nENTRYPOINT ["python", "script.py"]\nRUN invalid command',
+    ],
+)
+def test_traintuple_build_failure(dockerfile, factory, client, default_dataset):
+    """Invalid Dockerfile is causing traintuple failure."""
+
+    spec = factory.create_algo(AlgoCategory.simple, dockerfile=dockerfile)
+    algo = client.add_algo(spec)
+    spec = factory.create_traintuple(
+        algo=algo,
+        dataset=default_dataset,
+        data_samples=default_dataset.train_data_sample_keys,
+    )
+    traintuple = client.add_traintuple(spec)
+    traintuple = client.wait(traintuple, raises=False)
+    assert traintuple.status == Status.failed
+    assert traintuple.error_type == substra.sdk.models.TaskErrorType.build
+    assert traintuple.train.models is None
 
 
 @pytest.mark.slow
@@ -157,6 +190,7 @@ def test_traintuple_execution_failure(factory, client, default_dataset_1):
         traintuple = client.add_traintuple(spec)
         traintuple = client.wait(traintuple, raises=False)
         assert traintuple.status == Status.failed
+        assert traintuple.error_type == substra.sdk.models.TaskErrorType.execution
         assert traintuple.train.models is None
 
 
@@ -179,6 +213,7 @@ def test_composite_traintuple_execution_failure(factory, client, default_dataset
         composite_traintuple = client.add_composite_traintuple(spec)
         composite_traintuple = client.wait(composite_traintuple, raises=False)
         assert composite_traintuple.status == Status.failed
+        assert composite_traintuple.error_type == substra.sdk.models.TaskErrorType.execution
         assert composite_traintuple.composite.models is None
 
 
@@ -215,7 +250,9 @@ def test_aggregatetuple_execution_failure(factory, client, default_dataset):
         for composite_traintuple in composite_traintuples:
             composite_traintuple = client.get_composite_traintuple(composite_traintuple.key)
             assert composite_traintuple.status == Status.done
+            assert composite_traintuple.error_type is None
         assert aggregatetuple.status == Status.failed
+        assert aggregatetuple.error_type == substra.sdk.models.TaskErrorType.execution
         assert aggregatetuple.aggregate.models is None
 
 
@@ -235,6 +272,7 @@ def test_composite_traintuples_execution(factory, client, default_dataset, defau
     composite_traintuple_1 = client.add_composite_traintuple(spec)
     composite_traintuple_1 = client.wait(composite_traintuple_1)
     assert composite_traintuple_1.status == Status.done
+    assert composite_traintuple_1.error_type is None
     assert len(composite_traintuple_1.composite.models) == 2
 
     # second composite traintuple
@@ -248,6 +286,7 @@ def test_composite_traintuples_execution(factory, client, default_dataset, defau
     composite_traintuple_2 = client.add_composite_traintuple(spec)
     composite_traintuple_2 = client.wait(composite_traintuple_2)
     assert composite_traintuple_2.status == Status.done
+    assert composite_traintuple_2.error_type is None
     assert len(composite_traintuple_2.composite.models) == 2
 
     # add a 'composite' testtuple
@@ -260,6 +299,7 @@ def test_composite_traintuples_execution(factory, client, default_dataset, defau
     testtuple = client.add_testtuple(spec)
     testtuple = client.wait(testtuple)
     assert testtuple.status == Status.done
+    assert testtuple.error_type is None
     assert list(testtuple.test.perfs.values())[0] == 32
 
     # list composite traintuple
@@ -353,6 +393,7 @@ def test_aggregatetuple_chained(factory, client, default_metric, default_dataset
     aggregatetuple_2 = client.add_aggregatetuple(spec)
     aggregatetuple_2 = client.wait(aggregatetuple_2)
     assert aggregatetuple_2.status == Status.done
+    assert aggregatetuple_2.error_type is None
     assert len(aggregatetuple_2.parent_task_keys) == 1
 
 
@@ -401,6 +442,7 @@ def test_aggregatetuple_traintuple(factory, client, default_metric, default_data
     traintuple_2 = client.wait(traintuple_2)
 
     assert traintuple_2.status == Status.done
+    assert traintuple_2.error_type is None
 
 
 @pytest.mark.slow
@@ -538,6 +580,7 @@ def test_aggregate_composite_traintuples(factory, network, clients, default_data
         traintuple = client.add_traintuple(spec)
         traintuple = client.wait(traintuple)
         assert traintuple.status == Status.failed
+        assert traintuple.error_type == substra.sdk.models.TaskErrorType.execution
 
 
 @pytest.mark.remote_only
@@ -561,6 +604,7 @@ def test_use_data_sample_located_in_shared_path(factory, client, node_cfg, defau
     traintuple = client.add_traintuple(spec)
     traintuple = client.wait(traintuple)
     assert traintuple.status == Status.done
+    assert traintuple.error_type is None
     assert len(traintuple.train.models) == 1
 
     # create testtuple
@@ -573,6 +617,7 @@ def test_use_data_sample_located_in_shared_path(factory, client, node_cfg, defau
     testtuple = client.add_testtuple(spec)
     testtuple = client.wait(testtuple)
     assert testtuple.status == Status.done
+    assert testtuple.error_type is None
     assert list(testtuple.test.perfs.values())[0] == 2
 
 
@@ -663,3 +708,4 @@ def test_write_to_home_directory(factory, client, default_dataset):
     traintuple = client.wait(traintuple)
 
     assert traintuple.status == Status.done
+    assert traintuple.error_type is None
