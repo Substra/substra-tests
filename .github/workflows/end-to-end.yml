@@ -93,6 +93,7 @@ jobs:
         run: |
           CLUSTER_NAME="connect-tests-$(date -u +'%Y-%m-%d-%Hh%M')"
           cd ci/
+          start=`date +%s`
           python -u ./run-ci.py \
             --gcp-keys-directory=./keys/ --gcp-key-filename=gcp_sa_key.json \
             --cluster-name=${CLUSTER_NAME} \
@@ -105,15 +106,19 @@ jobs:
             --frontend ${{ env.CONNECT_FRONTEND }} \
             --orchestrator-mode distributed \
             --write-summary-to-file ./.slack_message
-        # frontend tests disabled in distributed mode for now
+            # frontend tests disabled in distributed mode for now
+          end=`date +%s`
+          echo "E2E_TESTS_DURATION_SECONDS=$((end-start))" >> $GITHUB_ENV
         env:
           GIT_TOKEN: ${{ secrets.OWLFRED_PAT }}
       - if: always() && github.event_name == 'schedule'
         name: Send Slack report
         run: |
           ci/send-slack-report.py '${{ secrets.SLACK_WEBHOOK }}' ci/.slack_message \
-          --title 'Distributed e2e tests: ${{ job.status }}' \
-          --context 'github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}'
+          --title 'Distributed e2e tests' \
+          --status '${{ job.status }}' \
+          --link 'github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}' \
+          --duration-seconds ${E2E_TESTS_DURATION_SECONDS}
       - name: Upload pod logs
         if: ${{ failure() }}
         uses: actions/upload-artifact@v2
@@ -171,6 +176,7 @@ jobs:
         run: |
           CLUSTER_NAME="connect-tests-$(date -u +'%Y-%m-%d-%Hh%M')"
           cd ci/
+          start=`date +%s`
           python -u ./run-ci.py \
             --gcp-keys-directory=./keys/ --gcp-key-filename=gcp_sa_key.json \
             --cluster-name=${CLUSTER_NAME} \
@@ -184,14 +190,18 @@ jobs:
             --orchestrator-mode standalone \
             --run-frontend-tests \
             --write-summary-to-file ./.slack_message
+          end=`date +%s`
+          echo "E2E_TESTS_DURATION_SECONDS=$((end-start))" >> $GITHUB_ENV
         env:
           GIT_TOKEN: ${{ secrets.OWLFRED_PAT }}
       - if: always() && github.event_name == 'schedule'
         name: Send Slack report
         run: |
           ci/send-slack-report.py '${{ secrets.SLACK_WEBHOOK }}' ci/.slack_message \
-          --title 'Standalone e2e tests: ${{ job.status }}' \
-          --context 'github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}'
+          --title 'Standalone e2e tests' \
+          --status '${{ job.status }}' \
+          --link 'github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}' \
+          --duration-seconds ${E2E_TESTS_DURATION_SECONDS}
       - name: Upload pod logs
         if: ${{ failure() }}
         uses: actions/upload-artifact@v2

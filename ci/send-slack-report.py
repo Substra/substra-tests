@@ -10,8 +10,10 @@ def main():
 
     parser.add_argument("hook")
     parser.add_argument("desc_file", help="Path to a file with the contents of the message")
-    parser.add_argument("--title", default="Connect e2e tests")
-    parser.add_argument("--context")
+    parser.add_argument("--title", help="Report title")
+    parser.add_argument("--status", help="Reported job status")
+    parser.add_argument("--link", help="Link to job")
+    parser.add_argument("--duration-seconds", help="The end-to-end tests duration in seconds", type=int)
 
     args = parser.parse_args()
 
@@ -20,7 +22,7 @@ def main():
             message = fp.read()
     except FileNotFoundError:
         message = "🔴 Something wrong happened"
-    slack.send_message(args.hook, args.title, message, args.context)
+    slack.send_message(args.hook, args.title, message, args.status, args.link, args.duration_seconds)
 
 
 if __name__ == "__main__":
