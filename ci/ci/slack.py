@@ -1,13 +1,17 @@
-import requests
 import json
+from typing import Optional
+
+import requests
 
 
 class SlackSendError(Exception):
     pass
 
 
-def _format_markdown(title: str, markdown_text: str, job_status: str, job_link: str, duration: int) -> str:
-    title = f"*{title}: <{job_link}|{job_status}>* in {_get_friendly_duration(duration)}"
+def _format_markdown(title: str, markdown_text: str, job_status: str, job_link: str, duration: Optional[int]) -> str:
+    title = f"*{title}: <{job_link}|{job_status}>*"
+    if duration is not None:
+        title += f" in {_get_friendly_duration(duration)}"
     blocks = [
         {"type": "section", "text": {"type": "mrkdwn", "text": title}},
         {"type": "section", "text": {"type": "mrkdwn", "text": markdown_text}},
@@ -15,7 +19,9 @@ def _format_markdown(title: str, markdown_text: str, job_status: str, job_link: 
     return json.dumps({"blocks": blocks})
 
 
-def send_message(hook_url: str, title: str, markdown_text: str, job_status: str, job_link: str, duration: int) -> None:
+def send_message(
+    hook_url: str, title: str, markdown_text: str, job_status: str, job_link: str, duration: Optional[int]
+) -> None:
     response = requests.post(
         hook_url,
         data=_format_markdown(title, markdown_text, job_status, job_link, duration),
