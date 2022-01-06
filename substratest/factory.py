@@ -309,6 +309,7 @@ class DatasetSpec(_Spec):
     description: str
     metadata: typing.Dict[str, str] = None
     permissions: Permissions = None
+    logs_permission: Permissions = None
 
     def read_opener(self):
         with open(self.data_opener, "rb") as f:
@@ -600,7 +601,7 @@ class AssetsFactory:
             data_manager_keys=[d.key for d in datasets],
         )
 
-    def create_dataset(self, permissions=None, metadata=None, py_script=None):
+    def create_dataset(self, permissions=None, metadata=None, py_script=None, logs_permission=None):
         idx = self._dataset_counter.inc()
         tmpdir = self._workdir / f"dataset-{idx}"
         tmpdir.mkdir()
@@ -622,6 +623,7 @@ class AssetsFactory:
             metadata=metadata,
             description=str(description_path),
             permissions=permissions or DEFAULT_PERMISSIONS,
+            logs_permission=logs_permission or DEFAULT_PERMISSIONS,
         )
 
     def create_metric(self, permissions=None, metadata=None, dockerfile=None, py_script=None, offset=0):
