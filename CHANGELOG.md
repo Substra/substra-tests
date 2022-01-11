@@ -6,6 +6,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.11.0] - 2022-01-10
+
+### Added
+
+- add frontend testing, improve slack reporting (#53)
+- test error type in tuple api responses (#119)
+
+### Changed
+
+- algo writes in the home directory (#111)
+- format code with Black and isort
+- update acceptable concommit subject pattern (#122)
+- more compact Slack reports + add e2e tests duration (#128)
+
+### Fixed
+
+- GHA workflow slack reporting condition (#121)
+- handle absent test duration in slack reporting (#131)
+
 ## [0.10.0] - 2021-12-01
 
 ### Added
