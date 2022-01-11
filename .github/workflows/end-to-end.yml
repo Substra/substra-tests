@@ -117,7 +117,7 @@ jobs:
           ci/send-slack-report.py '${{ secrets.SLACK_WEBHOOK }}' ci/.slack_message \
           --title 'Distributed e2e tests' \
           --status '${{ job.status }}' \
-          --link 'github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}' \
+          --link 'https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}' \
           --duration-seconds "${E2E_TESTS_DURATION_SECONDS}"
       - name: Upload pod logs
         if: ${{ failure() }}
@@ -200,7 +200,7 @@ jobs:
           ci/send-slack-report.py '${{ secrets.SLACK_WEBHOOK }}' ci/.slack_message \
           --title 'Standalone e2e tests' \
           --status '${{ job.status }}' \
-          --link 'github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}' \
+          --link 'https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}' \
           --duration-seconds "${E2E_TESTS_DURATION_SECONDS}"
       - name: Upload pod logs
         if: ${{ failure() }}
