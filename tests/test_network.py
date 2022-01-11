@@ -200,11 +200,15 @@ def test_list_nodes(client, network):
 
 
 def test_query_algos(factory, client):
+    """Check we can find a newly created algo through the list method."""
     spec = factory.create_algo(category=AlgoCategory.simple)
     algo = client.add_algo(spec)
 
-    algo_keys = [a.key for a in client.list_algo()]
-    assert algo.key in algo_keys
+    matching_algos = [a for a in client.list_algo() if a.key == algo.key]
+    assert len(matching_algos) == 1
+
+    # ensure the list method returns the same information as the add method
+    assert algo == matching_algos[0]
 
 
 @pytest.mark.parametrize(
