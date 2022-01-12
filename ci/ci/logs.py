@@ -78,6 +78,10 @@ def retrieve_logs_single_org(cfg: GCPConfig, namespace: str, ns_log_dir: str) ->
     worker_log_path = os.path.join(ns_log_dir, "backend-worker")
     _retrieve_pod_logs(cfg, worker_log_path, namespace, worker_pod)
 
+    events_pod = _get_pod_name(cfg, namespace, "app.kubernetes.io/name=substra-backend-events")
+    events_log_path = os.path.join(ns_log_dir, "backend-events")
+    _retrieve_pod_logs(cfg, events_log_path, namespace, events_pod)
+
 
 def _get_pod_name(cfg: GCPConfig, namespace: str, label_selector: str) -> str:
     """Retrieves a pod name based on a label selector.
