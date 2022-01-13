@@ -25,6 +25,14 @@ on:
         description: "Git branch or commit to use for connect-frontend"
         required: true
         default: "master"
+      connectTools:
+        description: "Git branch or commit to use for connect-tools"
+        required: true
+        default: "master"
+      connectlib:
+        description: "Git branch or commit to use for connectlib"
+        required: true
+        default: "main"
       substra:
         description: "Git branch or commit to use for substra sdk"
         required: true
@@ -39,6 +47,8 @@ env:
   DEFAULT_CONNECT_SDK: "master"
   DEFAULT_CONNECT_BACKEND: "master"
   DEFAULT_CONNECT_FRONTEND: "master"
+  DEFAULT_CONNECT_TOOLS: "master"
+  DEFAULT_CONNECTLIB: "main"
   DEFAULT_HLF_K8S: "master"
   DEFAULT_ORCHESTRATOR: "master"
 
@@ -162,6 +172,8 @@ jobs:
           echo "CONNECT_SDK=${{ github.event.inputs.substra || env.DEFAULT_CONNECT_SDK }}" >> $GITHUB_ENV
           echo "CONNECT_BACKEND=${{ github.event.inputs.connectBackend || env.DEFAULT_CONNECT_BACKEND }}" >> $GITHUB_ENV
           echo "CONNECT_FRONTEND=${{ github.event.inputs.connectFrontend || env.DEFAULT_CONNECT_FRONTEND }}" >> $GITHUB_ENV
+          echo "CONNECT_TOOLS=${{ github.event.inputs.connectTools || env.DEFAULT_CONNECT_TOOLS }}" >> $GITHUB_ENV
+          echo "CONNECTLIB=${{ github.event.inputs.connectlib || env.DEFAULT_CONNECTLIB }}" >> $GITHUB_ENV
           echo "HLF_K8S=${{ github.event.inputs.connectHlfK8s || env.DEFAULT_HLF_K8S }}" >> $GITHUB_ENV
           echo "ORCHESTRATOR=${{ github.event.inputs.orchestrator || env.DEFAULT_ORCHESTRATOR }}" >> $GITHUB_ENV
       - name: Workflow inputs
@@ -170,6 +182,8 @@ jobs:
           echo "substra ${{ env.CONNECT_SDK }}"
           echo "connect-backend ${{ env.CONNECT_BACKEND }}"
           echo "connect-frontend ${{ env.CONNECT_FRONTEND }}"
+          echo "connect-tools ${{ env.CONNECT_TOOLS }}"
+          echo "connectlib ${{ env.CONNECTLIB }}"
           echo "hlf-k8s ${{ env.HFL_K8S }}"
           echo "orchestrator ${{ env.ORCHESTRATOR }}"
       - name: Test
@@ -187,7 +201,10 @@ jobs:
             --hlf-k8s ${{ env.HLF_K8S }} \
             --orchestrator ${{ env.ORCHESTRATOR }} \
             --frontend ${{ env.CONNECT_FRONTEND }} \
+            --connect-tools ${{ env.CONNECT_TOOLS }} \
+            --connectlib ${{ env.CONNECTLIB }} \
             --orchestrator-mode standalone \
+            --run-connectlib-tests \
             --run-frontend-tests \
             --write-summary-to-file ./.slack_message
           end=`date +%s`

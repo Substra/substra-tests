@@ -122,6 +122,22 @@ def arg_parse() -> Config:
         metavar="GIT_BRANCH",
     )
     parser.add_argument(
+        "--connectlib",
+        "--connect-connectlib",
+        "--substra-connectlib",
+        type=str,
+        default=config.repos.connectlib.ref,
+        help="connectlib branch or tag",
+        metavar="GIT_BRANCH",
+    )
+    parser.add_argument(
+        "--connect-tools",
+        type=str,
+        default=config.repos.connect_tools.ref,
+        help="connect-tools branch or tag",
+        metavar="GIT_BRANCH",
+    )
+    parser.add_argument(
         "--orchestrator",
         type=str,
         default=config.repos.orchestrator.ref,
@@ -155,11 +171,21 @@ def arg_parse() -> Config:
         default=config.test.sdk.make_command,
         help="Override the make command to execute the tests, If set to \"\", no test will be run.",
     )
-
+    parser.add_argument(
+        "--connectlib-make-command",
+        type=str,
+        default=config.test.connectlib.make_command,
+        help="Override the make command to execute connectlib tests, If set to \"\", no test will be run.",
+    )
     parser.add_argument(
         "--run-frontend-tests",
         action="store_true",
         help="Run frontend tests",
+    )
+    parser.add_argument(
+        "--run-connectlib-tests",
+        action="store_true",
+        help="Run connectlib tests",
     )
     parser.add_argument(
         "--git-clone-method",
@@ -216,6 +242,8 @@ def arg_parse() -> Config:
     config.repos.sdk.ref = args["sdk"]
     config.repos.backend.ref = args["backend"]
     config.repos.frontend.ref = args["frontend"]
+    config.repos.connect_tools.ref = args["connect_tools"]
+    config.repos.connectlib.ref = args["connectlib"]
     config.repos.hlf_k8s.ref = args["hlf_k8s"]
     config.repos.orchestrator.ref = args["orchestrator"]
 
@@ -234,6 +262,9 @@ def arg_parse() -> Config:
     if args["run_frontend_tests"] and not config.test.sdk.make_command:
         raise Exception("SDK tests are disabled but frontend tests depend on them")
     config.test.frontend.enabled = args["run_frontend_tests"]
+
+    config.test.connectlib.enabled = args["run_connectlib_tests"]
+    config.test.connectlib.make_command = args["connectlib_make_command"]
 
     config.orchestrator_mode = args["orchestrator_mode"]
 

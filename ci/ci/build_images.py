@@ -43,6 +43,10 @@ def _build_image(
     if repo == cfg.repos.tests:
         substitutions["SUBSTRA_GIT_COMMIT"] = cfg.repos.sdk.commit
 
+    if repo == cfg.repos.connectlib:
+        substitutions["SUBSTRA_GIT_COMMIT"] = cfg.repos.sdk.commit
+        substitutions["CONNECTTOOLS_GIT_COMMIT"] = cfg.repos.connect_tools.commit
+
     cmd = (
         f"gcloud builds submit "
         f"{known_host_file_path} "

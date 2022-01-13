@@ -112,6 +112,16 @@ class Repositories:
             )
         ],
     )
+    connect_tools: Repository = Repository(
+        name="connect_tools",
+        repo_name="owkin/connect-tools.git",
+    )
+    connectlib: Repository = Repository(
+        name="connectlib",
+        repo_name="owkin/connectlib.git",
+        images=[Image("connectlib")],
+        ref="main"
+    )
     sdk: Repository = Repository(
         name="sdk",
         repo_name="owkin/substra.git",
@@ -154,9 +164,17 @@ class FrontendTestConfig:
 
 
 @dataclass
+class ConnectlibTestConfig:
+    future_timeout: int = 600
+    make_command: str = "test-ci"  # This is set in connectlib/Makefile
+    enabled: bool = False
+
+
+@dataclass
 class TestConfig:
     sdk: SdkTestConfig = SdkTestConfig()
     frontend: FrontendTestConfig = FrontendTestConfig()
+    connectlib: ConnectlibTestConfig = ConnectlibTestConfig()
 
 
 @dataclass()
@@ -183,6 +201,8 @@ class Config:
             f"SDK_BRANCH\t\t\t= {self.repos.sdk.ref}\n"
             f"BACKEND_BRANCH\t\t\t= {self.repos.backend.ref}\n"
             f"FRONTEND_BRANCH\t\t\t= {self.repos.frontend.ref}\n"
+            f"CONNECT_TOOLS_BRANCH\t\t\t= {self.repos.connect_tools.ref}\n"
+            f"CONNECTLIB_BRANCH\t\t\t= {self.repos.connectlib.ref}\n"
             f"HLF_K8S_BRANCH\t\t\t= {self.repos.hlf_k8s.ref}\n"
             f"ORCHESTRATOR_BRANCH\t\t= {self.repos.orchestrator.ref}\n"
             f"KANIKO_CACHE_TTL\t\t= {self.gcp.kaniko_cache_ttl}\n"
@@ -210,5 +230,9 @@ class Config:
 
         if self.test.frontend.enabled:
             res.append(self.repos.frontend)
+
+        if self.test.connectlib.enabled:
+            res.append(self.repos.connect_tools)
+            res.append(self.repos.connectlib)
 
         return res

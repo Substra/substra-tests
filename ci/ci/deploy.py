@@ -14,7 +14,7 @@ def deploy_all(cfg: Config, source_dir: str) -> None:
     _create_namespaces(cfg, ["org-1", "org-2"])
 
     for repo in cfg.get_repos():
-        if repo == cfg.repos.sdk:
+        if repo == cfg.repos.sdk or repo == cfg.repos.connect_tools:
             continue
 
         # For some projects don't wait for the deployment to complete
@@ -58,6 +58,9 @@ def _create_build_artifacts(cfg: Config, repo: Repository, source_dir: str, repo
 
             if image.name == "connect-tests":
                 tag += f"-{cfg.repos.sdk.commit}"
+
+            if image.name == "connectlib":  # Same image name as in cloudbuild/connectlib
+                tag += f"-{cfg.repos.sdk.commit}-{cfg.repos.connect_tools.commit}"
 
             ref = repo.skaffold_artifact or image.name
 
