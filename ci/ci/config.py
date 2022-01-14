@@ -133,6 +133,7 @@ class Repositories:
     orchestrator: Repository = Repository(
         name="orchestrator",
         repo_name="owkin/orchestrator.git",
+        ref="main",
         images=[
             Image("orchestrator-chaincode"),
             Image("orchestrator-chaincode-init"),
