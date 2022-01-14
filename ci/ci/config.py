@@ -83,9 +83,7 @@ class GitConfig:
 @dataclass()
 class Repositories:
     tests: Repository = Repository(
-        name="tests",
-        repo_name="owkin/connect-tests.git",
-        images=[Image("connect-tests")],
+        name="tests", repo_name="owkin/connect-tests.git", images=[Image("connect-tests")],
     )
     backend: Repository = Repository(
         name="backend",
@@ -103,36 +101,31 @@ class Repositories:
                 # "eu.gcr.io/connect-314908/connect-frontend" and not "substra-front/connect-frontend"
                 # in the build.artifacts section.
                 kaniko_cache=False,  # breaks build process if enabled
-                registry=_CONNECT_TEST_REGISTRY
+                registry=_CONNECT_TEST_REGISTRY,
             ),
             Image(
                 "connect-frontend-tests",
                 repo_subdir="automated-e2e-tests",
-                registry=_CONNECT_TEST_REGISTRY
-            )
+                registry=_CONNECT_TEST_REGISTRY,
+            ),
         ],
     )
     connect_tools: Repository = Repository(
-        name="connect_tools",
-        repo_name="owkin/connect-tools.git",
+        name="connect_tools", repo_name="owkin/connect-tools.git",
     )
     connectlib: Repository = Repository(
         name="connectlib",
         repo_name="owkin/connectlib.git",
         images=[Image("connectlib")],
-        ref="main"
+        ref="main",
     )
     sdk: Repository = Repository(
-        name="sdk",
-        repo_name="owkin/substra.git",
+        name="sdk", repo_name="owkin/substra.git", ref="main",
     )
     hlf_k8s: Repository = Repository(
         name="hlf_k8s",
         repo_name="owkin/connect-hlf-k8s.git",
-        images=[
-            Image("fabric-tools"),
-            Image("fabric-peer")
-        ],
+        images=[Image("fabric-tools"), Image("fabric-peer")],
         # use 2-orgs-policy-any instead of 2-orgs-policy-any-no-ca provided with root skaffold file
         # the aim is to test also hlf-ca certificates generation in distributed mode
         skaffold_dir="examples/2-orgs-policy-any/",
