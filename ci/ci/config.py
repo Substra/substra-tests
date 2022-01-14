@@ -111,7 +111,7 @@ class Repositories:
         ],
     )
     connect_tools: Repository = Repository(
-        name="connect_tools", repo_name="owkin/connect-tools.git",
+        name="connect_tools", repo_name="owkin/connect-tools.git", ref="main",
     )
     connectlib: Repository = Repository(
         name="connectlib",
