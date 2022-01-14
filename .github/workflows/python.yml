@@ -19,7 +19,7 @@ jobs:
     name: Local tests
     runs-on: ubuntu-latest
     env:
-      SUBSTRA_BRANCH: master
+      SUBSTRA_BRANCH: main
       SRC_DIRS: substratest tests
     steps:
       - name: checkout connect-tests
