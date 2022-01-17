@@ -28,7 +28,7 @@ on:
       connectTools:
         description: "Git branch or commit to use for connect-tools"
         required: true
-        default: "master"
+        default: "main"
       connectlib:
         description: "Git branch or commit to use for connectlib"
         required: true
@@ -36,7 +36,7 @@ on:
       substra:
         description: "Git branch or commit to use for substra sdk"
         required: true
-        default: "master"
+        default: "main"
 
 env:
   GCP_PROJECT: "connect-314908"
