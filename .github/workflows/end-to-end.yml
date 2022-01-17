@@ -16,7 +16,7 @@ on:
       orchestrator:
         description: "Git branch or commit to use for orchestrator"
         required: true
-        default: "master"
+        default: "main"
       connectBackend:
         description: "Git branch or commit to use for connect-backend"
         required: true
