@@ -4,11 +4,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.12.0] - 2022-01-16
+
+### Added
+
+- implement the connectlib e2e tests (#126)
+- ci: export events logs (#136)
+- add logs permission to dataset (#130)
 
 ### Changed
 
+- increase coverage of algo.list view (#137)
 - ci: the main branches of the substra and connect-tools repositories are now main (#143 #144 #146)
+
+### Fixed
+
+- ci: fix links in slack messages (#138)
 
 ## [0.11.0] - 2022-01-10
 
