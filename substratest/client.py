@@ -169,6 +169,15 @@ class Client:
             with open(path, "rb") as f:
                 return f.read()
 
+    def get_logs(self, tuple_key):
+        return self._client.get_logs(tuple_key)
+
+    def download_logs(self, tuple_key):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = self._client.download_logs(tuple_key, tmp)
+            with open(path, "r") as f:
+                return f.read()
+
     def describe_dataset(self, key):
         return self._client.describe_dataset(key)
 

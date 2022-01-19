@@ -193,6 +193,10 @@ def test_traintuple_execution_failure(factory, client, default_dataset_1):
         assert traintuple.error_type == substra.sdk.models.TaskErrorType.execution
         assert traintuple.train.models is None
 
+        logs = client.download_logs(traintuple.key)
+        assert "Traceback (most recent call last):" in logs
+        assert client.get_logs(traintuple.key) == logs
+
 
 @pytest.mark.slow
 def test_composite_traintuple_execution_failure(factory, client, default_dataset):
@@ -215,6 +219,7 @@ def test_composite_traintuple_execution_failure(factory, client, default_dataset
         assert composite_traintuple.status == Status.failed
         assert composite_traintuple.error_type == substra.sdk.models.TaskErrorType.execution
         assert composite_traintuple.composite.models is None
+        assert "Traceback (most recent call last):" in client.download_logs(composite_traintuple.key)
 
 
 @pytest.mark.slow
@@ -254,6 +259,7 @@ def test_aggregatetuple_execution_failure(factory, client, default_dataset):
         assert aggregatetuple.status == Status.failed
         assert aggregatetuple.error_type == substra.sdk.models.TaskErrorType.execution
         assert aggregatetuple.aggregate.models is None
+        assert "Traceback (most recent call last):" in client.download_logs(aggregatetuple.key)
 
 
 @pytest.mark.slow
