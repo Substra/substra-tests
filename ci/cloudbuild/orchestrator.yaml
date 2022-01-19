@@ -38,7 +38,7 @@ substitutions:
   _BUILD_TAG: "connect-tests"
   _IMAGE: "orchestrator"
   _COMMIT: "HEAD"
-  _BRANCH: "master"
+  _BRANCH: "main"
   _KANIKO_CACHE_ENABLED: "true"
   _KANIKO_CACHE_TTL: "168h"
   _GIT_REPOSITORY: "SubstraFoundation/orchestrator.git"

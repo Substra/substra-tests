@@ -60,9 +60,9 @@ substitutions:
   _KANIKO_CACHE_TTL: "168h"
   _SSH_KEY_SECRET: "projects/602744764353/secrets/connect-e2e-deploy-key/versions/3"
   _SUBSTRA_GIT_REPO: "git@github.com:owkin/substra.git"
-  _SUBSTRA_GIT_COMMIT: "master"
+  _SUBSTRA_GIT_COMMIT: "main"
   _CONNECTTOOLS_GIT_REPO: "git@github.com:owkin/connect-tools.git"
-  _CONNECTTOOLS_GIT_COMMIT: "master"
+  _CONNECTTOOLS_GIT_COMMIT: "main"
 
 timeout: 1200s
 availableSecrets:

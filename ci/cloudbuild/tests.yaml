@@ -55,7 +55,7 @@ substitutions:
   _COMMIT: "HEAD"
   _BRANCH: "master"
   _SUBSTRA_GIT_REPO: "git@github.com:owkin/substra.git"
-  _SUBSTRA_GIT_COMMIT: "master"
+  _SUBSTRA_GIT_COMMIT: "main"
   _KANIKO_CACHE_ENABLED: "true"
   _KANIKO_CACHE_TTL: "168h"
   _GIT_REPOSITORY: "SubstraFoundation/substra-tests.git"

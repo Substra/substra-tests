@@ -44,13 +44,13 @@ env:
   GCP_SERVICE_ACCOUNT_KEY: "ci/keys/connect-314908-3902714646d9.json.gpg"
   GCP_SSH_SECRET: "projects/101637030044/secrets/connect-e2e-deploy-key/versions/2"
   DEFAULT_CONNECT_TESTS: "master"
-  DEFAULT_CONNECT_SDK: "master"
+  DEFAULT_CONNECT_SDK: "main"
   DEFAULT_CONNECT_BACKEND: "master"
   DEFAULT_CONNECT_FRONTEND: "master"
-  DEFAULT_CONNECT_TOOLS: "master"
+  DEFAULT_CONNECT_TOOLS: "main"
   DEFAULT_CONNECTLIB: "main"
   DEFAULT_HLF_K8S: "master"
-  DEFAULT_ORCHESTRATOR: "master"
+  DEFAULT_ORCHESTRATOR: "main"
 
 jobs:
   test-distributed:
