@@ -5,6 +5,14 @@ on:
     - cron: "0 0 * * 2-6" # every Tuesday to Saturday at midnight
   workflow_dispatch:
     inputs:
+      runFrontendTests:
+        description: "If true, run frontend tests"
+        required: true
+        default: "false"
+      runConnectlibTests:
+        description: "If true, run connectlib tests"
+        required: true
+        default: "false"
       connectTests:
         description: "Git branch or commit to use for connect-tests"
         required: true
@@ -43,6 +51,10 @@ env:
   GCP_SERVICE_ACCOUNT: "e2e-tests@connect-314908.iam.gserviceaccount.com"
   GCP_SERVICE_ACCOUNT_KEY: "ci/keys/connect-314908-3902714646d9.json.gpg"
   GCP_SSH_SECRET: "projects/101637030044/secrets/connect-e2e-deploy-key/versions/2"
+  DEFAULT_RUN_FRONTEND_TESTS_DISTRIBUTED: "false" # frontend tests disabled in distributed mode for now
+  DEFAULT_RUN_FRONTEND_TESTS_STANDALONE: "true"
+  DEFAULT_RUN_CONNECTLIB_TESTS_DISTRIBUTED: "false" # connectlib tests disabled in distributed mode for now
+  DEFAULT_RUN_CONNECTLIB_TESTS_STANDALONE: "true"
   DEFAULT_CONNECT_TESTS: "master"
   DEFAULT_CONNECT_SDK: "main"
   DEFAULT_CONNECT_BACKEND: "master"
@@ -85,6 +97,8 @@ jobs:
         run: gpg --quiet --batch --yes --decrypt --passphrase="$GPG_PASSPHRASE" --output ci/keys/gcp_sa_key.json "${GCP_SERVICE_ACCOUNT_KEY}"
       - name: Set variables
         run: |
+          echo "RUN_FRONTEND_TESTS=${{ github.event.inputs.runFrontendTests || env.DEFAULT_RUN_FRONTEND_TESTS_DISTRIBUTED }}" >> $GITHUB_ENV
+          echo "RUN_CONNECTLIB_TESTS=${{ github.event.inputs.runConnectlibTests || env.DEFAULT_RUN_CONNECTLIB_TESTS_DISTRIBUTED }}" >> $GITHUB_ENV
           echo "CONNECT_TESTS=${{ github.event.inputs.connectTests || env.DEFAULT_CONNECT_TESTS }}" >> $GITHUB_ENV
           echo "CONNECT_SDK=${{ github.event.inputs.substra || env.DEFAULT_CONNECT_SDK }}" >> $GITHUB_ENV
           echo "CONNECT_TOOLS=${{ github.event.inputs.connectTools || env.DEFAULT_CONNECT_TOOLS }}" >> $GITHUB_ENV
@@ -121,8 +135,9 @@ jobs:
             --connect-tools ${{ env.CONNECT_TOOLS }} \
             --connectlib ${{ env.CONNECTLIB }} \
             --orchestrator-mode distributed \
+            $(if [ "${{ github.event.inputs.runFrontendTests }}" == "true" ]; then echo "--run-frontend-tests"; fi) \
+            $(if [ "${{ github.event.inputs.runConnectlibTests }}" == "true" ]; then echo "--run-connectlib-tests"; fi) \
             --write-summary-to-file ./.slack_message
-            # frontend tests disabled in distributed mode for now
           end=`date +%s`
           echo "E2E_TESTS_DURATION_SECONDS=$((end-start))" >> $GITHUB_ENV
         env:
@@ -174,6 +189,8 @@ jobs:
         run: gpg --quiet --batch --yes --decrypt --passphrase="$GPG_PASSPHRASE" --output ci/keys/gcp_sa_key.json "${GCP_SERVICE_ACCOUNT_KEY}"
       - name: Set variables
         run: |
+          echo "RUN_FRONTEND_TESTS=${{ github.event.inputs.runFrontendTests || env.DEFAULT_RUN_FRONTEND_TESTS_STANDALONE }}" >> $GITHUB_ENV
+          echo "RUN_CONNECTLIB_TESTS=${{ github.event.inputs.runConnectlibTests || env.DEFAULT_RUN_CONNECTLIB_TESTS_STANDALONE }}" >> $GITHUB_ENV
           echo "CONNECT_TESTS=${{ github.event.inputs.connectTests || env.DEFAULT_CONNECT_TESTS }}" >> $GITHUB_ENV
           echo "CONNECT_SDK=${{ github.event.inputs.substra || env.DEFAULT_CONNECT_SDK }}" >> $GITHUB_ENV
           echo "CONNECT_BACKEND=${{ github.event.inputs.connectBackend || env.DEFAULT_CONNECT_BACKEND }}" >> $GITHUB_ENV
@@ -210,8 +227,8 @@ jobs:
             --connect-tools ${{ env.CONNECT_TOOLS }} \
             --connectlib ${{ env.CONNECTLIB }} \
             --orchestrator-mode standalone \
-            --run-connectlib-tests \
-            --run-frontend-tests \
+            $(if [ "${{ github.event.inputs.runFrontendTests }}" == "true" ]; then echo "--run-frontend-tests"; fi) \
+            $(if [ "${{ github.event.inputs.runConnectlibTests }}" == "true" ]; then echo "--run-connectlib-tests"; fi) \
             --write-summary-to-file ./.slack_message
           end=`date +%s`
           echo "E2E_TESTS_DURATION_SECONDS=$((end-start))" >> $GITHUB_ENV
