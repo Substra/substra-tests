@@ -1,3 +1,5 @@
+import time
+
 import pytest
 import substra
 
@@ -71,9 +73,14 @@ def test_get_metadata(permissions, factory, clients):
         d = client.add_dataset(spec)
         datasets.append(d)
 
+    # Assets could be immediatly fetched in the organisation in which it was registered
+    # but have to wait to be synchronized in the other organisations local representation.
+    time.sleep(settings.DELAY_ORGANISATIONS_SYNCHRONIZATION)
+
     # check that all clients can get access to all metadata
     for client in clients:
         for d in datasets:
+            # WARNING: if asset is not found try to increase DELAY_ORGANISATIONS_SYNCHRONIZATION
             d = client.get_dataset(d.key)
             assert d.permissions.process.public == permissions.public
 
