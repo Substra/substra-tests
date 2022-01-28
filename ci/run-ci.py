@@ -312,6 +312,7 @@ def main() -> None:
 
         if config.write_summary_to_file:
             with open(config.write_summary_to_file, "w") as fp:
+                fp.write("WARNING: MNIST test from substra has been skipped.\n")
                 for k, v in test_passed.items():
                     if v is not None:
                         res = "✅" if v else "❌"
