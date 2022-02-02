@@ -18,7 +18,10 @@ def test_tuples_execution_on_same_node(factory, network, client, default_dataset
 
     # create traintuple
     spec = factory.create_traintuple(
-        algo=algo, dataset=default_dataset, data_samples=default_dataset.train_data_sample_keys, metadata={"foo": "bar"}
+        algo=algo,
+        dataset=default_dataset,
+        data_samples=default_dataset.train_data_sample_keys,
+        metadata={"foo": "bar"},
     )
     traintuple = client.add_traintuple(spec)
     traintuple = client.wait(traintuple)
@@ -449,6 +452,43 @@ def test_aggregatetuple_traintuple(factory, client, default_metric, default_data
 
     assert traintuple_2.status == Status.done
     assert traintuple_2.error_type is None
+
+
+@pytest.mark.slow
+@pytest.mark.remote_only
+def test_composite_traintuple_2_nodes_to_composite_traintuple(factory, clients, default_datasets):
+    """A composite traintuple which take as input a composite traintuple (input_head_model) from
+    node 1 and another composite traintuple (inpute_trunk_model) from node 2
+    """
+
+    spec = factory.create_algo(AlgoCategory.composite)
+    composite_algo = clients[0].add_algo(spec)
+
+    # composite traintuples on node 1 and node 2
+    composite_traintuples = []
+    for dataset in default_datasets:
+        spec = factory.create_composite_traintuple(
+            algo=composite_algo,
+            dataset=dataset,
+            data_samples=[dataset.train_data_sample_keys[0]],
+            permissions=Permissions(public=False, authorized_ids=[c.node_id for c in clients]),
+        )
+        composite_traintuple_key = clients[0].add_composite_traintuple(spec)
+        composite_traintuples.append(composite_traintuple_key)
+
+    spec = factory.create_composite_traintuple(
+        algo=composite_algo,
+        dataset=default_datasets[0],
+        data_samples=default_datasets[0].train_data_sample_keys,
+        head_traintuple=composite_traintuples[0],
+        trunk_traintuple=composite_traintuples[1],
+        rank=1,
+        permissions=Permissions(public=False, authorized_ids=[c.node_id for c in clients]),
+    )
+    composite_traintuple = clients[0].add_composite_traintuple(spec)
+    composite_traintuple = clients[0].wait(composite_traintuple)
+
+    assert composite_traintuple.status == Status.done
 
 
 @pytest.mark.slow
