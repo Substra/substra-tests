@@ -175,30 +175,37 @@ def test_traintuple_build_failure(dockerfile, factory, client, default_dataset):
 
 
 @pytest.mark.slow
-def test_traintuple_execution_failure(factory, client, default_dataset_1):
+def test_traintuple_execution_failure(factory, client_1, client_2, default_dataset_1):
     """Invalid algo script is causing traintuple failure."""
 
+    spec = factory.create_dataset(logs_permission=Permissions(public=True, authorized_ids=[client_1.node_id]))
+    dataset = client_1.add_dataset(spec)
+
+    spec = factory.create_data_sample(test_only=False, datasets=[dataset])
+    datasample = client_1.add_data_sample(spec)
+
     spec = factory.create_algo(category=AlgoCategory.simple, py_script=sbt.factory.INVALID_ALGO_SCRIPT)
-    algo = client.add_algo(spec)
+    algo = client_1.add_algo(spec)
 
     spec = factory.create_traintuple(
         algo=algo,
-        dataset=default_dataset_1,
-        data_samples=default_dataset_1.train_data_sample_keys,
+        dataset=dataset,
+        data_samples=[datasample],
     )
-    if client.debug:
+    if client_1.debug:
         with pytest.raises(substra.sdk.backends.local.compute.spawner.base.ExecutionError):
-            traintuple = client.add_traintuple(spec)
+            client_1.add_traintuple(spec)
     else:
-        traintuple = client.add_traintuple(spec)
-        traintuple = client.wait(traintuple, raises=False)
+        traintuple = client_1.add_traintuple(spec)
+        traintuple = client_1.wait(traintuple, raises=False)
         assert traintuple.status == Status.failed
         assert traintuple.error_type == substra.sdk.models.TaskErrorType.execution
         assert traintuple.train.models is None
 
-        logs = client.download_logs(traintuple.key)
-        assert "Traceback (most recent call last):" in logs
-        assert client.get_logs(traintuple.key) == logs
+        for client in (client_1, client_2):
+            logs = client.download_logs(traintuple.key)
+            assert "Traceback (most recent call last):" in logs
+            assert client.get_logs(traintuple.key) == logs
 
 
 @pytest.mark.slow
