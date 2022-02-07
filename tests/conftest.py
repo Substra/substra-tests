@@ -307,7 +307,10 @@ def clients(network):
 
 @pytest.fixture(scope="session")
 def debug_client(client):
-    """Client fixture in debug mode (first node)."""
+    """
+    Client fixture in debug mode (first node).
+    Use it with @pytest.mark.remote_only
+    """
     cfg = settings.load()
     node = cfg.nodes[0]
     # Debug client and client share the same

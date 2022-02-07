@@ -1,6 +1,7 @@
 import docker
 import pytest
 from substra.sdk import models
+from substra.sdk.exceptions import InvalidRequest
 
 from substratest.factory import AlgoCategory
 from substratest.factory import Permissions
@@ -32,7 +33,7 @@ def test_execution_debug(client, debug_client, debug_factory, default_dataset):
     spec = debug_factory.create_traintuple(
         algo=algo,
         dataset=default_dataset,
-        data_samples=default_dataset.train_data_sample_keys[0],
+        data_samples=[default_dataset.train_data_sample_keys[0]],
     )
     traintuple = debug_client.add_traintuple(spec)
     assert traintuple.status == models.Status.done
@@ -134,3 +135,43 @@ def test_debug_compute_plan_aggregate_composite(network, client, debug_client, d
 @pytest.mark.remote_only
 def test_debug_download_dataset(debug_client, default_dataset):
     debug_client.download_opener(default_dataset.key)
+
+
+@pytest.mark.remote_only
+@pytest.mark.slow
+def test_test_data_traintuple(client, debug_client, debug_factory, default_dataset):
+    """Check that we can't use test data samples for traintuples"""
+    spec = debug_factory.create_algo(AlgoCategory.simple)
+    algo = client.add_algo(spec)
+
+    #  Add the traintuple
+    # create traintuple
+    spec = debug_factory.create_traintuple(
+        algo=algo,
+        dataset=default_dataset,
+        data_samples=[default_dataset.test_data_sample_keys[0]],
+    )
+
+    with pytest.raises(InvalidRequest) as e:
+        debug_client.add_traintuple(spec)
+    assert "Cannot create train task with test data" in str(e.value)
+
+
+@pytest.mark.remote_only
+@pytest.mark.slow
+def test_fake_data_sample_key(client, debug_client, debug_factory, default_dataset):
+    """Check that a traintuple can't run with a fake train_data_sample_keys"""
+    spec = debug_factory.create_algo(AlgoCategory.simple)
+    algo = client.add_algo(spec)
+
+    #  Add the traintuple
+    # create traintuple
+    spec = debug_factory.create_traintuple(
+        algo=algo,
+        dataset=default_dataset,
+        data_samples=["fake_key"],
+    )
+
+    with pytest.raises(InvalidRequest) as e:
+        debug_client.add_traintuple(spec)
+    assert "Could not get all the data_samples in the database with the given data_sample_keys" in str(e.value)
