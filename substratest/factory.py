@@ -464,7 +464,7 @@ class _BaseComputePlanSpec(_Spec, abc.ABC):
     aggregatetuples: typing.List[ComputePlanAggregatetupleSpec]
     testtuples: typing.List[ComputePlanTesttupleSpec]
 
-    def add_traintuple(self, algo, dataset, data_samples, in_models=None, tag="", metadata=None):
+    def create_traintuple(self, algo, dataset, data_samples, in_models=None, tag="", metadata=None):
         in_models = in_models or []
         spec = ComputePlanTraintupleSpec(
             algo_key=algo.key,
@@ -478,7 +478,7 @@ class _BaseComputePlanSpec(_Spec, abc.ABC):
         self.traintuples.append(spec)
         return spec
 
-    def add_aggregatetuple(self, aggregate_algo, worker, in_models=None, tag="", metadata=None):
+    def create_aggregatetuple(self, aggregate_algo, worker, in_models=None, tag="", metadata=None):
         in_models = in_models or []
 
         for t in in_models:
@@ -495,7 +495,7 @@ class _BaseComputePlanSpec(_Spec, abc.ABC):
         self.aggregatetuples.append(spec)
         return spec
 
-    def add_composite_traintuple(
+    def create_composite_traintuple(
         self,
         composite_algo,
         dataset=None,
@@ -526,7 +526,7 @@ class _BaseComputePlanSpec(_Spec, abc.ABC):
         self.composite_traintuples.append(spec)
         return spec
 
-    def add_testtuple(self, metrics, traintuple_spec, dataset, data_samples, tag="", metadata=None):
+    def create_testtuple(self, metrics, traintuple_spec, dataset, data_samples, tag="", metadata=None):
         spec = ComputePlanTesttupleSpec(
             metric_keys=[metric.key for metric in metrics],
             traintuple_id=traintuple_spec.id,

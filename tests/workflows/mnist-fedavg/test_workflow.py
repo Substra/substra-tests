@@ -321,7 +321,7 @@ def test_mnist(factory, inputs, clients):
     for round_idx in range(nb_rounds):
 
         composite_specs = [
-            cp_spec.add_composite_traintuple(
+            cp_spec.create_composite_traintuple(
                 composite_algo=inputs.composite_algo,
                 dataset=org_inputs.dataset,
                 data_samples=org_inputs.train_data_sample_keys,
@@ -332,7 +332,7 @@ def test_mnist(factory, inputs, clients):
             for idx, org_inputs in enumerate(inputs.datasets)
         ]
 
-        aggregate_spec = cp_spec.add_aggregatetuple(
+        aggregate_spec = cp_spec.create_aggregatetuple(
             aggregate_algo=inputs.aggregate_algo,
             worker=aggregate_worker,
             in_models=composite_specs,
@@ -341,7 +341,7 @@ def test_mnist(factory, inputs, clients):
         # add testtuples for specified rounds
         if round_idx + 1 in testing_rounds:
             for idx, org_inputs in enumerate(inputs.datasets):
-                cp_spec.add_testtuple(
+                cp_spec.create_testtuple(
                     traintuple_spec=composite_specs[idx],
                     metrics=[org_inputs.metric],
                     dataset=org_inputs.dataset,

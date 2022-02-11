@@ -83,7 +83,7 @@ def test_debug_compute_plan_aggregate_composite(network, client, debug_client, d
                     "in_head_model": previous_composite_traintuple_specs[index],
                     "in_trunk_model": previous_aggregatetuple_spec,
                 }
-            spec = cp_spec.add_composite_traintuple(
+            spec = cp_spec.create_composite_traintuple(
                 composite_algo=composite_algo,
                 dataset=dataset,
                 data_samples=[dataset.train_data_sample_keys[0 + round_]],
@@ -93,7 +93,7 @@ def test_debug_compute_plan_aggregate_composite(network, client, debug_client, d
             composite_traintuple_specs.append(spec)
 
         # create aggregate on its node
-        spec = cp_spec.add_aggregatetuple(
+        spec = cp_spec.create_aggregatetuple(
             aggregate_algo=aggregate_algo,
             worker=aggregate_worker,
             in_models=composite_traintuple_specs,
@@ -114,7 +114,7 @@ def test_debug_compute_plan_aggregate_composite(network, client, debug_client, d
     for composite_traintuple_spec, dataset, metric in zip(
         previous_composite_traintuple_specs, default_datasets, metrics
     ):
-        cp_spec.add_testtuple(
+        cp_spec.create_testtuple(
             metrics=[metric],
             dataset=dataset,
             data_samples=dataset.test_data_sample_keys,
