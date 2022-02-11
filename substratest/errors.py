@@ -14,3 +14,9 @@ class FutureFailureError(TError):
     """Future execution failed."""
 
     pass
+
+
+class SynchronizationTimeoutError(TError):
+    """Asset could not be synchronized inn time."""
+
+    pass

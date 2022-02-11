@@ -306,6 +306,12 @@ def clients(network):
 
 
 @pytest.fixture(scope="session")
+def channel(network):
+    """Channel fixture (first node)."""
+    return sbt.Channel(clients=network.clients)
+
+
+@pytest.fixture(scope="session")
 def debug_client(client):
     """
     Client fixture in debug mode (first node).

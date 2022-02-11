@@ -3,6 +3,7 @@ import tempfile
 import time
 
 import substra
+from substra.sdk import models
 from substra.sdk.models import ComputePlanStatus
 from substra.sdk.models import ModelType
 from substra.sdk.models import Status
@@ -12,14 +13,6 @@ from . import errors
 
 DATASET_DOWNLOAD_FILENAME = "opener.py"
 ALGO_DOWNLOAD_FILENAME = "algo.tar.gz"
-
-_get_methods = {
-    "Traintuple": "get_traintuple",
-    "Testtuple": "get_testtuple",
-    "Aggregatetuple": "get_aggregatetuple",
-    "CompositeTraintuple": "get_composite_traintuple",
-    "ComputePlan": "get_compute_plan",
-}
 
 
 class Client:
@@ -219,15 +212,27 @@ class Client:
         tuples = sorted(tuples, key=lambda t: t.rank)
         return tuples
 
-    def wait(self, asset, timeout=cfg.FUTURE_TIMEOUT, raises=True):
+    def get(self, asset):
+        """Asset getter (valid only for first class asset)."""
+        getters = {
+            models.Dataset: self.get_dataset,
+            models.Metric: self.get_metric,
+            models.Algo: self.get_algo,
+            models.Traintuple: self.get_traintuple,
+            models.Testtuple: self.get_testtuple,
+            models.Aggregatetuple: self.get_aggregatetuple,
+            models.CompositeTraintuple: self.get_composite_traintuple,
+            models.ComputePlan: self.get_compute_plan,
+        }
+
         try:
-            m = _get_methods[asset.__class__.__name__]
+            getter = getters[asset.__class__]
         except KeyError:
-            assert False, "Future not supported"
-        getter = getattr(self, m)
+            raise AssertionError(f"Cannot find getter for asset {asset}")
 
-        key = asset.key
+        return getter(asset.key)
 
+    def wait(self, asset, timeout=cfg.FUTURE_TIMEOUT, raises=True):
         tstart = time.time()
         while asset.status not in [
             Status.done.value,
@@ -241,7 +246,7 @@ class Client:
                 raise errors.FutureTimeoutError(f"Future timeout on {asset}")
 
             time.sleep(cfg.FUTURE_POLLING_PERIOD)
-            asset = getter(key)
+            asset = self.get(asset)
 
         if raises and asset.status in (Status.failed.value, ComputePlanStatus.failed.value):
             raise errors.FutureFailureError(f"Future execution failed on {asset}")

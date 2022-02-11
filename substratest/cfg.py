@@ -16,3 +16,4 @@ def _getenv(name, default_env_value, converter=None):
 
 FUTURE_TIMEOUT = _getenv("FUTURE_TIMEOUT", "300", converter=int)  # seconds
 FUTURE_POLLING_PERIOD = _getenv("FUTURE_POLLING_PERIOD", "0.5", converter=float)  # seconds
+DELAY_ORGANISATIONS_SYNCHRONIZATION = 60  # seconds
