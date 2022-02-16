@@ -17,7 +17,7 @@ def test_compute_plan_simple(factory, client_1, client_2, default_dataset_1, def
     """
 
     spec = factory.create_algo(AlgoCategory.simple)
-    algo_2 = client_2.add_algo(spec)
+    algo_2 = client_1.add_algo(spec)
 
     # create compute plan
     cp_spec = factory.create_compute_plan(

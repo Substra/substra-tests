@@ -224,7 +224,7 @@ class _Inputs(pydantic.BaseModel):
 
 
 @pytest.fixture
-def inputs(datasamples_folders, factory, clients):
+def inputs(datasamples_folders, factory, clients, channel):
     """Register for each orgs substra inputs (dataset, datasamples and metric)."""
     results = _Inputs(datasets=[_InputsSubset() for _ in range(_NB_ORGS)])
 
@@ -286,6 +286,8 @@ def inputs(datasamples_folders, factory, clients):
         dockerfile=_ALGO_DOCKERFILE,
     )
     results.aggregate_algo = client.add_algo(spec)
+    # ensure last registered asset is synchronized on all nodes
+    channel.wait_for_asset_synchronized(results.aggregate_algo)
 
     return results
 

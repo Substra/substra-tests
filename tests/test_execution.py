@@ -117,7 +117,7 @@ def test_tuples_execution_on_different_nodes(
     # add test data samples / dataset / metric on node 1
 
     spec = factory.create_algo(AlgoCategory.simple)
-    algo_2 = client_2.add_algo(spec)
+    algo_2 = client_1.add_algo(spec)
 
     # add traintuple on node 2; should execute on node 2 (dataset located on node 2)
     spec = factory.create_traintuple(
