@@ -142,7 +142,7 @@ def test_download_asset_access_restricted(factory, client_1, client_2):
         ),
     ],
 )
-def test_merge_permissions(permissions_1, permissions_2, expected_permissions, factory, client_1, client_2):
+def test_merge_permissions(permissions_1, permissions_2, expected_permissions, factory, client_1, client_2, channel):
     """Test merge permissions from dataset and algo asset located on different nodes.
 
     - dataset and metrics located on node 1
@@ -165,6 +165,7 @@ def test_merge_permissions(permissions_1, permissions_2, expected_permissions, f
         dataset=dataset_1,
         data_samples=[train_data_sample_1],
     )
+    channel.wait_for_asset_synchronized(algo_2)
     traintuple = client_1.add_traintuple(spec)
     traintuple = client_1.wait(traintuple)
     assert traintuple.train.models is not None
