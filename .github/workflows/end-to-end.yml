@@ -5,6 +5,10 @@ on:
     - cron: "12 3 * * 2-6" # every Tuesday to Saturday at 3:12 AM
   workflow_dispatch:
     inputs:
+      runEndToEndTests:
+        description: "If true, run the end to end tests"
+        required: true
+        default: "true"
       runFrontendTests:
         description: "If true, run frontend tests"
         required: true
@@ -51,6 +55,7 @@ env:
   GCP_SERVICE_ACCOUNT: "e2e-tests@connect-314908.iam.gserviceaccount.com"
   GCP_SERVICE_ACCOUNT_KEY: "ci/keys/connect-314908-3902714646d9.json.gpg"
   GCP_SSH_SECRET: "projects/101637030044/secrets/connect-e2e-deploy-key/versions/2"
+  DEFAULT_RUN_END_TO_END_TESTS: "true"
   DEFAULT_RUN_FRONTEND_TESTS_DISTRIBUTED: "false" # frontend tests disabled in distributed mode for now
   DEFAULT_RUN_FRONTEND_TESTS_STANDALONE: "true"
   DEFAULT_RUN_CONNECTLIB_TESTS_DISTRIBUTED: "false" # connectlib tests disabled in distributed mode for now
@@ -97,6 +102,7 @@ jobs:
         run: gpg --quiet --batch --yes --decrypt --passphrase="$GPG_PASSPHRASE" --output ci/keys/gcp_sa_key.json "${GCP_SERVICE_ACCOUNT_KEY}"
       - name: Set variables
         run: |
+          echo "RUN_END_TO_END_TESTS=${{ github.event.inputs.runEndToEndTests || env.DEFAULT_RUN_END_TO_END_TESTS }}" >> $GITHUB_ENV
           echo "RUN_FRONTEND_TESTS=${{ github.event.inputs.runFrontendTests || env.DEFAULT_RUN_FRONTEND_TESTS_DISTRIBUTED }}" >> $GITHUB_ENV
           echo "RUN_CONNECTLIB_TESTS=${{ github.event.inputs.runConnectlibTests || env.DEFAULT_RUN_CONNECTLIB_TESTS_DISTRIBUTED }}" >> $GITHUB_ENV
           echo "CONNECT_TESTS=${{ github.event.inputs.connectTests || env.DEFAULT_CONNECT_TESTS }}" >> $GITHUB_ENV
@@ -135,6 +141,7 @@ jobs:
             --connect-tools ${{ env.CONNECT_TOOLS }} \
             --connectlib ${{ env.CONNECTLIB }} \
             --orchestrator-mode distributed \
+            $(if [ "${{ env.RUN_END_TO_END_TESTS }}" != "true" ]; then echo "--tests-make-command ''"; fi) \
             $(if [ "${{ env.RUN_FRONTEND_TESTS }}" == "true" ]; then echo "--run-frontend-tests"; fi) \
             $(if [ "${{ env.RUN_CONNECTLIB_TESTS }}" == "true" ]; then echo "--run-connectlib-tests"; fi) \
             --write-summary-to-file ./.slack_message
@@ -189,6 +196,7 @@ jobs:
         run: gpg --quiet --batch --yes --decrypt --passphrase="$GPG_PASSPHRASE" --output ci/keys/gcp_sa_key.json "${GCP_SERVICE_ACCOUNT_KEY}"
       - name: Set variables
         run: |
+          echo "RUN_END_TO_END_TESTS=${{ github.event.inputs.runEndToEndTests || env.DEFAULT_RUN_END_TO_END_TESTS }}" >> $GITHUB_ENV
           echo "RUN_FRONTEND_TESTS=${{ github.event.inputs.runFrontendTests || env.DEFAULT_RUN_FRONTEND_TESTS_STANDALONE }}" >> $GITHUB_ENV
           echo "RUN_CONNECTLIB_TESTS=${{ github.event.inputs.runConnectlibTests || env.DEFAULT_RUN_CONNECTLIB_TESTS_STANDALONE }}" >> $GITHUB_ENV
           echo "CONNECT_TESTS=${{ github.event.inputs.connectTests || env.DEFAULT_CONNECT_TESTS }}" >> $GITHUB_ENV
@@ -227,6 +235,7 @@ jobs:
             --connect-tools ${{ env.CONNECT_TOOLS }} \
             --connectlib ${{ env.CONNECTLIB }} \
             --orchestrator-mode standalone \
+            $(if [ "${{ env.RUN_END_TO_END_TESTS }}" != "true" ]; then echo "--tests-make-command ''"; fi) \
             $(if [ "${{ env.RUN_FRONTEND_TESTS }}" == "true" ]; then echo "--run-frontend-tests"; fi) \
             $(if [ "${{ env.RUN_CONNECTLIB_TESTS }}" == "true" ]; then echo "--run-connectlib-tests"; fi) \
             --write-summary-to-file ./.slack_message

@@ -169,13 +169,13 @@ def arg_parse() -> Config:
         "--tests-make-command",
         type=str,
         default=config.test.sdk.make_command,
-        help="Override the make command to execute the tests, If set to \"\", no test will be run.",
+        help="Override the make command to execute the tests, If set to '', no test will be run.",
     )
     parser.add_argument(
         "--connectlib-make-command",
         type=str,
         default=config.test.connectlib.make_command,
-        help="Override the make command to execute connectlib tests, If set to \"\", no test will be run.",
+        help="Override the make command to execute connectlib tests, If set to '', no test will be run.",
     )
     parser.add_argument(
         "--run-frontend-tests",
