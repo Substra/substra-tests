@@ -113,7 +113,7 @@ def test_download_asset_access_granted(permissions, factory, client_1, client_2)
 
 
 @pytest.mark.remote_only  # no check on permissions with the local backend
-def test_download_asset_access_restricted(factory, client_1, client_2):
+def test_download_asset_access_restricted(factory, client_1, client_2, channel):
     """Test public asset can be downloaded by all nodes."""
     permissions = Permissions(public=False, authorized_ids=[])
     spec = factory.create_dataset(permissions=permissions)
@@ -121,6 +121,7 @@ def test_download_asset_access_restricted(factory, client_1, client_2):
 
     content = client_1.download_opener(dataset.key)
     assert content == spec.read_opener()
+    channel.wait_for_asset_synchronized(dataset)
 
     with pytest.raises(substra.exceptions.AuthorizationError):
         client_2.download_opener(dataset.key)
