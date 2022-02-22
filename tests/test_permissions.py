@@ -100,7 +100,7 @@ def test_permission_invalid_node_id(factory, client):
         pytest.lazy_fixture("node_2_only"),
     ],
 )
-def test_download_asset_access_granted(permissions, factory, client_1, client_2):
+def test_download_asset_access_granted(permissions, factory, client_1, client_2, channel):
     """Test asset can be downloaded by all permitted nodes."""
     spec = factory.create_dataset(permissions=permissions)
     dataset = client_1.add_dataset(spec)
@@ -108,6 +108,7 @@ def test_download_asset_access_granted(permissions, factory, client_1, client_2)
     content = client_1.download_opener(dataset.key)
     assert content == spec.read_opener()
 
+    channel.wait_for_asset_synchronized(dataset)
     content = client_2.download_opener(dataset.key)
     assert content == spec.read_opener()
 
@@ -177,7 +178,7 @@ def test_merge_permissions(permissions_1, permissions_2, expected_permissions, f
 
 
 @pytest.mark.remote_only  # no check on permissions with the local backend
-def test_permissions_denied_process(factory, client_1, client_2):
+def test_permissions_denied_process(factory, client_1, client_2, channel):
     # setup data
 
     spec = factory.create_dataset(permissions=Permissions(public=False, authorized_ids=[]))
@@ -193,6 +194,7 @@ def test_permissions_denied_process(factory, client_1, client_2):
 
     spec = factory.create_algo(category=AlgoCategory.simple, permissions=Permissions(public=False, authorized_ids=[]))
     algo_2 = client_2.add_algo(spec)
+    channel.wait_for_asset_synchronized(algo_2)
 
     # traintuples
 
@@ -219,7 +221,7 @@ def test_permissions_denied_process(factory, client_1, client_2):
     ],
 )
 def test_permissions_model_process(
-    client_1_permissions, client_2_permissions, expected_success, factory, client_1, client_2, network
+    client_1_permissions, client_2_permissions, expected_success, factory, client_1, client_2, network, channel
 ):
     """Test that a traintuple can/cannot process an in-model depending on permissions."""
     datasets = []
@@ -237,7 +239,9 @@ def test_permissions_model_process(
 
         # algo
         spec = factory.create_algo(category=AlgoCategory.simple, permissions=permissions)
-        algos.append(client.add_algo(spec))
+        algo = client.add_algo(spec)
+        channel.wait_for_asset_synchronized(algo)
+        algos.append(algo)
 
     dataset_1, dataset_2 = datasets
     algo_1, algo_2 = algos
@@ -273,7 +277,7 @@ def test_permissions_model_process(
 
 @pytest.mark.remote_only  # no check on permissions with the local backend
 @pytest.mark.skipif(len(MSP_IDS) < 3, reason="requires at least 3 nodes")
-def test_merge_permissions_denied_process(factory, clients):
+def test_merge_permissions_denied_process(factory, clients, channel):
     """Test to process asset with merged permissions from 2 other nodes
 
     - dataset and metrics located on node 1
@@ -301,6 +305,7 @@ def test_merge_permissions_denied_process(factory, clients):
         # add train data samples / dataset / metric on node 1
         spec = factory.create_dataset(permissions=permissions_1)
         dataset_1 = client_1.add_dataset(spec)
+        channel.wait_for_asset_synchronized(dataset_1)  # used by client_2 and client_3
         spec = factory.create_data_sample(
             test_only=False,
             datasets=[dataset_1],
@@ -313,6 +318,7 @@ def test_merge_permissions_denied_process(factory, clients):
         _ = client_1.add_data_sample(spec)
         spec = factory.create_metric(permissions=permissions_1)
         metric_1 = client_1.add_metric(spec)
+        channel.wait_for_asset_synchronized(metric_1)  # used by client_3
 
         # add algo on node 2
         spec = factory.create_algo(category=AlgoCategory.simple, permissions=permissions_2)
@@ -326,6 +332,7 @@ def test_merge_permissions_denied_process(factory, clients):
         )
         traintuple_2 = client_2.add_traintuple(spec)
         traintuple_2 = client_2.wait(traintuple_2)
+        channel.wait_for_asset_synchronized(traintuple_2)  # used by client_3
 
         # failed to add testtuple from node 3
         spec = factory.create_testtuple(
@@ -340,7 +347,7 @@ def test_merge_permissions_denied_process(factory, clients):
 
 
 @pytest.mark.remote_only  # no check on permissions with the local backend
-def test_permissions_denied_head_model_process(factory, client_1, client_2):
+def test_permissions_denied_head_model_process(factory, client_1, client_2, channel):
     # setup data
 
     datasets = []
@@ -355,7 +362,9 @@ def test_permissions_denied_head_model_process(factory, client_1, client_2):
         )
         client.add_data_sample(spec)
 
-        datasets.append(client.get_dataset(dataset.key))
+        dataset = client.get_dataset(dataset.key)
+        channel.wait_for_asset_synchronized(dataset)
+        datasets.append(dataset)
 
     dataset_1, dataset_2 = datasets
 
@@ -363,6 +372,7 @@ def test_permissions_denied_head_model_process(factory, client_1, client_2):
 
     spec = factory.create_algo(category=AlgoCategory.composite)
     composite_algo = client_1.add_algo(spec)
+    channel.wait_for_asset_synchronized(composite_algo)  # used by client_2
 
     # composite traintuples
 
@@ -372,6 +382,7 @@ def test_permissions_denied_head_model_process(factory, client_1, client_2):
         data_samples=dataset_1.train_data_sample_keys,
     )
     composite_traintuple_1 = client_1.add_composite_traintuple(spec)
+    channel.wait_for_asset_synchronized(composite_traintuple_1)  # used by client_2
 
     spec = factory.create_composite_traintuple(
         algo=composite_algo,
