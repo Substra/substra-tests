@@ -48,6 +48,10 @@ on:
         description: "Git branch or commit to use for substra sdk"
         required: true
         default: "main"
+      githubBotContext:
+        description: 'This field is only used by GitHub bot'
+        required: false
+        default: ''
 
 env:
   GCP_PROJECT: "connect-314908"
@@ -258,3 +262,16 @@ jobs:
           name: logs-and-screenshots-standalone
           path: ci/logs
           retention-days: 5
+  connect-bot-context-artifact:
+    name: Create Connect Bot context artifact
+    runs-on: ubuntu-latest
+    if: github.event.inputs.githubBotContext != ''
+    steps:
+    - name: Create artifact
+      run: cat > connect-bot-context.json <<< '${{ github.event.inputs.githubBotContext }}'
+    - name: Upload artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: connect-bot-context.json
+        path: connect-bot-context.json
+        retention-days: 1
