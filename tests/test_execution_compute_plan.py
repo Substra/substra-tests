@@ -458,6 +458,7 @@ def test_compute_plan_remove_intermediary_model(factory, client, default_dataset
 
     with pytest.raises(substra.exceptions.InvalidRequest) as e:
         cp_added = client.add_traintuple(traintuple_spec_3)
+        client.wait(cp_added)
 
     assert "has been disabled" in str(e.value)
 
