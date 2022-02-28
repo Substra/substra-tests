@@ -262,16 +262,12 @@ jobs:
           name: logs-and-screenshots-standalone
           path: ci/logs
           retention-days: 5
-  connect-bot-context-artifact:
-    name: Create Connect Bot context artifact
-    runs-on: ubuntu-latest
+  connect-bot-context:
+    # This allows the Connect GitHub Bot to retrieve the context in which the workflow was triggered
     if: github.event.inputs.githubBotContext != ''
+    name: Output bot context
+    runs-on: ubuntu-latest
     steps:
-    - name: Create artifact
-      run: cat > connect-bot-context.json <<< '${{ github.event.inputs.githubBotContext }}'
-    - name: Upload artifact
-      uses: actions/upload-artifact@v2
-      with:
-        name: connect-bot-context.json
-        path: connect-bot-context.json
-        retention-days: 1
+    - run: |
+        # The bot will parse the comment line below
+        # bot context is: ${{ github.event.inputs.githubBotContext }}
