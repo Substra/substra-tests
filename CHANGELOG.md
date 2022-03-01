@@ -1,8 +1,25 @@
 # Changelog
+
 All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## Unreleased
+
+## [0.13.0] - 2022-03-01
+
+### Added
+
+- feat: add support for Connect GitHub Bot (#175)
+- ci: workflow dispatch - be able to deactivate the sdk tests (#165)
+- chore(ci): enable/disable frontend/connectlib tests when triggering the workflow manually (#154)
+
+### Changed
+
+- ci: the main branches of the substra and connect-tools repositories are now main (#143 #144 #146)
+
+### Fixed
 
 ## [0.12.0] - 2022-01-16
 
@@ -43,15 +60,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.10.0] - 2021-12-01
 
 ### Added
+
 - test on algo download (#109)
 
 ### Changed
+
 - update tests for compatibility with backend (#107)
 - improve tests coverage on task compatibility (#92)
 
 ## [0.9.0] - 2021-11-02
 
 ### Added
+
 - test returned task counts with cp (#91)
 - add default values for user inputs (#99)
 - test start end date integration (#93)
@@ -62,6 +82,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - multiple metrics per testtask (#74)
 
 ### Changed
+
 - rename tests.test_debug module (#103)
 - improve code for local images (#102)
 - update skaffold version (#80)
@@ -69,6 +90,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Retry a bit when images fail building (#79)
 
 ### Fixed
+
 - handle canceled and failed cp in client.wait method (#100)
 - task registration on a disabled model should fail (#97)
 - remove the random id generator that fails everyday (#98)
@@ -83,6 +105,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.8.0] - 2021-10-04
 
 ### Added
+
 - Option to `run-ci.py` to create a cluster with multiple kubernetes nodes (#37)
 - Options `--no-cleanup` and `--use-cluster` to `run-ci.py` (#39)
 - `cleanup.py` in addition to `run-ci.py` (#49)
@@ -91,6 +114,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Twuni helm repo (#65)
 
 ### Changed
+
 - Unify all algos into one (#61)
 - Testtuple after aggregate tuple (#32)
 
