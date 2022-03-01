@@ -8,7 +8,9 @@ from substratest.factory import Permissions
 
 
 @pytest.mark.remote_only
-def test_compute_plan_simple(factory, client_1, client_2, default_dataset_1, default_dataset_2, default_metrics):
+def test_compute_plan_simple(
+    factory, client_1, client_2, default_dataset_1, default_dataset_2, default_metrics, channel
+):
     """Execution of a compute plan containing multiple traintuples:
     - 1 traintuple executed on node 1
     - 1 traintuple executed on node 2
@@ -17,7 +19,8 @@ def test_compute_plan_simple(factory, client_1, client_2, default_dataset_1, def
     """
 
     spec = factory.create_algo(AlgoCategory.simple)
-    algo_2 = client_1.add_algo(spec)
+    algo_2 = client_2.add_algo(spec)
+    channel.wait_for_asset_synchronized(algo_2)
 
     # create compute plan
     cp_spec = factory.create_compute_plan(

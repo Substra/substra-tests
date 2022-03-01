@@ -111,13 +111,14 @@ def test_federated_learning_workflow(factory, client, default_datasets):
 @pytest.mark.slow
 @pytest.mark.remote_only
 def test_tuples_execution_on_different_nodes(
-    factory, client_1, client_2, default_metric_1, default_dataset_1, default_dataset_2
+    factory, client_1, client_2, default_metric_1, default_dataset_1, default_dataset_2, channel
 ):
     """Execution of a traintuple on node 1 and the following testtuple on node 2."""
     # add test data samples / dataset / metric on node 1
 
     spec = factory.create_algo(AlgoCategory.simple)
-    algo_2 = client_1.add_algo(spec)
+    algo_2 = client_2.add_algo(spec)
+    channel.wait_for_asset_synchronized(algo_2)
 
     # add traintuple on node 2; should execute on node 2 (dataset located on node 2)
     spec = factory.create_traintuple(
