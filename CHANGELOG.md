@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Added
+
+- ci: option to chose orchestrator mode (#170)
+
 ## [0.13.0] - 2022-03-01
 
 ### Added
@@ -18,8 +22,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - ci: the main branches of the substra and connect-tools repositories are now main (#143 #144 #146)
-
-### Fixed
 
 ## [0.12.0] - 2022-01-16
 
