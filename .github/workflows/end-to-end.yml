@@ -16,15 +16,6 @@ on:
         - sdk
         - sdkConnectlib
         - sdkFrontend
-      orchestratorMode:
-        type: choice
-        description: "Orchestrator modes to run tests for"
-        required: true
-        default: "both"
-        options:
-          - both
-          - standalone
-          - distributed
       connectTests:
         description: "Git branch or commit to use for connect-tests"
         required: true
@@ -83,14 +74,7 @@ env:
 
 jobs:
   test-distributed:
-    # Prevent the test from running on forks
-    if: >-
-      github.repository == 'owkin/connect-tests' &&
-      (
-        !github.event.inputs.orchestratorMode ||
-        github.event.inputs.orchestratorMode == 'both' ||
-        github.event.inputs.orchestratorMode == 'distributed'
-      )
+    if: github.repository == 'owkin/connect-tests' # Prevent the test from running on forks
     name: Tests Distributed
     runs-on: ubuntu-latest
     steps:
@@ -184,14 +168,7 @@ jobs:
           path: ci/logs
           retention-days: 5
   test-standalone:
-    # Prevent the test from running on forks
-    if: >-
-      github.repository == 'owkin/connect-tests' &&
-      (
-        !github.event.inputs.orchestratorMode ||
-        github.event.inputs.orchestratorMode == 'both' ||
-        github.event.inputs.orchestratorMode == 'standalone'
-      )
+    if: github.repository == 'owkin/connect-tests' # Prevent the test from running on forks
     name: Tests Standalone
     runs-on: ubuntu-latest
     steps:
