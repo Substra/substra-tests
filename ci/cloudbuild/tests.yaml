@@ -41,7 +41,7 @@ steps:
 
   - name: "gcr.io/kaniko-project/executor:v1.3.0"
     args:
-      - --destination=eu.gcr.io/$PROJECT_ID/${_IMAGE}:ci-${_COMMIT}-${_SUBSTRA_GIT_COMMIT}
+      - --destination=${_GCR_HOST}/$PROJECT_ID/${_IMAGE}:ci-${_COMMIT}-${_SUBSTRA_GIT_COMMIT}
       - --cache=${_KANIKO_CACHE_ENABLED}
       - --dockerfile=tests/docker/substra-tests/Dockerfile
       - --context=tests
@@ -50,6 +50,7 @@ steps:
 tags:
   - ${_BUILD_TAG}
 substitutions:
+  _GCR_HOST: "gcr.io"
   _BUILD_TAG: "connect-tests"
   _IMAGE: "connect-tests"
   _COMMIT: "HEAD"

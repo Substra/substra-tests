@@ -6,6 +6,8 @@ from typing import Dict, Tuple
 from ci.config import Config, Repository, Image
 from ci.call import call_output
 
+GCR_HOST = "eu.gcr.io"
+
 
 def build_images(cfg: Config, known_host_file_path: str, run_tag: str, dir: str) -> None:
     tag = f"connect-tests-{run_tag}"
@@ -31,6 +33,7 @@ def _build_image(
     config_file = os.path.join(dir, f"cloudbuild/{repo.name}.yaml")
 
     substitutions = {
+        "GCR_HOST": GCR_HOST,
         "BUILD_TAG": tag,
         "IMAGE": image.name,
         "GIT_REPOSITORY": repo.repo_name,

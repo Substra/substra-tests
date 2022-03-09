@@ -4,6 +4,7 @@ from typing import List
 
 import yaml
 
+from ci.build_images import GCR_HOST
 from ci.config import Config, Repository
 from ci.call import call
 
@@ -54,7 +55,7 @@ def _create_build_artifacts(cfg: Config, repo: Repository, source_dir: str, repo
 
         for image in images:
 
-            tag = f"eu.gcr.io/{cfg.gcp.project}/{image.name}:ci-{repo.commit}"
+            tag = f"{GCR_HOST}/{cfg.gcp.project}/{image.name}:ci-{repo.commit}"
 
             if image.name == "connect-tests":
                 tag += f"-{cfg.repos.sdk.commit}"
@@ -160,11 +161,11 @@ def _patch_values_file(cfg: Config, repo: Repository, value_file: str, release: 
 
     if repo == cfg.repos.hlf_k8s:
         if "chaincodes" in data:
-            data["chaincodes"][0]["image"]["repository"] = f"eu.gcr.io/{cfg.gcp.project}/orchestrator-chaincode"
+            data["chaincodes"][0]["image"]["repository"] = f"{GCR_HOST}/{cfg.gcp.project}/orchestrator-chaincode"
             data["chaincodes"][0]["image"]["tag"] = f"ci-{cfg.repos.orchestrator.commit}"
 
             data["chaincodes"][0]["init"]["image"][
-                "repository"] = f"eu.gcr.io/{cfg.gcp.project}/orchestrator-chaincode-init"
+                "repository"] = f"{GCR_HOST}/{cfg.gcp.project}/orchestrator-chaincode-init"
             data["chaincodes"][0]["init"]["image"]["tag"] = f"ci-{cfg.repos.orchestrator.commit}"
 
         # remove docker-config secret
