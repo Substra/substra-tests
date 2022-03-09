@@ -144,7 +144,7 @@ jobs:
             --connect-tools ${{ env.CONNECT_TOOLS }} \
             --connectlib ${{ env.CONNECTLIB }} \
             --orchestrator-mode distributed \
-            $(if [ "${{ env.RUN_END_TO_END_TESTS }}" != "true" ]; then echo "--tests-make-command ''"; fi) \
+            $(if [ "${{ env.RUN_END_TO_END_TESTS }}" != "true" ]; then echo --tests-make-command=""; fi) \
             $(if [ "${{ env.RUN_FRONTEND_TESTS }}" == "true" ]; then echo "--run-frontend-tests"; fi) \
             $(if [ "${{ env.RUN_CONNECTLIB_TESTS }}" == "true" ]; then echo "--run-connectlib-tests"; fi) \
             --write-summary-to-file ./.slack_message
@@ -239,7 +239,7 @@ jobs:
             --connect-tools ${{ env.CONNECT_TOOLS }} \
             --connectlib ${{ env.CONNECTLIB }} \
             --orchestrator-mode standalone \
-            $(if [ "${{ env.RUN_END_TO_END_TESTS }}" != "true" ]; then echo "--tests-make-command ''"; fi) \
+            $(if [ "${{ env.RUN_END_TO_END_TESTS }}" != "true" ]; then echo --tests-make-command=""; fi) \
             $(if [ "${{ env.RUN_FRONTEND_TESTS }}" == "true" ]; then echo "--run-frontend-tests"; fi) \
             $(if [ "${{ env.RUN_CONNECTLIB_TESTS }}" == "true" ]; then echo "--run-connectlib-tests"; fi) \
             --write-summary-to-file ./.slack_message

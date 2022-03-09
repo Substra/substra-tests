@@ -28,6 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - implement the connectlib e2e tests (#126)
 - ci: export events logs (#136)
 - add logs permission to dataset (#130)
+- ci: Be able to run only the connectlib tests (#165 #173 #179)
 
 ### Changed
 

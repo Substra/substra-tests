@@ -50,7 +50,8 @@ def run_sdk(cfg: Config):
         call(
             f"kubectl --context {cfg.gcp.kube_context} exec {substra_tests_pod} -n connect-tests -- "
             f"env SUBSTRA_TESTS_FUTURE_TIMEOUT={cfg.test.sdk.future_timeout} "
-            f"make {cfg.test.sdk.make_command} PARALLELISM={cfg.test.sdk.concurrency}"
+            f"make {cfg.test.sdk.make_command} "
+            f"PARALLELISM={cfg.test.sdk.concurrency} "
         )
         return True
     except subprocess.CalledProcessError:
