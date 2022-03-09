@@ -1,10 +1,9 @@
 import pytest
 import substra
 
+from substratest import settings
 from substratest.factory import AlgoCategory
 from substratest.factory import Permissions
-
-from . import settings
 
 MSP_IDS = settings.MSP_IDS
 

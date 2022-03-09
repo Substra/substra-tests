@@ -5,8 +5,7 @@ import uuid
 import pytest
 
 import substratest as sbt
-
-from . import settings
+from substratest import settings
 
 TESTS_RUN_UUID = uuid.uuid4().hex  # unique uuid identifying the tests run
 

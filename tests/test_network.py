@@ -5,9 +5,8 @@ import pytest
 import substra
 
 import substratest as sbt
+from substratest import settings
 from substratest.factory import AlgoCategory
-
-from . import settings
 
 
 def test_connection_to_nodes(clients):

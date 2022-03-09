@@ -3,10 +3,9 @@ import substra
 from substra.sdk.models import Status
 
 import substratest as sbt
+from substratest import settings
 from substratest.factory import AlgoCategory
 from substratest.factory import Permissions
-
-from . import settings
 
 
 @pytest.mark.slow

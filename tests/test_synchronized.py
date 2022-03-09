@@ -1,8 +1,7 @@
 import pytest
 
+from substratest import settings
 from substratest.factory import AlgoCategory
-
-from . import settings
 
 MSP_IDS = settings.MSP_IDS
 
