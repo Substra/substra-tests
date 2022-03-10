@@ -6,7 +6,7 @@ from typing import Dict, Tuple
 from ci.config import Config, Repository, Image
 from ci.call import call_output
 
-GCR_HOST = "eu.gcr.io"
+GCR_HOST = "gcr.io"
 
 
 def build_images(cfg: Config, known_host_file_path: str, run_tag: str, dir: str) -> None:
