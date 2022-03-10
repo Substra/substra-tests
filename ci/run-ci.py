@@ -207,7 +207,7 @@ def arg_parse() -> Config:
     parser.add_argument(
         "--nodes",
         type=int,
-        default=config.gcp.nodes,
+        default=config.gcp.cluster.nodes,
         help=("Number of cluster nodes (default value is 1). " "set the worker replicas to the same number."),
     )
     parser.add_argument(
@@ -235,7 +235,7 @@ def arg_parse() -> Config:
     config.gcp.service_account.key_file = args["gcp_key_filename"]
     if args["no_cache"]:
         config.gcp.kaniko_cache_ttl = "-1h"
-    config.gcp.nodes = args["nodes"]
+    config.gcp.cluster.nodes = args["nodes"]
 
     # Repo config
     config.repos.tests.ref = args["e2e_tests"]
@@ -305,7 +305,7 @@ def main() -> None:
         gcloud.label_nodes(config.gcp)
         deploy_all(config, SOURCE_DIR)
         app_deployed = True
-        if config.gcp.nodes > 1:
+        if config.gcp.cluster.nodes > 1:
             gcloud.print_nodes(config.gcp)
 
         test_passed = tests.run(config, SOURCE_DIR)

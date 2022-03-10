@@ -52,6 +52,7 @@ class GCPConfigCluster:
     # or else several kubernetes nodes will be created instead of just one,
     # which can lead to pod/volume affinity issues at runtime.
     zone: str = "us-east1-b"
+    nodes: int = 1
 
 
 @dataclass()
@@ -70,7 +71,6 @@ class GCPConfig:
     ssh_key_secret: str = "projects/101637030044/secrets/connect-e2e-deploy-key/versions/2"
     no_cleanup: bool = False
     create_cluster: bool = True
-    nodes: int = 1
 
 
 @dataclass()
@@ -197,8 +197,8 @@ class Config:
             f"SDK_BRANCH\t\t\t= {self.repos.sdk.ref}\n"
             f"BACKEND_BRANCH\t\t\t= {self.repos.backend.ref}\n"
             f"FRONTEND_BRANCH\t\t\t= {self.repos.frontend.ref}\n"
-            f"CONNECT_TOOLS_BRANCH\t\t\t= {self.repos.connect_tools.ref}\n"
-            f"CONNECTLIB_BRANCH\t\t\t= {self.repos.connectlib.ref}\n"
+            f"CONNECT_TOOLS_BRANCH\t\t= {self.repos.connect_tools.ref}\n"
+            f"CONNECTLIB_BRANCH\t\t= {self.repos.connectlib.ref}\n"
             f"HLF_K8S_BRANCH\t\t\t= {self.repos.hlf_k8s.ref}\n"
             f"ORCHESTRATOR_BRANCH\t\t= {self.repos.orchestrator.ref}\n"
             f"KANIKO_CACHE_TTL\t\t= {self.gcp.kaniko_cache_ttl}\n"

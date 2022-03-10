@@ -135,7 +135,7 @@ def _patch_values_file(cfg: Config, repo: Repository, value_file: str, release: 
         data = yaml.load(file, Loader=yaml.FullLoader)
 
     if repo == cfg.repos.backend:
-        data["worker"]["replicaCount"] = cfg.gcp.nodes
+        data["worker"]["replicaCount"] = cfg.gcp.cluster.nodes
         data["worker"]["concurrency"] = cfg.backend_celery_concurrency
         data["kaniko"]["dockerConfigSecretName"] = ""  # remove docker-config secret
         data["server"]["commonHostDomain"] = "cluster.local"

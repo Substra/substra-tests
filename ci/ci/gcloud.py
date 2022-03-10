@@ -82,7 +82,7 @@ def create_cluster_async(cfg: GCPConfig) -> None:
         f"gcloud container clusters create {cfg.cluster.name} "
         f"--machine-type {cfg.cluster.machine_type} "
         f"--service-account {cfg.service_account.name} "
-        f"--num-nodes={cfg.nodes} "
+        f"--num-nodes={cfg.cluster.nodes} "
         f"--zone={cfg.cluster.zone} "
         f"--project={cfg.project} "
         f"--enable-ip-alias "
