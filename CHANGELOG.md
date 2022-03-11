@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - ci: the main branches of the substra and connect-tools repositories are now main (#143 #144 #146)
+- The base Docker image is connect-tools 0.10.0, with Python 3.9
 
 ### Fixed
 
