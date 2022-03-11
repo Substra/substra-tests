@@ -9,6 +9,8 @@ from ci.call import call, call_output
 from ci.deploy import deploy
 from ci import gcloud
 from ci.k8s import get_single_k8s_object, NoK8sObjectsMatchError
+from ci.tests_config import SUBSTRA_TESTS_CONFIG_FILEPATH
+from ci.tests_config import inject_config_file
 
 # TODO: when splitting deployment scripts and test (cf https://app.asana.com/0/1201044465977493/1201519666278453/f)
 # the functions run_sdk, run_connectlib (and run_frontend if possible) should be refactored.
@@ -45,13 +47,16 @@ def run_sdk(cfg: Config):
 
     print("\n# Run tests")
 
+    inject_config_file(cfg, "connect-tests", substra_tests_pod, cfg.test.sdk.future_timeout)
+
     try:
         # Run the tests on the remote and local backend
         call(
             f"kubectl --context {cfg.gcp.kube_context} exec {substra_tests_pod} -n connect-tests -- "
             f"env SUBSTRA_TESTS_FUTURE_TIMEOUT={cfg.test.sdk.future_timeout} "
+            f"SUBSTRA_TESTS_CONFIG_FILEPATH={SUBSTRA_TESTS_CONFIG_FILEPATH} "
             f"make {cfg.test.sdk.make_command} "
-            f"PARALLELISM={cfg.test.sdk.concurrency} "
+            f"PARALLELISM={cfg.test.sdk.concurrency}"
         )
         return True
     except subprocess.CalledProcessError:
@@ -138,7 +143,6 @@ def run_connectlib(cfg: Config):
         # Run the tests on the remote and local backend
         call(
             f"kubectl --context {cfg.gcp.kube_context} exec {connectlib_tests_pod} -n connect-tests -- "
-            f"env SUBSTRA_TESTS_FUTURE_TIMEOUT={cfg.test.connectlib.future_timeout} "
             f"make {cfg.test.connectlib.make_command}"
         )
         return True
