@@ -52,6 +52,8 @@ class GCPConfigCluster:
     # or else several kubernetes nodes will be created instead of just one,
     # which can lead to pod/volume affinity issues at runtime.
     zone: str = "us-east1-b"
+    node_disk_type = "pd-ssd"
+    node_disk_size = "100GB"
     nodes: int = 1
 
 

@@ -86,6 +86,8 @@ def create_cluster_async(cfg: GCPConfig) -> None:
         f"--zone={cfg.cluster.zone} "
         f"--project={cfg.project} "
         f"--enable-ip-alias "
+        f"--disk-size={cfg.cluster.node_disk_size} "
+        f"--disk-type={cfg.cluster.node_disk_type} "
         f"--no-enable-autoupgrade "
         f"--enable-network-policy "
         f"--async"
