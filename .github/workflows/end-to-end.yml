@@ -16,38 +16,11 @@ on:
         - sdk
         - sdkConnectlib
         - sdkFrontend
-      connectTests:
-        description: "Git branch or commit to use for connect-tests"
-        required: true
-        default: "master"
-      connectHlfK8s:
-        description: "Git branch or commit to use for connect-hlf-k8s"
-        required: true
-        default: "master"
-      orchestrator:
-        description: "Git branch or commit to use for orchestrator"
-        required: true
-        default: "main"
-      connectBackend:
-        description: "Git branch or commit to use for connect-backend"
-        required: true
-        default: "master"
-      connectFrontend:
-        description: "Git branch or commit to use for connect-frontend"
-        required: true
-        default: "master"
-      connectTools:
-        description: "Git branch or commit to use for connect-tools"
-        required: true
-        default: "main"
-      connectlib:
-        description: "Git branch or commit to use for connectlib"
-        required: true
-        default: "main"
-      substra:
-        description: "Git branch or commit to use for substra sdk"
-        required: true
-        default: "main"
+      refs:
+        description: |
+          Git ref (branch or tag) to use instead of default for Connect repos, in format REPO=GIT_REF,REPO=GIT_REF.
+          Valid repos: tests, backend, frontend, connect_tools, connectlib, sdk, hlf_k8s, orchestrator
+        default: ""
       githubBotContext:
         description: 'This field is only used by GitHub bot'
         required: false
@@ -63,14 +36,6 @@ env:
   DEFAULT_RUN_FRONTEND_TESTS_STANDALONE: "true"
   DEFAULT_RUN_CONNECTLIB_TESTS_DISTRIBUTED: "false" # connectlib tests disabled in distributed mode for now
   DEFAULT_RUN_CONNECTLIB_TESTS_STANDALONE: "true"
-  DEFAULT_CONNECT_TESTS: "master"
-  DEFAULT_CONNECT_SDK: "main"
-  DEFAULT_CONNECT_BACKEND: "master"
-  DEFAULT_CONNECT_FRONTEND: "master"
-  DEFAULT_CONNECT_TOOLS: "main"
-  DEFAULT_CONNECTLIB: "main"
-  DEFAULT_HLF_K8S: "master"
-  DEFAULT_ORCHESTRATOR: "main"
 
 jobs:
   test-distributed:
@@ -108,24 +73,9 @@ jobs:
           echo "RUN_END_TO_END_TESTS=${{ github.event_name == 'workflow_dispatch' && (github.event.inputs.testsToRun == 'all' || github.event.inputs.testsToRun == 'sdk' || github.event.inputs.testsToRun == 'sdkFrontend' || github.event.inputs.testsToRun == 'sdkConnectlib') || github.event_name != 'workflow_dispatch' && env.DEFAULT_RUN_END_TO_END_TESTS }}" >> $GITHUB_ENV
           echo "RUN_FRONTEND_TESTS=${{ github.event_name == 'workflow_dispatch' && (github.event.inputs.testsToRun == 'all' || github.event.inputs.testsToRun == 'sdkFrontend') || github.event_name != 'workflow_dispatch' && env.DEFAULT_RUN_FRONTEND_TESTS_DISTRIBUTED }}" >> $GITHUB_ENV
           echo "RUN_CONNECTLIB_TESTS=${{ github.event_name == 'workflow_dispatch' && (github.event.inputs.testsToRun == 'all' || github.event.inputs.testsToRun == 'sdkConnectlib' || github.event.inputs.testsToRun == 'connectlib') || github.event_name != 'workflow_dispatch' && env.DEFAULT_RUN_CONNECTLIB_TESTS_DISTRIBUTED }}" >> $GITHUB_ENV
-          echo "CONNECT_TESTS=${{ github.event.inputs.connectTests || env.DEFAULT_CONNECT_TESTS }}" >> $GITHUB_ENV
-          echo "CONNECT_SDK=${{ github.event.inputs.substra || env.DEFAULT_CONNECT_SDK }}" >> $GITHUB_ENV
-          echo "CONNECT_TOOLS=${{ github.event.inputs.connectTools || env.DEFAULT_CONNECT_TOOLS }}" >> $GITHUB_ENV
-          echo "CONNECTLIB=${{ github.event.inputs.connectlib || env.DEFAULT_CONNECTLIB }}" >> $GITHUB_ENV
-          echo "CONNECT_BACKEND=${{ github.event.inputs.connectBackend || env.DEFAULT_CONNECT_BACKEND }}" >> $GITHUB_ENV
-          echo "CONNECT_FRONTEND=${{ github.event.inputs.connectFrontend || env.DEFAULT_CONNECT_FRONTEND }}" >> $GITHUB_ENV
-          echo "HLF_K8S=${{ github.event.inputs.connectHlfK8s || env.DEFAULT_HLF_K8S }}" >> $GITHUB_ENV
-          echo "ORCHESTRATOR=${{ github.event.inputs.orchestrator || env.DEFAULT_ORCHESTRATOR }}" >> $GITHUB_ENV
       - name: Workflow inputs
         run: |
-          echo "connect-tests ${{ env.CONNECT_TESTS }}"
-          echo "substra ${{ env.CONNECT_SDK }}"
-          echo "connect-backend ${{ env.CONNECT_BACKEND }}"
-          echo "connect-frontend ${{ env.CONNECT_FRONTEND }}"
-          echo "connect-tools ${{ env.CONNECT_TOOLS }}"
-          echo "connectlib ${{ env.CONNECTLIB }}"
-          echo "hlf-k8s ${{ env.HFL_K8S }}"
-          echo "orchestrator ${{ env.ORCHESTRATOR }}"
+          echo '${{ github.event.inputs.refs }}'
       - name: Test
         run: |
           CLUSTER_NAME="connect-tests-$(date -u +'%Y-%m-%d-%Hh%M')"
@@ -135,14 +85,7 @@ jobs:
             --gcp-keys-directory=./keys/ --gcp-key-filename=gcp_sa_key.json \
             --cluster-name=${CLUSTER_NAME} \
             --git-use-token --git-clone-method=https \
-            --connect-tests ${{ env.CONNECT_TESTS }} \
-            --substra ${{ env.CONNECT_SDK }} \
-            --backend ${{ env.CONNECT_BACKEND }} \
-            --hlf-k8s ${{ env.HLF_K8S }} \
-            --orchestrator ${{ env.ORCHESTRATOR }} \
-            --frontend ${{ env.CONNECT_FRONTEND }} \
-            --connect-tools ${{ env.CONNECT_TOOLS }} \
-            --connectlib ${{ env.CONNECTLIB }} \
+            --refs '${{ github.event.inputs.refs }}'
             --orchestrator-mode distributed \
             $(if [ "${{ env.RUN_END_TO_END_TESTS }}" != "true" ]; then echo --tests-make-command=""; fi) \
             $(if [ "${{ env.RUN_FRONTEND_TESTS }}" == "true" ]; then echo "--run-frontend-tests"; fi) \
@@ -203,24 +146,9 @@ jobs:
           echo "RUN_END_TO_END_TESTS=${{  github.event_name == 'workflow_dispatch' && (github.event.inputs.testsToRun == 'all' || github.event.inputs.testsToRun == 'sdk' || github.event.inputs.testsToRun == 'sdkFrontend' || github.event.inputs.testsToRun == 'sdkConnectlib') || github.event_name != 'workflow_dispatch' && env.DEFAULT_RUN_END_TO_END_TESTS }}" >> $GITHUB_ENV
           echo "RUN_FRONTEND_TESTS=${{ github.event_name == 'workflow_dispatch' && (github.event.inputs.testsToRun == 'all' || github.event.inputs.testsToRun == 'sdkFrontend') || github.event_name != 'workflow_dispatch' && env.DEFAULT_RUN_FRONTEND_TESTS_STANDALONE }}" >> $GITHUB_ENV
           echo "RUN_CONNECTLIB_TESTS=${{ github.event_name == 'workflow_dispatch' && (github.event.inputs.testsToRun == 'all' || github.event.inputs.testsToRun == 'sdkConnectlib' || github.event.inputs.testsToRun == 'connectlib') || github.event_name != 'workflow_dispatch' && env.DEFAULT_RUN_CONNECTLIB_TESTS_STANDALONE }}" >> $GITHUB_ENV
-          echo "CONNECT_TESTS=${{ github.event.inputs.connectTests || env.DEFAULT_CONNECT_TESTS }}" >> $GITHUB_ENV
-          echo "CONNECT_SDK=${{ github.event.inputs.substra || env.DEFAULT_CONNECT_SDK }}" >> $GITHUB_ENV
-          echo "CONNECT_BACKEND=${{ github.event.inputs.connectBackend || env.DEFAULT_CONNECT_BACKEND }}" >> $GITHUB_ENV
-          echo "CONNECT_FRONTEND=${{ github.event.inputs.connectFrontend || env.DEFAULT_CONNECT_FRONTEND }}" >> $GITHUB_ENV
-          echo "CONNECT_TOOLS=${{ github.event.inputs.connectTools || env.DEFAULT_CONNECT_TOOLS }}" >> $GITHUB_ENV
-          echo "CONNECTLIB=${{ github.event.inputs.connectlib || env.DEFAULT_CONNECTLIB }}" >> $GITHUB_ENV
-          echo "HLF_K8S=${{ github.event.inputs.connectHlfK8s || env.DEFAULT_HLF_K8S }}" >> $GITHUB_ENV
-          echo "ORCHESTRATOR=${{ github.event.inputs.orchestrator || env.DEFAULT_ORCHESTRATOR }}" >> $GITHUB_ENV
       - name: Workflow inputs
         run: |
-          echo "connect-tests ${{ env.CONNECT_TESTS }}"
-          echo "substra ${{ env.CONNECT_SDK }}"
-          echo "connect-backend ${{ env.CONNECT_BACKEND }}"
-          echo "connect-frontend ${{ env.CONNECT_FRONTEND }}"
-          echo "connect-tools ${{ env.CONNECT_TOOLS }}"
-          echo "connectlib ${{ env.CONNECTLIB }}"
-          echo "hlf-k8s ${{ env.HFL_K8S }}"
-          echo "orchestrator ${{ env.ORCHESTRATOR }}"
+          echo '${{ github.event.inputs.refs }}'
       - name: Test
         run: |
           CLUSTER_NAME="connect-tests-$(date -u +'%Y-%m-%d-%Hh%M')"
@@ -230,14 +158,7 @@ jobs:
             --gcp-keys-directory=./keys/ --gcp-key-filename=gcp_sa_key.json \
             --cluster-name=${CLUSTER_NAME} \
             --git-use-token --git-clone-method=https \
-            --connect-tests ${{ env.CONNECT_TESTS }} \
-            --substra ${{ env.CONNECT_SDK }} \
-            --backend ${{ env.CONNECT_BACKEND }} \
-            --hlf-k8s ${{ env.HLF_K8S }} \
-            --orchestrator ${{ env.ORCHESTRATOR }} \
-            --frontend ${{ env.CONNECT_FRONTEND }} \
-            --connect-tools ${{ env.CONNECT_TOOLS }} \
-            --connectlib ${{ env.CONNECTLIB }} \
+            --refs '${{ github.event.inputs.refs }}'
             --orchestrator-mode standalone \
             $(if [ "${{ env.RUN_END_TO_END_TESTS }}" != "true" ]; then echo --tests-make-command=""; fi) \
             $(if [ "${{ env.RUN_FRONTEND_TESTS }}" == "true" ]; then echo "--run-frontend-tests"; fi) \

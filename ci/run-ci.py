@@ -83,66 +83,19 @@ def arg_parse() -> Config:
         default=config.gcp.service_account.key_file,
         help="the filename of the service account key",
     )
+
+    class ParseRepoRefs(argparse.Action):
+        def __call__(self, parser, namespace, values, option_string=None):
+            d = {repo.split("=")[0]: repo.split("=")[1] for repo in values.split(",")}
+            assert all([k in [r.name for r in config.repos.get_all()] for k in d.keys()])
+            setattr(namespace, self.dest, d)
+
     parser.add_argument(
-        "--e2e-tests",
-        "--substra-tests",
-        "--connect-tests",
-        type=str,
-        default=config.repos.tests.ref,
-        help="e2e tests repo branch or tag",
-        metavar="GIT_BRANCH",
-    )
-    parser.add_argument(
-        "--sdk",
-        "--substra",
-        type=str,
-        default=config.repos.sdk.ref,
-        help="sdk/client branch or tag",
-        metavar="GIT_BRANCH",
-    )
-    parser.add_argument(
-        "--backend",
-        "--connect-backend",
-        "--substra-backend",
-        type=str,
-        default=config.repos.backend.ref,
-        help="backend branch or tag",
-        metavar="GIT_BRANCH",
-    )
-    parser.add_argument(
-        "--hlf-k8s", type=str, default=config.repos.hlf_k8s.ref, help="hlf-k8s branch or tag", metavar="GIT_BRANCH",
-    )
-    parser.add_argument(
-        "--frontend",
-        "--connect-frontend",
-        "--substra-frontend",
-        type=str,
-        default=config.repos.frontend.ref,
-        help="frontend branch or tag",
-        metavar="GIT_BRANCH",
-    )
-    parser.add_argument(
-        "--connectlib",
-        "--connect-connectlib",
-        "--substra-connectlib",
-        type=str,
-        default=config.repos.connectlib.ref,
-        help="connectlib branch or tag",
-        metavar="GIT_BRANCH",
-    )
-    parser.add_argument(
-        "--connect-tools",
-        type=str,
-        default=config.repos.connect_tools.ref,
-        help="connect-tools branch or tag",
-        metavar="GIT_BRANCH",
-    )
-    parser.add_argument(
-        "--orchestrator",
-        type=str,
-        default=config.repos.orchestrator.ref,
-        help="orchestrator branch or tag",
-        metavar="GIT_BRANCH",
+        "--refs",
+        action=ParseRepoRefs,
+        help="Refs (branch, tag, etc) for any or all repos",
+        metavar="REPO=GIT_REF,REPO=GIT_REF",
+        default=",".join([f"{repo.name}={repo.ref}" for repo in config.repos.get_all()])  # for expressive --help
     )
     parser.add_argument(
         "--no-cache", action="store_true", help="Use this option to disable kaniko caching",
@@ -238,14 +191,9 @@ def arg_parse() -> Config:
     config.gcp.cluster.nodes = args["nodes"]
 
     # Repo config
-    config.repos.tests.ref = args["e2e_tests"]
-    config.repos.sdk.ref = args["sdk"]
-    config.repos.backend.ref = args["backend"]
-    config.repos.frontend.ref = args["frontend"]
-    config.repos.connect_tools.ref = args["connect_tools"]
-    config.repos.connectlib.ref = args["connectlib"]
-    config.repos.hlf_k8s.ref = args["hlf_k8s"]
-    config.repos.orchestrator.ref = args["orchestrator"]
+    for repo in config.repos.get_all():
+        if repo.name in args["refs"]:
+            repo.ref = args["refs"][repo.name]
 
     # Git config
     config.git.clone_method = args["git_clone_method"]

@@ -1,5 +1,5 @@
 import os
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, fields, make_dataclass
 from typing import List, Optional
 from enum import Enum
 
@@ -82,18 +82,19 @@ class GitConfig:
     use_token: bool = False
 
 
-@dataclass()
-class Repositories:
-    tests: Repository = Repository(
-        name="tests", repo_name="owkin/connect-tests.git", images=[Image("connect-tests")],
-    )
-    backend: Repository = Repository(
+repos = [
+    Repository(
+        name="tests",
+        repo_name="owkin/connect-tests.git",
+        images=[Image("connect-tests")],
+    ),
+    Repository(
         name="backend",
         repo_name="owkin/connect-backend.git",
         images=[Image("connect-backend")],
         skaffold_artifact="substra-backend",
-    )
-    frontend: Repository = Repository(
+    ),
+    Repository(
         name="frontend",
         repo_name="owkin/connect-frontend.git",
         images=[
@@ -111,30 +112,32 @@ class Repositories:
                 registry=_CONNECT_TEST_REGISTRY,
             ),
         ],
-    )
-    connect_tools: Repository = Repository(
+    ),
+    Repository(
         name="connect_tools",
         repo_name="owkin/connect-tools.git",
         ref="main",
-    )
-    connectlib: Repository = Repository(
+    ),
+    Repository(
         name="connectlib",
         repo_name="owkin/connectlib.git",
         images=[Image("connectlib")],
         ref="main",
-    )
-    sdk: Repository = Repository(
-        name="sdk", repo_name="owkin/substra.git", ref="main",
-    )
-    hlf_k8s: Repository = Repository(
+    ),
+    Repository(
+        name="sdk",
+        repo_name="owkin/substra.git",
+        ref="main",
+    ),
+    Repository(
         name="hlf_k8s",
         repo_name="owkin/connect-hlf-k8s.git",
         images=[Image("fabric-tools"), Image("fabric-peer")],
         # use 2-orgs-policy-any instead of 2-orgs-policy-any-no-ca provided with root skaffold file
         # the aim is to test also hlf-ca certificates generation in distributed mode
         skaffold_dir="examples/2-orgs-policy-any/",
-    )
-    orchestrator: Repository = Repository(
+    ),
+    Repository(
         name="orchestrator",
         repo_name="owkin/orchestrator.git",
         ref="main",
@@ -145,7 +148,14 @@ class Repositories:
             Image("orchestrator-server"),
             Image("orchestrator-rabbitmq-operator"),
         ],
-    )
+    ),
+]
+
+Repositories = make_dataclass(
+    "Repositories",
+    [(r.name, Repository, r) for r in repos],
+    namespace={"get_all": lambda self: [f.default for f in fields(self)]},
+)
 
 
 @dataclass
