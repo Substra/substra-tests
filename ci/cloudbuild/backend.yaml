@@ -28,7 +28,7 @@ steps:
     args:
       - --destination=${_GCR_HOST}/$PROJECT_ID/${_IMAGE}:ci-${_COMMIT}
       - --cache=${_KANIKO_CACHE_ENABLED}
-      - --dockerfile=backend/docker/substra-backend/Dockerfile
+      - --dockerfile=backend/docker/${_IMAGE}/Dockerfile
       - --context=backend
       - --cache-ttl=${_KANIKO_CACHE_TTL}
 
