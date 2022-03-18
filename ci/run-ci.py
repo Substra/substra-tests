@@ -52,7 +52,10 @@ def arg_parse() -> Config:
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     parser.add_argument(
-        "--machine-type", type=str, default=config.gcp.cluster.machine_type, help="The GKE machine type to use",
+        "--machine-type",
+        type=str,
+        default=config.gcp.cluster.machine_type,
+        help="The GKE machine type to use",
     )
     parser.add_argument(
         "-N",
@@ -86,19 +89,27 @@ def arg_parse() -> Config:
 
     class ParseRepoRefs(argparse.Action):
         def __call__(self, parser, namespace, values, option_string=None):
-            d = {repo.split("=")[0]: repo.split("=")[1] for repo in values.split(",")}
-            assert all([k in [r.name for r in config.repos.get_all()] for k in d.keys()])
-            setattr(namespace, self.dest, d)
+            refs = {}
+
+            for repo in values.split(","):
+                parts = repo.split("=")
+                if len(parts) == 2:
+                    refs[parts[0]] = parts[1]
+
+            assert all([k in [r.name for r in config.repos.get_all()] for k in refs.keys()])
+            setattr(namespace, self.dest, refs)
 
     parser.add_argument(
         "--refs",
         action=ParseRepoRefs,
         help="Refs (branch, tag, etc) for any or all repos",
         metavar="REPO=GIT_REF,REPO=GIT_REF",
-        default=",".join([f"{repo.name}={repo.ref}" for repo in config.repos.get_all()])  # for expressive --help
+        default=",".join([f"{repo.name}={repo.ref}" for repo in config.repos.get_all()]),  # for expressive --help
     )
     parser.add_argument(
-        "--no-cache", action="store_true", help="Use this option to disable kaniko caching",
+        "--no-cache",
+        action="store_true",
+        help="Use this option to disable kaniko caching",
     )
     parser.add_argument(
         "--backend-celery-concurrency",
@@ -155,7 +166,9 @@ def arg_parse() -> Config:
         help="Mode of the orchestrator used to run the tests",
     )
     parser.add_argument(
-        "--git-use-token", action="store_true", help="Use a private access token stored in the env var GIT_TOKEN",
+        "--git-use-token",
+        action="store_true",
+        help="Use a private access token stored in the env var GIT_TOKEN",
     )
     parser.add_argument(
         "--nodes",
@@ -291,7 +304,7 @@ def main() -> None:
         if config.gcp.no_cleanup:
             print(
                 f"Skipping teardown of cluster {config.gcp.cluster.name}. \n",
-                "⚠️💸 DON'T FORGET TO RUN cleanup.py WHEN YOU'RE DONE 💸⚠️"
+                "⚠️💸 DON'T FORGET TO RUN cleanup.py WHEN YOU'RE DONE 💸⚠️",
             )
         else:
             print("\n# Perform final teardown")
