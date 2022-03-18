@@ -21,6 +21,15 @@ on:
           Git ref (branch or tag) to use instead of default for Connect repos, in format REPO=GIT_REF,REPO=GIT_REF.
           Valid repos: tests, backend, frontend, connect_tools, connectlib, sdk, hlf_k8s, orchestrator
         default: ""
+      orchestratorMode:
+        type: choice
+        description: "Orchestrator modes to run tests for"
+        required: true
+        default: "both"
+        options:
+          - both
+          - standalone
+          - distributed
       githubBotContext:
         description: 'This field is only used by GitHub bot'
         required: false
@@ -39,7 +48,14 @@ env:
 
 jobs:
   test-distributed:
-    if: github.repository == 'owkin/connect-tests' # Prevent the test from running on forks
+    # Prevent the test from running on forks
+    if: >-
+      github.repository == 'owkin/connect-tests' &&
+      (
+        !github.event.inputs.orchestratorMode ||
+        github.event.inputs.orchestratorMode == 'both' ||
+        github.event.inputs.orchestratorMode == 'distributed'
+      )
     name: Tests Distributed
     runs-on: ubuntu-latest
     steps:
@@ -111,7 +127,14 @@ jobs:
           path: ci/logs
           retention-days: 5
   test-standalone:
-    if: github.repository == 'owkin/connect-tests' # Prevent the test from running on forks
+    # Prevent the test from running on forks
+    if: >-
+      github.repository == 'owkin/connect-tests' &&
+      (
+        !github.event.inputs.orchestratorMode ||
+        github.event.inputs.orchestratorMode == 'both' ||
+        github.event.inputs.orchestratorMode == 'standalone'
+      )
     name: Tests Standalone
     runs-on: ubuntu-latest
     steps:
