@@ -101,7 +101,7 @@ jobs:
             --gcp-keys-directory=./keys/ --gcp-key-filename=gcp_sa_key.json \
             --cluster-name=${CLUSTER_NAME} \
             --git-use-token --git-clone-method=https \
-            --refs '${{ github.event.inputs.refs }}'
+            --refs '${{ github.event.inputs.refs }}' \
             --orchestrator-mode distributed \
             $(if [ "${{ env.RUN_END_TO_END_TESTS }}" != "true" ]; then echo --tests-make-command=""; fi) \
             $(if [ "${{ env.RUN_FRONTEND_TESTS }}" == "true" ]; then echo "--run-frontend-tests"; fi) \
@@ -181,7 +181,7 @@ jobs:
             --gcp-keys-directory=./keys/ --gcp-key-filename=gcp_sa_key.json \
             --cluster-name=${CLUSTER_NAME} \
             --git-use-token --git-clone-method=https \
-            --refs '${{ github.event.inputs.refs }}'
+            --refs '${{ github.event.inputs.refs }}' \
             --orchestrator-mode standalone \
             $(if [ "${{ env.RUN_END_TO_END_TESTS }}" != "true" ]; then echo --tests-make-command=""; fi) \
             $(if [ "${{ env.RUN_FRONTEND_TESTS }}" == "true" ]; then echo "--run-frontend-tests"; fi) \
