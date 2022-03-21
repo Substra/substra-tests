@@ -8,14 +8,14 @@ import string
 import sys
 
 from ci import gcloud
-from ci.config import Config, OrchestratorMode
-from ci.logs import retrieve_logs
-from ci.deploy import deploy_all
-from ci.helm import setup_helm
-from ci.git import clone_repos
-from ci.build_images import build_images
 from ci import tests
-
+from ci.build_images import build_images
+from ci.config import Config
+from ci.config import OrchestratorMode
+from ci.deploy import deploy_all
+from ci.git import clone_repos
+from ci.helm import setup_helm
+from ci.logs import retrieve_logs
 
 CLUSTER_NAME_ALLOWED_PREFIX = "connect-tests"
 DIR = os.path.dirname(os.path.realpath(__file__))
@@ -99,12 +99,13 @@ def arg_parse() -> Config:
             assert all([k in [r.name for r in config.repos.get_all()] for k in refs.keys()])
             setattr(namespace, self.dest, refs)
 
+    default_repo_list = ",".join([f"{repo.name}={repo.ref}" for repo in config.repos.get_all()])
     parser.add_argument(
         "--refs",
         action=ParseRepoRefs,
         help="Refs (branch, tag, etc) for any or all repos",
         metavar="REPO=GIT_REF,REPO=GIT_REF",
-        default=",".join([f"{repo.name}={repo.ref}" for repo in config.repos.get_all()]),  # for expressive --help
+        default=default_repo_list,  # for expressive --help
     )
     parser.add_argument(
         "--no-cache",
@@ -204,9 +205,11 @@ def arg_parse() -> Config:
     config.gcp.cluster.nodes = args["nodes"]
 
     # Repo config
-    for repo in config.repos.get_all():
-        if repo.name in args["refs"]:
-            repo.ref = args["refs"][repo.name]
+    # We need to check if this is the default value because Argparse does not call action= on default=
+    if args["refs"] != default_repo_list:
+        for repo in config.repos.get_all():
+            if repo.name in args["refs"]:
+                repo.ref = args["refs"][repo.name]
 
     # Git config
     config.git.clone_method = args["git_clone_method"]
