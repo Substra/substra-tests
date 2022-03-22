@@ -159,6 +159,9 @@ def _patch_values_file(cfg: Config, repo: Repository, value_file: str, release: 
         ]
         data["config"]["CORS_ORIGIN_WHITELIST"] = json.dumps(allowed_cors_origins)
 
+        # Default dev settings are allocating 10Gi for the registry, this is not enough to run both e2e & workflow tests
+        data["docker-registry"]["persistence"] = {"size": "20Gi"}
+
     if repo == cfg.repos.hlf_k8s:
         if "chaincodes" in data:
             data["chaincodes"][0]["image"]["repository"] = f"{GCR_HOST}/{cfg.gcp.project}/orchestrator-chaincode"
