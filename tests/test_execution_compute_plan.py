@@ -66,6 +66,8 @@ def test_compute_plan_simple(
     assert cp.metadata == {"foo": "bar"}
     assert cp.task_count == cp.done_count == 4
     assert cp.todo_count == cp.waiting_count == cp.doing_count == cp.canceled_count == cp.failed_count == 0
+    assert cp.end_date is not None
+    assert cp.duration is not None
 
     traintuples = client_1.list_compute_plan_traintuples(cp.key)
     assert len(traintuples) == 3
@@ -175,6 +177,8 @@ def test_compute_plan_single_client_success(factory, client, default_dataset, de
     cp = client.wait(cp_added)
 
     assert cp.status == "PLAN_STATUS_DONE"
+    assert cp.end_date is not None
+    assert cp.duration is not None
 
     # All the train/test tuples should succeed
     for t in client.list_compute_plan_traintuples(cp.key) + client.list_compute_plan_testtuples(cp.key):
@@ -313,6 +317,8 @@ def test_compute_plan_single_client_failure(factory, client, default_dataset, de
 
     assert cp.status == "PLAN_STATUS_FAILED"
     assert cp.failed_task.category == "TASK_TRAIN"
+    assert cp.end_date is not None
+    assert cp.duration is not None
 
 
 @pytest.mark.slow
@@ -527,6 +533,8 @@ def test_execution_compute_plan_canceled(factory, client, default_dataset):
 
     cp = client.wait(cp, raises=False)
     assert cp.status == models.ComputePlanStatus.canceled
+    assert cp.end_date is not None
+    assert cp.duration is not None
 
     # check that the status of the done tuple as not been updated
     first_traintuple = [t for t in client.list_compute_plan_traintuples(cp.key) if t.rank == 0][0]
