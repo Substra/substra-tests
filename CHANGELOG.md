@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - ci: option to chose orchestrator mode (#170)
 
+### Changed
+
+- ci: metric endpoint now returns 404 instead of 400 for non-uuid keys in retrieve calls (#206)
+
 ## [0.13.0] - 2022-03-01
 
 ### Added
