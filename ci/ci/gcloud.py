@@ -5,7 +5,8 @@ import time
 import urllib.error
 import urllib.request
 from dataclasses import dataclass
-from typing import Any, Dict
+from typing import Any
+from typing import Dict
 
 from ci.config import GCPConfig
 from ci.call import call, call_output
@@ -118,30 +119,23 @@ def get_kube_context(cfg: GCPConfig) -> GCPConfig:
     return cfg
 
 
-def delete_cluster(cfg: GCPConfig) -> None:
-    wait_for_cluster(cfg)
-    print("# Delete cluster")
-    cmd = (
-        f"yes | gcloud container clusters delete {cfg.cluster.name} --zone "
-        f"{cfg.cluster.zone} --project {cfg.project} --quiet"
-    )
-    call(cmd)
+def delete_all(cfg: GCPConfig) -> None:
+    """Delete cluster and PVC disks"""
 
+    # Step 1. Delete the disks
+    #
+    # Deleting the namespaces will automatically delete the PVC disks.
+    # Deleting the cluster will automatically delete the disks of the kubernetes nodes (1 per node).
+    #
+    # The scheduled Google Cloud Function "cluster_cleaning_function" acts as a fallback in case something goes wrong:
+    # it will periodically identify and delete the orphaned disks, if any. See the cluster_cleaning_function source
+    # code and documentation for more info.
+    namespaces = "org-1 org-2"
+    # "foreground" deletion should maximize the chances the command returns only after everything is deleted (I think).
+    call(f"kubectl --context {cfg.kube_context} delete ns {namespaces} --ignore-not-found --cascade=foreground")
 
-def delete_disks(cfg: GCPConfig) -> None:
-    try:
-        # the filter AND is implicit
-        disk_filter = f"name~^gke-{cfg.cluster.pvc_volume_name_prefix}-pvc-.* zone~{cfg.cluster.zone}"
-        cmd = (
-            f'gcloud compute disks list --project {cfg.project} --format="table(name)" '
-            f'--filter="{disk_filter}" | sed 1d'
-        )
-        disks = call_output(cmd)
-        disks = disks.replace("\n", " ")
-        if disks:
-            call(f"gcloud compute disks delete --zone {cfg.cluster.zone} " f"--project {cfg.project} --quiet {disks}")
-    except subprocess.CalledProcessError as ex:
-        print("ERROR: Deletion of the GCP disks failed", ex)
+    # Step 2. Delete the cluster
+    _delete_cluster_async(cfg)
 
 
 def wait_for_cluster(cfg: GCPConfig) -> None:
@@ -207,6 +201,22 @@ def print_nodes(cfg: GCPConfig):
         ),
         print_cmd=False,
     ))
+
+
+def _delete_cluster_async(cfg: GCPConfig) -> None:
+    wait_for_cluster(cfg)
+    print("# Delete cluster")
+
+    args = [
+        f"--zone {cfg.cluster.zone}",
+        f"--project {cfg.project}",
+        "--quiet",
+        "--async",
+    ]
+
+    args = " ".join(args)
+    cmd = f"yes | gcloud container clusters delete {cfg.cluster.name} {args}"
+    call(cmd)
 
 
 @dataclass()

@@ -312,8 +312,7 @@ def main() -> None:
         else:
             print("\n# Perform final teardown")
             if permissions_validated:
-                gcloud.delete_cluster(config.gcp)
-                gcloud.delete_disks(config.gcp)
+                gcloud.delete_all(config.gcp)
                 gcloud.set_project(current_project)
 
     sys.exit(0 if is_success else 1)

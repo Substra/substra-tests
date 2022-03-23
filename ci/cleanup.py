@@ -45,8 +45,7 @@ def main() -> None:
     gcloud.set_project(config.gcp.project)
     gcloud.test_permissions(config.gcp)
 
-    gcloud.delete_cluster(config.gcp)
-    gcloud.delete_disks(config.gcp)
+    gcloud.delete_all(config.gcp)
     gcloud.set_project(current_project)
 
 

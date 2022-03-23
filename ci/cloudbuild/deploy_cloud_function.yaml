@@ -29,7 +29,7 @@ steps:
       - clean-tests-ci-deployment
       - --trigger-topic=clean-tests
       - --runtime=python37
-      - --entry-point=clean_cluster
+      - --entry-point=main
     dir: 'tests/ci/cluster_cleaning_function'
 
 substitutions:
