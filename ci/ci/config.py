@@ -1,7 +1,11 @@
 import os
-from dataclasses import dataclass, field, fields, make_dataclass
-from typing import List, Optional
+from dataclasses import dataclass
+from dataclasses import field
+from dataclasses import fields
+from dataclasses import make_dataclass
 from enum import Enum
+from typing import List
+from typing import Optional
 
 _CONNECT_TEST_REGISTRY = "eu.gcr.io/connect-314908"
 
@@ -91,7 +95,7 @@ repos = [
     Repository(
         name="backend",
         repo_name="owkin/connect-backend.git",
-        images=[Image("connect-backend")],
+        images=[Image("connect-backend"), Image("metrics-exporter")],
         skaffold_artifact="substra-backend",
     ),
     Repository(
