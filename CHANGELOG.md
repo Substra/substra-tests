@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - ci: metric endpoint now returns 404 instead of 400 for non-uuid keys in retrieve calls (#206)
+- ci: algo endpoint now returns 404 instead of 400 for non-uuid keys in retrieve calls (#207)
 
 ## [0.13.0] - 2022-03-01
 
