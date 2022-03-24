@@ -262,6 +262,7 @@ def test_compute_plan_update(factory, client, default_dataset, default_metric):
     assert testtuples[1].metadata == {"foo": "bar"}
 
 
+@pytest.mark.skip(reason="to fix, see issue connect-backend#889")
 @pytest.mark.slow
 @pytest.mark.remote_only
 def test_compute_plan_single_client_failure(factory, client, default_dataset, default_metric):
@@ -494,6 +495,7 @@ def test_compute_plan_circular_dependency_failure(factory, client, default_datas
     assert "missing dependency among inModels IDs" in str(e.value)
 
 
+@pytest.mark.skip(reason="to fix, see issue connect-backend#888")
 @pytest.mark.slow
 @pytest.mark.remote_only
 def test_execution_compute_plan_canceled(factory, client, default_dataset):
