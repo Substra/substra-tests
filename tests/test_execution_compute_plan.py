@@ -422,7 +422,6 @@ def test_compute_plan_aggregate_composite_traintuples(factory, clients, default_
 
 @pytest.mark.slow
 @pytest.mark.remote_only
-@pytest.mark.skip(reason="test is flaky, see issue #167")
 def test_compute_plan_remove_intermediary_model(factory, client, default_dataset, default_metric):
     """
     Create a simple compute plan with clean_models at true, see it done and
