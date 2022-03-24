@@ -8,9 +8,9 @@ from dataclasses import dataclass
 from typing import Any
 from typing import Dict
 
+from ci.call import call
+from ci.call import call_output
 from ci.config import GCPConfig
-from ci.call import call, call_output
-
 
 SERVER_LABEL, WORKER_LABEL = "server=true", "worker=true"
 
@@ -114,7 +114,7 @@ def get_kube_context(cfg: GCPConfig) -> GCPConfig:
     if old_ctx is not None:
         call(f"kubectl config use-context {old_ctx}")  # Restore old context
 
-    cfg.kube_context = f"gke_{cfg.project}_{cfg.cluster.zone}_{cfg.cluster.name}"
+    cfg.cluster.kube_context = f"gke_{cfg.project}_{cfg.cluster.zone}_{cfg.cluster.name}"
 
     return cfg
 
@@ -132,7 +132,7 @@ def delete_all(cfg: GCPConfig) -> None:
     # code and documentation for more info.
     namespaces = "org-1 org-2"
     # "foreground" deletion should maximize the chances the command returns only after everything is deleted (I think).
-    call(f"kubectl --context {cfg.kube_context} delete ns {namespaces} --ignore-not-found --cascade=foreground")
+    call(f"kubectl --context {cfg.cluster.kube_context} delete ns {namespaces} --ignore-not-found --cascade=foreground")
 
     # Step 2. Delete the cluster
     _delete_cluster_async(cfg)
@@ -144,7 +144,7 @@ def wait_for_cluster(cfg: GCPConfig) -> None:
     while True:
         output = call_output(
             f'gcloud container clusters list --filter="name={cfg.cluster.name}" --project {cfg.project} '
-            f'--zone={cfg.cluster.zone}',
+            f"--zone={cfg.cluster.zone}",
             print_cmd=False,
         )
 
@@ -168,39 +168,37 @@ def wait_for_cluster(cfg: GCPConfig) -> None:
 
 def label_nodes(cfg: GCPConfig) -> None:
     print("\n# Label nodes")
-    data = json.loads(call_output(
-        cmd=f"kubectl --context {cfg.kube_context} get nodes -A -o json",
-        print_cmd=False,
-    ))
+    data = json.loads(
+        call_output(
+            cmd=f"kubectl --context {cfg.cluster.kube_context} get nodes -A -o json",
+            print_cmd=False,
+        )
+    )
     nodes = [node["metadata"]["name"] for node in data["items"]]
     first_node, *other_nodes = nodes
     # label first node for server
     call(
-        cmd=(
-            f"kubectl --context {cfg.kube_context} "
-            f"label nodes {first_node} {SERVER_LABEL} --overwrite"
-        ),
+        cmd=(f"kubectl --context {cfg.cluster.kube_context} " f"label nodes {first_node} {SERVER_LABEL} --overwrite"),
     )
     # label other nodes for worker (or first node in case of single node)
-    for node in (other_nodes or [first_node]):
+    for node in other_nodes or [first_node]:
         call(
-            cmd=(
-                f"kubectl --context {cfg.kube_context} "
-                f"label nodes {node} {WORKER_LABEL} --overwrite"
-            ),
+            cmd=(f"kubectl --context {cfg.cluster.kube_context} " f"label nodes {node} {WORKER_LABEL} --overwrite"),
         )
 
 
 def print_nodes(cfg: GCPConfig):
     print("******* Backend server and worker nodes *******")
-    print(call_output(
-        cmd=(
-            f"kubectl --context {cfg.kube_context} get pods -A "
-            "-l 'app.kubernetes.io/name in (substra-backend-server,substra-backend-worker)' "
-            "-o custom-columns='pod:metadata.name,node:spec.nodeName'"
-        ),
-        print_cmd=False,
-    ))
+    print(
+        call_output(
+            cmd=(
+                f"kubectl --context {cfg.cluster.kube_context} get pods -A "
+                "-l 'app.kubernetes.io/name in (substra-backend-server,substra-backend-worker)' "
+                "-o custom-columns='pod:metadata.name,node:spec.nodeName'"
+            ),
+            print_cmd=False,
+        )
+    )
 
 
 def _delete_cluster_async(cfg: GCPConfig) -> None:

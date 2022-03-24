@@ -3,12 +3,13 @@ import time
 from traceback import print_exc
 from typing import Dict
 
-
-from ci.config import Config
-from ci.call import call, call_output
-from ci.deploy import deploy
 from ci import gcloud
-from ci.k8s import get_single_k8s_object, NoK8sObjectsMatchError
+from ci.call import call
+from ci.call import call_output
+from ci.config import Config
+from ci.deploy import deploy
+from ci.k8s import NoK8sObjectsMatchError
+from ci.k8s import get_single_k8s_object
 from ci.tests_config import SUBSTRA_TESTS_CONFIG_FILEPATH
 from ci.tests_config import inject_config_file
 
@@ -19,12 +20,12 @@ from ci.tests_config import inject_config_file
 def run_sdk(cfg: Config):
     print("# Wait for the connect-tests pod to be ready")
     substra_tests_pod = call_output(
-        f"kubectl --context {cfg.gcp.kube_context} get pods -n connect-tests | grep connect-tests"
+        f"kubectl --context {cfg.gcp.cluster.kube_context} get pods -n connect-tests | grep connect-tests"
     ).split(" ")[0]
 
     try:
         call(
-            f"kubectl --context {cfg.gcp.kube_context} wait pod/{substra_tests_pod} "
+            f"kubectl --context {cfg.gcp.cluster.kube_context} wait pod/{substra_tests_pod} "
             f"-n connect-tests --for=condition=ready --timeout=590s"
         )
     except subprocess.CalledProcessError:
@@ -37,7 +38,7 @@ def run_sdk(cfg: Config):
         time.sleep(5)
         token = gcloud.get_auth_token()
         call(
-            f"kubectl --context {cfg.gcp.kube_context} exec {substra_tests_pod} -n connect-tests -- "
+            f"kubectl --context {cfg.gcp.cluster.kube_context} exec {substra_tests_pod} -n connect-tests -- "
             f"docker login -u oauth2accesstoken -p {token} https://gcr.io",
             secrets=[token],
         )
@@ -52,7 +53,7 @@ def run_sdk(cfg: Config):
     try:
         # Run the tests on the remote and local backend
         call(
-            f"kubectl --context {cfg.gcp.kube_context} exec {substra_tests_pod} -n connect-tests -- "
+            f"kubectl --context {cfg.gcp.cluster.kube_context} exec {substra_tests_pod} -n connect-tests -- "
             f"env SUBSTRA_TESTS_FUTURE_TIMEOUT={cfg.test.sdk.future_timeout} "
             f"SUBSTRA_TESTS_CONFIG_FILEPATH={SUBSTRA_TESTS_CONFIG_FILEPATH} "
             f"make {cfg.test.sdk.make_command} "
@@ -92,7 +93,7 @@ def get_done_frontend_tests_job(cfg: Config, timeout_s: int) -> Dict:
                 "job",
                 cfg.test.frontend.namespace,
                 lambda m: "connect-frontend-tests" in m["name"],
-                desc="frontend tests job"
+                desc="frontend tests job",
             )
             try:
                 if job["status"]["conditions"][0]["status"] == "True":
@@ -111,12 +112,12 @@ def get_done_frontend_tests_job(cfg: Config, timeout_s: int) -> Dict:
 def run_connectlib(cfg: Config):
     print("# Wait for the connect-tests pod to be ready")
     connectlib_tests_pod = call_output(
-        f"kubectl --context {cfg.gcp.kube_context} get pods -n connect-tests | grep connectlib"
+        f"kubectl --context {cfg.gcp.cluster.kube_context} get pods -n connect-tests | grep connectlib"
     ).split(" ")[0]
 
     try:
         call(
-            f"kubectl --context {cfg.gcp.kube_context} wait pod/{connectlib_tests_pod} "
+            f"kubectl --context {cfg.gcp.cluster.kube_context} wait pod/{connectlib_tests_pod} "
             f"-n connect-tests --for=condition=ready --timeout=590s"
         )
     except subprocess.CalledProcessError:
@@ -129,7 +130,7 @@ def run_connectlib(cfg: Config):
         time.sleep(5)
         token = gcloud.get_auth_token()
         call(
-            f"kubectl --context {cfg.gcp.kube_context} exec {connectlib_tests_pod} -n connect-tests -- "
+            f"kubectl --context {cfg.gcp.cluster.kube_context} exec {connectlib_tests_pod} -n connect-tests -- "
             f"docker login -u oauth2accesstoken -p {token} https://gcr.io",
             secrets=[token],
         )
@@ -142,7 +143,7 @@ def run_connectlib(cfg: Config):
     try:
         # Run the tests on the remote and local backend
         call(
-            f"kubectl --context {cfg.gcp.kube_context} exec {connectlib_tests_pod} -n connect-tests -- "
+            f"kubectl --context {cfg.gcp.cluster.kube_context} exec {connectlib_tests_pod} -n connect-tests -- "
             f"make {cfg.test.connectlib.make_command}"
         )
         return True
@@ -159,11 +160,7 @@ def run(cfg: Config, source_dir) -> Dict[str, bool]:
     FRONTEND_LABEL = "frontend"
     CONNECTLIB_LABEL = "connectlib"
 
-    test_passed: Dict[str, bool] = {
-        SDK_LABEL: None,
-        FRONTEND_LABEL: None,
-        CONNECTLIB_LABEL: None
-    }
+    test_passed: Dict[str, bool] = {SDK_LABEL: None, FRONTEND_LABEL: None, CONNECTLIB_LABEL: None}
 
     cfg.test.frontend
 

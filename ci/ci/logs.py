@@ -1,9 +1,13 @@
 import os
 import subprocess
 
-from ci.config import Config, GCPConfig, OrchestratorMode
-from ci.call import call, call_output
-from ci.k8s import get_single_k8s_object, get_k8s_objects
+from ci.call import call
+from ci.call import call_output
+from ci.config import Config
+from ci.config import GCPConfig
+from ci.config import OrchestratorMode
+from ci.k8s import get_k8s_objects
+from ci.k8s import get_single_k8s_object
 from ci.tests import get_done_frontend_tests_job
 
 
@@ -95,10 +99,7 @@ def _get_pod_name(cfg: GCPConfig, namespace: str, label_selector: str) -> str:
         str: a pod name.
     """
     return call_output(
-        cmd=(
-            f"kubectl --context {cfg.kube_context} get pod -n {namespace}"
-            f" -l {label_selector} -o name"
-        )
+        cmd=(f"kubectl --context {cfg.cluster.kube_context} get pod -n {namespace}" f" -l {label_selector} -o name")
     )
 
 
@@ -114,9 +115,9 @@ def _retrieve_pod_logs(cfg: GCPConfig, log_file_path: str, namespace: str, pod_n
     with open(log_file_path, "w") as f:
         try:
             call(
-                cmd=f"kubectl --context {cfg.kube_context} logs -n {namespace} {pod_name}",
+                cmd=f"kubectl --context {cfg.cluster.kube_context} logs -n {namespace} {pod_name}",
                 stdout=f,
-                print_cmd=False
+                print_cmd=False,
             )
         except subprocess.CalledProcessError:
             print(f"Failed to retrieve logs for pod {pod_name}")
@@ -131,15 +132,11 @@ def retrieve_frontend_test_logs(cfg: Config, log_dir: str) -> None:
         "pod",
         namespace,
         extra_k8s_args=f"--selector job-name={job['metadata']['name']} --sort-by '{{status.startTime}}'",
-        desc="cypress pods"
+        desc="cypress pods",
     )
 
     frontend_pods = get_k8s_objects(
-        cfg,
-        "pod",
-        namespace,
-        lambda m: "connect-frontend" in m["name"],
-        desc="frontend pods"
+        cfg, "pod", namespace, lambda m: "connect-frontend" in m["name"], desc="frontend pods"
     )
 
     ns_log_dir = os.path.join(log_dir, namespace)
@@ -152,8 +149,8 @@ def retrieve_frontend_test_logs(cfg: Config, log_dir: str) -> None:
         "pod",
         namespace,
         lambda m: "cypress-screenshots-retriever" in m["name"],
-        desc="pod with frontend screenshots"
+        desc="pod with frontend screenshots",
     )
     sc_dir = os.path.join(log_dir, "cypress-screenshots")
     os.makedirs(sc_dir, exist_ok=True)
-    call(f"kubectl --context {cfg.gcp.kube_context} cp org-1/{pod['metadata']['name']}:/screenshots/ {sc_dir}")
+    call(f"kubectl --context {cfg.gcp.cluster.kube_context} cp org-1/{pod['metadata']['name']}:/screenshots/ {sc_dir}")

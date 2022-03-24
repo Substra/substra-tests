@@ -25,7 +25,7 @@ def deploy_all(cfg: Config, source_dir: str) -> None:
 
 def _create_namespaces(cfg: Config, namespaces: List[str]) -> None:
     for namespace in namespaces:
-        call(f"kubectl --context {cfg.gcp.kube_context} create namespace {namespace}")
+        call(f"kubectl --context {cfg.gcp.cluster.kube_context} create namespace {namespace}")
 
 
 def deploy(cfg: Config, repo: Repository, source_dir: str, wait=True, repo_subdir: str = "") -> None:
@@ -39,7 +39,7 @@ def deploy(cfg: Config, repo: Repository, source_dir: str, wait=True, repo_subdi
         skaffold_profile = f"--profile {repo.skaffold_profile}"
 
     call(
-        f"cd {path} && skaffold deploy --kube-context={cfg.gcp.kube_context} "
+        f"cd {path} && skaffold deploy --kube-context={cfg.gcp.cluster.kube_context} "
         f'-f=skaffold.yaml -a={artifacts_file} --status-check={"true" if wait else "false"} {skaffold_profile}'
     )
 
@@ -92,8 +92,9 @@ def _patch_skaffold_file(cfg: Config, repo: Repository, source_dir: str, repo_su
         # use 2-orgs-policy-any instead of 2-orgs-policy-any-no-ca provided with root skaffold file
         # which means that chartPath is not properly defined like the one in the root dir of hlf-k8s
         # the aim is to test also hlf-ca certificates generation in distributed mode
-        if (release.get("chartPath", "").startswith("charts/") or
-           release.get("chartPath", "").startswith("../../charts/")):
+        if release.get("chartPath", "").startswith("charts/") or release.get("chartPath", "").startswith(
+            "../../charts/"
+        ):
             release["chartPath"] = os.path.join(repo_dir, release["chartPath"].replace("../../", ""))
         if "valuesFiles" in release:
             values_files.extend([(release, vf) for vf in release["valuesFiles"]])
@@ -121,12 +122,7 @@ def _patch_skaffold_file(cfg: Config, repo: Repository, source_dir: str, repo_su
         yaml.dump(data, file)
 
     for (release, values_file) in values_files:
-        _patch_values_file(
-            cfg,
-            repo,
-            os.path.join(repo_dir, repo.skaffold_dir, values_file),
-            release
-        )
+        _patch_values_file(cfg, repo, os.path.join(repo_dir, repo.skaffold_dir, values_file), release)
     return skaffold_file
 
 
@@ -168,7 +164,8 @@ def _patch_values_file(cfg: Config, repo: Repository, value_file: str, release: 
             data["chaincodes"][0]["image"]["tag"] = f"ci-{cfg.repos.orchestrator.commit}"
 
             data["chaincodes"][0]["init"]["image"][
-                "repository"] = f"{GCR_HOST}/{cfg.gcp.project}/orchestrator-chaincode-init"
+                "repository"
+            ] = f"{GCR_HOST}/{cfg.gcp.project}/orchestrator-chaincode-init"
             data["chaincodes"][0]["init"]["image"]["tag"] = f"ci-{cfg.repos.orchestrator.commit}"
 
         # remove docker-config secret

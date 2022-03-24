@@ -19,7 +19,7 @@ def inject_config_file(
         yaml.dump(tests_config, f)
         f.seek(0)
         call(
-            f"kubectl --context {cfg.gcp.kube_context} cp -n {namespace} "
+            f"kubectl --context {cfg.gcp.cluster.kube_context} cp -n {namespace} "
             f"{f.name} {substra_tests_pod}:{SUBSTRA_TESTS_CONFIG_FILEPATH}"
         )
 
