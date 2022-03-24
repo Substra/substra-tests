@@ -220,10 +220,11 @@ def test_list_asset(asset_type, client):
     method()  # should not raise
 
 
-# get metric now returns a 404 when the key in the url isn't a UUID (raised a 400 before)
+# some get calls now returns a 404 when the key in the url isn't a UUID (raised a 400 before)
 gettable_with_key_validation = sbt.assets.AssetType.can_be_get()
 gettable_with_key_validation.remove(sbt.assets.AssetType.metric)
 gettable_with_key_validation.remove(sbt.assets.AssetType.algo)
+gettable_with_key_validation.remove(sbt.assets.AssetType.dataset)
 
 
 @pytest.mark.remote_only
