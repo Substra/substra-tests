@@ -3,10 +3,10 @@ import os
 from typing import List
 
 import yaml
-
 from ci.build_images import GCR_HOST
-from ci.config import Config, Repository
 from ci.call import call
+from ci.config import Config
+from ci.config import Repository
 
 
 def deploy_all(cfg: Config, source_dir: str) -> None:
@@ -63,7 +63,7 @@ def _create_build_artifacts(cfg: Config, repo: Repository, source_dir: str, repo
             if image.name == "connectlib":  # Same image name as in cloudbuild/connectlib
                 tag += f"-{cfg.repos.sdk.commit}-{cfg.repos.connect_tools.commit}"
 
-            ref = repo.skaffold_artifact or image.name
+            ref = image.skaffold_artifact or image.name
 
             name = f"{image.registry}/{ref}"
             tags["builds"].append({"imageName": name, "tag": tag})

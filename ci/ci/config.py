@@ -24,6 +24,7 @@ class Image:
     repo_subdir: str = ""
     kaniko_cache: bool = True
     registry: str = "substrafoundation"
+    skaffold_artifact: str = ""
 
 
 @dataclass()
@@ -31,7 +32,6 @@ class Repository:
     name: str = ""
     repo_name: str = ""
     commit: str = ""
-    skaffold_artifact: str = ""
     skaffold_profile: str = None
     skaffold_dir: str = ""
     skaffold_filename: str = "skaffold.yaml"
@@ -95,8 +95,7 @@ repos = [
     Repository(
         name="backend",
         repo_name="owkin/connect-backend.git",
-        images=[Image("connect-backend"), Image("metrics-exporter")],
-        skaffold_artifact="substra-backend",
+        images=[Image("connect-backend", skaffold_artifact="substra-backend"), Image("metrics-exporter")],
     ),
     Repository(
         name="frontend",
