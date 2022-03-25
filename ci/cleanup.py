@@ -45,7 +45,8 @@ def main() -> None:
     gcloud.set_project(config.gcp.project)
     gcloud.test_permissions(config.gcp)
 
-    config.gcp = gcloud.get_kube_context(config.gcp)
+    gcloud.wait_for_cluster(config.gcp)
+    config.gcp.cluster.kube_context = gcloud.get_kube_context(config.gcp)
 
     gcloud.delete_all(config.gcp)
     gcloud.set_project(current_project)

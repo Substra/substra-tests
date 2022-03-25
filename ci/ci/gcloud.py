@@ -96,7 +96,7 @@ def create_cluster_async(cfg: GCPConfig) -> None:
     call(cmd)
 
 
-def get_kube_context(cfg: GCPConfig) -> GCPConfig:
+def get_kube_context(cfg: GCPConfig) -> str:
     old_ctx = None
     print("\n# Fetch kubernetes context")
 
@@ -114,9 +114,7 @@ def get_kube_context(cfg: GCPConfig) -> GCPConfig:
     if old_ctx is not None:
         call(f"kubectl config use-context {old_ctx}")  # Restore old context
 
-    cfg.cluster.kube_context = f"gke_{cfg.project}_{cfg.cluster.zone}_{cfg.cluster.name}"
-
-    return cfg
+    return f"gke_{cfg.project}_{cfg.cluster.zone}_{cfg.cluster.name}"
 
 
 def delete_all(cfg: GCPConfig) -> None:
@@ -202,7 +200,6 @@ def print_nodes(cfg: GCPConfig):
 
 
 def _delete_cluster_async(cfg: GCPConfig) -> None:
-    wait_for_cluster(cfg)
     print("# Delete cluster")
 
     args = [

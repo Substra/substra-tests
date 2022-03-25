@@ -264,7 +264,7 @@ def main() -> None:
         config = clone_repos(config, SOURCE_DIR)
         build_images(config, KNOWN_HOST_FILE_PATH, RUN_TAG, DIR)
         gcloud.wait_for_cluster(config.gcp)
-        config.gcp = gcloud.get_kube_context(config.gcp)
+        config.gcp.cluster.kube_context = gcloud.get_kube_context(config.gcp)
         setup_helm()
         gcloud.label_nodes(config.gcp)
         deploy_all(config, SOURCE_DIR)
@@ -312,6 +312,8 @@ def main() -> None:
         else:
             print("\n# Perform final teardown")
             if permissions_validated:
+                gcloud.wait_for_cluster(config.gcp)
+                config.gcp.cluster.kube_context = gcloud.get_kube_context(config.gcp)
                 gcloud.delete_all(config.gcp)
                 gcloud.set_project(current_project)
 
