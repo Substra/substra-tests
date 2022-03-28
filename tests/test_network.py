@@ -221,10 +221,15 @@ def test_list_asset(asset_type, client):
 
 
 # some get calls now returns a 404 when the key in the url isn't a UUID (raised a 400 before)
+# at this point, only ComputePlan still has the old behavior
 gettable_with_key_validation = sbt.assets.AssetType.can_be_get()
 gettable_with_key_validation.remove(sbt.assets.AssetType.metric)
 gettable_with_key_validation.remove(sbt.assets.AssetType.algo)
 gettable_with_key_validation.remove(sbt.assets.AssetType.dataset)
+gettable_with_key_validation.remove(sbt.assets.AssetType.traintuple)
+gettable_with_key_validation.remove(sbt.assets.AssetType.composite_traintuple)
+gettable_with_key_validation.remove(sbt.assets.AssetType.testtuple)
+gettable_with_key_validation.remove(sbt.assets.AssetType.aggregatetuple)
 
 
 @pytest.mark.remote_only
