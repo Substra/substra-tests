@@ -1,5 +1,6 @@
 import subprocess
-from typing import List, TextIO
+from typing import List
+from typing import TextIO
 
 
 def call(

@@ -20,7 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       SUBSTRA_BRANCH: main
-      SRC_DIRS: substratest tests
+      SRC_DIRS: substratest tests ci
     steps:
       - name: checkout connect-tests
         uses: actions/checkout@v2
@@ -59,7 +59,7 @@ jobs:
           isort --check $SRC_DIRS
 
       - name: Lint
-        run: flake8 --exclude ./substra
+        run: flake8 $SRC_DIRS
 
       - name: Install requirements
         run: |

@@ -1,10 +1,13 @@
+import json
 import os
 import time
-import json
-from typing import Dict, Tuple
+from typing import Dict
+from typing import Tuple
 
-from ci.config import Config, Repository, Image
 from ci.call import call_output
+from ci.config import Config
+from ci.config import Image
+from ci.config import Repository
 
 GCR_HOST = "gcr.io"
 
@@ -22,14 +25,7 @@ def build_images(cfg: Config, known_host_file_path: str, run_tag: str, dir: str)
     _wait_for_builds(cfg, tag, images, known_host_file_path, dir)
 
 
-def _build_image(
-    cfg: Config,
-    tag: str,
-    image: Image,
-    repo: Repository,
-    known_host_file_path: str,
-    dir: str
-) -> str:
+def _build_image(cfg: Config, tag: str, image: Image, repo: Repository, known_host_file_path: str, dir: str) -> str:
     config_file = os.path.join(dir, f"cloudbuild/{repo.name}.yaml")
 
     substitutions = {

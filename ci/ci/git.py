@@ -2,8 +2,11 @@ import os
 import shutil
 import subprocess
 
-from ci.config import Config, GitConfig, Repository
-from ci.call import call, call_output
+from ci.call import call
+from ci.call import call_output
+from ci.config import Config
+from ci.config import GitConfig
+from ci.config import Repository
 
 
 def clone_repos(cfg: Config, source_dir: str) -> Config:

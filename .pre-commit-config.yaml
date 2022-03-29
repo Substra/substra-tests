@@ -4,17 +4,17 @@ repos:
     hooks:
       - id: black
         language_version: python3
-        files: (substratest|tests)/.+\.py
+        files: (substratest|tests|ci)/.+\.py
 
   - repo: https://github.com/pycqa/isort
     rev: 5.10.1
     hooks:
       - id: isort
         args: [--settings-path=pyproject.toml]
-        files: (substratest|tests)/.+\.py
+        files: (substratest|tests|ci)/.+\.py
 
   - repo: https://github.com/pycqa/flake8
     rev: 4.0.1
     hooks:
       - id: flake8
-        files: (substratest|tests)/.+\.py
+        files: (substratest|tests|ci)/.+\.py
