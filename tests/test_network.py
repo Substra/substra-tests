@@ -220,29 +220,6 @@ def test_list_asset(asset_type, client):
     method()  # should not raise
 
 
-# some get calls now returns a 404 when the key in the url isn't a UUID (raised a 400 before)
-# at this point, only ComputePlan still has the old behavior
-gettable_with_key_validation = sbt.assets.AssetType.can_be_get()
-gettable_with_key_validation.remove(sbt.assets.AssetType.metric)
-gettable_with_key_validation.remove(sbt.assets.AssetType.algo)
-gettable_with_key_validation.remove(sbt.assets.AssetType.dataset)
-gettable_with_key_validation.remove(sbt.assets.AssetType.traintuple)
-gettable_with_key_validation.remove(sbt.assets.AssetType.composite_traintuple)
-gettable_with_key_validation.remove(sbt.assets.AssetType.testtuple)
-gettable_with_key_validation.remove(sbt.assets.AssetType.aggregatetuple)
-
-
-@pytest.mark.remote_only
-@pytest.mark.parametrize(
-    "asset_type",
-    gettable_with_key_validation,
-)
-def test_error_get_asset_invalid_request(asset_type, client):
-    method = getattr(client, f"get_{asset_type.name}")
-    with pytest.raises(substra.exceptions.InvalidRequest):
-        method("invalid-id")
-
-
 @pytest.mark.parametrize(
     "asset_type",
     sbt.assets.AssetType.can_be_get(),
