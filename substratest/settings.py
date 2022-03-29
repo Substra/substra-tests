@@ -1,8 +1,9 @@
 """Global settings for all tests environment."""
-import dataclasses
 import os
-import typing
+from typing import List
+from typing import Optional
 
+import pydantic
 import yaml
 
 CURRENT_DIR = os.path.dirname(__file__)
@@ -15,43 +16,41 @@ DEFAULT_NETWORK_LOCAL_CONFIGURATION_PATH = os.path.join(CURRENT_DIR, "../", "loc
 MIN_NODES = 1
 
 
-@dataclasses.dataclass(frozen=True)
-class NodeCfg:
+class NodeCfg(pydantic.BaseModel):
     name: str
     msp_id: str
     address: str
-    user: str = None
-    password: str = None
-    shared_path: str = None
+    user: Optional[str] = None
+    password: Optional[str] = None
+    shared_path: Optional[str] = None
 
 
-@dataclasses.dataclass(frozen=True)
-class Options:
+class Options(pydantic.BaseModel):
     enable_intermediate_model_removal: bool
     enable_model_download: bool
     minikube: bool = False
 
 
-@dataclasses.dataclass(frozen=True)
-class Settings:
+class Settings(pydantic.BaseModel):
     path: str
     options: Options
-    nodes: typing.List[NodeCfg] = dataclasses.field(default_factory=list)
+    nodes: List[NodeCfg]
+
+    @classmethod
+    def from_yaml_file(cls, path: str) -> "Settings":
+        """Load configuration from yaml file."""
+        with open(path) as f:
+            data = yaml.safe_load(f)
+
+        data["path"] = path
+        return Settings.parse_obj(data)
 
 
 _SETTINGS = None
 _LOCAL_SETTINGS = None
 
 
-def _load_yaml(path):
-    """Load configuration from yaml file."""
-    with open(path) as f:
-        data = yaml.load(f, Loader=yaml.Loader)
-    nodes = [NodeCfg(**kw) for kw in data["nodes"]]
-    return Settings(path=path, nodes=nodes, options=Options(**data["options"]))
-
-
-def load():
+def load() -> Settings:
     """Loads settings static configuration.
 
     As the configuration is static and immutable, it is loaded only once from the disk.
@@ -62,13 +61,13 @@ def load():
     if _SETTINGS is not None:
         return _SETTINGS
 
-    s = _load_yaml(SUBSTRA_TESTS_CONFIG_FILEPATH)
+    s = Settings.from_yaml_file(SUBSTRA_TESTS_CONFIG_FILEPATH)
     assert len(s.nodes) >= MIN_NODES, f"not enough nodes: {len(s.nodes)}"
     _SETTINGS = s
     return _SETTINGS
 
 
-def load_local_backend():
+def load_local_backend() -> Settings:
     """Loads settings static configuration.
 
     As the configuration is static and immutable, it is loaded only once from the disk.
@@ -77,7 +76,7 @@ def load_local_backend():
     """
     global _LOCAL_SETTINGS
     if _LOCAL_SETTINGS is None:
-        _LOCAL_SETTINGS = _load_yaml(DEFAULT_NETWORK_LOCAL_CONFIGURATION_PATH)
+        _LOCAL_SETTINGS = Settings.from_yaml_file(DEFAULT_NETWORK_LOCAL_CONFIGURATION_PATH)
     return _LOCAL_SETTINGS
 
 
@@ -88,7 +87,6 @@ def load_local_backend():
 # load configuration at module load time to allow tests parametrization depending on
 # network static configuration
 load()
-
 
 MSP_IDS = [n.msp_id for n in _SETTINGS.nodes]
 HAS_SHARED_PATH = bool(_SETTINGS.nodes[0].shared_path)

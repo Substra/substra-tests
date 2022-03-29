@@ -1,6 +1,6 @@
 """Configuration of substratest package.
 
-This is not the targetted network configuration.
+This is not the targeted network configuration.
 """
 import os
 
