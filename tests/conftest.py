@@ -189,13 +189,13 @@ def default_data_env(network, client_debug_local):
             dataset = client.add_dataset(spec)
 
             # create train data samples
-            for i in range(4):
+            for _ in range(4):
                 spec = f.create_data_sample(datasets=[dataset], test_only=False)
                 client.add_data_sample(spec)
 
             # create test data sample
             spec = f.create_data_sample(datasets=[dataset], test_only=True)
-            _ = client.add_data_sample(spec)
+            client.add_data_sample(spec)
 
             # reload datasets (to ensure they are properly linked with the created data samples)
             dataset = client.get_dataset(dataset.key)

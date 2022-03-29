@@ -137,12 +137,12 @@ def dataset(factory, client):
     dataset = client.add_dataset(spec)
 
     # create train data samples
-    for i in range(4):
+    for _ in range(4):
         spec = factory.create_data_sample(datasets=[dataset], test_only=False)
         client.add_data_sample(spec)
 
     # create test data samples
-    for i in range(2):
+    for _ in range(2):
         spec = factory.create_data_sample(datasets=[dataset], test_only=True)
         client.add_data_sample(spec)
 

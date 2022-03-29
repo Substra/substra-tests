@@ -6,7 +6,7 @@ def zip_folder(path, destination=None):
     if not destination:
         destination = os.path.join(os.path.dirname(path), os.path.basename(path) + ".zip")
     with zipfile.ZipFile(destination, "w", zipfile.ZIP_DEFLATED) as zf:
-        for root, dirs, files in os.walk(path):
+        for root, _dirs, files in os.walk(path):
             for f in files:
                 abspath = os.path.join(root, f)
                 archive_path = os.path.relpath(abspath, start=path)
