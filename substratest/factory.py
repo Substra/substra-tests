@@ -230,8 +230,6 @@ class Counter:
 class _Spec(pydantic.BaseModel, abc.ABC):
     """Asset specification base class."""
 
-    pass
-
 
 class Permissions(pydantic.BaseModel):
     public: bool

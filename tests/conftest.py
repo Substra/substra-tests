@@ -12,7 +12,7 @@ TESTS_RUN_UUID = uuid.uuid4().hex  # unique uuid identifying the tests run
 
 def pytest_report_header(config):
     """Print network configuration in pytest header to help configuration debugging."""
-    cfg = settings.load()
+    cfg = settings.Settings.load()
     messages = [
         f"tests run uuid: {TESTS_RUN_UUID}",
         f"substra network configuration loaded from: '{cfg.path}'",
@@ -142,10 +142,10 @@ def network(client_debug_local):
     Returns an instance of the `Network` class.
     """
     if not client_debug_local:
-        cfg = settings.load()
+        cfg = settings.Settings.load()
     else:
         # TODO check what enable_intermediate_model_removal does
-        cfg = settings.load_local_backend()
+        cfg = settings.Settings.load_local_backend()
     clients = [
         sbt.Client(
             debug=client_debug_local,
@@ -288,7 +288,7 @@ def client_2(network):
 @pytest.fixture
 def node_cfg():
     """Node configuration (first node)."""
-    cfg = settings.load()
+    cfg = settings.Settings.load()
     return cfg.nodes[0]
 
 
@@ -300,7 +300,7 @@ def client(network):
 
 @pytest.fixture
 def clients(network):
-    """Client fixture (first node)."""
+    """Clients fixture (all nodes)."""
     return network.clients
 
 
@@ -316,7 +316,7 @@ def debug_client(client):
     Client fixture in debug mode (first node).
     Use it with @pytest.mark.remote_only
     """
-    cfg = settings.load()
+    cfg = settings.Settings.load()
     node = cfg.nodes[0]
     # Debug client and client share the same
     # token, otherwise when one connects the other

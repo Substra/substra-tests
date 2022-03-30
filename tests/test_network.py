@@ -5,7 +5,6 @@ import pytest
 import substra
 
 import substratest as sbt
-from substratest import settings
 from substratest.factory import AlgoCategory
 
 
@@ -106,13 +105,13 @@ def test_link_dataset_with_datasamples(factory, client):
 
 @pytest.mark.skip(reason="may fill up disk as shared folder is not cleanup")
 @pytest.mark.parametrize("filesize", [1, 10, 100, 1000])  # in mega
-def test_add_data_sample_path_big_files(filesize, factory, client, node_cfg):
+def test_add_data_sample_path_big_files(network, filesize, factory, client, node_cfg):
     spec = factory.create_dataset()
     dataset = client.add_dataset(spec)
 
     content = os.urandom(filesize * 1000 * 1000)
     spec = factory.create_data_sample(content=content, datasets=[dataset])
-    spec.move_data_to_server(node_cfg.shared_path, settings.IS_MINIKUBE)
+    spec.move_data_to_server(node_cfg.shared_path, network.options.minikube)
     client.add_data_sample(spec, local=False)  # should not raise
 
 

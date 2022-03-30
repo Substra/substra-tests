@@ -3,7 +3,6 @@ import substra
 from substra.sdk.models import Status
 
 import substratest as sbt
-from substratest import settings
 from substratest.factory import AlgoCategory
 from substratest.factory import Permissions
 
@@ -637,13 +636,15 @@ def test_aggregate_composite_traintuples(factory, network, clients, default_data
 
 
 @pytest.mark.remote_only
-@pytest.mark.skipif(not settings.HAS_SHARED_PATH, reason="requires a shared path")
-def test_use_data_sample_located_in_shared_path(factory, client, node_cfg, default_metric):
+def test_use_data_sample_located_in_shared_path(factory, network, client, node_cfg, default_metric):
+    if not node_cfg.shared_path:
+        pytest.skip("requires a shared path")
+
     spec = factory.create_dataset()
     dataset = client.add_dataset(spec)
 
     spec = factory.create_data_sample(datasets=[dataset])
-    spec.move_data_to_server(node_cfg.shared_path, settings.IS_MINIKUBE)
+    spec.move_data_to_server(node_cfg.shared_path, network.options.minikube)
     data_sample_key = client.add_data_sample(spec, local=False)  # should not raise
 
     spec = factory.create_algo(AlgoCategory.simple)

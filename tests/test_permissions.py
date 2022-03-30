@@ -1,11 +1,8 @@
 import pytest
 import substra
 
-from substratest import settings
 from substratest.factory import AlgoCategory
 from substratest.factory import Permissions
-
-MSP_IDS = settings.MSP_IDS
 
 
 @pytest.fixture
@@ -19,8 +16,8 @@ def private():
 
 
 @pytest.fixture
-def all_nodes():
-    return Permissions(public=False, authorized_ids=MSP_IDS)
+def all_nodes(clients):
+    return Permissions(public=False, authorized_ids=[c.node_id for c in clients])
 
 
 @pytest.fixture
@@ -275,7 +272,6 @@ def test_permissions_model_process(
 
 
 @pytest.mark.remote_only  # no check on permissions with the local backend
-@pytest.mark.skipif(len(MSP_IDS) < 3, reason="requires at least 3 nodes")
 def test_merge_permissions_denied_process(factory, clients, channel):
     """Test to process asset with merged permissions from 2 other nodes
 
@@ -284,19 +280,20 @@ def test_merge_permissions_denied_process(factory, clients, channel):
     - traintuple created on node 2
     - failed attempt to create testtuple using this traintuple from node 3
     """
-    # define clients one and for all
-    client_1 = clients[0]
-    client_2 = clients[1]
-    client_3 = clients[2]
+    if len(clients) < 3:
+        pytest.skip("requires at least 3 nodes")
+
+    # define clients once and for all
+    client_1, client_2, client_3, *_ = clients
 
     permissions_list = [
         (
-            Permissions(public=False, authorized_ids=[MSP_IDS[1], MSP_IDS[2]]),
-            Permissions(public=False, authorized_ids=[MSP_IDS[0]]),
+            Permissions(public=False, authorized_ids=[client_2.node_id, client_3.node_id]),
+            Permissions(public=False, authorized_ids=[client_1.node_id]),
         ),
         (
             Permissions(public=True, authorized_ids=[]),
-            Permissions(public=False, authorized_ids=[MSP_IDS[0]]),
+            Permissions(public=False, authorized_ids=[client_1.node_id]),
         ),
     ]
     for permissions_1, permissions_2 in permissions_list:
