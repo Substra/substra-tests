@@ -46,6 +46,9 @@ def _build_image(cfg: Config, tag: str, image: Image, repo: Repository, known_ho
         substitutions["SUBSTRA_GIT_COMMIT"] = cfg.repos.sdk.commit
         substitutions["CONNECTTOOLS_GIT_COMMIT"] = cfg.repos.connect_tools.commit
 
+    if repo == cfg.repos.connect_tools:
+        substitutions["DOCKERFILE"] = image.dockerfile
+
     cmd = (
         f"gcloud builds submit "
         f"{known_host_file_path} "

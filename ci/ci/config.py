@@ -9,6 +9,10 @@ from typing import Optional
 
 _CONNECT_TEST_REGISTRY = "eu.gcr.io/connect-314908"
 
+CONNECT_TOOLS_MINIMAL = "connect-tools-minimal"
+CONNECT_TOOLS_WORKFLOWS = "connect-tools-workflows"
+DOCKERHUB_OWKIN_USERNAME = "owkin"
+
 
 class OrchestratorMode(Enum):
     DISTRIBUTED = "distributed"
@@ -25,6 +29,7 @@ class Image:
     kaniko_cache: bool = True
     registry: str = "substrafoundation"
     skaffold_artifact: str = ""
+    dockerfile: str = ""  # custom Dockerfile location (connect-tools only)
 
 
 @dataclass()
@@ -119,6 +124,10 @@ repos = [
     Repository(
         name="connect_tools",
         repo_name="owkin/connect-tools.git",
+        images=[
+            Image(CONNECT_TOOLS_MINIMAL, dockerfile="Dockerfile.minimal"),
+            Image(CONNECT_TOOLS_WORKFLOWS, dockerfile="Dockerfile.workflows"),
+        ],
         ref="main",
     ),
     Repository(
@@ -238,12 +247,12 @@ class Config:
         res.append(self.repos.backend)
         res.append(self.repos.sdk)
         res.append(self.repos.tests)
+        res.append(self.repos.connect_tools)
 
         if self.test.frontend.enabled:
             res.append(self.repos.frontend)
 
         if self.test.connectlib.enabled:
-            res.append(self.repos.connect_tools)
             res.append(self.repos.connectlib)
 
         return res

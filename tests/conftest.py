@@ -20,6 +20,7 @@ def pytest_report_header(config):
     ]
     for n in cfg.nodes:
         messages.append(f"  - node: name={n.name} msp_id={n.msp_id} address={n.address}")
+    messages.append(f"connect tools images: {cfg.connect_tools}")
     return messages
 
 
@@ -107,31 +108,40 @@ class Network:
 
 
 @pytest.fixture
-def factory(request, client_debug_local):
+def factory(request, cfg, client_debug_local):
     """Factory fixture.
 
     Provide class methods to simply create asset specification in order to add them
     to the substra framework.
     """
     name = f"{TESTS_RUN_UUID}_{request.node.name}"
-    with sbt.AssetsFactory(name=name, client_debug_local=client_debug_local) as f:
-        yield f
-
-
-@pytest.fixture
-def debug_factory(request):
-    """Factory fixture.
-
-    Provide class methods to simply create asset specification in order to add them
-    to the substra framework.
-    """
-    name = f"{TESTS_RUN_UUID}_{request.node.name}"
-    with sbt.AssetsFactory(name=name, client_debug_local=True) as f:
+    with sbt.AssetsFactory(name=name, cfg=cfg, client_debug_local=client_debug_local) as f:
         yield f
 
 
 @pytest.fixture(scope="session")
-def network(client_debug_local):
+def cfg(client_debug_local):
+    if not client_debug_local:
+        return settings.Settings.load()
+    else:
+        # TODO check what enable_intermediate_model_removal does
+        return settings.Settings.load_local_backend()
+
+
+@pytest.fixture
+def debug_factory(request, cfg):
+    """Factory fixture.
+
+    Provide class methods to simply create asset specification in order to add them
+    to the substra framework.
+    """
+    name = f"{TESTS_RUN_UUID}_{request.node.name}"
+    with sbt.AssetsFactory(name=name, cfg=cfg, client_debug_local=True) as f:
+        yield f
+
+
+@pytest.fixture(scope="session")
+def network(cfg, client_debug_local):
     """Network fixture.
 
     Network must be started outside of the tests environment and the network is kept
@@ -141,11 +151,6 @@ def network(client_debug_local):
 
     Returns an instance of the `Network` class.
     """
-    if not client_debug_local:
-        cfg = settings.Settings.load()
-    else:
-        # TODO check what enable_intermediate_model_removal does
-        cfg = settings.Settings.load_local_backend()
     clients = [
         sbt.Client(
             debug=client_debug_local,
@@ -163,7 +168,7 @@ def network(client_debug_local):
 
 
 @pytest.fixture(scope="session")
-def default_data_env(network, client_debug_local):
+def default_data_env(cfg, network, client_debug_local):
     """Fixture with pre-existing assets in all nodes.
 
     The following assets will be created for each node:
@@ -179,7 +184,7 @@ def default_data_env(network, client_debug_local):
     """
     factory_name = f"{TESTS_RUN_UUID}_global"
 
-    with sbt.AssetsFactory(name=factory_name, client_debug_local=client_debug_local) as f:
+    with sbt.AssetsFactory(name=factory_name, cfg=cfg, client_debug_local=client_debug_local) as f:
         datasets = []
         metrics = []
         for index, client in enumerate(network.clients):
@@ -286,9 +291,8 @@ def client_2(network):
 
 
 @pytest.fixture
-def node_cfg():
+def node_cfg(cfg):
     """Node configuration (first node)."""
-    cfg = settings.Settings.load()
     return cfg.nodes[0]
 
 
@@ -311,12 +315,11 @@ def channel(network):
 
 
 @pytest.fixture(scope="session")
-def debug_client(client):
+def debug_client(cfg, client):
     """
     Client fixture in debug mode (first node).
     Use it with @pytest.mark.remote_only
     """
-    cfg = settings.Settings.load()
     node = cfg.nodes[0]
     # Debug client and client share the same
     # token, otherwise when one connects the other

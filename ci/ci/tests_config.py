@@ -1,7 +1,11 @@
 import tempfile
 
 import yaml
+from ci.build_images import GCR_HOST
 from ci.call import call
+from ci.config import CONNECT_TOOLS_MINIMAL
+from ci.config import CONNECT_TOOLS_WORKFLOWS
+from ci.config import DOCKERHUB_OWKIN_USERNAME
 from ci.config import Config
 
 SUBSTRA_TESTS_CONFIG_FILEPATH = "/usr/src/app/values.yaml"
@@ -14,7 +18,7 @@ def inject_config_file(
     future_timeout: int,
 ) -> None:
 
-    tests_config = _get_config(future_timeout)
+    tests_config = _get_config(cfg, future_timeout)
     with tempfile.NamedTemporaryFile("w") as f:
         yaml.dump(tests_config, f)
         f.seek(0)
@@ -24,9 +28,10 @@ def inject_config_file(
         )
 
 
-def _get_config(
-    future_timeout: int,
-) -> object:
+def _get_config(cfg: Config, future_timeout: int) -> object:
+
+    connect_tools_tag = f"ci-{cfg.repos.connect_tools.commit}"
+
     return {
         "future_timeout": future_timeout,
         "options": {
@@ -49,4 +54,9 @@ def _get_config(
                 "password": "p@sswr0d45",
             },
         ],
+        "connect_tools": {
+            "image_remote": f"{DOCKERHUB_OWKIN_USERNAME}/{CONNECT_TOOLS_MINIMAL}:{connect_tools_tag}",
+            "image_local": f"{GCR_HOST}/{cfg.gcp.project}/{CONNECT_TOOLS_MINIMAL}:{connect_tools_tag}",
+            "image_workflows": f"{GCR_HOST}/{cfg.gcp.project}/{CONNECT_TOOLS_WORKFLOWS}:{connect_tools_tag}",
+        },
     }

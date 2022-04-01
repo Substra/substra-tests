@@ -12,16 +12,9 @@ from substra.sdk import models
 from substra.sdk.schemas import AlgoCategory
 
 from . import utils
+from .settings import Settings
 
 DEFAULT_DATA_SAMPLE_FILENAME = "data.csv"
-
-DEFAULT_TOOLS_VERSION = "0.10.0-nvidiacuda11.6.0-base-ubuntu20.04-python3.9"
-DEFAULT_TOOLS_BASE_IMAGE = "owkin/connect-tools"
-DEFAULT_TOOLS_IMAGE = f"{DEFAULT_TOOLS_BASE_IMAGE}:{DEFAULT_TOOLS_VERSION}-minimal"
-
-DEFAULT_TOOLS_BASE_IMAGE_GCR = "gcr.io/connect-314908/connect-tools"
-
-DEFAULT_TOOLS_IMAGE_GCR = f"{DEFAULT_TOOLS_BASE_IMAGE_GCR}:{DEFAULT_TOOLS_VERSION}-minimal"
 
 DEFAULT_OPENER_SCRIPT = f"""
 import csv
@@ -549,13 +542,14 @@ class UpdateComputePlanSpec(_BaseComputePlanSpec):
 
 
 class AssetsFactory:
-    def __init__(self, name, client_debug_local=False):
+    def __init__(self, name, cfg: Settings, client_debug_local=False):
         self._data_sample_counter = Counter()
         self._dataset_counter = Counter()
         self._metric_counter = Counter()
         self._algo_counter = Counter()
         self._workdir = pathlib.Path(tempfile.mkdtemp(prefix="/tmp/"))
         self._uuid = name
+        self._cfg = cfg
         self._client_debug_local = client_debug_local
 
     def __enter__(self):
@@ -566,7 +560,7 @@ class AssetsFactory:
 
     @property
     def default_tools_image(self):
-        return DEFAULT_TOOLS_IMAGE_GCR if self._client_debug_local else DEFAULT_TOOLS_IMAGE
+        return self._cfg.connect_tools.image_local if self._client_debug_local else self._cfg.connect_tools.image_remote
 
     # We need to adapt the image base name base on the fact that we run the cp in the docker context (debug)
     # or the kaniko pod (remote) to be able to pull the image

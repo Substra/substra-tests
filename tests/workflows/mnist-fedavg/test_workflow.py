@@ -8,6 +8,7 @@ import substra as sb
 
 import substratest as sbt
 from substratest.factory import AlgoCategory
+from substratest.settings import Settings
 
 # extra requirements located in requirements-workflows.txt
 try:
@@ -41,20 +42,17 @@ _INPUT_SIZE = 28
 # represents the number of orgs: it will be used to split the data into NB_ORGS parts
 _NB_ORGS = 2
 
-# this image is built and pushed by the connect-tools repository
-_IMAGE = f"{sbt.factory.DEFAULT_TOOLS_BASE_IMAGE_GCR}:" f"{sbt.factory.DEFAULT_TOOLS_VERSION}-workflows"
 
-_ALGO_DOCKERFILE = f"""
-FROM {_IMAGE}
-COPY algo.py .
-ENTRYPOINT ["python3", "algo.py"]
-"""
+@pytest.fixture
+def algo_dockerfile(cfg: Settings) -> str:
+    return f"FROM {cfg.connect_tools.image_workflows}\n" f"COPY algo.py .\n" f'ENTRYPOINT ["python3", "algo.py"]\n'
 
-_METRICS_DOCKERFILE = f"""
-FROM {_IMAGE}
-COPY metrics.py .
-ENTRYPOINT ["python3", "metrics.py"]
-"""
+
+@pytest.fixture
+def metrics_dockerfile(cfg: Settings) -> str:
+    return (
+        f"FROM {cfg.connect_tools.image_workflows}\n" f"COPY metrics.py .\n" f'ENTRYPOINT ["python3", "metrics.py"]\n'
+    )
 
 
 @pytest.fixture(autouse=True)
@@ -224,7 +222,7 @@ class _Inputs(pydantic.BaseModel):
 
 
 @pytest.fixture
-def inputs(datasamples_folders, factory, clients, channel):
+def inputs(datasamples_folders, factory, clients, channel, algo_dockerfile, metrics_dockerfile):
     """Register for each orgs substra inputs (dataset, datasamples and metric)."""
     results = _Inputs(datasets=[_InputsSubset() for _ in range(_NB_ORGS)])
 
@@ -263,7 +261,7 @@ def inputs(datasamples_folders, factory, clients, channel):
 
         # XXX is it required to link dataset with datasamples ?
 
-        spec = factory.create_metric(dockerfile=_METRICS_DOCKERFILE, py_script=_METRICS.open().read())
+        spec = factory.create_metric(dockerfile=metrics_dockerfile, py_script=_METRICS.open().read())
         res.metric = client.add_metric(spec)
 
         # refresh dataset (to be up-to-date with added samples)
@@ -276,14 +274,14 @@ def inputs(datasamples_folders, factory, clients, channel):
     spec = factory.create_algo(
         AlgoCategory.composite,
         py_script=_COMPOSITE_ALGO.open().read(),
-        dockerfile=_ALGO_DOCKERFILE,
+        dockerfile=algo_dockerfile,
     )
     results.composite_algo = client.add_algo(spec)
 
     spec = factory.create_algo(
         AlgoCategory.aggregate,
         py_script=_AGGREGATE_ALGO.open().read(),
-        dockerfile=_ALGO_DOCKERFILE,
+        dockerfile=algo_dockerfile,
     )
     results.aggregate_algo = client.add_algo(spec)
     # ensure last registered asset is synchronized on all nodes

@@ -5,6 +5,9 @@ from typing import List
 import yaml
 from ci.build_images import GCR_HOST
 from ci.call import call
+from ci.config import CONNECT_TOOLS_MINIMAL
+from ci.config import CONNECT_TOOLS_WORKFLOWS
+from ci.config import DOCKERHUB_OWKIN_USERNAME
 from ci.config import Config
 from ci.config import Repository
 
@@ -134,9 +137,25 @@ def _patch_values_file(cfg: Config, repo: Repository, value_file: str, release: 
         data["worker"]["replicaCount"] = cfg.gcp.cluster.nodes
         data["worker"]["concurrency"] = cfg.backend_celery_concurrency
         data["kaniko"]["dockerConfigSecretName"] = ""  # remove docker-config secret
+        data["kaniko"]["cache"]["warmer"]["cachedImages"] = [
+            f"{GCR_HOST}/{cfg.gcp.project}/{CONNECT_TOOLS_MINIMAL}:ci-{cfg.repos.connect_tools.commit}",
+            f"{GCR_HOST}/{cfg.gcp.project}/{CONNECT_TOOLS_WORKFLOWS}:ci-{cfg.repos.connect_tools.commit}",
+        ]
         data["server"]["commonHostDomain"] = "cluster.local"
-        for elt in data["containerRegistry"]["prepopulate"]:
-            elt["dockerConfigSecretName"] = ""  # remove docker-config secret
+        data["containerRegistry"]["prepopulate"] = [
+            {
+                "image": f"{cfg.gcp.project}/{CONNECT_TOOLS_MINIMAL}:ci-{cfg.repos.connect_tools.commit}",
+                "sourceRegistry": GCR_HOST,
+                "dstImage": f"{DOCKERHUB_OWKIN_USERNAME}/{CONNECT_TOOLS_MINIMAL}:ci-{cfg.repos.connect_tools.commit}",
+                "dockerConfigSecretName": "",  # remove docker-config secret
+            },
+            {
+                "image": f"{cfg.gcp.project}/{CONNECT_TOOLS_WORKFLOWS}:ci-{cfg.repos.connect_tools.commit}",
+                "sourceRegistry": GCR_HOST,
+                "dstImage": f"{DOCKERHUB_OWKIN_USERNAME}/{CONNECT_TOOLS_WORKFLOWS}:ci-{cfg.repos.connect_tools.commit}",
+                "dockerConfigSecretName": "",  # remove docker-config secret
+            },
+        ]
 
         if "extraEnv" not in data:
             data["extraEnv"] = []

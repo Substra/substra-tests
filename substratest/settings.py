@@ -11,6 +11,11 @@ _CURRENT_DIR = os.path.dirname(__file__)
 _DEFAULT_NETWORK_CONFIGURATION_PATH = os.path.join(_CURRENT_DIR, "../", "values.yaml")
 _SUBSTRA_TESTS_CONFIG_FILEPATH = os.getenv("SUBSTRA_TESTS_CONFIG_FILEPATH", _DEFAULT_NETWORK_CONFIGURATION_PATH)
 
+_DEFAULT_CONNECT_TOOLS_TAG = "0.10.0-nvidiacuda11.6.0-base-ubuntu20.04-python3.9"
+_DEFAULT_CONNECT_TOOLS_IMAGE_REMOTE = f"owkin/connect-tools:{_DEFAULT_CONNECT_TOOLS_TAG}-minimal"
+_DEFAULT_CONNECT_TOOLS_IMAGE_LOCAL = f"gcr.io/connect-314908/connect-tools:{_DEFAULT_CONNECT_TOOLS_TAG}-minimal"
+_DEFAULT_CONNECT_TOOLS_IMAGE_WORKFLOWS = f"gcr.io/connect-314908/connect-tools:{_DEFAULT_CONNECT_TOOLS_TAG}-workflows"
+
 _DEFAULT_NETWORK_LOCAL_CONFIGURATION_PATH = os.path.join(_CURRENT_DIR, "../", "local-backend-values.yaml")
 
 _MIN_NODES = 1
@@ -25,6 +30,12 @@ class NodeCfg(pydantic.BaseModel):
     shared_path: Optional[str] = None
 
 
+class ConnectToolsCfg(pydantic.BaseModel):
+    image_remote: str = _DEFAULT_CONNECT_TOOLS_IMAGE_REMOTE
+    image_local: str = _DEFAULT_CONNECT_TOOLS_IMAGE_LOCAL
+    image_workflows: str = _DEFAULT_CONNECT_TOOLS_IMAGE_WORKFLOWS
+
+
 class Options(pydantic.BaseModel):
     enable_intermediate_model_removal: bool
     enable_model_download: bool
@@ -37,6 +48,7 @@ class Settings(pydantic.BaseModel):
 
     path: str
     options: Options
+    connect_tools: ConnectToolsCfg = ConnectToolsCfg()
     nodes: List[NodeCfg]
 
     @classmethod
