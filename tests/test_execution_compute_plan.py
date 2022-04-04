@@ -459,6 +459,10 @@ def test_compute_plan_remove_intermediary_model(factory, client, default_dataset
     cp_added = client.add_compute_plan(cp_spec)
     cp = client.wait(cp_added)
 
+    traintuple_1 = client.get_traintuple(traintuple_spec_1.traintuple_id)
+    traintuple_1 = client.wait(traintuple_1)
+    client.wait_model_deletion(traintuple_1.train.models[0].key)
+
     traintuple_spec_3 = factory.create_traintuple(
         algo=algo,
         dataset=default_dataset,

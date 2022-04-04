@@ -255,3 +255,14 @@ class Client:
             raise errors.FutureFailureError(f"Future execution canceled on {asset}")
 
         return asset
+
+    def wait_model_deletion(self, model_key, timeout=cfg.FUTURE_TIMEOUT):
+        """Wait for the model to be deleted (address unset)"""
+        tstart = time.time()
+        model = self._client.get_model(model_key)
+        while model.address:
+            if time.time() - tstart > timeout:
+                raise errors.FutureTimeoutError(f"Future timeout waiting on model deletion for {model_key}")
+
+            time.sleep(cfg.FUTURE_POLLING_PERIOD)
+            model = self._client.get_model(model_key)
