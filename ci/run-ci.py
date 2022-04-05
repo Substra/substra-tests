@@ -45,7 +45,8 @@ def cluster_name_format(value: str) -> str:
     return value
 
 
-def arg_parse() -> Config:
+# FIXME: arg_parse is too complex, consider refactoring
+def arg_parse() -> Config:  # noqa: C901
     config = Config()
 
     parser = argparse.ArgumentParser(
@@ -244,7 +245,8 @@ def arg_parse() -> Config:
     return config
 
 
-def main() -> None:
+# FIXME: main is too complex, consider refactoring
+def main() -> None:  # noqa: C901
     is_success = False
     config = arg_parse()
     current_project = None

@@ -65,7 +65,8 @@ def _build_image(cfg: Config, tag: str, image: Image, repo: Repository, known_ho
     return build_id
 
 
-def _wait_for_builds(
+# FIXME: _wait_for_builds is too complex, consider refactoring
+def _wait_for_builds(  # noqa: C901
     cfg: Config,
     tag: str,
     images: Dict[str, Tuple[Repository, Image]],

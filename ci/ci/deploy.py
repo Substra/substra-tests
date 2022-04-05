@@ -129,7 +129,8 @@ def _patch_skaffold_file(cfg: Config, repo: Repository, source_dir: str, repo_su
     return skaffold_file
 
 
-def _patch_values_file(cfg: Config, repo: Repository, value_file: str, release: dict) -> None:
+# FIXME: _patch_values_file is too complex, consider refactoring
+def _patch_values_file(cfg: Config, repo: Repository, value_file: str, release: dict) -> None:  # noqa: C901
     with open(value_file) as file:
         data = yaml.load(file, Loader=yaml.FullLoader)
 

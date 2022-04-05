@@ -322,8 +322,11 @@ def test_compute_plan_single_client_failure(factory, client, default_dataset, de
     assert cp.duration is not None
 
 
-@pytest.mark.slow
-def test_compute_plan_aggregate_composite_traintuples(factory, clients, default_datasets, default_metrics):
+# FIXME: test_compute_plan_aggregate_composite_traintuples is too complex, consider refactoring
+@pytest.mark.slow  # noqa: C901
+def test_compute_plan_aggregate_composite_traintuples(  # noqa: C901
+    factory, clients, default_datasets, default_metrics
+):
     """
     Compute plan version of the `test_aggregate_composite_traintuples` method from `test_execution.py`
     """
