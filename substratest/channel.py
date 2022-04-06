@@ -58,7 +58,7 @@ class Channel:
                 raise errors.SynchronizationTimeoutError(
                     f"Asset {asset.key} not synchronized: "
                     f"reference_asset={reference_asset}; "
-                    f"unsynchronized_assets={json.dumps(unsynchronized_assets)}"
+                    f"unsynchronized_assets={json.dumps(unsynchronized_assets, default=str)}"
                 )
 
             # iterate on a copy of the dict as its items are modified inside the for loop
