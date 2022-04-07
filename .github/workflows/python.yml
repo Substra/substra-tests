@@ -12,7 +12,7 @@ on:
 
 env:
   GCP_SERVICE_ACCOUNT: "e2e-tests@connect-314908.iam.gserviceaccount.com"
-  GCP_SERVICE_ACCOUNT_KEY: "ci/keys/connect-314908-3902714646d9.json.gpg"
+  GCP_SERVICE_ACCOUNT_KEY: "keys/connect-314908-3902714646d9.json.gpg"
 
 jobs:
   test:
@@ -20,7 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       SUBSTRA_BRANCH: main
-      SRC_DIRS: substratest tests ci
+      SRC_DIRS: substratest tests
     steps:
       - name: checkout connect-tests
         uses: actions/checkout@v2
@@ -36,11 +36,11 @@ jobs:
       - name: Open GCP key
         env:
           GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
-        run: gpg --quiet --batch --yes --decrypt --passphrase="$GPG_PASSPHRASE" --output ./ci/keys/gcp_sa_key.json "${GCP_SERVICE_ACCOUNT_KEY}"
+        run: gpg --quiet --batch --yes --decrypt --passphrase="$GPG_PASSPHRASE" --output ./keys/gcp_sa_key.json "${GCP_SERVICE_ACCOUNT_KEY}"
 
       - name: Docker login
         run: |
-          gcloud auth activate-service-account "${GCP_SERVICE_ACCOUNT}" --key-file=./ci/keys/gcp_sa_key.json
+          gcloud auth activate-service-account "${GCP_SERVICE_ACCOUNT}" --key-file=./keys/gcp_sa_key.json
           gcloud auth configure-docker 'gcr.io'
 
       - uses: actions/setup-python@v2

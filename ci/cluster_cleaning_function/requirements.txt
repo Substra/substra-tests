@@ -1,2 +1,0 @@
-google-api-python-client==2.41.0
-google-cloud-container==2.10.6
