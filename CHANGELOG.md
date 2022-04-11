@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - ci: datamanager endpoint now returns 404 instead of 400 for non-uuid keys in retrieve calls (#209)
 - ci: tuple endpoints now returns 404 instead of 400 for non-uuid keys in retrieve calls (#216)
 - ci: compute plan endpoint now returns 404 instead of 400 for non-uuid keys in retrieve calls (#219)
+- feat: use latest connect-tools image by default (#237)
 
 ## [0.13.0] - 2022-03-01
 
