@@ -16,11 +16,17 @@ env:
 
 jobs:
   test:
-    name: Local tests
-    runs-on: ubuntu-latest
+    name: test-py-${{ matrix.python }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-20.04]
+        python: ['3.7', '3.8', '3.9']
     env:
-      SUBSTRA_BRANCH: main
-      SRC_DIRS: substratest tests
+      SUBSTRA_REF: main
+      TOOLS_REF: main
+      SRC_DIRS: substratest tests ci
+
     steps:
       - name: checkout connect-tests
         uses: actions/checkout@v2
@@ -31,7 +37,15 @@ jobs:
           repository: owkin/substra
           path: substra
           token: ${{ secrets.OWLFRED_PAT }}
-          ref: ${{ env.SUBSTRA_BRANCH }}
+          ref: ${{ env.SUBSTRA_REF }}
+
+      - name: checkout connect SDK
+        uses: actions/checkout@v2
+        with:
+          repository: owkin/connect-tools
+          path: connect-tools
+          token: ${{ secrets.OWLFRED_PAT }}
+          ref: ${{ env.TOOLS_REF }}
 
       - name: Open GCP key
         env:
@@ -45,7 +59,7 @@ jobs:
 
       - uses: actions/setup-python@v2
         with:
-          python-version: 3.7
+          python-version: ${{ matrix.python }}
 
       - name: Install tools
         run: pip install -r <(egrep "flake|black|isort" requirements.txt)
@@ -63,6 +77,7 @@ jobs:
 
       - name: Install requirements
         run: |
+          pip install --no-cache-dir ./connect-tools
           pip install --no-cache-dir ./substra
           pip install --no-cache-dir -r requirements.txt
 

@@ -41,6 +41,11 @@ def pytest_configure(config):
         "markers",
         "workflows: marks tests as part of a production workflow (deselect with '-m \"not workflows\"')",
     )
+    config.addinivalue_line(
+        "markers",
+        "subprocess_skip: marks that needs to be skip only in subprocess mode "
+        "(deselect with '-m \"not subprocess_skip\"')",
+    )
 
 
 def pytest_addoption(parser):

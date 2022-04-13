@@ -17,13 +17,20 @@ test-remote: pyclean
 test-minimal: pyclean
 	pytest tests -rs -v --durations=0 -m "not slow and not workflows" -n $(PARALLELISM)
 
-test-local: pyclean
-	pytest tests -rs -v --durations=0 -m "not workflows" --local
+test-local: test-subprocess test-docker
+
+test-docker: pyclean
+	DEBUG_SPAWNER=docker pytest tests -rs -v --durations=0 -m "not workflows" --local
+
+test-subprocess: pyclean
+	DEBUG_SPAWNER=subprocess pytest tests -rs -v --durations=0 -m "not workflows and not subprocess_skip" --local
 
 test-workflows: pyclean
-	pytest tests/workflows -v --durations=0
+	pytest tests -v --durations=0 -m "workflows"
 
 test-ci: test-remote test-workflows
+
+test-all: test-local test-ci
 
 install:
 	pip3 install -r requirements.txt

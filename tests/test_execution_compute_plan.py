@@ -7,7 +7,6 @@ from substratest.factory import AlgoCategory
 from substratest.factory import Permissions
 
 
-@pytest.mark.remote_only
 def test_compute_plan_simple(
     factory, client_1, client_2, default_dataset_1, default_dataset_2, default_metrics, channel
 ):

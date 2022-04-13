@@ -1,3 +1,5 @@
+import subprocess
+
 import pytest
 import substra
 from substra.sdk.models import Status
@@ -191,7 +193,7 @@ def test_traintuple_execution_failure(factory, client_1, client_2, default_datas
         dataset=dataset,
         data_samples=[datasample],
     )
-    if client_1.debug:
+    if client_1.backend_mode != substra.BackendType.DEPLOYED:
         with pytest.raises(substra.sdk.backends.local.compute.spawner.base.ExecutionError):
             client_1.add_traintuple(spec)
     else:
@@ -219,16 +221,24 @@ def test_composite_traintuple_execution_failure(factory, client, default_dataset
         dataset=default_dataset,
         data_samples=default_dataset.train_data_sample_keys,
     )
-    if client.debug:
-        with pytest.raises(substra.sdk.backends.local.compute.spawner.base.ExecutionError):
-            composite_traintuple = client.add_composite_traintuple(spec)
-    else:
+    if client.backend_mode == substra.BackendType.DEPLOYED:
         composite_traintuple = client.add_composite_traintuple(spec)
         composite_traintuple = client.wait(composite_traintuple, raises=False)
         assert composite_traintuple.status == Status.failed
         assert composite_traintuple.error_type == substra.sdk.models.TaskErrorType.execution
         assert composite_traintuple.composite.models is None
         assert "Traceback (most recent call last):" in client.download_logs(composite_traintuple.key)
+
+    elif client.backend_mode == substra.BackendType.LOCAL_SUBPROCESS:
+        with pytest.raises(subprocess.CalledProcessError):
+            composite_traintuple = client.add_composite_traintuple(spec)
+
+    elif client.backend_mode == substra.BackendType.LOCAL_DOCKER:
+        with pytest.raises(substra.sdk.backends.local.compute.spawner.base.ExecutionError):
+            composite_traintuple = client.add_composite_traintuple(spec)
+
+    else:
+        raise NotImplementedError(f"Backend mode '{client.backend_mode}' is not supported.")
 
 
 @pytest.mark.slow
@@ -255,10 +265,8 @@ def test_aggregatetuple_execution_failure(factory, client, default_dataset):
         traintuples=composite_traintuples,
         worker=client.node_id,
     )
-    if client.debug:
-        with pytest.raises(substra.sdk.backends.local.compute.spawner.base.ExecutionError):
-            aggregatetuple = client.add_aggregatetuple(spec)
-    else:
+
+    if client.backend_mode == substra.BackendType.DEPLOYED:
         aggregatetuple = client.add_aggregatetuple(spec)
         aggregatetuple = client.wait(aggregatetuple, raises=False)
         for composite_traintuple in composite_traintuples:
@@ -269,6 +277,17 @@ def test_aggregatetuple_execution_failure(factory, client, default_dataset):
         assert aggregatetuple.error_type == substra.sdk.models.TaskErrorType.execution
         assert aggregatetuple.aggregate.models is None
         assert "Traceback (most recent call last):" in client.download_logs(aggregatetuple.key)
+
+    elif client.backend_mode == substra.BackendType.LOCAL_SUBPROCESS:
+        with pytest.raises(subprocess.CalledProcessError):
+            aggregatetuple = client.add_aggregatetuple(spec)
+
+    elif client.backend_mode == substra.BackendType.LOCAL_DOCKER:
+        with pytest.raises(substra.sdk.backends.local.compute.spawner.base.ExecutionError):
+            aggregatetuple = client.add_aggregatetuple(spec)
+
+    else:
+        raise NotImplementedError(f"Backend mode '{client.backend_mode}' is not supported.")
 
 
 @pytest.mark.slow
@@ -675,6 +694,7 @@ def test_use_data_sample_located_in_shared_path(factory, network, client, node_c
     assert list(testtuple.test.perfs.values())[0] == 2
 
 
+@pytest.mark.subprocess_skip
 def test_user_creates_model_folder(factory, client, default_dataset):
     """Check that the model folder is not overwritten by connect"""
     dockerfile = (
@@ -748,6 +768,7 @@ if __name__ == '__main__':
 """  # noqa
 
 
+@pytest.mark.subprocess_skip
 def test_write_to_home_directory(factory, client, default_dataset):
     """The algo writes to the home directory (~/foo)"""
 

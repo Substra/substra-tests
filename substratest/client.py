@@ -25,10 +25,10 @@ class Client:
         super().__init__()
 
         self.node_id = node_id
-        self.debug = debug
         self._client = substra.Client(debug=debug, url=address, insecure=False, token=token)
         if not token:
             token = self._client.login(user, password)
+        self.backend_mode = self._client.backend_mode
         self.token = token
 
     def add_data_sample(self, spec, *args, **kwargs):
