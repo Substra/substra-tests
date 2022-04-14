@@ -12,20 +12,21 @@ from . import errors
 _OVERRIDDEN_FIELDS = (
     # storage address is replaced by each backend with its internal address
     "storage_address",
+    "host",
 )
 
 
 def _anonymize_asset(asset: dict) -> dict:
     """Anonymize asset from an organisation point of view."""
+
     anonymized_asset = dict(asset)  # make a copy so as not to modify input args
     for field, value in asset.items():
-
         if field in _OVERRIDDEN_FIELDS:
             anonymized_asset[field] = None
-
+        elif isinstance(value, list):
+            anonymized_asset[field] = [_anonymize_asset(x) if isinstance(x, dict) else x for x in value]
         elif isinstance(value, dict):
             anonymized_asset[field] = _anonymize_asset(value)
-
     return anonymized_asset
 
 

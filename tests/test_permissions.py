@@ -377,7 +377,11 @@ def test_permissions_denied_head_model_process(factory, client_1, client_2, chan
         dataset=dataset_1,
         data_samples=dataset_1.train_data_sample_keys,
     )
+
     composite_traintuple_1 = client_1.add_composite_traintuple(spec)
+
+    composite_traintuple_1 = client_1.wait(composite_traintuple_1)
+
     channel.wait_for_asset_synchronized(composite_traintuple_1)  # used by client_2
 
     spec = factory.create_composite_traintuple(
