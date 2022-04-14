@@ -12,13 +12,16 @@ _CURRENT_DIR = os.path.dirname(__file__)
 _DEFAULT_NETWORK_CONFIGURATION_PATH = os.path.join(_CURRENT_DIR, "../", "values.yaml")
 _SUBSTRA_TESTS_CONFIG_FILEPATH = os.getenv("SUBSTRA_TESTS_CONFIG_FILEPATH", _DEFAULT_NETWORK_CONFIGURATION_PATH)
 
-_DEFAULT_CONNECT_TOOLS_TAG = (
+_DEFAULT_CONNECT_TOOLS_TAG_LOCAL = (
     f"latest-nvidiacuda11.6.0-base-ubuntu20.04-python{sys.version_info.major}.{sys.version_info.minor}"
 )
+_DEFAULT_CONNECT_TOOLS_TAG_REMOTE = "latest"
 
-_DEFAULT_CONNECT_TOOLS_IMAGE_REMOTE = f"owkin/connect-tools:{_DEFAULT_CONNECT_TOOLS_TAG}-minimal"
-_DEFAULT_CONNECT_TOOLS_IMAGE_LOCAL = f"gcr.io/connect-314908/connect-tools:{_DEFAULT_CONNECT_TOOLS_TAG}-minimal"
-_DEFAULT_CONNECT_TOOLS_IMAGE_WORKFLOWS = f"gcr.io/connect-314908/connect-tools:{_DEFAULT_CONNECT_TOOLS_TAG}-workflows"
+_DEFAULT_CONNECT_TOOLS_IMAGE_REMOTE = f"owkin/connect-tools:{_DEFAULT_CONNECT_TOOLS_TAG_REMOTE}-minimal"
+_DEFAULT_CONNECT_TOOLS_IMAGE_LOCAL = f"gcr.io/connect-314908/connect-tools:{_DEFAULT_CONNECT_TOOLS_TAG_LOCAL}-minimal"
+_DEFAULT_CONNECT_TOOLS_IMAGE_WORKFLOWS = (
+    f"gcr.io/connect-314908/connect-tools:{_DEFAULT_CONNECT_TOOLS_TAG_REMOTE}-workflows"
+)
 
 _DEFAULT_NETWORK_LOCAL_CONFIGURATION_PATH = os.path.join(_CURRENT_DIR, "../", "local-backend-values.yaml")
 
