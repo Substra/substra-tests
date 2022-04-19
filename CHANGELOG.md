@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## [0.15.0] - 2022-04-19
+
+### Changed
+
+- feat: fully covering debug mode test (#230) 
+
+### Fixed
+
+- fix: set remote tag to latest (#241) 
+- fix: permissions head model test (#240) 
+
 ## [0.14.0] - 2022-04-11
 
 ### Added
