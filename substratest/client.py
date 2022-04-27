@@ -1,6 +1,7 @@
 import os
 import tempfile
 import time
+from typing import Optional
 
 import substra
 from substra.sdk import models
