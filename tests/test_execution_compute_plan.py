@@ -108,6 +108,11 @@ def test_compute_plan_simple(
         5,
     }
 
+    # check compute plan perfs
+    performances = client_1.get_performances(cp.key)
+    assert all(len(val) == len(default_metrics) for val in performances.dict().values())
+    assert set(testtuple.test.perfs.values()) == set(performances.performance)
+
     # XXX as the first two tuples have the same rank, there is currently no way to know
     #     which one will be returned first
     workers_rank_0 = set([traintuple_1.worker, traintuple_2.worker])

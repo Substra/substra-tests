@@ -82,6 +82,9 @@ class Client:
     def get_compute_plan(self, *args, **kwargs):
         return self._client.get_compute_plan(*args, **kwargs)
 
+    def get_performances(self, *args, **kwargs):
+        return self._client.get_performances(*args, **kwargs)
+
     def list_data_sample(self, *args, **kwargs):
         return self._client.list_data_sample(*args, **kwargs)
 
