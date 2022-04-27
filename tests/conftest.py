@@ -163,6 +163,8 @@ def network(cfg, client_debug_local):
             address=n.address,
             user=n.user,
             password=n.password,
+            future_timeout=cfg.options.future_timeout,
+            future_polling_period=cfg.options.future_polling_period,
         )
         for n in cfg.nodes
     ]
@@ -314,9 +316,9 @@ def clients(network):
 
 
 @pytest.fixture(scope="session")
-def channel(network):
+def channel(cfg, network):
     """Channel fixture (first node)."""
-    return sbt.Channel(clients=network.clients)
+    return sbt.Channel(network.clients, cfg.options.organization_sync_timeout)
 
 
 @pytest.fixture(scope="session")
@@ -335,5 +337,7 @@ def debug_client(cfg, client):
         address=node.address,
         user=node.user,
         password=node.password,
+        future_timeout=cfg.options.future_timeout,
+        future_polling_period=cfg.options.future_polling_period,
         token=client.token,
     )

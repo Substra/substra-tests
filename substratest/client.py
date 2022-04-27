@@ -8,7 +8,6 @@ from substra.sdk.models import ComputePlanStatus
 from substra.sdk.models import ModelType
 from substra.sdk.models import Status
 
-from . import cfg
 from . import errors
 
 DATASET_DOWNLOAD_FILENAME = "opener.py"
@@ -21,7 +20,18 @@ class Client:
     Parses responses from server to return Asset instances.
     """
 
-    def __init__(self, debug, node_id=None, address=None, token=None, user=None, password=None):
+    def __init__(
+        self,
+        debug: bool,
+        node_id: str,
+        address: str,
+        user: str,
+        password: str,
+        future_timeout: int,
+        future_polling_period: int,
+        token: Optional[str] = None,
+    ):
+
         super().__init__()
 
         self.node_id = node_id
@@ -30,6 +40,8 @@ class Client:
             token = self._client.login(user, password)
         self.backend_mode = self._client.backend_mode
         self.token = token
+        self.future_timeout = future_timeout
+        self.future_polling_period = future_polling_period
 
     def add_data_sample(self, spec, *args, **kwargs):
         key = self._client.add_data_sample(spec.dict(), *args, **kwargs)
@@ -235,7 +247,11 @@ class Client:
 
         return getter(asset.key)
 
-    def wait(self, asset, timeout=cfg.FUTURE_TIMEOUT, raises=True):
+    def wait(self, asset, raises=True, timeout=None):
+
+        if timeout is None:
+            timeout = self.future_timeout
+
         tstart = time.time()
         while asset.status not in [
             Status.done.value,
@@ -248,7 +264,7 @@ class Client:
             if time.time() - tstart > timeout:
                 raise errors.FutureTimeoutError(f"Future timeout on {asset}")
 
-            time.sleep(cfg.FUTURE_POLLING_PERIOD)
+            time.sleep(self.future_polling_period)
             asset = self.get(asset)
 
         if raises and asset.status in (Status.failed.value, ComputePlanStatus.failed.value):
@@ -259,13 +275,13 @@ class Client:
 
         return asset
 
-    def wait_model_deletion(self, model_key, timeout=cfg.FUTURE_TIMEOUT):
+    def wait_model_deletion(self, model_key):
         """Wait for the model to be deleted (address unset)"""
         tstart = time.time()
         model = self._client.get_model(model_key)
         while model.address:
-            if time.time() - tstart > timeout:
+            if time.time() - tstart > self.future_timeout:
                 raise errors.FutureTimeoutError(f"Future timeout waiting on model deletion for {model_key}")
 
-            time.sleep(cfg.FUTURE_POLLING_PERIOD)
+            time.sleep(self.future_polling_period)
             model = self._client.get_model(model_key)

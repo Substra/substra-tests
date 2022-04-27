@@ -2,6 +2,9 @@ options:
   enable_intermediate_model_removal: False
   enable_model_download: True
   # minikube: True
+  # future_timeout: 300
+  # future_polling_period: 0.5
+  # organization_sync_timeout: 300
 nodes:
   - name: 'node-1'
     msp_id: 'MyOrg1MSP'
@@ -15,4 +18,3 @@ nodes:
     user: 'node-2'
     password: 'p@sswr0d45'
     shared_path: '/tmp/org-2/servermedias'
-

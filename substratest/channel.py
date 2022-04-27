@@ -5,7 +5,6 @@ import typing
 
 import substra
 
-from . import cfg
 from . import errors
 
 # fields overriden by the backend that must be stripped in order to anonymize the asset
@@ -34,9 +33,10 @@ def _anonymize_asset(asset: dict) -> dict:
 class Channel:
     """Represents a channel, that is to say a group of users belonging to the same channel."""
 
-    clients: typing.List[substra.Client] = dataclasses.field(default_factory=list)
+    clients: typing.List[substra.Client]
+    organization_sync_timeout: int
 
-    def wait_for_asset_synchronized(self, asset, timeout=cfg.DELAY_ORGANISATIONS_SYNCHRONIZATION):
+    def wait_for_asset_synchronized(self, asset):
         """Check if an asset is synchronized in all organisations.
 
         Asset are synchronized through orchestrator event in all organisation, as a
@@ -53,7 +53,7 @@ class Channel:
         tstart = time.time()
 
         while True:
-            if time.time() - tstart > timeout:
+            if time.time() - tstart > self.organization_sync_timeout:
                 # provide representation of unsynchronized assets as it will help
                 # to understand quickly a test failure
                 raise errors.SynchronizationTimeoutError(

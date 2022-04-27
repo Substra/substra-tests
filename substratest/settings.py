@@ -47,6 +47,9 @@ class Options(pydantic.BaseModel):
     enable_intermediate_model_removal: bool
     enable_model_download: bool
     minikube: bool = False
+    future_timeout: int = 300
+    future_polling_period: float = 0.5
+    organization_sync_timeout: int = 300
 
 
 class Settings(pydantic.BaseModel):
