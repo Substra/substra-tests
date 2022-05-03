@@ -266,7 +266,6 @@ def test_compute_plan_update(factory, client, default_dataset, default_metric):
     assert testtuples[1].metadata == {"foo": "bar"}
 
 
-@pytest.mark.skip(reason="to fix, see issue connect-backend#889")
 @pytest.mark.slow
 @pytest.mark.remote_only
 def test_compute_plan_single_client_failure(factory, client, default_dataset, default_metric):
