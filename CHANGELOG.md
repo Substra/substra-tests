@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## [0.16.0] - 2022-05-03
+
+### Added
+- test: get_performances from a compute plan key (#243)
+- test: test the base docker image with kaniko #245
+
+### Changed
+
+- chore: refactor config (#246)
+
+### Fixed
+
+- fix: add missing type hint import (#247)
+
 ## [0.15.0] - 2022-04-19
 
 ### Changed
