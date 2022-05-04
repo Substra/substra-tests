@@ -312,15 +312,6 @@ class DatasetSpec(_Spec):
             return f.read()
 
 
-class MetricSpec(_Spec):
-    name: str
-    description: str
-    name: str
-    file: str
-    metadata: typing.Dict[str, str] = None
-    permissions: Permissions = None
-
-
 DEFAULT_ALGO_SCRIPTS = {
     AlgoCategory.simple: DEFAULT_ALGO_SCRIPT,
     AlgoCategory.composite: DEFAULT_COMPOSITE_ALGO_SCRIPT,
@@ -335,6 +326,10 @@ class AlgoSpec(_Spec):
     file: str
     metadata: typing.Dict[str, str] = None
     permissions: Permissions = None
+
+
+class MetricSpec(AlgoSpec):
+    category: AlgoCategory = pydantic.Field(AlgoCategory.metric, const=True)
 
 
 class TraintupleSpec(_Spec):
