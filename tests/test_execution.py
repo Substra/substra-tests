@@ -148,6 +148,7 @@ def test_tuples_execution_on_different_nodes(
     assert list(testtuple.test.perfs.values())[0] == 2
 
 
+@pytest.mark.skip(reason="to fix, see issue connect-tests#254")
 @pytest.mark.remote_only
 @pytest.mark.slow
 @pytest.mark.parametrize(
