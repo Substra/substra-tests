@@ -110,6 +110,9 @@ class Client:
     def get_dataset(self, *args, **kwargs):
         return self._client.get_dataset(*args, **kwargs)
 
+    def get_data_sample(self, *args, **kwargs):
+        return self._client.get_data_sample(*args, **kwargs)
+
     def list_dataset(self, *args, **kwargs):
         return self._client.list_dataset(*args, **kwargs)
 
@@ -239,6 +242,7 @@ class Client:
             models.Aggregatetuple: self.get_aggregatetuple,
             models.CompositeTraintuple: self.get_composite_traintuple,
             models.ComputePlan: self.get_compute_plan,
+            models.DataSample: self.get_data_sample,
         }
 
         try:
