@@ -527,6 +527,7 @@ class _BaseComputePlanSpec(_Spec, abc.ABC):
 
 
 class ComputePlanSpec(_BaseComputePlanSpec):
+    key: str
     tag: str
     metadata: typing.Dict[str, str] = None
     clean_models: bool
@@ -770,8 +771,9 @@ class AssetsFactory:
             metadata=metadata,
         )
 
-    def create_compute_plan(self, tag="", clean_models=False, metadata=None):
+    def create_compute_plan(self, key=None, tag="", clean_models=False, metadata=None):
         return ComputePlanSpec(
+            key=key or random_uuid(),
             traintuples=[],
             composite_traintuples=[],
             aggregatetuples=[],

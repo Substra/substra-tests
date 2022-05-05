@@ -7,9 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+- BREAKING CHANGE: feat!: update tests to give a key to ComputePlanSpec
+
 ## [0.16.0] - 2022-05-03
 
 ### Added
+
 - test: get_performances from a compute plan key (#243)
 - test: test the base docker image with kaniko #245
 
@@ -25,12 +28,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- feat: fully covering debug mode test (#230) 
+- feat: fully covering debug mode test (#230)
 
 ### Fixed
 
-- fix: set remote tag to latest (#241) 
-- fix: permissions head model test (#240) 
+- fix: set remote tag to latest (#241)
+- fix: permissions head model test (#240)
 
 ## [0.14.0] - 2022-04-11
 

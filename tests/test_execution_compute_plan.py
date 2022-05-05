@@ -1,3 +1,5 @@
+import uuid
+
 import pytest
 import substra
 from substra.sdk import models
@@ -17,12 +19,14 @@ def test_compute_plan_simple(
     - 1 testtuple executed on node 1 depending on the last traintuple and on multiple metrics
     """
 
+    cp_key = str(uuid.uuid4())
     spec = factory.create_algo(AlgoCategory.simple)
     algo_2 = client_2.add_algo(spec)
     channel.wait_for_asset_synchronized(algo_2)
 
     # create compute plan
     cp_spec = factory.create_compute_plan(
+        key=cp_key,
         tag="foo",
         metadata={"foo": "bar"},
     )
@@ -61,6 +65,7 @@ def test_compute_plan_simple(
     cp_added = client_1.add_compute_plan(cp_spec)
 
     cp = client_1.wait(cp_added)
+    assert cp.key == cp_key
     assert cp.tag == "foo"
     assert cp.metadata == {"foo": "bar"}
     assert cp.task_count == cp.done_count == 4
