@@ -510,10 +510,9 @@ def test_compute_plan_circular_dependency_failure(factory, client, default_datas
     assert "missing dependency among inModels IDs" in str(e.value)
 
 
-@pytest.mark.skip(reason="to fix, see issue connect-backend#888")
 @pytest.mark.slow
 @pytest.mark.remote_only
-def test_execution_compute_plan_canceled(factory, client, default_dataset):
+def test_execution_compute_plan_canceled(factory, client, default_dataset, cfg):
     # XXX A canceled compute plan can be done if the it is canceled while it last tuples
     #     are executing on the workers. The compute plan status will in this case change
     #     from canceled to done.
@@ -544,10 +543,9 @@ def test_execution_compute_plan_canceled(factory, client, default_dataset):
     first_traintuple = client.wait(first_traintuple)
     assert first_traintuple.status == models.Status.done
 
-    cp = client.cancel_compute_plan(cp.key)
-    assert cp.status == models.ComputePlanStatus.canceled
-
-    cp = client.wait(cp, raises=False)
+    client.cancel_compute_plan(cp.key)
+    # as cancel request do not directly update localrep we need to wait for the sync
+    cp = client.wait(cp, raises=False, timeout=cfg.options.organization_sync_timeout)
     assert cp.status == models.ComputePlanStatus.canceled
     assert cp.end_date is not None
     assert cp.duration is not None
