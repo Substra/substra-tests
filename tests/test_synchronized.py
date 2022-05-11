@@ -56,7 +56,6 @@ def test_synchronized_datasample(clients, factory, channel, current_client):
     channel.wait_for_asset_synchronized(datasample)
 
 
-@pytest.mark.skip(reason="to fix, see issue connect-tests#258")
 @pytest.mark.remote_only
 def test_synchronized_traintuple(clients, factory, channel, current_client):
     if len(clients) < 2:
@@ -84,4 +83,5 @@ def test_synchronized_traintuple(clients, factory, channel, current_client):
         data_samples=[datasample.key],
     )
     traintuple = current_client.add_traintuple(spec)
+    traintuple = current_client.wait(traintuple)
     channel.wait_for_asset_synchronized(traintuple)
