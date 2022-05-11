@@ -28,6 +28,7 @@ def test_compute_plan_simple(
     cp_spec = factory.create_compute_plan(
         key=cp_key,
         tag="foo",
+        name="Bar",
         metadata={"foo": "bar"},
     )
 
