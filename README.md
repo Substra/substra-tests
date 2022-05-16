@@ -117,3 +117,15 @@ This repository contains the end to end tests definition. They validate there is
 - In case of nightly failure or failure on the main branches, ensure the issue is tracked (through Github Issues) and fixed.
 - They are not responsible for writing new tests, but they are responsible for maintaining tooling to write some tests. They still need to review the code proposing new tests.
 - If a squad needs new tooling, the requester should write it (like in other components). If the change is straightforward, the requester can open a new PR directly. If the change requires architectural or concept modification, then the requester should first discuss with the code owners.
+
+
+## M1 User Workflow test
+
+requirements: `python 3.8+`
+
+To run the workflow on M1 computer (arm64) `hdf5` library needs to be installed directly with brew or mac ports:
+
+```brew install hdf5
+export HDF5_DIR="$(brew --prefix hdf5)"
+pip install --no-binary=h5py h5py
+```
