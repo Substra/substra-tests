@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## [0.18.0] - 2022-05-16
+
 ### Changed
 
 - BREAKING CHANGE: add mandatory name field to compute plan (#257)
