@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - BREAKING CHANGE: feat!: update tests to give a key to ComputePlanSpec
+- Add a test on GPU support, skipped by default (#248)
 
 ## [0.16.0] - 2022-05-03
 
