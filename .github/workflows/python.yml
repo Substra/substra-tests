@@ -8,7 +8,7 @@ on:
     branches:
       - "main"
   schedule:
-    - cron: '0 0 * * *' # every day at midnight
+    - cron: "0 0 * * *" # every day at midnight
 
 env:
   GCP_SERVICE_ACCOUNT: "e2e-tests@connect-314908.iam.gserviceaccount.com"
@@ -21,7 +21,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-20.04]
-        python: ['3.7', '3.8', '3.9']
+        python: ["3.7", "3.8", "3.9"]
     env:
       SUBSTRA_REF: main
       TOOLS_REF: main
@@ -82,4 +82,18 @@ jobs:
           pip install --no-cache-dir -r requirements.txt
 
       - name: Test
-        run: make test-local
+        run: |
+          start=`date +%s`
+          python -u ./run-local-test.py \
+            --write-summary-to-file ./.slack_message
+          end=`date +%s`
+          echo "LOCAL_TESTS_DURATION_SECONDS=$((end-start))" >> $GITHUB_ENV
+
+      - if: always() && github.event_name == 'schedule'
+        name: Send Slack report
+        run: |
+          ./send-slack-report.py '${{ secrets.SLACK_WEBHOOK }}' .slack_message \
+          --title 'SDK local tests' \
+          --status '${{ job.status }}' \
+          --link 'https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}' \
+          --duration-seconds "${LOCAL_TESTS_DURATION_SECONDS}"
