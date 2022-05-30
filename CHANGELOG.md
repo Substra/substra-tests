@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## [0.20.0] - 2022-05-30
+
 ### Added
 
 - feat: add slack bot for sdk local tests (publish on #component_substra_sdk with the Substra-CI app) (#270)
