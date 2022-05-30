@@ -8,7 +8,7 @@ on:
     branches:
       - "main"
   schedule:
-    - cron: "0 0 * * *" # every day at midnight
+    - cron: "12 3 * * 2-6" # every Tuesday to Saturday at 3:12 AM
 
 env:
   GCP_SERVICE_ACCOUNT: "e2e-tests@connect-314908.iam.gserviceaccount.com"
