@@ -171,6 +171,7 @@ def test_traintuple_build_failure(dockerfile, factory, client, default_dataset):
     )
     traintuple = client.add_traintuple(spec)
     traintuple = client.wait(traintuple, raises=False)
+
     assert traintuple.status == Status.failed
     assert traintuple.error_type == substra.sdk.models.TaskErrorType.build
     assert traintuple.train.models is None
@@ -200,6 +201,7 @@ def test_traintuple_execution_failure(factory, client_1, client_2, default_datas
     else:
         traintuple = client_1.add_traintuple(spec)
         traintuple = client_1.wait(traintuple, raises=False)
+
         assert traintuple.status == Status.failed
         assert traintuple.error_type == substra.sdk.models.TaskErrorType.execution
         assert traintuple.train.models is None
@@ -225,6 +227,7 @@ def test_composite_traintuple_execution_failure(factory, client, default_dataset
     if client.backend_mode == substra.BackendType.DEPLOYED:
         composite_traintuple = client.add_composite_traintuple(spec)
         composite_traintuple = client.wait(composite_traintuple, raises=False)
+
         assert composite_traintuple.status == Status.failed
         assert composite_traintuple.error_type == substra.sdk.models.TaskErrorType.execution
         assert composite_traintuple.composite.models is None
@@ -270,10 +273,12 @@ def test_aggregatetuple_execution_failure(factory, client, default_dataset):
     if client.backend_mode == substra.BackendType.DEPLOYED:
         aggregatetuple = client.add_aggregatetuple(spec)
         aggregatetuple = client.wait(aggregatetuple, raises=False)
+
         for composite_traintuple in composite_traintuples:
             composite_traintuple = client.get_composite_traintuple(composite_traintuple.key)
             assert composite_traintuple.status == Status.done
             assert composite_traintuple.error_type is None
+
         assert aggregatetuple.status == Status.failed
         assert aggregatetuple.error_type == substra.sdk.models.TaskErrorType.execution
         assert aggregatetuple.aggregate.models is None

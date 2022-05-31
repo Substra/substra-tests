@@ -258,14 +258,21 @@ class Client:
             timeout = self.future_timeout
 
         tstart = time.time()
-        while asset.status not in [
-            Status.done.value,
-            Status.failed.value,
-            Status.canceled.value,
-            ComputePlanStatus.done.value,
-            ComputePlanStatus.failed.value,
-            ComputePlanStatus.canceled.value,
-        ]:
+        while True:
+            if asset.status in (
+                Status.done.value,
+                Status.canceled.value,
+                ComputePlanStatus.done.value,
+                ComputePlanStatus.failed.value,
+                ComputePlanStatus.canceled.value,
+            ):
+                break
+
+            if asset.status == Status.failed.value and asset.error_type is not None:
+                # when dealing with a failed tuple, wait for the error_type field of the tuple to be set
+                # i.e. wait for the registration of the failure report
+                break
+
             if time.time() - tstart > timeout:
                 raise errors.FutureTimeoutError(f"Future timeout on {asset}")
 
