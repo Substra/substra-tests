@@ -1,5 +1,3 @@
-import subprocess
-
 import pytest
 import substra
 from substra.sdk.models import Status
@@ -233,11 +231,7 @@ def test_composite_traintuple_execution_failure(factory, client, default_dataset
         assert composite_traintuple.composite.models is None
         assert "Traceback (most recent call last):" in client.download_logs(composite_traintuple.key)
 
-    elif client.backend_mode == substra.BackendType.LOCAL_SUBPROCESS:
-        with pytest.raises(subprocess.CalledProcessError):
-            composite_traintuple = client.add_composite_traintuple(spec)
-
-    elif client.backend_mode == substra.BackendType.LOCAL_DOCKER:
+    elif client.backend_mode in (substra.BackendType.LOCAL_SUBPROCESS, substra.BackendType.LOCAL_DOCKER):
         with pytest.raises(substra.sdk.backends.local.compute.spawner.base.ExecutionError):
             composite_traintuple = client.add_composite_traintuple(spec)
 
@@ -284,11 +278,7 @@ def test_aggregatetuple_execution_failure(factory, client, default_dataset):
         assert aggregatetuple.aggregate.models is None
         assert "Traceback (most recent call last):" in client.download_logs(aggregatetuple.key)
 
-    elif client.backend_mode == substra.BackendType.LOCAL_SUBPROCESS:
-        with pytest.raises(subprocess.CalledProcessError):
-            aggregatetuple = client.add_aggregatetuple(spec)
-
-    elif client.backend_mode == substra.BackendType.LOCAL_DOCKER:
+    elif client.backend_mode in (substra.BackendType.LOCAL_SUBPROCESS, substra.BackendType.LOCAL_DOCKER):
         with pytest.raises(substra.sdk.backends.local.compute.spawner.base.ExecutionError):
             aggregatetuple = client.add_aggregatetuple(spec)
 

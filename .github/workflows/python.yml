@@ -37,9 +37,9 @@ jobs:
           repository: owkin/substra
           path: substra
           token: ${{ secrets.OWLFRED_PAT }}
-          ref: ${{ env.SUBSTRA_REF }}
+          ref: change/subprocess_errror
 
-      - name: checkout connect SDK
+      - name: checkout connect tools
         uses: actions/checkout@v2
         with:
           repository: owkin/connect-tools
