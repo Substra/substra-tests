@@ -1,4 +1,3 @@
-import csv
 import pathlib
 import typing
 
@@ -32,15 +31,18 @@ _METRICS = _PARENT_DIR / "assets" / "metrics.py"
 _AGGREGATE_ALGO = _PARENT_DIR / "assets" / "aggregate_algo.py"
 _COMPOSITE_ALGO = _PARENT_DIR / "assets" / "composite_algo.py"
 
-_SEED = 42
-
-_ML_BATCH_SIZE = 32
-_ML_NUM_UPDATES = 50
+_SEED = 1
 
 _INPUT_SIZE = 28
 
 # represents the number of orgs: it will be used to split the data into NB_ORGS parts
 _NB_ORGS = 2
+
+
+_EXPECTED_RESULTS = {
+    (500, 200): [0.81, 0.82, 0.85, 0.88, 0.88, 0.9, 0.86, 0.89, 0.86, 0.9],  # E2E
+    (60000, 10000): [0.8422, 0.8424, 0.8982, 0.8938, 0.9224, 0.9192, 0.9436, 0.9496, 0.9496, 0.9564],  # benchmark
+}
 
 
 @pytest.fixture
@@ -78,12 +80,17 @@ def clients(client_debug_local, clients):
         assert len(clients) == 1
         return [clients[0]] * _NB_ORGS
     else:
-        assert len(clients) <= _NB_ORGS
+        assert len(clients) >= _NB_ORGS
         return clients[:_NB_ORGS]
 
 
 @pytest.fixture
-def mnist_train_test():
+def nb_train_test_samples(pytestconfig):
+    return (int(pytestconfig.getoption("nb_train_datasamples")), int(pytestconfig.getoption("nb_test_datasamples")))
+
+
+@pytest.fixture
+def mnist_train_test(nb_train_test_samples):
     """Download MNIST data using sklearn and store it to disk.
 
     This will check if MNIST is present in a cache data folder. If not it will download
@@ -97,15 +104,23 @@ def mnist_train_test():
     train_data_filepath = _CACHE_PATH / "train.h5"
     test_data_filepath = _CACHE_PATH / "test.h5"
 
-    if train_data_filepath.exists() and test_data_filepath.exists():
-        return train_data_filepath, test_data_filepath
-
     mnist = sk_fetch_openml(_MNIST_DATASET_NAME)
 
-    # MNIST has 70k samples, 60k are used for trained, 10k for testing
-    nb_train = 60000
-    X_train, y_train = mnist.data[:nb_train], mnist.target[:nb_train]
-    X_test, y_test = mnist.data[nb_train:], mnist.target[nb_train:]
+    nb_train, nb_test = nb_train_test_samples
+
+    assert nb_train + nb_test <= 70000, "MNIST has 70k samples"
+
+    indices = np.arange(mnist.data.shape[0])
+    rng = np.random.default_rng(seed=_SEED)
+    rng.shuffle(indices)
+
+    train_indices = indices[:nb_train]
+    test_indices = indices[nb_train : nb_train + nb_test]
+
+    X_train, y_train = mnist.data.iloc[train_indices], mnist.target.iloc[train_indices]
+    X_test, y_test = mnist.data.iloc[test_indices], mnist.target.iloc[test_indices]
+    assert len(X_train) == len(y_train) == nb_train
+    assert len(X_test) == len(y_test) == nb_test
 
     # Preprocess training data and save it in HDF5 files
     X_train = X_train.values.reshape((-1, 1, _INPUT_SIZE, _INPUT_SIZE)).astype(np.float32) / 255.0
@@ -128,7 +143,6 @@ def _split_into_datasamples(
     path: pathlib.Path,
     type_: str,
     destination: pathlib.Path,
-    nb_samples: int,
     nb_orgs: int,
 ):
     """Split h5 file into datasample folders.
@@ -142,35 +156,30 @@ def _split_into_datasamples(
         data_X = np.array(fp["X"])
         data_y = np.array(fp["y"])
 
-    # Shuffle data
-    np.random.seed(_SEED)
-    indices = np.arange(data_X.shape[0])
-    np.random.shuffle(indices)
-    data_X = data_X[indices]
-    data_y = data_y[indices]
-    assert nb_samples < data_X.shape[0]
-
     orgs = [f"org{org_idx}" for org_idx in range(nb_orgs)]
-    folders_per_org = [list() for _ in range(nb_orgs)]
+    folders_per_org = list()
 
-    for i in range(nb_samples):
-        sample_idx = (i // 2) + 1
-        pseudoid = i + 1
-        org_idx = i % nb_orgs
-        foldername = f"sample_{sample_idx:08d}"
-        folder = destination / orgs[org_idx] / f"{type_}_data_samples" / foldername
+    len_X = len(data_X) // nb_orgs
+    len_y = len(data_y) // nb_orgs
+
+    for org_idx in range(nb_orgs):
+        # split datasamples into chunks for each org
+        org_data_X = data_X[org_idx * len_X : (org_idx + 1) * len_X]
+        org_data_y = data_y[org_idx * len_y : (org_idx + 1) * len_y]
+
+        assert len(org_data_X) == len_X
+        assert len(org_data_y) == len_y
+
+        folder = destination / orgs[org_idx] / f"{type_}_data_samples"
         folder.mkdir(parents=True, exist_ok=True)
 
-        folders_per_org[org_idx].append(folder)
+        folders_per_org.append(folder)
 
-        filename_npy = folder / f"{type_}_{pseudoid:08d}.npy"
-        np.save(str(filename_npy), data_X[i])
+        filename_X_npy = folder / "x.npy"
+        np.save(str(filename_X_npy), org_data_X)
 
-        filename_csv = folder / f"{type_}_{pseudoid:08d}.csv"
-        with open(filename_csv, "w") as fp:
-            writer = csv.writer(fp, delimiter=";")
-            writer.writerow(["pseudoid", "label"])
-            writer.writerow([f"{type_}_{pseudoid:08d}", data_y[i]])
+        filename_y_npy = folder / "y.npy"
+        np.save(str(filename_y_npy), org_data_y)
 
     return folders_per_org
 
@@ -178,22 +187,25 @@ def _split_into_datasamples(
 class _DatasampleFolders(pydantic.BaseModel):
     """Datasample folders for a single org."""
 
-    train: typing.List[str] = []
-    test: typing.List[str] = []
+    train: str = None
+    test: str = None
 
 
 @pytest.fixture
-def datasamples_folders(tmpdir, mnist_train_test):
-    """Split input dataset into datasamples for each orgs."""
+def datasamples_folders(tmpdir, mnist_train_test, nb_train_test_samples):
+    """Split input dataset into datasamples for each orgs.
+    Total available datasamples: 70k
+    """
     train_path, test_path = mnist_train_test
     tmpdir = pathlib.Path(tmpdir)
 
-    folders = [_DatasampleFolders() for org_idx in range(_NB_ORGS)]
+    folders = [_DatasampleFolders() for _ in range(_NB_ORGS)]
 
-    # XXX this example is using 700 samples (out of 70k) as it is sufficient to have
-    #     a good performance.
-    train_folders = _split_into_datasamples(train_path, "train", tmpdir, nb_samples=500, nb_orgs=_NB_ORGS)
-    test_folders = _split_into_datasamples(test_path, "test", tmpdir, nb_samples=200, nb_orgs=_NB_ORGS)
+    nb_train_samples, nb_test_samples = nb_train_test_samples
+    print(f"nb of train datasamples: {nb_train_samples}, test datasamples: {nb_test_samples}")
+
+    train_folders = _split_into_datasamples(train_path, "train", tmpdir, nb_orgs=_NB_ORGS)
+    test_folders = _split_into_datasamples(test_path, "test", tmpdir, nb_orgs=_NB_ORGS)
 
     for train, test, folder in zip(train_folders, test_folders, folders):
         folder.train = train
@@ -203,7 +215,6 @@ def datasamples_folders(tmpdir, mnist_train_test):
 
 class _InputsSubset(pydantic.BaseModel):
     """Inputs objects required to launch a FL pipeline on a Connect org.
-
     One subset per org.
     """
 
@@ -226,41 +237,27 @@ def inputs(datasamples_folders, factory, clients, channel, algo_dockerfile, metr
     """Register for each orgs substra inputs (dataset, datasamples and metric)."""
     results = _Inputs(datasets=[_InputsSubset() for _ in range(_NB_ORGS)])
 
-    batch_size = 100
-
-    def _split_into_chunks(items, size):
-        """Yield successive n-sized chunks from lst."""
-        for i in range(0, len(items), size):
-            yield items[i : i + size]
-
-    for client, folders, res in zip(clients, datasamples_folders, results.datasets):
+    for org_idx, (client, folders, res) in enumerate(zip(clients, datasamples_folders, results.datasets)):
         spec = factory.create_dataset(py_script=_OPENER.open().read())
+        spec.metadata = {
+            sb.sdk.DEBUG_OWNER: f"Org{org_idx+1}MSP",
+        }
         res.dataset = client.add_dataset(spec)
 
-        train_keys = []
-        for paths in _split_into_chunks(folders.train, batch_size):
-            keys_per_batch = client.add_data_samples(
-                sbt.factory.DataSampleBatchSpec(
-                    paths=[str(p) for p in paths],
-                    test_only=False,
-                    data_manager_keys=[res.dataset.key],
-                )
+        train_keys = client.add_data_samples(
+            sbt.factory.DataSampleBatchSpec(
+                paths=[str(folders.train)],
+                test_only=False,
+                data_manager_keys=[res.dataset.key],
             )
-            train_keys.extend(keys_per_batch)
-
-        test_keys = []
-        for paths in _split_into_chunks(folders.test, batch_size):
-            keys_per_batch = client.add_data_samples(
-                sbt.factory.DataSampleBatchSpec(
-                    paths=[str(p) for p in paths],
-                    test_only=True,
-                    data_manager_keys=[res.dataset.key],
-                )
+        )
+        client.add_data_samples(
+            sbt.factory.DataSampleBatchSpec(
+                paths=[str(folders.test)],
+                test_only=True,
+                data_manager_keys=[res.dataset.key],
             )
-            test_keys.extend(keys_per_batch)
-
-        # XXX is it required to link dataset with datasamples ?
-
+        )
         spec = factory.create_metric(dockerfile=metrics_dockerfile, py_script=_METRICS.open().read())
         res.metric = client.add_metric(spec)
 
@@ -292,7 +289,7 @@ def inputs(datasamples_folders, factory, clients, channel, algo_dockerfile, metr
 
 @pytest.mark.slow
 @pytest.mark.workflows
-def test_mnist(factory, inputs, clients):
+def test_mnist(factory, inputs, clients, nb_train_test_samples):
     client = clients[0]
     nb_rounds = 20
     testing_rounds = (1, 5, 10, 15, 20)
@@ -312,10 +309,13 @@ def test_mnist(factory, inputs, clients):
     composite_specs = [None] * len(inputs.datasets)
     aggregate_spec = None
 
-    # At each round all node samples are used by the composite traintuple. This is due
-    # to the fact that the algo processes 32 (batch_size) * 50 (num_updates) samples,
-    # and that the total amount of samples per node is smaller than this value.
-    assert all([len(org.dataset.train_data_sample_keys) < _ML_BATCH_SIZE * _ML_NUM_UPDATES for org in inputs.datasets])
+    # At each round, the whole dataset is passed to the task
+    # For the e2e test, the train task uses 50 updates * 32 batch size
+    # samples and there are 500 train samples so it goes over the whole dataset
+    # several times.
+    # For the benchmark, there are 60'000 samples so it does not use the whole dataset
+    # but it does not make much difference in the final result and simplifies the code
+    # to pass the whole dataset.
 
     # next rounds
     for round_idx in range(nb_rounds):
@@ -328,6 +328,9 @@ def test_mnist(factory, inputs, clients):
                 in_head_model=composite_specs[idx],
                 in_trunk_model=aggregate_spec,
                 out_trunk_model_permissions=trunk_model_perms[idx],
+                metadata={
+                    "round_idx": round_idx,
+                },
             )
             for idx, org_inputs in enumerate(inputs.datasets)
         ]
@@ -336,6 +339,9 @@ def test_mnist(factory, inputs, clients):
             aggregate_algo=inputs.aggregate_algo,
             worker=aggregate_worker,
             in_models=composite_specs,
+            metadata={
+                "round_idx": round_idx,
+            },
         )
 
         # add testtuples for specified rounds
@@ -346,6 +352,9 @@ def test_mnist(factory, inputs, clients):
                     metrics=[org_inputs.metric],
                     dataset=org_inputs.dataset,
                     data_samples=org_inputs.dataset.test_data_sample_keys,
+                    metadata={
+                        "round_idx": round_idx,
+                    },
                 )
 
     cp = client.add_compute_plan(cp_spec)
@@ -355,8 +364,23 @@ def test_mnist(factory, inputs, clients):
     testtuples = client.list_compute_plan_testtuples(cp.key)
     testtuples = sorted(testtuples, key=lambda x: (x.rank, x.worker))
     for testtuple in testtuples:
-        print(f"testtuple({testtuple.worker}) - {testtuple.rank} " f"perf: {list(testtuple.test.perfs.values())[0]}")
-    # check perf is as good as expected: after 20 rounds we expect a performance of
-    # around 0.86. To avoid a flaky test a lower performance is expected.
-    mininum_expected_perf = 0.85
-    assert all([list(testtuple.test.perfs.values())[0] > mininum_expected_perf for testtuple in testtuples[-_NB_ORGS:]])
+        print(
+            f"testtuple({testtuple.worker}) - rank {testtuple.rank} "
+            f"- round {testtuple.metadata['round_idx']} "
+            f"perf: {list(testtuple.test.perfs.values())[0]}"
+        )
+
+    # performance should be deterministic a fixed number of samples:
+    if nb_train_test_samples in _EXPECTED_RESULTS.keys():
+        expected_perf = _EXPECTED_RESULTS[nb_train_test_samples]
+        assert all(
+            [
+                pytest.approx(list(testtuple.test.perfs.values())[0], perf)
+                for (perf, testtuple) in zip(expected_perf, testtuples)
+            ]
+        )
+    else:
+        # check perf is as good as expected: after 20 rounds we expect a performance of
+        # around 0.86. To avoid a flaky test a lower performance is expected.
+        mininum_expected_perf = 0.85
+        assert all([list(testtuple.test.perfs.values())[0] > mininum_expected_perf for testtuple in testtuples])

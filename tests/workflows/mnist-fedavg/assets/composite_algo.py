@@ -29,7 +29,6 @@ class Network(torch.nn.Module):
 
 
 def _fit(model, X, y, batch_size, num_updates, rank):
-    assert len(X) <= batch_size * num_updates
     tensor_x = torch.FloatTensor(X)  # transform to torch tensor
     tensor_y = torch.LongTensor(y)
     dataset = torch.utils.data.TensorDataset(tensor_x, tensor_y)

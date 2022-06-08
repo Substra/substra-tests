@@ -1,9 +1,10 @@
 import substratools as tools
+from sklearn.metrics import accuracy_score
 
 
 class NodeMetrics(tools.Metrics):
     def score(self, y_true, y_pred):
-        return (y_true == y_pred).mean()
+        return accuracy_score(y_true=y_true, y_pred=y_pred)
 
 
 if __name__ == "__main__":

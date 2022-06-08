@@ -55,6 +55,18 @@ def pytest_addoption(parser):
         action="store_true",
         help="Run the tests on the local backend only. Otherwise run the tests only on the remote backend.",
     )
+    parser.addoption(
+        "--nb-train-datasamples",
+        default=500,
+        type=int,
+        help="number of train datasamples to use for the MNIST benchmark",
+    )
+    parser.addoption(
+        "--nb-test-datasamples",
+        default=200,
+        type=int,
+        help="number of test datasamples to use for the MNIST benchmark",
+    )
 
 
 def pytest_collection_modifyitems(config, items):

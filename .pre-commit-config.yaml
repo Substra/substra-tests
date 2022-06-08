@@ -5,7 +5,6 @@ repos:
       - id: black
         language_version: python3
         files: (substratest|tests|ci)/.+\.py
-
   - repo: https://github.com/pycqa/isort
     rev: 5.10.1
     hooks:
