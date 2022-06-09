@@ -193,8 +193,8 @@ class Client:
     def describe_dataset(self, key):
         return self._client.describe_dataset(key)
 
-    def cancel_compute_plan(self, *args, **kwargs):
-        return self._client.cancel_compute_plan(*args, **kwargs)
+    def cancel_compute_plan(self, *args, **kwargs) -> None:
+        self._client.cancel_compute_plan(*args, **kwargs)
 
     def link_dataset_with_data_samples(self, dataset, data_samples):
         self._client.link_dataset_with_data_samples(dataset.key, data_samples)

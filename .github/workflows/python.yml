@@ -23,7 +23,7 @@ jobs:
         os: [ubuntu-20.04]
         python: ["3.7", "3.8", "3.9"]
     env:
-      SUBSTRA_REF: main
+      SUBSTRA_REF: fix_cancel_cp # TODO: reset to main
       TOOLS_REF: main
       SRC_DIRS: substratest tests ci
 
