@@ -8,8 +8,8 @@ import substratest as sbt
 from substratest.factory import AlgoCategory
 
 
-def test_connection_to_nodes(clients):
-    """Connect to each substra nodes using the client."""
+def test_connection_to_organizations(clients):
+    """Connect to each substra organizations using the client."""
     for client in clients:
         client.list_algo()
 
@@ -105,13 +105,13 @@ def test_link_dataset_with_datasamples(factory, client):
 
 @pytest.mark.skip(reason="may fill up disk as shared folder is not cleanup")
 @pytest.mark.parametrize("filesize", [1, 10, 100, 1000])  # in mega
-def test_add_data_sample_path_big_files(network, filesize, factory, client, node_cfg):
+def test_add_data_sample_path_big_files(network, filesize, factory, client, organization_cfg):
     spec = factory.create_dataset()
     dataset = client.add_dataset(spec)
 
     content = os.urandom(filesize * 1000 * 1000)
     spec = factory.create_data_sample(content=content, datasets=[dataset])
-    spec.move_data_to_server(node_cfg.shared_path, network.options.minikube)
+    spec.move_data_to_server(organization_cfg.shared_path, network.options.minikube)
     client.add_data_sample(spec, local=False)  # should not raise
 
 
@@ -187,14 +187,14 @@ def test_add_algo(factory, client):
     assert algo == algo_copy
 
 
-@pytest.mark.remote_only  # No node saved in the local backend
-def test_list_nodes(client, network):
-    """Nodes are properly registered and list nodes returns expected nodes."""
-    nodes = client.list_node()
-    node_ids = [n.id for n in nodes]
-    network_node_ids = [c.node_id for c in network.clients]
-    # check all nodes configured are correctly registered
-    assert set(network_node_ids).issubset(set(node_ids))
+@pytest.mark.remote_only  # No organization saved in the local backend
+def test_list_organizations(client, network):
+    """Organizations are properly registered and list organizations returns expected organizations."""
+    organizations = client.list_organization()
+    organization_ids = [n.id for n in organizations]
+    network_organization_ids = [c.organization_id for c in network.clients]
+    # check all organizations configured are correctly registered
+    assert set(network_organization_ids).issubset(set(organization_ids))
 
 
 def test_query_algos(factory, client):

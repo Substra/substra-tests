@@ -5,16 +5,16 @@ options:
   # future_timeout: 300
   # future_polling_period: 0.5
   # organization_sync_timeout: 300
-nodes:
-  - name: 'node-1'
+organizations:
+  - name: 'organization-1'
     msp_id: 'MyOrg1MSP'
-    address: 'http://substra-backend.node-1.com'
-    user: 'node-1'
+    address: 'http://substra-backend.org-1.com'
+    user: 'org-1'
     password: 'p@sswr0d44'
     shared_path: '/tmp/org-1/servermedias'
-  - name: 'node-2'
+  - name: 'organization-2'
     msp_id: 'MyOrg2MSP'
-    address: 'http://substra-backend.node-2.com'
-    user: 'node-2'
+    address: 'http://substra-backend.org-2.com'
+    user: 'org-2'
     password: 'p@sswr0d45'
     shared_path: '/tmp/org-2/servermedias'

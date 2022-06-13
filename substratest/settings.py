@@ -25,10 +25,10 @@ _DEFAULT_CONNECT_TOOLS_IMAGE_WORKFLOWS = (
 
 _DEFAULT_NETWORK_LOCAL_CONFIGURATION_PATH = os.path.join(_CURRENT_DIR, "../", "local-backend-values.yaml")
 
-_MIN_NODES = 1
+_MIN_ORGANIZATIONS = 1
 
 
-class NodeCfg(pydantic.BaseModel):
+class OrganizationCfg(pydantic.BaseModel):
     name: str
     msp_id: str
     address: str
@@ -59,7 +59,7 @@ class Settings(pydantic.BaseModel):
     path: str
     options: Options
     connect_tools: ConnectToolsCfg = ConnectToolsCfg()
-    nodes: List[NodeCfg]
+    organizations: List[OrganizationCfg]
 
     @classmethod
     def _from_yaml_file(cls, path: str) -> "Settings":
@@ -78,7 +78,7 @@ class Settings(pydantic.BaseModel):
         """
         if cls._SETTINGS is None:
             s = Settings._from_yaml_file(_SUBSTRA_TESTS_CONFIG_FILEPATH)
-            assert len(s.nodes) >= _MIN_NODES, f"not enough nodes: {len(s.nodes)}"
+            assert len(s.organizations) >= _MIN_ORGANIZATIONS, f"not enough organizations: {len(s.organizations)}"
             cls._SETTINGS = s
 
         return cls._SETTINGS

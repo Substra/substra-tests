@@ -16,7 +16,7 @@ ALGO_DOWNLOAD_FILENAME = "algo.tar.gz"
 
 
 class Client:
-    """Client to interact with a Node of Substra.
+    """Client to interact with a Organization of Substra.
 
     Parses responses from server to return Asset instances.
     """
@@ -24,7 +24,7 @@ class Client:
     def __init__(
         self,
         debug: bool,
-        node_id: str,
+        organization_id: str,
         address: str,
         user: str,
         password: str,
@@ -35,7 +35,7 @@ class Client:
 
         super().__init__()
 
-        self.node_id = node_id
+        self.organization_id = organization_id
         self._client = substra.Client(debug=debug, url=address, insecure=False, token=token)
         if not token:
             token = self._client.login(user, password)
@@ -146,8 +146,8 @@ class Client:
     def list_testtuple(self, *args, **kwargs):
         return self._client.list_testtuple(*args, **kwargs)
 
-    def list_node(self, *args, **kwargs):
-        return self._client.list_node(*args, **kwargs)
+    def list_organization(self, *args, **kwargs):
+        return self._client.list_organization(*args, **kwargs)
 
     def download_opener(self, key):
         with tempfile.TemporaryDirectory() as tmp:

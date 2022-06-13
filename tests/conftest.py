@@ -18,8 +18,8 @@ def pytest_report_header(config):
         f"substra network configuration loaded from: '{cfg.path}'",
         "substra network setup:",
     ]
-    for n in cfg.nodes:
-        messages.append(f"  - node: name={n.name} msp_id={n.msp_id} address={n.address}")
+    for n in cfg.organizations:
+        messages.append(f"  - organization: name={n.name} msp_id={n.msp_id} address={n.address}")
     messages.append(f"connect tools images: {cfg.connect_tools}")
     return messages
 
@@ -111,9 +111,9 @@ class _DataEnv:
     def metrics(self):
         return self._metrics
 
-    def filter_by(self, node_id):
-        datasets = [d for d in self._datasets if d.owner == node_id]
-        metrics = [o for o in self._metrics if o.owner == node_id]
+    def filter_by(self, organization_id):
+        datasets = [d for d in self._datasets if d.owner == organization_id]
+        metrics = [o for o in self._metrics if o.owner == organization_id]
 
         return _DataEnv(metrics=metrics, datasets=datasets)
 
@@ -171,14 +171,14 @@ def network(cfg, client_debug_local):
     clients = [
         sbt.Client(
             debug=client_debug_local,
-            node_id=n.msp_id,
+            organization_id=n.msp_id,
             address=n.address,
             user=n.user,
             password=n.password,
             future_timeout=cfg.options.future_timeout,
             future_polling_period=cfg.options.future_polling_period,
         )
-        for n in cfg.nodes
+        for n in cfg.organizations
     ]
     return Network(
         options=cfg.options,
@@ -188,9 +188,9 @@ def network(cfg, client_debug_local):
 
 @pytest.fixture(scope="session")
 def default_data_env(cfg, network, client_debug_local):
-    """Fixture with pre-existing assets in all nodes.
+    """Fixture with pre-existing assets in all organizations.
 
-    The following assets will be created for each node:
+    The following assets will be created for each organization:
     - 4 train data samples
     - 1 test data sample
     - 1 dataset
@@ -236,49 +236,49 @@ def default_data_env(cfg, network, client_debug_local):
 
 @pytest.fixture
 def data_env_1(default_data_env, client_1):
-    """Fixture with pre-existing assets in first node."""
-    return default_data_env.filter_by(client_1.node_id)
+    """Fixture with pre-existing assets in first organization."""
+    return default_data_env.filter_by(client_1.organization_id)
 
 
 @pytest.fixture
 def data_env_2(default_data_env, client_2):
-    """Fixture with pre-existing assets in second node."""
-    return default_data_env.filter_by(client_2.node_id)
+    """Fixture with pre-existing assets in second organization."""
+    return default_data_env.filter_by(client_2.organization_id)
 
 
 @pytest.fixture
 def default_dataset_1(data_env_1):
-    """Fixture with pre-existing dataset in first node."""
+    """Fixture with pre-existing dataset in first organization."""
     return data_env_1.datasets[0]
 
 
 @pytest.fixture
 def default_metric_1(data_env_1):
-    """Fixture with pre-existing metric in first node."""
+    """Fixture with pre-existing metric in first organization."""
     return data_env_1.metrics[0]
 
 
 @pytest.fixture
 def default_dataset_2(data_env_2):
-    """Fixture with pre-existing dataset in second node."""
+    """Fixture with pre-existing dataset in second organization."""
     return data_env_2.datasets[0]
 
 
 @pytest.fixture
 def default_metric_2(data_env_2):
-    """Fixture with pre-existing metric in second node."""
+    """Fixture with pre-existing metric in second organization."""
     return data_env_2.metrics[0]
 
 
 @pytest.fixture
 def default_dataset(default_dataset_1):
-    """Fixture with pre-existing dataset in first node."""
+    """Fixture with pre-existing dataset in first organization."""
     return default_dataset_1
 
 
 @pytest.fixture
 def default_metric(default_metric_1):
-    """Fixture with pre-existing metric in first node."""
+    """Fixture with pre-existing metric in first organization."""
     return default_metric_1
 
 
@@ -296,59 +296,59 @@ def default_metrics(default_data_env):
 
 @pytest.fixture
 def client_1(network):
-    """Client fixture (first node)."""
+    """Client fixture (first organization)."""
     return network.clients[0]
 
 
 @pytest.fixture
 def client_2(network):
-    """Client fixture (second node)."""
+    """Client fixture (second organization)."""
     if len(network.clients) < 2:
-        pytest.skip("Not enough nodes to run this test")
+        pytest.skip("Not enough organizations to run this test")
 
     return network.clients[1]
 
 
 @pytest.fixture
-def node_cfg(cfg):
-    """Node configuration (first node)."""
-    return cfg.nodes[0]
+def organization_cfg(cfg):
+    """Organization configuration (first organization)."""
+    return cfg.organizations[0]
 
 
 @pytest.fixture(scope="session")
 def client(network):
-    """Client fixture (first node)."""
+    """Client fixture (first organization)."""
     return network.clients[0]
 
 
 @pytest.fixture
 def clients(network):
-    """Clients fixture (all nodes)."""
+    """Clients fixture (all organizations)."""
     return network.clients
 
 
 @pytest.fixture(scope="session")
 def channel(cfg, network):
-    """Channel fixture (first node)."""
+    """Channel fixture (first organization)."""
     return sbt.Channel(network.clients, cfg.options.organization_sync_timeout)
 
 
 @pytest.fixture(scope="session")
 def debug_client(cfg, client):
     """
-    Client fixture in debug mode (first node).
+    Client fixture in debug mode (first organization).
     Use it with @pytest.mark.remote_only
     """
-    node = cfg.nodes[0]
+    organization = cfg.organizations[0]
     # Debug client and client share the same
     # token, otherwise when one connects the other
     # is disconnected.
     return sbt.Client(
         debug=True,
-        node_id=node.msp_id,
-        address=node.address,
-        user=node.user,
-        password=node.password,
+        organization_id=organization.msp_id,
+        address=organization.address,
+        user=organization.user,
+        password=organization.password,
         future_timeout=cfg.options.future_timeout,
         future_polling_period=cfg.options.future_polling_period,
         token=client.token,

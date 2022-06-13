@@ -8,7 +8,7 @@ from substratest.factory import Permissions
 
 
 @pytest.mark.slow
-def test_tuples_execution_on_same_node(factory, network, client, default_dataset, default_metric):
+def test_tuples_execution_on_same_organization(factory, network, client, default_dataset, default_metric):
     """Execution of a traintuple, a following testtuple and a following traintuple."""
 
     spec = factory.create_algo(AlgoCategory.simple)
@@ -66,7 +66,7 @@ def test_tuples_execution_on_same_node(factory, network, client, default_dataset
 
 @pytest.mark.slow
 def test_federated_learning_workflow(factory, client, default_datasets):
-    """Test federated learning workflow on each node."""
+    """Test federated learning workflow on each organization."""
 
     # create test environment
     spec = factory.create_algo(AlgoCategory.simple)
@@ -77,7 +77,7 @@ def test_federated_learning_workflow(factory, client, default_datasets):
     rank = 0
     compute_plan_key = None
 
-    # default_datasets contains datasets on each node and
+    # default_datasets contains datasets on each organization and
     # that has a result we can use for federated learning
     for dataset in default_datasets:
         traintuples = [traintuple] if traintuple else []
@@ -108,17 +108,17 @@ def test_federated_learning_workflow(factory, client, default_datasets):
 
 @pytest.mark.slow
 @pytest.mark.remote_only
-def test_tuples_execution_on_different_nodes(
+def test_tuples_execution_on_different_organizations(
     factory, client_1, client_2, default_metric_1, default_dataset_1, default_dataset_2, channel
 ):
-    """Execution of a traintuple on node 1 and the following testtuple on node 2."""
-    # add test data samples / dataset / metric on node 1
+    """Execution of a traintuple on organization 1 and the following testtuple on organization 2."""
+    # add test data samples / dataset / metric on organization 1
 
     spec = factory.create_algo(AlgoCategory.simple)
     algo_2 = client_2.add_algo(spec)
     channel.wait_for_asset_synchronized(algo_2)
 
-    # add traintuple on node 2; should execute on node 2 (dataset located on node 2)
+    # add traintuple on organization 2; should execute on organization 2 (dataset located on organization 2)
     spec = factory.create_traintuple(
         algo=algo_2,
         dataset=default_dataset_2,
@@ -129,9 +129,9 @@ def test_tuples_execution_on_different_nodes(
     assert traintuple.status == Status.done
     assert traintuple.error_type is None
     assert len(traintuple.train.models) != 0
-    assert traintuple.worker == client_2.node_id
+    assert traintuple.worker == client_2.organization_id
 
-    # add testtuple; should execute on node 1 (default_dataset_1 is located on node 1)
+    # add testtuple; should execute on organization 1 (default_dataset_1 is located on organization 1)
     spec = factory.create_testtuple(
         metrics=[default_metric_1],
         traintuple=traintuple,
@@ -142,7 +142,7 @@ def test_tuples_execution_on_different_nodes(
     testtuple = client_1.wait(testtuple)
     assert testtuple.status == Status.done
     assert testtuple.error_type is None
-    assert testtuple.worker == client_1.node_id
+    assert testtuple.worker == client_1.organization_id
     assert list(testtuple.test.perfs.values())[0] == 2
 
 
@@ -179,7 +179,7 @@ def test_traintuple_build_failure(dockerfile, factory, client, default_dataset):
 def test_traintuple_execution_failure(factory, client_1, client_2, default_dataset_1):
     """Invalid algo script is causing traintuple failure."""
 
-    spec = factory.create_dataset(logs_permission=Permissions(public=True, authorized_ids=[client_1.node_id]))
+    spec = factory.create_dataset(logs_permission=Permissions(public=True, authorized_ids=[client_1.organization_id]))
     dataset = client_1.add_dataset(spec)
 
     spec = factory.create_data_sample(test_only=False, datasets=[dataset])
@@ -261,7 +261,7 @@ def test_aggregatetuple_execution_failure(factory, client, default_dataset):
     spec = factory.create_aggregatetuple(
         algo=aggregate_algo,
         traintuples=composite_traintuples,
-        worker=client.node_id,
+        worker=client.organization_id,
     )
 
     if client.backend_mode == substra.BackendType.DEPLOYED:
@@ -365,7 +365,7 @@ def test_aggregatetuple(factory, client, default_metric, default_dataset):
 
     spec = factory.create_aggregatetuple(
         algo=aggregate_algo,
-        worker=client.node_id,
+        worker=client.organization_id,
         traintuples=traintuples,
     )
     aggregatetuple = client.add_aggregatetuple(spec)
@@ -406,7 +406,7 @@ def test_aggregatetuple_chained(factory, client, default_metric, default_dataset
     # add first layer of aggregatetuples
     spec = factory.create_aggregatetuple(
         algo=aggregate_algo,
-        worker=client.node_id,
+        worker=client.organization_id,
         traintuples=[traintuple],
     )
 
@@ -416,7 +416,7 @@ def test_aggregatetuple_chained(factory, client, default_metric, default_dataset
     # add second layer of aggregatetuple
     spec = factory.create_aggregatetuple(
         algo=aggregate_algo,
-        worker=client.node_id,
+        worker=client.organization_id,
         traintuples=[aggregatetuple_1],
     )
 
@@ -454,7 +454,7 @@ def test_aggregatetuple_traintuple(factory, client, default_metric, default_data
     # add aggregatetuple
     spec = factory.create_aggregatetuple(
         algo=aggregate_algo,
-        worker=client.node_id,
+        worker=client.organization_id,
         traintuples=[traintuple_1],
     )
     aggregatetuple = client.add_aggregatetuple(spec)
@@ -477,22 +477,22 @@ def test_aggregatetuple_traintuple(factory, client, default_metric, default_data
 
 @pytest.mark.slow
 @pytest.mark.remote_only
-def test_composite_traintuple_2_nodes_to_composite_traintuple(factory, clients, default_datasets):
+def test_composite_traintuple_2_organizations_to_composite_traintuple(factory, clients, default_datasets):
     """A composite traintuple which take as input a composite traintuple (input_head_model) from
-    node 1 and another composite traintuple (inpute_trunk_model) from node 2
+    organization 1 and another composite traintuple (inpute_trunk_model) from organization 2
     """
 
     spec = factory.create_algo(AlgoCategory.composite)
     composite_algo = clients[0].add_algo(spec)
 
-    # composite traintuples on node 1 and node 2
+    # composite traintuples on organization 1 and organization 2
     composite_traintuples = []
     for dataset in default_datasets:
         spec = factory.create_composite_traintuple(
             algo=composite_algo,
             dataset=dataset,
             data_samples=[dataset.train_data_sample_keys[0]],
-            permissions=Permissions(public=False, authorized_ids=[c.node_id for c in clients]),
+            permissions=Permissions(public=False, authorized_ids=[c.organization_id for c in clients]),
         )
         composite_traintuple_key = clients[0].add_composite_traintuple(spec)
         composite_traintuples.append(composite_traintuple_key)
@@ -504,7 +504,7 @@ def test_composite_traintuple_2_nodes_to_composite_traintuple(factory, clients, 
         head_traintuple=composite_traintuples[0],
         trunk_traintuple=composite_traintuples[1],
         rank=1,
-        permissions=Permissions(public=False, authorized_ids=[c.node_id for c in clients]),
+        permissions=Permissions(public=False, authorized_ids=[c.organization_id for c in clients]),
     )
     composite_traintuple = clients[0].add_composite_traintuple(spec)
     composite_traintuple = clients[0].wait(composite_traintuple)
@@ -514,22 +514,22 @@ def test_composite_traintuple_2_nodes_to_composite_traintuple(factory, clients, 
 
 @pytest.mark.slow
 def test_aggregate_composite_traintuples(factory, network, clients, default_datasets, default_metrics):
-    """Do 2 rounds of composite traintuples aggregations on multiple nodes.
+    """Do 2 rounds of composite traintuples aggregations on multiple organizations.
 
     Compute plan details:
 
     Round 1:
-    - Create 2 composite traintuples executed on two datasets located on node 1 and
-      node 2.
-    - Create an aggregatetuple on node 1, aggregating the two previous composite
+    - Create 2 composite traintuples executed on two datasets located on organization 1 and
+      organization 2.
+    - Create an aggregatetuple on organization 1, aggregating the two previous composite
       traintuples (trunk models aggregation).
 
     Round 2:
-    - Create 2 composite traintuples executed on each nodes that depend on: the
-      aggregated tuple and the previous composite traintuple executed on this node. That
-      is to say, the previous round aggregated trunk models from all nodes and the
-      previous round head model from this node.
-    - Create an aggregatetuple on node 1, aggregating the two previous composite
+    - Create 2 composite traintuples executed on each organizations that depend on: the
+      aggregated tuple and the previous composite traintuple executed on this organization. That
+      is to say, the previous round aggregated trunk models from all organizations and the
+      previous round head model from this organization.
+    - Create an aggregatetuple on organization 1, aggregating the two previous composite
       traintuples (similar to round 1 aggregatetuple).
     - Create a testtuple for each previous composite traintuples and aggregate tuple
       created during this round.
@@ -542,10 +542,10 @@ def test_aggregate_composite_traintuples(factory, network, clients, default_data
     This test refers to the model composition use case.
     """
 
-    aggregate_worker = clients[0].node_id
+    aggregate_worker = clients[0].organization_id
     number_of_rounds = 2
 
-    # register algos on first node
+    # register algos on first organization
     spec = factory.create_algo(AlgoCategory.composite)
     composite_algo = clients[0].add_algo(spec)
     spec = factory.create_algo(AlgoCategory.aggregate)
@@ -556,7 +556,7 @@ def test_aggregate_composite_traintuples(factory, network, clients, default_data
     previous_composite_traintuples = []
 
     for round_ in range(number_of_rounds):
-        # create composite traintuple on each node
+        # create composite traintuple on each organization
         composite_traintuples = []
         for index, dataset in enumerate(default_datasets):
             kwargs = {}
@@ -569,14 +569,14 @@ def test_aggregate_composite_traintuples(factory, network, clients, default_data
                 algo=composite_algo,
                 dataset=dataset,
                 data_samples=[dataset.train_data_sample_keys[0 + round_]],
-                permissions=Permissions(public=False, authorized_ids=[c.node_id for c in clients]),
+                permissions=Permissions(public=False, authorized_ids=[c.organization_id for c in clients]),
                 **kwargs,
             )
             t = clients[0].add_composite_traintuple(spec)
             t = clients[0].wait(t)
             composite_traintuples.append(t)
 
-        # create aggregate on its node
+        # create aggregate on its organization
         spec = factory.create_aggregatetuple(
             algo=aggregate_algo,
             worker=aggregate_worker,
@@ -651,15 +651,15 @@ def test_aggregate_composite_traintuples(factory, network, clients, default_data
 
 
 @pytest.mark.remote_only
-def test_use_data_sample_located_in_shared_path(factory, network, client, node_cfg, default_metric):
-    if not node_cfg.shared_path:
+def test_use_data_sample_located_in_shared_path(factory, network, client, organization_cfg, default_metric):
+    if not organization_cfg.shared_path:
         pytest.skip("requires a shared path")
 
     spec = factory.create_dataset()
     dataset = client.add_dataset(spec)
 
     spec = factory.create_data_sample(datasets=[dataset])
-    spec.move_data_to_server(node_cfg.shared_path, network.options.minikube)
+    spec.move_data_to_server(organization_cfg.shared_path, network.options.minikube)
     data_sample_key = client.add_data_sample(spec, local=False)  # should not raise
 
     spec = factory.create_algo(AlgoCategory.simple)

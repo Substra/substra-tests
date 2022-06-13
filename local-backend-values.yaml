@@ -1,7 +1,7 @@
 options:
   enable_intermediate_model_removal: False
   enable_model_download: True
-nodes:
+organizations:
   - name: 'local-backend'
     msp_id: 'local-backend'
     address: ''

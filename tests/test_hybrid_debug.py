@@ -58,10 +58,10 @@ def test_debug_compute_plan_aggregate_composite(network, client, debug_client, d
     Debug / Compute plan version of the
     `test_aggregate_composite_traintuples` method from `test_execution.py`
     """
-    aggregate_worker = debug_client.node_id
+    aggregate_worker = debug_client.organization_id
     number_of_rounds = 2
 
-    # register algos on first node
+    # register algos on first organization
     spec = debug_factory.create_algo(AlgoCategory.composite)
     composite_algo = client.add_algo(spec)
     spec = debug_factory.create_algo(AlgoCategory.aggregate)
@@ -74,7 +74,7 @@ def test_debug_compute_plan_aggregate_composite(network, client, debug_client, d
     cp_spec = debug_factory.create_compute_plan()
 
     for round_ in range(number_of_rounds):
-        # create composite traintuple on each node
+        # create composite traintuple on each organization
         composite_traintuple_specs = []
         for index, dataset in enumerate(default_datasets):
             kwargs = {}
@@ -87,12 +87,12 @@ def test_debug_compute_plan_aggregate_composite(network, client, debug_client, d
                 composite_algo=composite_algo,
                 dataset=dataset,
                 data_samples=[dataset.train_data_sample_keys[0 + round_]],
-                out_trunk_model_permissions=Permissions(public=False, authorized_ids=[debug_client.node_id]),
+                out_trunk_model_permissions=Permissions(public=False, authorized_ids=[debug_client.organization_id]),
                 **kwargs,
             )
             composite_traintuple_specs.append(spec)
 
-        # create aggregate on its node
+        # create aggregate on its organization
         spec = cp_spec.create_aggregatetuple(
             aggregate_algo=aggregate_algo,
             worker=aggregate_worker,

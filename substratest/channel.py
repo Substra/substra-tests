@@ -16,7 +16,7 @@ _OVERRIDDEN_FIELDS = (
 
 
 def _anonymize_asset(asset: dict) -> dict:
-    """Anonymize asset from an organisation point of view."""
+    """Anonymize asset from an organization point of view."""
 
     anonymized_asset = dict(asset)  # make a copy so as not to modify input args
     for field, value in asset.items():
@@ -37,16 +37,16 @@ class Channel:
     organization_sync_timeout: int
 
     def wait_for_asset_synchronized(self, asset):
-        """Check if an asset is synchronized in all organisations.
+        """Check if an asset is synchronized in all organizations.
 
-        Asset are synchronized through orchestrator event in all organisation, as a
-        result asset creation and update is asynchronous accross organisations.
+        Asset are synchronized through orchestrator event in all organization, as a
+        result asset creation and update is asynchronous accross organizations.
 
         This method is needed only in tests as in production user should only interact with
         its own organization.
         """
-        unsynchronized_clients = {c.node_id: c for c in self.clients}
-        unsynchronized_assets = {c.node_id: None for c in self.clients}
+        unsynchronized_clients = {c.organization_id: c for c in self.clients}
+        unsynchronized_assets = {c.organization_id: None for c in self.clients}
 
         reference_asset = _anonymize_asset(asset.dict())
 
@@ -63,7 +63,7 @@ class Channel:
                 )
 
             # iterate on a copy of the dict as its items are modified inside the for loop
-            for node_id, client in list(unsynchronized_clients.items()):
+            for organization_id, client in list(unsynchronized_clients.items()):
                 try:
                     local_asset = client.get(asset)
                 except substra.exceptions.NotFound:
@@ -72,12 +72,12 @@ class Channel:
                 anonymized_asset = _anonymize_asset(local_asset.dict())
 
                 if anonymized_asset == reference_asset:
-                    del unsynchronized_clients[node_id]
-                    del unsynchronized_assets[node_id]
+                    del unsynchronized_clients[organization_id]
+                    del unsynchronized_assets[organization_id]
                     continue
 
                 # store the latest state of unsynchronized asset for debugging purposes
-                unsynchronized_assets[node_id] = anonymized_asset
+                unsynchronized_assets[organization_id] = anonymized_asset
 
             # all backends have the same representation of the asset, synchronization is done
             if not unsynchronized_clients:

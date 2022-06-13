@@ -6,7 +6,7 @@ import numpy as np
 import substratools as tools
 
 
-class NodeOpener(tools.Opener):
+class OrganizationOpener(tools.Opener):
     def get_X(self, folders):
         """Load data."""
         assert len(folders) == 1, "Supporting only one data sample for the whole dataset"

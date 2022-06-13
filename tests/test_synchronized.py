@@ -12,7 +12,7 @@ def current_client(clients):
 @pytest.mark.remote_only
 def test_synchronized_algo(clients, factory, channel, current_client):
     if len(clients) < 2:
-        pytest.skip("requires at least 2 nodes")
+        pytest.skip("requires at least 2 organizations")
 
     spec = factory.create_algo(AlgoCategory.simple)
     algo = current_client.add_algo(spec)
@@ -22,7 +22,7 @@ def test_synchronized_algo(clients, factory, channel, current_client):
 @pytest.mark.remote_only
 def test_synchronized_metric(clients, factory, channel, current_client):
     if len(clients) < 2:
-        pytest.skip("requires at least 2 nodes")
+        pytest.skip("requires at least 2 organizations")
 
     spec = factory.create_metric()
     metric = current_client.add_metric(spec)
@@ -32,7 +32,7 @@ def test_synchronized_metric(clients, factory, channel, current_client):
 @pytest.mark.remote_only
 def test_synchronized_dataset(clients, factory, channel, current_client):
     if len(clients) < 2:
-        pytest.skip("requires at least 2 nodes")
+        pytest.skip("requires at least 2 organizations")
 
     spec = factory.create_dataset()
     dataset = current_client.add_dataset(spec)
@@ -42,7 +42,7 @@ def test_synchronized_dataset(clients, factory, channel, current_client):
 @pytest.mark.remote_only
 def test_synchronized_datasample(clients, factory, channel, current_client):
     if len(clients) < 2:
-        pytest.skip("requires at least 2 nodes")
+        pytest.skip("requires at least 2 organizations")
 
     # create dataset
     spec = factory.create_dataset()
@@ -59,7 +59,7 @@ def test_synchronized_datasample(clients, factory, channel, current_client):
 @pytest.mark.remote_only
 def test_synchronized_traintuple(clients, factory, channel, current_client):
     if len(clients) < 2:
-        pytest.skip("requires at least 2 nodes")
+        pytest.skip("requires at least 2 organizations")
 
     # create algo
     spec = factory.create_algo(AlgoCategory.simple)

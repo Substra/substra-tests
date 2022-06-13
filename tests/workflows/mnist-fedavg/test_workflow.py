@@ -281,7 +281,7 @@ def inputs(datasamples_folders, factory, clients, channel, algo_dockerfile, metr
         dockerfile=algo_dockerfile,
     )
     results.aggregate_algo = client.add_algo(spec)
-    # ensure last registered asset is synchronized on all nodes
+    # ensure last registered asset is synchronized on all organizations
     channel.wait_for_asset_synchronized(results.aggregate_algo)
 
     return results
@@ -295,12 +295,12 @@ def test_mnist(factory, inputs, clients, nb_train_test_samples):
     testing_rounds = (1, 5, 10, 15, 20)
     cp_spec = factory.create_compute_plan()
 
-    aggregate_worker = client.node_id
+    aggregate_worker = client.organization_id
 
     trunk_model_perms = [
         sbt.factory.Permissions(
             public=False,
-            authorized_ids=[aggregate_worker, c.node_id],
+            authorized_ids=[aggregate_worker, c.organization_id],
         )
         for c in clients
     ]

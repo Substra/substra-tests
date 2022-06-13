@@ -8,7 +8,7 @@ class AssetType(enum.Enum):
     data_sample = enum.auto()
     dataset = enum.auto()
     metric = enum.auto()
-    node = enum.auto()
+    organization = enum.auto()
     testtuple = enum.auto()
     traintuple = enum.auto()
     compute_plan = enum.auto()
@@ -21,7 +21,7 @@ class AssetType(enum.Enum):
     def can_be_get(cls):
         gettable = cls.all()
         gettable.remove(cls.data_sample)
-        gettable.remove(cls.node)
+        gettable.remove(cls.organization)
         return gettable
 
     @classmethod

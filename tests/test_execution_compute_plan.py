@@ -13,10 +13,10 @@ def test_compute_plan_simple(
     factory, client_1, client_2, default_dataset_1, default_dataset_2, default_metrics, channel
 ):
     """Execution of a compute plan containing multiple traintuples:
-    - 1 traintuple executed on node 1
-    - 1 traintuple executed on node 2
-    - 1 traintuple executed on node 1 depending on previous traintuples
-    - 1 testtuple executed on node 1 depending on the last traintuple and on multiple metrics
+    - 1 traintuple executed on organization 1
+    - 1 traintuple executed on organization 2
+    - 1 traintuple executed on organization 1 depending on previous traintuples
+    - 1 testtuple executed on organization 1 depending on the last traintuple and on multiple metrics
     """
 
     cp_key = str(uuid.uuid4())
@@ -80,7 +80,7 @@ def test_compute_plan_simple(
     testtuples = client_1.list_compute_plan_testtuples(cp.key)
     assert len(testtuples) == 1
 
-    # check all tuples are done and check they have been executed on the expected node
+    # check all tuples are done and check they have been executed on the expected organization
     for t in traintuples:
         assert t.status == models.Status.done
         assert t.start_date is not None
@@ -122,9 +122,9 @@ def test_compute_plan_simple(
     # XXX as the first two tuples have the same rank, there is currently no way to know
     #     which one will be returned first
     workers_rank_0 = set([traintuple_1.worker, traintuple_2.worker])
-    assert workers_rank_0 == set([client_1.node_id, client_2.node_id])
-    assert traintuple_3.worker == client_1.node_id
-    assert testtuple.worker == client_1.node_id
+    assert workers_rank_0 == set([client_1.organization_id, client_2.organization_id])
+    assert traintuple_3.worker == client_1.organization_id
+    assert testtuple.worker == client_1.organization_id
 
     # check mapping
     traintuple_id_1 = traintuple_spec_1.traintuple_id
@@ -339,10 +339,10 @@ def test_compute_plan_aggregate_composite_traintuples(  # noqa: C901
     """
     Compute plan version of the `test_aggregate_composite_traintuples` method from `test_execution.py`
     """
-    aggregate_worker = clients[0].node_id
+    aggregate_worker = clients[0].organization_id
     number_of_rounds = 2
 
-    # register algos on first node
+    # register algos on first organization
     spec = factory.create_algo(AlgoCategory.composite)
     composite_algo = clients[0].add_algo(spec)
     spec = factory.create_algo(AlgoCategory.aggregate)
@@ -355,7 +355,7 @@ def test_compute_plan_aggregate_composite_traintuples(  # noqa: C901
     cp_spec = factory.create_compute_plan()
 
     for round_ in range(number_of_rounds):
-        # create composite traintuple on each node
+        # create composite traintuple on each organization
         composite_traintuple_specs = []
         for index, dataset in enumerate(default_datasets):
             kwargs = {}
@@ -368,13 +368,15 @@ def test_compute_plan_aggregate_composite_traintuples(  # noqa: C901
                 composite_algo=composite_algo,
                 dataset=dataset,
                 data_samples=[dataset.train_data_sample_keys[0 + round_]],
-                out_trunk_model_permissions=Permissions(public=False, authorized_ids=[c.node_id for c in clients]),
+                out_trunk_model_permissions=Permissions(
+                    public=False, authorized_ids=[c.organization_id for c in clients]
+                ),
                 metadata={"foo": "bar"},
                 **kwargs,
             )
             composite_traintuple_specs.append(spec)
 
-        # create aggregate on its node
+        # create aggregate on its organization
         spec = cp_spec.create_aggregatetuple(
             aggregate_algo=aggregate_algo,
             worker=aggregate_worker,

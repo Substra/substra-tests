@@ -16,23 +16,23 @@ def private():
 
 
 @pytest.fixture
-def all_nodes(clients):
-    return Permissions(public=False, authorized_ids=[c.node_id for c in clients])
+def all_organizations(clients):
+    return Permissions(public=False, authorized_ids=[c.organization_id for c in clients])
 
 
 @pytest.fixture
-def node_1_only(client_1):
-    return Permissions(public=False, authorized_ids=[client_1.node_id])
+def organization_1_only(client_1):
+    return Permissions(public=False, authorized_ids=[client_1.organization_id])
 
 
 @pytest.fixture
-def node_2_only(client_2):
-    return Permissions(public=False, authorized_ids=[client_2.node_id])
+def organization_2_only(client_2):
+    return Permissions(public=False, authorized_ids=[client_2.organization_id])
 
 
 @pytest.fixture
-def nodes_1_and_2_only(client_1, client_2):
-    return Permissions(public=False, authorized_ids=[client_1.node_id, client_2.node_id])
+def organizations_1_and_2_only(client_1, client_2):
+    return Permissions(public=False, authorized_ids=[client_1.organization_id, client_2.organization_id])
 
 
 @pytest.mark.remote_only  # no check on permissions with the local backend
@@ -51,16 +51,16 @@ def test_permission_creation(is_public, factory, client):
     [
         pytest.lazy_fixture("public"),
         pytest.lazy_fixture("private"),
-        pytest.lazy_fixture("all_nodes"),
-        pytest.lazy_fixture("node_1_only"),
-        pytest.lazy_fixture("node_2_only"),
+        pytest.lazy_fixture("all_organizations"),
+        pytest.lazy_fixture("organization_1_only"),
+        pytest.lazy_fixture("organization_2_only"),
     ],
 )
 def test_get_metadata(permissions, factory, clients, channel):
     """Test get metadata assets with various permissions."""
     clients = clients[:2]
 
-    # add 1 dataset per node
+    # add 1 dataset per organization
     datasets = []
     for client in clients:
         spec = factory.create_dataset(permissions=permissions)
@@ -78,10 +78,10 @@ def test_get_metadata(permissions, factory, clients, channel):
 
 
 @pytest.mark.remote_only  # no check on permissions with the local backend
-def test_permission_invalid_node_id(factory, client):
+def test_permission_invalid_organization_id(factory, client):
     """Test asset creation with invalid permission."""
-    invalid_node = "unknown-node"
-    invalid_permissions = Permissions(public=False, authorized_ids=[invalid_node])
+    invalid_organization = "unknown-organization"
+    invalid_permissions = Permissions(public=False, authorized_ids=[invalid_organization])
     spec = factory.create_dataset(permissions=invalid_permissions)
     with pytest.raises(substra.exceptions.InvalidRequest) as exc:
         client.add_dataset(spec)
@@ -93,11 +93,11 @@ def test_permission_invalid_node_id(factory, client):
     "permissions",
     [
         pytest.lazy_fixture("public"),
-        pytest.lazy_fixture("node_2_only"),
+        pytest.lazy_fixture("organization_2_only"),
     ],
 )
 def test_download_asset_access_granted(permissions, factory, client_1, client_2, channel):
-    """Test asset can be downloaded by all permitted nodes."""
+    """Test asset can be downloaded by all permitted organizations."""
     spec = factory.create_dataset(permissions=permissions)
     dataset = client_1.add_dataset(spec)
 
@@ -111,7 +111,7 @@ def test_download_asset_access_granted(permissions, factory, client_1, client_2,
 
 @pytest.mark.remote_only  # no check on permissions with the local backend
 def test_download_asset_access_restricted(factory, client_1, client_2, channel):
-    """Test public asset can be downloaded by all nodes."""
+    """Test public asset can be downloaded by all organizations."""
     permissions = Permissions(public=False, authorized_ids=[])
     spec = factory.create_dataset(permissions=permissions)
     dataset = client_1.add_dataset(spec)
@@ -129,35 +129,35 @@ def test_download_asset_access_restricted(factory, client_1, client_2, channel):
     "permissions_1,permissions_2,expected_permissions",
     [
         (
-            pytest.lazy_fixture("node_2_only"),
-            pytest.lazy_fixture("node_1_only"),
-            pytest.lazy_fixture("nodes_1_and_2_only"),
+            pytest.lazy_fixture("organization_2_only"),
+            pytest.lazy_fixture("organization_1_only"),
+            pytest.lazy_fixture("organizations_1_and_2_only"),
         ),
         (
             pytest.lazy_fixture("public"),
-            pytest.lazy_fixture("node_1_only"),
-            pytest.lazy_fixture("nodes_1_and_2_only"),
+            pytest.lazy_fixture("organization_1_only"),
+            pytest.lazy_fixture("organizations_1_and_2_only"),
         ),
     ],
 )
 def test_merge_permissions(permissions_1, permissions_2, expected_permissions, factory, client_1, client_2, channel):
-    """Test merge permissions from dataset and algo asset located on different nodes.
+    """Test merge permissions from dataset and algo asset located on different organizations.
 
-    - dataset and metrics located on node 1
-    - algo located on node 2
-    - traintuple created on node 2
+    - dataset and metrics located on organization 1
+    - algo located on organization 2
+    - traintuple created on organization 2
     """
-    # add train data samples / dataset / metric on node 1
+    # add train data samples / dataset / metric on organization 1
     spec = factory.create_dataset(permissions=permissions_1)
     dataset_1 = client_1.add_dataset(spec)
     spec = factory.create_data_sample(test_only=False, datasets=[dataset_1])
     train_data_sample_1 = client_1.add_data_sample(spec)
 
-    # add algo on node 2
+    # add algo on organization 2
     spec = factory.create_algo(category=AlgoCategory.simple, permissions=permissions_2)
     algo_2 = client_2.add_algo(spec)
 
-    # add traintuple from node 2
+    # add traintuple from organization 2
     spec = factory.create_traintuple(
         algo=algo_2,
         dataset=dataset_1,
@@ -167,7 +167,7 @@ def test_merge_permissions(permissions_1, permissions_2, expected_permissions, f
     traintuple = client_1.add_traintuple(spec)
     traintuple = client_1.wait(traintuple)
     assert traintuple.train.models is not None
-    assert traintuple.worker == client_1.node_id
+    assert traintuple.worker == client_1.organization_id
     tuple_permissions = traintuple.train.model_permissions.process
     assert tuple_permissions.public == expected_permissions.public
     assert set(tuple_permissions.authorized_ids) == set(expected_permissions.authorized_ids)
@@ -213,7 +213,7 @@ def test_permissions_denied_process(factory, client_1, client_2, channel):
     "client_1_permissions,client_2_permissions,expected_success",
     [
         (pytest.lazy_fixture("private"), pytest.lazy_fixture("private"), False),
-        (pytest.lazy_fixture("node_2_only"), pytest.lazy_fixture("private"), True),
+        (pytest.lazy_fixture("organization_2_only"), pytest.lazy_fixture("private"), True),
     ],
 )
 def test_permissions_model_process(
@@ -255,7 +255,7 @@ def test_permissions_model_process(
 
     assert not traintuple_1.train.model_permissions.process.public
     assert set(traintuple_1.train.model_permissions.process.authorized_ids) == set(
-        [client_1.node_id] + client_1_permissions.authorized_ids
+        [client_1.organization_id] + client_1_permissions.authorized_ids
     )
 
     spec = factory.create_traintuple(
@@ -273,32 +273,32 @@ def test_permissions_model_process(
 
 @pytest.mark.remote_only  # no check on permissions with the local backend
 def test_merge_permissions_denied_process(factory, clients, channel):
-    """Test to process asset with merged permissions from 2 other nodes
+    """Test to process asset with merged permissions from 2 other organizations
 
-    - dataset and metrics located on node 1
-    - algo located on node 2
-    - traintuple created on node 2
-    - failed attempt to create testtuple using this traintuple from node 3
+    - dataset and metrics located on organization 1
+    - algo located on organization 2
+    - traintuple created on organization 2
+    - failed attempt to create testtuple using this traintuple from organization 3
     """
     if len(clients) < 3:
-        pytest.skip("requires at least 3 nodes")
+        pytest.skip("requires at least 3 organizations")
 
     # define clients once and for all
     client_1, client_2, client_3, *_ = clients
 
     permissions_list = [
         (
-            Permissions(public=False, authorized_ids=[client_2.node_id, client_3.node_id]),
-            Permissions(public=False, authorized_ids=[client_1.node_id]),
+            Permissions(public=False, authorized_ids=[client_2.organization_id, client_3.organization_id]),
+            Permissions(public=False, authorized_ids=[client_1.organization_id]),
         ),
         (
             Permissions(public=True, authorized_ids=[]),
-            Permissions(public=False, authorized_ids=[client_1.node_id]),
+            Permissions(public=False, authorized_ids=[client_1.organization_id]),
         ),
     ]
     for permissions_1, permissions_2 in permissions_list:
 
-        # add train data samples / dataset / metric on node 1
+        # add train data samples / dataset / metric on organization 1
         spec = factory.create_dataset(permissions=permissions_1)
         dataset_1 = client_1.add_dataset(spec)
         channel.wait_for_asset_synchronized(dataset_1)  # used by client_2 and client_3
@@ -316,11 +316,11 @@ def test_merge_permissions_denied_process(factory, clients, channel):
         metric_1 = client_1.add_metric(spec)
         channel.wait_for_asset_synchronized(metric_1)  # used by client_3
 
-        # add algo on node 2
+        # add algo on organization 2
         spec = factory.create_algo(category=AlgoCategory.simple, permissions=permissions_2)
         algo_2 = client_2.add_algo(spec)
 
-        # add traintuple from node 2
+        # add traintuple from organization 2
         spec = factory.create_traintuple(
             algo=algo_2,
             dataset=dataset_1,
@@ -330,7 +330,7 @@ def test_merge_permissions_denied_process(factory, clients, channel):
         traintuple_2 = client_2.wait(traintuple_2)
         channel.wait_for_asset_synchronized(traintuple_2)  # used by client_3
 
-        # failed to add testtuple from node 3
+        # failed to add testtuple from organization 3
         spec = factory.create_testtuple(
             metrics=[metric_1],
             traintuple=traintuple_2,
@@ -349,7 +349,7 @@ def test_permissions_denied_head_model_process(factory, client_1, client_2, chan
     datasets = []
     for client in [client_1, client_2]:
 
-        spec = factory.create_dataset(permissions=Permissions(public=False, authorized_ids=[client.node_id]))
+        spec = factory.create_dataset(permissions=Permissions(public=False, authorized_ids=[client.organization_id]))
         dataset = client.add_dataset(spec)
 
         spec = factory.create_data_sample(
