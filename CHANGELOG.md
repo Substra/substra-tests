@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## [0.22.0] - 2022-06-14
+
 ### Added
 
 - workflow: configurable number of datasamples to use for Mnist (#264)
