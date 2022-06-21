@@ -200,33 +200,25 @@ class Client:
         self._client.link_dataset_with_data_samples(dataset.key, data_samples)
 
     def list_compute_plan_traintuples(self, compute_plan_key):
-        filters = [
-            f"traintuple:compute_plan_key:{compute_plan_key}",
-        ]
+        filters = {"compute_plan_key": [compute_plan_key]}
         tuples = self.list_traintuple(filters=filters)
         tuples = sorted(tuples, key=lambda t: t.rank)
         return tuples
 
     def list_compute_plan_composite_traintuples(self, compute_plan_key):
-        filters = [
-            f"composite_traintuple:compute_plan_key:{compute_plan_key}",
-        ]
+        filters = {"compute_plan_key": [compute_plan_key]}
         tuples = self.list_composite_traintuple(filters=filters)
         tuples = sorted(tuples, key=lambda t: t.rank)
         return tuples
 
     def list_compute_plan_aggregatetuples(self, compute_plan_key):
-        filters = [
-            f"aggregatetuple:compute_plan_key:{compute_plan_key}",
-        ]
+        filters = {"compute_plan_key": [compute_plan_key]}
         tuples = self.list_aggregatetuple(filters=filters)
         tuples = sorted(tuples, key=lambda t: t.rank)
         return tuples
 
     def list_compute_plan_testtuples(self, compute_plan_key):
-        filters = [
-            f"testtuple:compute_plan_key:{compute_plan_key}",
-        ]
+        filters = {"compute_plan_key": [compute_plan_key]}
         tuples = self.list_testtuple(filters=filters)
         tuples = sorted(tuples, key=lambda t: t.rank)
         return tuples
