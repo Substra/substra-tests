@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Changed
+
+- Stop using metrics APIs, use algo APIs instead (#286)
+
 ## [0.23.0] - 2022-06-27
 
 ### Changed

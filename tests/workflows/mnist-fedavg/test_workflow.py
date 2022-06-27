@@ -50,13 +50,6 @@ def algo_dockerfile(cfg: Settings) -> str:
     return f"FROM {cfg.connect_tools.image_workflows}\n" f"COPY algo.py .\n" f'ENTRYPOINT ["python3", "algo.py"]\n'
 
 
-@pytest.fixture
-def metrics_dockerfile(cfg: Settings) -> str:
-    return (
-        f"FROM {cfg.connect_tools.image_workflows}\n" f"COPY metrics.py .\n" f'ENTRYPOINT ["python3", "metrics.py"]\n'
-    )
-
-
 @pytest.fixture(autouse=True)
 def check_imports():
     """Check imports at runtime as all external dependencies may not be installed.
@@ -219,7 +212,7 @@ class _InputsSubset(pydantic.BaseModel):
     """
 
     dataset: sb.sdk.models.Dataset = None
-    metric: sb.sdk.models.Metric = None
+    metric: sb.sdk.models.Algo = None
     train_data_sample_keys: typing.List[str] = []
 
 
@@ -233,7 +226,7 @@ class _Inputs(pydantic.BaseModel):
 
 
 @pytest.fixture
-def inputs(datasamples_folders, factory, clients, channel, algo_dockerfile, metrics_dockerfile):
+def inputs(datasamples_folders, factory, clients, channel, algo_dockerfile):
     """Register for each orgs substra inputs (dataset, datasamples and metric)."""
     results = _Inputs(datasets=[_InputsSubset() for _ in range(_NB_ORGS)])
 
@@ -258,8 +251,10 @@ def inputs(datasamples_folders, factory, clients, channel, algo_dockerfile, metr
                 data_manager_keys=[res.dataset.key],
             )
         )
-        spec = factory.create_metric(dockerfile=metrics_dockerfile, py_script=_METRICS.open().read())
-        res.metric = client.add_metric(spec)
+        spec = factory.create_algo(
+            category=AlgoCategory.metric, dockerfile=algo_dockerfile, py_script=_METRICS.open().read()
+        )
+        res.metric = client.add_algo(spec)
 
         # refresh dataset (to be up-to-date with added samples)
         res.dataset = client.get_dataset(res.dataset.key)

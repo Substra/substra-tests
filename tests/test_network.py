@@ -115,18 +115,10 @@ def test_add_data_sample_path_big_files(network, filesize, factory, client, orga
     client.add_data_sample(spec, local=False)  # should not raise
 
 
-def test_add_metric(factory, client):
-    spec = factory.create_metric()
-    metric = client.add_metric(spec)
-    metric_copy = client.get_metric(metric.key)
-    assert metric == metric_copy
-
-
 @pytest.mark.parametrize(
     "asset_name,params",
     [
         ("dataset", {}),
-        ("metric", {}),
         ("algo", {"category": AlgoCategory.simple}),
     ],
 )
@@ -155,7 +147,6 @@ def test_asset_with_metadata(factory, client, asset_name, params, metadata, meta
     "asset_name,params",
     [
         ("dataset", {}),
-        ("metric", {}),
         ("algo", {"category": AlgoCategory.simple}),
     ],
 )

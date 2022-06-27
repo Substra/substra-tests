@@ -328,10 +328,6 @@ class AlgoSpec(_Spec):
     permissions: Permissions = None
 
 
-class MetricSpec(AlgoSpec):
-    category: AlgoCategory = pydantic.Field(AlgoCategory.metric, const=True)
-
-
 class TraintupleSpec(_Spec):
     algo_key: str
     data_manager_key: str
@@ -565,12 +561,6 @@ class AssetsFactory:
     def default_algo_dockerfile(self):
         return f'FROM {self.default_tools_image}\nCOPY algo.py .\nENTRYPOINT ["python3", "algo.py"]\n'
 
-    # We need to adapt the image base name base on the fact that we run the cp in the docker context (debug)
-    # or the kaniko pod (remote) to be able to pull the image
-    @property
-    def default_metrics_dockerfile(self):
-        return f'FROM {self.default_tools_image}\nCOPY metrics.py .\nENTRYPOINT ["python3", "metrics.py"]\n'
-
     def create_data_sample(self, content=None, datasets=None, test_only=False):
         idx = self._data_sample_counter.inc()
         tmpdir = self._workdir / f"data-{idx}"
@@ -616,37 +606,7 @@ class AssetsFactory:
             logs_permission=logs_permission or DEFAULT_PERMISSIONS,
         )
 
-    def create_metric(self, permissions=None, metadata=None, dockerfile=None, py_script=None, offset=0):
-        if py_script is None:
-            py_script = TEMPLATED_DEFAULT_METRICS_SCRIPT.substitute(offset=offset)
-
-        idx = self._metric_counter.inc()
-        tmpdir = self._workdir / f"metric-{idx}"
-        tmpdir.mkdir()
-        name = _shorten_name(f"{self._uuid} - Metric {idx}")
-
-        description_path = tmpdir / "description.md"
-        description_content = name
-        with open(description_path, "w") as f:
-            f.write(description_content)
-
-        dockerfile = dockerfile or self.default_metrics_dockerfile
-
-        metrics_zip = utils.create_archive(
-            tmpdir / "metrics",
-            ("metrics.py", py_script),
-            ("Dockerfile", dockerfile),
-        )
-
-        return MetricSpec(
-            name=name,
-            description=str(description_path),
-            file=str(metrics_zip),
-            metadata=metadata,
-            permissions=permissions or DEFAULT_PERMISSIONS,
-        )
-
-    def create_algo(self, category, py_script=None, dockerfile=None, permissions=None, metadata=None, local=False):
+    def create_algo(self, category, py_script=None, dockerfile=None, permissions=None, metadata=None, offset=0):
         idx = self._algo_counter.inc()
         tmpdir = self._workdir / f"algo-{idx}"
         tmpdir.mkdir()
@@ -658,7 +618,10 @@ class AssetsFactory:
             f.write(description_content)
 
         try:
-            algo_content = py_script or DEFAULT_ALGO_SCRIPTS[category]
+            if category == AlgoCategory.metric:
+                algo_content = py_script or TEMPLATED_DEFAULT_METRICS_SCRIPT.substitute(offset=offset)
+            else:
+                algo_content = py_script or DEFAULT_ALGO_SCRIPTS[category]
         except KeyError:
             raise Exception("Invalid algo category", category)
 

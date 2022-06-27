@@ -56,10 +56,6 @@ class Client:
         key = self._client.add_dataset(spec.dict(), *args, **kwargs)
         return self._client.get_dataset(key)
 
-    def add_metric(self, spec, *args, **kwargs):
-        key = self._client.add_metric(spec.dict(), *args, **kwargs)
-        return self._client.get_metric(key)
-
     def add_algo(self, spec, *args, **kwargs):
         key = self._client.add_algo(spec.dict(), *args, **kwargs)
         return self._client.get_algo(key)
@@ -115,12 +111,6 @@ class Client:
 
     def list_dataset(self, *args, **kwargs):
         return self._client.list_dataset(*args, **kwargs)
-
-    def get_metric(self, *args, **kwargs):
-        return self._client.get_metric(*args, **kwargs)
-
-    def list_metric(self, *args, **kwargs):
-        return self._client.list_metric(*args, **kwargs)
 
     def get_traintuple(self, *args, **kwargs):
         return self._client.get_traintuple(*args, **kwargs)
@@ -227,7 +217,6 @@ class Client:
         """Asset getter (valid only for first class asset)."""
         getters = {
             models.Dataset: self.get_dataset,
-            models.Metric: self.get_metric,
             models.Algo: self.get_algo,
             models.Traintuple: self.get_traintuple,
             models.Testtuple: self.get_testtuple,

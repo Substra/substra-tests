@@ -160,8 +160,8 @@ def test_traintuple_data_samples_relative_order(factory, client, dataset):
     algo = client.add_algo(algo_spec)
 
     metric_script = TEMPLATE_METRIC_SCRIPT.format(data_sample_keys=data_sample_keys[:2])
-    metric_spec = factory.create_metric(py_script=metric_script)
-    metric = client.add_metric(metric_spec)
+    metric_spec = factory.create_algo(category=AlgoCategory.metric, py_script=metric_script)
+    metric = client.add_algo(metric_spec)
 
     traintuple_spec = factory.create_traintuple(
         algo=algo,
@@ -196,8 +196,8 @@ def test_composite_traintuple_data_samples_relative_order(factory, client, datas
     composite_algo = client.add_algo(algo_spec)
 
     metric_script = TEMPLATE_METRIC_SCRIPT.format(data_sample_keys=data_sample_keys[:2])
-    metric_spec = factory.create_metric(py_script=metric_script)
-    metric = client.add_metric(metric_spec)
+    metric_spec = factory.create_algo(category=AlgoCategory.metric, py_script=metric_script)
+    metric = client.add_algo(metric_spec)
 
     traintuple_spec = factory.create_composite_traintuple(
         algo=composite_algo,

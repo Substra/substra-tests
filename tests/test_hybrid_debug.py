@@ -25,8 +25,8 @@ def test_execution_debug(client, debug_client, debug_factory, default_dataset):
     spec = debug_factory.create_algo(AlgoCategory.simple)
     algo = client.add_algo(spec)
 
-    metric_spec = debug_factory.create_metric()
-    metric = client.add_metric(metric_spec)
+    metric_spec = debug_factory.create_algo(category=AlgoCategory.metric)
+    metric = client.add_algo(metric_spec)
 
     #  Add the traintuple
     # create traintuple
@@ -106,8 +106,8 @@ def test_debug_compute_plan_aggregate_composite(network, client, debug_client, d
     metrics = []
     for index, client in enumerate(network.clients):
         # create metric
-        spec = debug_factory.create_metric(offset=index)
-        metric = client.add_metric(spec)
+        spec = debug_factory.create_algo(category=AlgoCategory.metric, offset=index)
+        metric = client.add_algo(spec)
         metrics.append(metric)
 
     # last round: create associated testtuple

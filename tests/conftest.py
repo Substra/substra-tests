@@ -3,6 +3,7 @@ import typing
 import uuid
 
 import pytest
+from substra.sdk.schemas import AlgoCategory
 
 import substratest as sbt
 from substratest import settings
@@ -226,8 +227,8 @@ def default_data_env(cfg, network, client_debug_local):
             datasets.append(dataset)
 
             # create metric
-            spec = f.create_metric(offset=index)
-            metric = client.add_metric(spec)
+            spec = f.create_algo(category=AlgoCategory.metric, offset=index)
+            metric = client.add_algo(spec)
             metrics.append(metric)
 
         assets = _DataEnv(datasets=datasets, metrics=metrics)

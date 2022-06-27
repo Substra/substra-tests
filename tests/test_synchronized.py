@@ -24,8 +24,8 @@ def test_synchronized_metric(clients, factory, channel, current_client):
     if len(clients) < 2:
         pytest.skip("requires at least 2 organizations")
 
-    spec = factory.create_metric()
-    metric = current_client.add_metric(spec)
+    spec = factory.create_algo(category=AlgoCategory.metric)
+    metric = current_client.add_algo(spec)
     channel.wait_for_asset_synchronized(metric)
 
 

@@ -312,8 +312,8 @@ def test_merge_permissions_denied_process(factory, clients, channel):
             datasets=[dataset_1],
         )
         _ = client_1.add_data_sample(spec)
-        spec = factory.create_metric(permissions=permissions_1)
-        metric_1 = client_1.add_metric(spec)
+        spec = factory.create_algo(category=AlgoCategory.metric, permissions=permissions_1)
+        metric_1 = client_1.add_algo(spec)
         channel.wait_for_asset_synchronized(metric_1)  # used by client_3
 
         # add algo on organization 2
