@@ -8,8 +8,16 @@ import typing
 import uuid
 
 import pydantic
+import substra
 from substra.sdk import models
+from substra.sdk.schemas import AggregatetupleSpec
 from substra.sdk.schemas import AlgoCategory
+from substra.sdk.schemas import AlgoSpec
+from substra.sdk.schemas import CompositeTraintupleSpec
+from substra.sdk.schemas import ComputePlanTesttupleSpec
+from substra.sdk.schemas import Permissions
+from substra.sdk.schemas import TesttupleSpec
+from substra.sdk.schemas import TraintupleSpec
 
 from . import utils
 from .settings import Settings
@@ -224,11 +232,6 @@ class _Spec(pydantic.BaseModel, abc.ABC):
     """Asset specification base class."""
 
 
-class Permissions(pydantic.BaseModel):
-    public: bool
-    authorized_ids: typing.List[str]
-
-
 class PrivatePermissions(pydantic.BaseModel):
     public: bool
     authorized_ids: typing.List[str]
@@ -294,15 +297,7 @@ class DataSampleBatchSpec(_Spec):
         )
 
 
-class DatasetSpec(_Spec):
-    name: str
-    data_opener: str
-    type: str
-    description: str
-    metadata: typing.Dict[str, str] = None
-    permissions: Permissions = None
-    logs_permission: Permissions = None
-
+class DatasetSpec(substra.sdk.schemas.DatasetSpec):
     def read_opener(self):
         with open(self.data_opener, "rb") as f:
             return f.read()
@@ -319,108 +314,22 @@ DEFAULT_ALGO_SCRIPTS = {
 }
 
 
-class AlgoSpec(_Spec):
-    name: str
-    category: AlgoCategory
-    description: str
-    file: str
-    metadata: typing.Dict[str, str] = None
-    permissions: Permissions = None
-
-
-class TraintupleSpec(_Spec):
-    algo_key: str
-    data_manager_key: str
-    train_data_sample_keys: typing.List[str]
-    in_models_keys: typing.List[str] = None
-    tag: str = None
-    metadata: typing.Dict[str, str] = None
-    compute_plan_key: str = None
-    rank: int = None
-
-
-class AggregatetupleSpec(_Spec):
-    algo_key: str
-    worker: str
-    in_models_keys: typing.List[str]
-    tag: str = None
-    metadata: typing.Dict[str, str] = None
-    compute_plan_key: str = None
-    rank: int = None
-
-
-class CompositeTraintupleSpec(_Spec):
-    algo_key: str
-    data_manager_key: str
-    train_data_sample_keys: typing.List[str]
-    in_head_model_key: str = None
-    in_trunk_model_key: str = None
-    tag: str = None
-    metadata: typing.Dict[str, str] = None
-    compute_plan_key: str = None
-    out_trunk_model_permissions: PrivatePermissions
-    rank: int = None
-
-
-class TesttupleSpec(_Spec):
-    metric_keys: typing.List[str]
-    traintuple_key: str
-    tag: str = None
-    data_manager_key: str = None
-    test_data_sample_keys: typing.List[str] = None
-    metadata: typing.Dict[str, str] = None
-
-
-class ComputePlanTraintupleSpec(_Spec):
-    algo_key: str
-    data_manager_key: str
-    train_data_sample_keys: typing.List[str]
-    traintuple_id: str
-    in_models_ids: typing.List[str] = None
-    tag: str = None
-    metadata: typing.Dict[str, str] = None
-
+class ComputePlanTraintupleSpec(substra.sdk.schemas.ComputePlanTraintupleSpec):
     @property
     def id(self):
         return self.traintuple_id
 
 
-class ComputePlanAggregatetupleSpec(_Spec):
-    aggregatetuple_id: str
-    algo_key: str
-    worker: str
-    in_models_ids: typing.List[str] = None
-    tag: str = None
-    metadata: typing.Dict[str, str] = None
-
+class ComputePlanAggregatetupleSpec(substra.sdk.schemas.ComputePlanAggregatetupleSpec):
     @property
     def id(self):
         return self.aggregatetuple_id
 
 
-class ComputePlanCompositeTraintupleSpec(_Spec):
-    composite_traintuple_id: str
-    algo_key: str
-    data_manager_key: str
-    train_data_sample_keys: typing.List[str]
-    in_head_model_id: str = None
-    in_trunk_model_id: str = None
-    tag: str = None
-    out_trunk_model_permissions: Permissions
-    metadata: typing.Dict[str, str] = None
-
+class ComputePlanCompositeTraintupleSpec(substra.sdk.schemas.ComputePlanCompositeTraintupleSpec):
     @property
     def id(self):
         return self.composite_traintuple_id
-
-
-class ComputePlanTesttupleSpec(_Spec):
-    metric_keys: typing.List[str]
-    traintuple_id: str
-    tag: str
-    data_manager_key: str = None
-    test_data_sample_keys: typing.List[str] = None
-    metadata: typing.Dict[str, str] = None
 
 
 def _get_key(obj, field="key"):
@@ -441,13 +350,10 @@ def _get_keys(obj, field="key"):
     return [_get_key(x, field=field) for x in obj]
 
 
-class _BaseComputePlanSpec(_Spec, abc.ABC):
-    traintuples: typing.List[ComputePlanTraintupleSpec]
-    composite_traintuples: typing.List[ComputePlanCompositeTraintupleSpec]
-    aggregatetuples: typing.List[ComputePlanAggregatetupleSpec]
-    testtuples: typing.List[ComputePlanTesttupleSpec]
-
-    def create_traintuple(self, algo, dataset, data_samples, in_models=None, tag="", metadata=None):
+class _ComputePlanSpecFactory:
+    def create_traintuple(
+        self, algo, dataset, data_samples, in_models=None, tag="", metadata=None
+    ) -> ComputePlanTraintupleSpec:
         in_models = in_models or []
         spec = ComputePlanTraintupleSpec(
             algo_key=algo.key,
@@ -461,7 +367,9 @@ class _BaseComputePlanSpec(_Spec, abc.ABC):
         self.traintuples.append(spec)
         return spec
 
-    def create_aggregatetuple(self, aggregate_algo, worker, in_models=None, tag="", metadata=None):
+    def create_aggregatetuple(
+        self, aggregate_algo, worker, in_models=None, tag="", metadata=None
+    ) -> ComputePlanAggregatetupleSpec:
         in_models = in_models or []
 
         for t in in_models:
@@ -488,7 +396,7 @@ class _BaseComputePlanSpec(_Spec, abc.ABC):
         out_trunk_model_permissions=None,
         tag="",
         metadata=None,
-    ):
+    ) -> ComputePlanCompositeTraintupleSpec:
         data_samples = data_samples or []
 
         if in_head_model and in_trunk_model:
@@ -509,7 +417,9 @@ class _BaseComputePlanSpec(_Spec, abc.ABC):
         self.composite_traintuples.append(spec)
         return spec
 
-    def create_testtuple(self, metrics, traintuple_spec, dataset, data_samples, tag="", metadata=None):
+    def create_testtuple(
+        self, metrics, traintuple_spec, dataset, data_samples, tag="", metadata=None
+    ) -> ComputePlanTesttupleSpec:
         spec = ComputePlanTesttupleSpec(
             metric_keys=[metric.key for metric in metrics],
             traintuple_id=traintuple_spec.id,
@@ -522,16 +432,12 @@ class _BaseComputePlanSpec(_Spec, abc.ABC):
         return spec
 
 
-class ComputePlanSpec(_BaseComputePlanSpec):
-    key: str
-    tag: str
-    name: str
-    metadata: typing.Dict[str, str] = None
-    clean_models: bool
+class ComputePlanSpec(_ComputePlanSpecFactory, substra.sdk.schemas.ComputePlanSpec):
+    pass
 
 
-class UpdateComputePlanSpec(_BaseComputePlanSpec):
-    key: str
+class UpdateComputePlanSpec(_ComputePlanSpecFactory, substra.sdk.schemas.UpdateComputePlanSpec):
+    pass
 
 
 class AssetsFactory:
@@ -606,7 +512,9 @@ class AssetsFactory:
             logs_permission=logs_permission or DEFAULT_PERMISSIONS,
         )
 
-    def create_algo(self, category, py_script=None, dockerfile=None, permissions=None, metadata=None, offset=0):
+    def create_algo(
+        self, category, py_script=None, dockerfile=None, permissions=None, metadata=None, offset=0
+    ) -> AlgoSpec:
         idx = self._algo_counter.inc()
         tmpdir = self._workdir / f"algo-{idx}"
         tmpdir.mkdir()
@@ -652,7 +560,7 @@ class AssetsFactory:
         compute_plan_key=None,
         rank=None,
         metadata=None,
-    ):
+    ) -> TraintupleSpec:
         data_samples = data_samples or []
         traintuples = traintuples or []
 
@@ -672,7 +580,7 @@ class AssetsFactory:
 
     def create_aggregatetuple(
         self, algo=None, worker=None, traintuples=None, tag=None, compute_plan_key=None, rank=None, metadata=None
-    ):
+    ) -> AggregatetupleSpec:
         traintuples = traintuples or []
 
         for t in traintuples:
@@ -700,7 +608,7 @@ class AssetsFactory:
         rank=None,
         permissions=None,
         metadata=None,
-    ):
+    ) -> CompositeTraintupleSpec:
         data_samples = data_samples or []
 
         if head_traintuple and trunk_traintuple:
@@ -725,7 +633,7 @@ class AssetsFactory:
             out_trunk_model_permissions=permissions or DEFAULT_OUT_TRUNK_MODEL_PERMISSIONS,
         )
 
-    def create_testtuple(self, metrics, traintuple, dataset, data_samples, tag=None, metadata=None):
+    def create_testtuple(self, metrics, traintuple, dataset, data_samples, tag=None, metadata=None) -> TesttupleSpec:
         return TesttupleSpec(
             metric_keys=[metric.key for metric in metrics],
             traintuple_key=traintuple.key,

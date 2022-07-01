@@ -1,6 +1,7 @@
 import pytest
 import substra
 from substra.sdk.models import Status
+from substra.sdk.schemas import TraintupleSpec
 
 import substratest as sbt
 from substratest.factory import AlgoCategory
@@ -15,12 +16,15 @@ def test_tuples_execution_on_same_organization(factory, network, client, default
     algo = client.add_algo(spec)
 
     # create traintuple
-    spec = factory.create_traintuple(
-        algo=algo,
-        dataset=default_dataset,
-        data_samples=default_dataset.train_data_sample_keys,
-        metadata={"foo": "bar"},
-    )
+    def get_traintuple_spec() -> TraintupleSpec:
+        return factory.create_traintuple(
+            algo=algo,
+            dataset=default_dataset,
+            data_samples=default_dataset.train_data_sample_keys,
+            metadata={"foo": "bar"},
+        )
+
+    spec = get_traintuple_spec()
     traintuple = client.add_traintuple(spec)
     traintuple = client.wait(traintuple)
     assert traintuple.status == Status.done
@@ -33,6 +37,7 @@ def test_tuples_execution_on_same_organization(factory, network, client, default
         assert client.download_model(model.key) == b'{"value": 2.2}'
 
     # check we can add twice the same traintuple
+    spec = get_traintuple_spec()
     client.add_traintuple(spec)
 
     # create testtuple
