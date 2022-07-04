@@ -79,11 +79,11 @@ class Client:
     def add_compute_plan(self, spec, *args, **kwargs):
         return self._client.add_compute_plan(spec.dict(), *args, **kwargs)
 
-    def update_compute_plan(self, spec, *args, **kwargs):
+    def add_compute_plan_tuples(self, spec, *args, **kwargs):
         spec_dict = spec.dict()
         # Remove extra field from data
         spec_dict.pop("key")
-        return self._client.update_compute_plan(spec.key, spec_dict, *args, **kwargs)
+        return self._client.add_compute_plan_tuples(spec.key, spec_dict, *args, **kwargs)
 
     def list_compute_plan(self, *args, **kwargs):
         return self._client.list_compute_plan(*args, **kwargs)

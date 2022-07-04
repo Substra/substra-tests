@@ -221,7 +221,7 @@ def test_compute_plan_update(factory, client, default_dataset, default_metric):
 
     # Update compute plan with traintuple + testtuple
 
-    cp_spec = factory.update_compute_plan(cp)
+    cp_spec = factory.add_compute_plan_tuples(cp)
     traintuple_spec_2 = cp_spec.create_traintuple(
         algo=algo,
         dataset=default_dataset,
@@ -236,26 +236,26 @@ def test_compute_plan_update(factory, client, default_dataset, default_metric):
         dataset=default_dataset,
         data_samples=default_dataset.test_data_sample_keys,
     )
-    cp = client.update_compute_plan(cp_spec, auto_batching=True, batch_size=1)
+    cp = client.add_compute_plan_tuples(cp_spec, auto_batching=True, batch_size=1)
 
     # Update compute plan with traintuple
 
-    cp_spec = factory.update_compute_plan(cp)
+    cp_spec = factory.add_compute_plan_tuples(cp)
     traintuple_spec_3 = cp_spec.create_traintuple(
         algo=algo, dataset=default_dataset, data_samples=[data_sample_3], in_models=[traintuple_spec_2]
     )
-    cp = client.update_compute_plan(cp_spec)
+    cp = client.add_compute_plan_tuples(cp_spec)
 
     # Update compute plan with testtuple
 
-    cp_spec = factory.update_compute_plan(cp)
+    cp_spec = factory.add_compute_plan_tuples(cp)
     cp_spec.create_testtuple(
         metrics=[default_metric],
         traintuple_spec=traintuple_spec_3,
         dataset=default_dataset,
         data_samples=default_dataset.test_data_sample_keys,
     )
-    cp = client.update_compute_plan(cp_spec)
+    cp = client.add_compute_plan_tuples(cp_spec)
 
     # All the train/test tuples should succeed
     cp_added = client.get_compute_plan(cp.key)
@@ -581,7 +581,7 @@ def test_compute_plan_no_batching(factory, client, default_dataset):
     assert all([tuple_.status == models.Status.done for tuple_ in traintuples])
 
     # Update the compute plan
-    cp_spec = factory.update_compute_plan(cp)
+    cp_spec = factory.add_compute_plan_tuples(cp)
     cp_spec.create_traintuple(
         algo=algo,
         dataset=default_dataset,
@@ -589,7 +589,7 @@ def test_compute_plan_no_batching(factory, client, default_dataset):
         in_models=[traintuple_spec_1],
         metadata={"foo": "bar"},
     )
-    cp_added = client.update_compute_plan(cp_spec, auto_batching=False)
+    cp_added = client.add_compute_plan_tuples(cp_spec, auto_batching=False)
     cp = client.wait(cp_added)
 
     traintuples = client.list_compute_plan_traintuples(cp.key)

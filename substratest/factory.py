@@ -656,7 +656,7 @@ class AssetsFactory:
             clean_models=clean_models,
         )
 
-    def update_compute_plan(self, compute_plan):
+    def add_compute_plan_tuples(self, compute_plan):
         return UpdateComputePlanSpec(
             traintuples=[],
             composite_traintuples=[],

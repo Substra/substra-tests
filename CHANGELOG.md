@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Stop using metrics APIs, use algo APIs instead (#286)
+- Following the change in substra, rename `Client.update_compute_plan` in `Client.add_compute_plan_tuples` (#294)
 
 ## [0.23.0] - 2022-06-27
 
