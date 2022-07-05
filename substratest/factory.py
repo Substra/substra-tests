@@ -14,8 +14,10 @@ from substra.sdk.schemas import AggregatetupleSpec
 from substra.sdk.schemas import AlgoCategory
 from substra.sdk.schemas import AlgoSpec
 from substra.sdk.schemas import CompositeTraintupleSpec
+from substra.sdk.schemas import ComputePlanPredicttupleSpec
 from substra.sdk.schemas import ComputePlanTesttupleSpec
 from substra.sdk.schemas import Permissions
+from substra.sdk.schemas import PredicttupleSpec
 from substra.sdk.schemas import TesttupleSpec
 from substra.sdk.schemas import TraintupleSpec
 
@@ -311,6 +313,7 @@ DEFAULT_ALGO_SCRIPTS = {
     AlgoCategory.simple: DEFAULT_ALGO_SCRIPT,
     AlgoCategory.composite: DEFAULT_COMPOSITE_ALGO_SCRIPT,
     AlgoCategory.aggregate: DEFAULT_AGGREGATE_ALGO_SCRIPT,
+    AlgoCategory.predict: DEFAULT_ALGO_SCRIPT,
 }
 
 
@@ -417,12 +420,27 @@ class _ComputePlanSpecFactory:
         self.composite_traintuples.append(spec)
         return spec
 
+    def create_predicttuple(
+        self, algo, traintuple_spec, dataset, data_samples, tag="", metadata=None
+    ) -> ComputePlanPredicttupleSpec:
+        spec = ComputePlanPredicttupleSpec(
+            predicttuple_id=random_uuid(),
+            algo_key=algo.key,
+            traintuple_id=traintuple_spec.id,
+            data_manager_key=dataset.key,
+            test_data_sample_keys=_get_keys(data_samples),
+            tag=tag,
+            metadata=metadata,
+        )
+        self.predicttuples.append(spec)
+        return spec
+
     def create_testtuple(
-        self, metrics, traintuple_spec, dataset, data_samples, tag="", metadata=None
+        self, algo, predicttuple_spec, dataset, data_samples, tag="", metadata=None
     ) -> ComputePlanTesttupleSpec:
         spec = ComputePlanTesttupleSpec(
-            metric_keys=[metric.key for metric in metrics],
-            traintuple_id=traintuple_spec.id,
+            algo_key=algo.key,
+            predicttuple_id=predicttuple_spec.predicttuple_id,
             data_manager_key=dataset.key,
             test_data_sample_keys=_get_keys(data_samples),
             tag=tag,
@@ -633,10 +651,20 @@ class AssetsFactory:
             out_trunk_model_permissions=permissions or DEFAULT_OUT_TRUNK_MODEL_PERMISSIONS,
         )
 
-    def create_testtuple(self, metrics, traintuple, dataset, data_samples, tag=None, metadata=None) -> TesttupleSpec:
-        return TesttupleSpec(
-            metric_keys=[metric.key for metric in metrics],
+    def create_predicttuple(self, algo, traintuple, dataset, data_samples, tag=None, metadata=None) -> PredicttupleSpec:
+        return PredicttupleSpec(
+            algo_key=algo.key,
             traintuple_key=traintuple.key,
+            data_manager_key=dataset.key,
+            test_data_sample_keys=_get_keys(data_samples),
+            tag=tag,
+            metadata=metadata,
+        )
+
+    def create_testtuple(self, algo, predicttuple, dataset, data_samples, tag=None, metadata=None) -> TesttupleSpec:
+        return TesttupleSpec(
+            algo_key=algo.key,
+            predicttuple_key=predicttuple.key,
             data_manager_key=dataset.key,
             test_data_sample_keys=_get_keys(data_samples),
             tag=tag,
@@ -650,6 +678,7 @@ class AssetsFactory:
             composite_traintuples=[],
             aggregatetuples=[],
             testtuples=[],
+            predicttuples=[],
             tag=tag,
             name=name,
             metadata=metadata,
@@ -662,5 +691,6 @@ class AssetsFactory:
             composite_traintuples=[],
             aggregatetuples=[],
             testtuples=[],
+            predicttuples=[],
             key=compute_plan.key,
         )

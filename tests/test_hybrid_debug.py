@@ -3,6 +3,7 @@ import pytest
 from substra.sdk import models
 from substra.sdk.exceptions import InvalidRequest
 
+from substratest.factory import DEFAULT_COMPOSITE_ALGO_SCRIPT
 from substratest.factory import AlgoCategory
 from substratest.factory import Permissions
 
@@ -23,7 +24,9 @@ pytestmark = pytest.mark.skipif(not docker_available(), reason="requires docker"
 def test_execution_debug(client, debug_client, debug_factory, default_dataset):
 
     spec = debug_factory.create_algo(AlgoCategory.simple)
-    algo = client.add_algo(spec)
+    simple_algo = client.add_algo(spec)
+    spec = debug_factory.create_algo(AlgoCategory.predict)
+    predict_algo = client.add_algo(spec)
 
     metric_spec = debug_factory.create_algo(category=AlgoCategory.metric)
     metric = client.add_algo(metric_spec)
@@ -31,7 +34,7 @@ def test_execution_debug(client, debug_client, debug_factory, default_dataset):
     #  Add the traintuple
     # create traintuple
     spec = debug_factory.create_traintuple(
-        algo=algo,
+        algo=simple_algo,
         dataset=default_dataset,
         data_samples=[default_dataset.train_data_sample_keys[0]],
     )
@@ -40,9 +43,18 @@ def test_execution_debug(client, debug_client, debug_factory, default_dataset):
     assert len(traintuple.train.models) != 0
 
     # Add the testtuple
-    spec = debug_factory.create_testtuple(
-        metrics=[metric],
+    spec = debug_factory.create_predicttuple(
+        algo=predict_algo,
         traintuple=traintuple,
+        dataset=default_dataset,
+        data_samples=[default_dataset.test_data_sample_keys[0]],
+    )
+    predicttuple = debug_client.add_predicttuple(spec)
+    assert predicttuple.status == models.Status.done
+
+    spec = debug_factory.create_testtuple(
+        algo=metric,
+        predicttuple=predicttuple,
         dataset=default_dataset,
         data_samples=[default_dataset.test_data_sample_keys[0]],
     )
@@ -66,6 +78,8 @@ def test_debug_compute_plan_aggregate_composite(network, client, debug_client, d
     composite_algo = client.add_algo(spec)
     spec = debug_factory.create_algo(AlgoCategory.aggregate)
     aggregate_algo = client.add_algo(spec)
+    spec = debug_factory.create_algo(AlgoCategory.predict, py_script=DEFAULT_COMPOSITE_ALGO_SCRIPT)
+    predict_algo_composite = client.add_algo(spec)
 
     # launch execution
     previous_aggregatetuple_spec = None
@@ -114,20 +128,28 @@ def test_debug_compute_plan_aggregate_composite(network, client, debug_client, d
     for composite_traintuple_spec, dataset, metric in zip(
         previous_composite_traintuple_specs, default_datasets, metrics
     ):
-        cp_spec.create_testtuple(
-            metrics=[metric],
+
+        spec = cp_spec.create_predicttuple(
+            algo=predict_algo_composite,
             dataset=dataset,
             data_samples=dataset.test_data_sample_keys,
             traintuple_spec=composite_traintuple_spec,
+        )
+        cp_spec.create_testtuple(
+            algo=metric,
+            dataset=dataset,
+            data_samples=dataset.test_data_sample_keys,
+            predicttuple_spec=spec,
         )
 
     cp = debug_client.add_compute_plan(cp_spec)
     traintuples = debug_client.list_compute_plan_traintuples(cp.key)
     composite_traintuples = client.list_compute_plan_composite_traintuples(cp.key)
     aggregatetuples = client.list_compute_plan_aggregatetuples(cp.key)
+    predicttuples = client.list_compute_plan_predicttuples(cp.key)
     testtuples = client.list_compute_plan_testtuples(cp.key)
 
-    tuples = traintuples + composite_traintuples + aggregatetuples + testtuples
+    tuples = traintuples + composite_traintuples + aggregatetuples + predicttuples + testtuples
     for t in tuples:
         assert t.status == models.Status.done
 

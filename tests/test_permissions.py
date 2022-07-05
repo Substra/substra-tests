@@ -321,6 +321,10 @@ def test_merge_permissions_denied_process(factory, clients, channel):
         algo_2 = client_2.add_algo(spec)
 
         # add traintuple from organization 2
+        spec = factory.create_algo(category=AlgoCategory.predict, permissions=permissions_1)
+        predict_algo_1 = client_1.add_algo(spec)
+
+        # add traintuple from node 2
         spec = factory.create_traintuple(
             algo=algo_2,
             dataset=dataset_1,
@@ -330,16 +334,16 @@ def test_merge_permissions_denied_process(factory, clients, channel):
         traintuple_2 = client_2.wait(traintuple_2)
         channel.wait_for_asset_synchronized(traintuple_2)  # used by client_3
 
-        # failed to add testtuple from organization 3
-        spec = factory.create_testtuple(
-            metrics=[metric_1],
+        # failed to add predicttuple from organization 3
+        spec = factory.create_predicttuple(
+            algo=predict_algo_1,
             traintuple=traintuple_2,
             dataset=dataset_1,
             data_samples=dataset_1.test_data_sample_keys,
         )
 
         with pytest.raises(substra.exceptions.AuthorizationError):
-            client_3.add_testtuple(spec)
+            client_3.add_predicttuple(spec)
 
 
 @pytest.mark.remote_only  # no check on permissions with the local backend

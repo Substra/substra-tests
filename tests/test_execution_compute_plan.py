@@ -5,6 +5,7 @@ import substra
 from substra.sdk import models
 
 import substratest as sbt
+from substratest.factory import DEFAULT_COMPOSITE_ALGO_SCRIPT
 from substratest.factory import AlgoCategory
 from substratest.factory import Permissions
 
@@ -16,13 +17,19 @@ def test_compute_plan_simple(
     - 1 traintuple executed on organization 1
     - 1 traintuple executed on organization 2
     - 1 traintuple executed on organization 1 depending on previous traintuples
-    - 1 testtuple executed on organization 1 depending on the last traintuple and on multiple metrics
+    - 1 predicttuple executed on organization 1 depending on previous traintuples
+    - 1 testtuple executed on organization 1 depending on the last predicttuple and on one metric
     """
 
     cp_key = str(uuid.uuid4())
-    spec = factory.create_algo(AlgoCategory.simple)
-    algo_2 = client_2.add_algo(spec)
-    channel.wait_for_asset_synchronized(algo_2)
+
+    simple_algo_spec = factory.create_algo(AlgoCategory.simple)
+    simple_algo_2 = client_2.add_algo(simple_algo_spec)
+
+    predict_algo_spec = factory.create_algo(AlgoCategory.predict)
+    predict_algo_2 = client_2.add_algo(predict_algo_spec)
+
+    channel.wait_for_asset_synchronized(simple_algo_2)
 
     # create compute plan
     cp_spec = factory.create_compute_plan(
@@ -33,30 +40,38 @@ def test_compute_plan_simple(
     )
 
     traintuple_spec_1 = cp_spec.create_traintuple(
-        algo=algo_2,
+        algo=simple_algo_2,
         dataset=default_dataset_1,
         data_samples=default_dataset_1.train_data_sample_keys,
         metadata=None,
     )
 
     traintuple_spec_2 = cp_spec.create_traintuple(
-        algo=algo_2,
+        algo=simple_algo_2,
         dataset=default_dataset_2,
         data_samples=default_dataset_2.train_data_sample_keys,
         metadata={},
     )
 
     traintuple_spec_3 = cp_spec.create_traintuple(
-        algo=algo_2,
+        algo=simple_algo_2,
         dataset=default_dataset_1,
         data_samples=default_dataset_1.train_data_sample_keys,
         in_models=[traintuple_spec_1, traintuple_spec_2],
         metadata={"foo": "bar"},
     )
 
-    cp_spec.create_testtuple(
-        metrics=default_metrics,
+    predicttuple_spec_3 = cp_spec.create_predicttuple(
+        algo=predict_algo_2,
         traintuple_spec=traintuple_spec_3,
+        dataset=default_dataset_1,
+        data_samples=default_dataset_1.test_data_sample_keys,
+        metadata={"foo": "bar"},
+    )
+
+    cp_spec.create_testtuple(
+        algo=default_metrics[0],
+        predicttuple_spec=predicttuple_spec_3,
         dataset=default_dataset_1,
         data_samples=default_dataset_1.test_data_sample_keys,
         metadata={"foo": "bar"},
@@ -69,13 +84,16 @@ def test_compute_plan_simple(
     assert cp.key == cp_key
     assert cp.tag == "foo"
     assert cp.metadata == {"foo": "bar"}
-    assert cp.task_count == cp.done_count == 4
+    assert cp.task_count == cp.done_count == 5
     assert cp.todo_count == cp.waiting_count == cp.doing_count == cp.canceled_count == cp.failed_count == 0
     assert cp.end_date is not None
     assert cp.duration is not None
 
     traintuples = client_1.list_compute_plan_traintuples(cp.key)
     assert len(traintuples) == 3
+
+    predicttuples = client_1.list_compute_plan_predicttuples(cp.key)
+    assert len(predicttuples) == 1
 
     testtuples = client_1.list_compute_plan_testtuples(cp.key)
     assert len(testtuples) == 1
@@ -90,33 +108,38 @@ def test_compute_plan_simple(
 
     assert len(traintuple_3.parent_task_keys) == 2
 
+    for p in predicttuples:
+        assert p.status == models.Status.done
+
     for t in testtuples:
         assert t.status == models.Status.done
 
     testtuple = client_1.get_testtuple(testtuples[0].key)
+    predicttuple = client_1.get_predicttuple(predicttuples[0].key)
 
     # check tuples metadata
     assert traintuple_1.metadata == {}
     assert traintuple_2.metadata == {}
     assert traintuple_3.metadata == {"foo": "bar"}
+    assert predicttuple.metadata == {"foo": "bar"}
     assert testtuple.metadata == {"foo": "bar"}
 
     # check tuples rank
     assert traintuple_1.rank == 0
     assert traintuple_2.rank == 0
     assert traintuple_3.rank == 1
-    assert testtuple.rank == traintuple_3.rank
+    assert predicttuple.rank == 2  # TODO to verify
+    assert testtuple.rank == predicttuple.rank
 
     # check testtuple perfs
-    assert len(testtuple.test.perfs) == len(default_metrics)
+    assert len(testtuple.test.perfs) == 1
     assert set(testtuple.test.perfs.values()) == {
         4,
-        5,
     }
 
     # check compute plan perfs
     performances = client_1.get_performances(cp.key)
-    assert all(len(val) == len(default_metrics) for val in performances.dict().values())
+    assert all(len(val) == 1 for val in performances.dict().values())
     assert set(testtuple.test.perfs.values()) == set(performances.performance)
 
     # XXX as the first two tuples have the same rank, there is currently no way to know
@@ -124,6 +147,7 @@ def test_compute_plan_simple(
     workers_rank_0 = set([traintuple_1.worker, traintuple_2.worker])
     assert workers_rank_0 == set([client_1.organization_id, client_2.organization_id])
     assert traintuple_3.worker == client_1.organization_id
+    assert predicttuple.worker == client_1.organization_id
     assert testtuple.worker == client_1.organization_id
 
     # check mapping
@@ -149,35 +173,60 @@ def test_compute_plan_single_client_success(factory, client, default_dataset, de
 
     data_sample_1, data_sample_2, data_sample_3, _ = default_dataset.train_data_sample_keys
 
-    spec = factory.create_algo(AlgoCategory.simple)
-    algo = client.add_algo(spec)
+    simple_algo_spec = factory.create_algo(AlgoCategory.simple)
+    simple_algo = client.add_algo(simple_algo_spec)
+
+    predict_algo_spec = factory.create_algo(AlgoCategory.predict)
+    predict_algo = client.add_algo(predict_algo_spec)
 
     cp_spec = factory.create_compute_plan()
 
-    traintuple_spec_1 = cp_spec.create_traintuple(algo=algo, dataset=default_dataset, data_samples=[data_sample_1])
-    cp_spec.create_testtuple(
-        metrics=[default_metric],
+    traintuple_spec_1 = cp_spec.create_traintuple(
+        algo=simple_algo, dataset=default_dataset, data_samples=[data_sample_1]
+    )
+
+    predicttuple_spec_1 = cp_spec.create_predicttuple(
+        algo=predict_algo,
         traintuple_spec=traintuple_spec_1,
         dataset=default_dataset,
         data_samples=default_dataset.test_data_sample_keys,
     )
 
-    traintuple_spec_2 = cp_spec.create_traintuple(
-        algo=algo, dataset=default_dataset, data_samples=[data_sample_2], in_models=[traintuple_spec_1]
-    )
     cp_spec.create_testtuple(
-        metrics=[default_metric],
+        algo=default_metric,
+        predicttuple_spec=predicttuple_spec_1,
         dataset=default_dataset,
         data_samples=default_dataset.test_data_sample_keys,
+    )
+
+    traintuple_spec_2 = cp_spec.create_traintuple(
+        algo=simple_algo, dataset=default_dataset, data_samples=[data_sample_2], in_models=[traintuple_spec_1]
+    )
+    predicttuple_spec_2 = cp_spec.create_predicttuple(
+        algo=predict_algo,
         traintuple_spec=traintuple_spec_2,
+        dataset=default_dataset,
+        data_samples=default_dataset.test_data_sample_keys,
+    )
+    cp_spec.create_testtuple(
+        algo=default_metric,
+        dataset=default_dataset,
+        data_samples=default_dataset.test_data_sample_keys,
+        predicttuple_spec=predicttuple_spec_2,
     )
 
     traintuple_spec_3 = cp_spec.create_traintuple(
-        algo=algo, dataset=default_dataset, data_samples=[data_sample_3], in_models=[traintuple_spec_2]
+        algo=simple_algo, dataset=default_dataset, data_samples=[data_sample_3], in_models=[traintuple_spec_2]
+    )
+    predicttuple_spec_3 = cp_spec.create_predicttuple(
+        algo=predict_algo,
+        traintuple_spec=traintuple_spec_3,
+        dataset=default_dataset,
+        data_samples=default_dataset.test_data_sample_keys,
     )
     cp_spec.create_testtuple(
-        metrics=[default_metric],
-        traintuple_spec=traintuple_spec_3,
+        algo=default_metric,
+        predicttuple_spec=predicttuple_spec_3,
         dataset=default_dataset,
         data_samples=default_dataset.test_data_sample_keys,
     )
@@ -191,7 +240,11 @@ def test_compute_plan_single_client_success(factory, client, default_dataset, de
     assert cp.duration is not None
 
     # All the train/test tuples should succeed
-    for t in client.list_compute_plan_traintuples(cp.key) + client.list_compute_plan_testtuples(cp.key):
+    for t in (
+        client.list_compute_plan_traintuples(cp.key)
+        + client.list_compute_plan_predicttuples(cp.key)
+        + client.list_compute_plan_testtuples(cp.key)
+    ):
         assert t.status == models.Status.done
 
 
@@ -204,16 +257,29 @@ def test_compute_plan_update(factory, client, default_dataset, default_metric):
 
     data_sample_1, data_sample_2, data_sample_3, _ = default_dataset.train_data_sample_keys
 
-    spec = factory.create_algo(AlgoCategory.simple)
-    algo = client.add_algo(spec)
+    simple_algo_spec = factory.create_algo(AlgoCategory.simple)
+    simple_algo = client.add_algo(simple_algo_spec)
+
+    predict_algo_spec = factory.create_algo(AlgoCategory.predict)
+    predict_algo = client.add_algo(predict_algo_spec)
 
     # Create a compute plan with traintuple + testtuple
 
     cp_spec = factory.create_compute_plan()
-    traintuple_spec_1 = cp_spec.create_traintuple(algo=algo, dataset=default_dataset, data_samples=[data_sample_1])
-    cp_spec.create_testtuple(
-        metrics=[default_metric],
+    traintuple_spec_1 = cp_spec.create_traintuple(
+        algo=simple_algo, dataset=default_dataset, data_samples=[data_sample_1]
+    )
+
+    predicttuple_spec_1 = cp_spec.create_predicttuple(
+        algo=predict_algo,
         traintuple_spec=traintuple_spec_1,
+        dataset=default_dataset,
+        data_samples=default_dataset.test_data_sample_keys,
+    )
+
+    cp_spec.create_testtuple(
+        algo=default_metric,
+        predicttuple_spec=predicttuple_spec_1,
         dataset=default_dataset,
         data_samples=default_dataset.test_data_sample_keys,
     )
@@ -223,15 +289,22 @@ def test_compute_plan_update(factory, client, default_dataset, default_metric):
 
     cp_spec = factory.add_compute_plan_tuples(cp)
     traintuple_spec_2 = cp_spec.create_traintuple(
-        algo=algo,
+        algo=simple_algo,
         dataset=default_dataset,
         data_samples=[data_sample_2],
         in_models=[traintuple_spec_1],
         metadata={"foo": "bar"},
     )
-    cp_spec.create_testtuple(
-        metrics=[default_metric],
+    predicttuple_spec_2 = cp_spec.create_predicttuple(
+        algo=predict_algo,
         traintuple_spec=traintuple_spec_2,
+        dataset=default_dataset,
+        data_samples=default_dataset.test_data_sample_keys,
+        metadata={"foo": "bar"},
+    )
+    cp_spec.create_testtuple(
+        algo=default_metric,
+        predicttuple_spec=predicttuple_spec_2,
         metadata={"foo": "bar"},
         dataset=default_dataset,
         data_samples=default_dataset.test_data_sample_keys,
@@ -242,7 +315,13 @@ def test_compute_plan_update(factory, client, default_dataset, default_metric):
 
     cp_spec = factory.add_compute_plan_tuples(cp)
     traintuple_spec_3 = cp_spec.create_traintuple(
-        algo=algo, dataset=default_dataset, data_samples=[data_sample_3], in_models=[traintuple_spec_2]
+        algo=simple_algo, dataset=default_dataset, data_samples=[data_sample_3], in_models=[traintuple_spec_2]
+    )
+    predicttuple_spec_3 = cp_spec.create_predicttuple(
+        algo=predict_algo,
+        traintuple_spec=traintuple_spec_3,
+        dataset=default_dataset,
+        data_samples=default_dataset.test_data_sample_keys,
     )
     cp = client.add_compute_plan_tuples(cp_spec)
 
@@ -250,8 +329,8 @@ def test_compute_plan_update(factory, client, default_dataset, default_metric):
 
     cp_spec = factory.add_compute_plan_tuples(cp)
     cp_spec.create_testtuple(
-        metrics=[default_metric],
-        traintuple_spec=traintuple_spec_3,
+        algo=default_metric,
+        predicttuple_spec=predicttuple_spec_3,
         dataset=default_dataset,
         data_samples=default_dataset.test_data_sample_keys,
     )
@@ -261,14 +340,16 @@ def test_compute_plan_update(factory, client, default_dataset, default_metric):
     cp_added = client.get_compute_plan(cp.key)
     cp = client.wait(cp_added)
     traintuples = client.list_compute_plan_traintuples(cp.key)
+    predicttuples = client.list_compute_plan_predicttuples(cp.key)
     testtuples = client.list_compute_plan_testtuples(cp.key)
-    tuples = traintuples + testtuples
-    assert len(tuples) == 6
+    tuples = traintuples + predicttuples + testtuples
+    assert len(tuples) == 9
     for t in tuples:
         assert t.status == models.Status.done
 
     # Check tuples metadata
     assert traintuples[1].metadata == {"foo": "bar"}
+    assert predicttuples[1].metadata == {"foo": "bar"}
     assert testtuples[1].metadata == {"foo": "bar"}
 
 
@@ -280,43 +361,67 @@ def test_compute_plan_single_client_failure(factory, client, default_dataset, de
 
     # Create a compute plan with 3 steps:
     #
-    # 1. traintuple + testtuple
-    # 2. traintuple + testtuple
-    # 3. traintuple + testtuple
+    # 1. traintuple + predicttuple + testtuple
+    # 2. traintuple + predicttuple + testtuple
+    # 3. traintuple + predicttuple + testtuple
     #
     # Intentionally use an invalid (broken) algo.
 
     data_sample_1, data_sample_2, data_sample_3, _ = default_dataset.train_data_sample_keys
 
-    spec = factory.create_algo(category=AlgoCategory.simple, py_script=sbt.factory.INVALID_ALGO_SCRIPT)
-    algo = client.add_algo(spec)
+    simple_algo_spec = factory.create_algo(AlgoCategory.simple, py_script=sbt.factory.INVALID_ALGO_SCRIPT)
+    simple_algo = client.add_algo(simple_algo_spec)
+
+    predict_algo_spec = factory.create_algo(AlgoCategory.predict)
+    predict_algo = client.add_algo(predict_algo_spec)
 
     cp_spec = factory.create_compute_plan()
 
-    traintuple_spec_1 = cp_spec.create_traintuple(algo=algo, dataset=default_dataset, data_samples=[data_sample_1])
-    cp_spec.create_testtuple(
-        metrics=[default_metric],
+    traintuple_spec_1 = cp_spec.create_traintuple(
+        algo=simple_algo, dataset=default_dataset, data_samples=[data_sample_1]
+    )
+    predicttuple_spec_1 = cp_spec.create_predicttuple(
+        algo=predict_algo,
         traintuple_spec=traintuple_spec_1,
+        dataset=default_dataset,
+        data_samples=default_dataset.test_data_sample_keys,
+    )
+    cp_spec.create_testtuple(
+        algo=default_metric,
+        predicttuple_spec=predicttuple_spec_1,
         dataset=default_dataset,
         data_samples=default_dataset.test_data_sample_keys,
     )
 
     traintuple_spec_2 = cp_spec.create_traintuple(
-        algo=algo, dataset=default_dataset, data_samples=[data_sample_2], in_models=[traintuple_spec_1]
+        algo=simple_algo, dataset=default_dataset, data_samples=[data_sample_2], in_models=[traintuple_spec_1]
     )
-    cp_spec.create_testtuple(
-        metrics=[default_metric],
+    predicttuple_spec_2 = cp_spec.create_predicttuple(
+        algo=predict_algo,
         traintuple_spec=traintuple_spec_2,
         dataset=default_dataset,
         data_samples=default_dataset.test_data_sample_keys,
     )
 
+    cp_spec.create_testtuple(
+        algo=default_metric,
+        predicttuple_spec=predicttuple_spec_2,
+        dataset=default_dataset,
+        data_samples=default_dataset.test_data_sample_keys,
+    )
+
     traintuple_spec_3 = cp_spec.create_traintuple(
-        algo=algo, dataset=default_dataset, data_samples=[data_sample_3], in_models=[traintuple_spec_2]
+        algo=simple_algo, dataset=default_dataset, data_samples=[data_sample_3], in_models=[traintuple_spec_2]
+    )
+    predicttuple_spec_3 = cp_spec.create_predicttuple(
+        algo=predict_algo,
+        traintuple_spec=traintuple_spec_3,
+        dataset=default_dataset,
+        data_samples=default_dataset.test_data_sample_keys,
     )
     cp_spec.create_testtuple(
-        metrics=[default_metric],
-        traintuple_spec=traintuple_spec_3,
+        algo=default_metric,
+        predicttuple_spec=predicttuple_spec_3,
         dataset=default_dataset,
         data_samples=default_dataset.test_data_sample_keys,
     )
@@ -347,6 +452,10 @@ def test_compute_plan_aggregate_composite_traintuples(  # noqa: C901
     composite_algo = clients[0].add_algo(spec)
     spec = factory.create_algo(AlgoCategory.aggregate)
     aggregate_algo = clients[0].add_algo(spec)
+    spec = factory.create_algo(AlgoCategory.predict)
+    predict_algo = clients[0].add_algo(spec)
+    spec = factory.create_algo(AlgoCategory.predict, py_script=DEFAULT_COMPOSITE_ALGO_SCRIPT)
+    predict_algo_composite = clients[0].add_algo(spec)
 
     # launch execution
     previous_aggregatetuple_spec = None
@@ -392,24 +501,39 @@ def test_compute_plan_aggregate_composite_traintuples(  # noqa: C901
     for composite_traintuple, dataset, metric in zip(
         previous_composite_traintuple_specs, default_datasets, default_metrics
     ):
-        cp_spec.create_testtuple(
-            metrics=[metric],
+        spec = cp_spec.create_predicttuple(
+            algo=predict_algo_composite,
             dataset=dataset,
             data_samples=dataset.test_data_sample_keys,
             traintuple_spec=composite_traintuple,
         )
-    cp_spec.create_testtuple(
-        metrics=[metric],
+        cp_spec.create_testtuple(
+            algo=metric,
+            dataset=dataset,
+            data_samples=dataset.test_data_sample_keys,
+            predicttuple_spec=spec,
+        )
+
+    predicttuple_from_aggregate_spec = cp_spec.create_predicttuple(
+        algo=predict_algo,
+        dataset=default_datasets[0],
+        data_samples=default_datasets[0].test_data_sample_keys,
         traintuple_spec=previous_aggregatetuple_spec,
+    )
+    cp_spec.create_testtuple(
+        algo=metric,
+        predicttuple_spec=predicttuple_from_aggregate_spec,
         dataset=default_datasets[0],
         data_samples=default_datasets[0].test_data_sample_keys,
     )
 
     cp_added = clients[0].add_compute_plan(cp_spec)
     cp = clients[0].wait(cp_added)
+
     traintuples = clients[0].list_compute_plan_traintuples(cp.key)
     composite_traintuples = clients[0].list_compute_plan_composite_traintuples(cp.key)
     aggregatetuples = clients[0].list_compute_plan_aggregatetuples(cp.key)
+    predicttuples = clients[0].list_compute_plan_predicttuples(cp.key)
     testtuples = clients[0].list_compute_plan_testtuples(cp.key)
 
     for task in composite_traintuple_specs:
@@ -419,7 +543,7 @@ def test_compute_plan_aggregate_composite_traintuples(  # noqa: C901
         if task.in_trunk_model_id:
             assert task.in_trunk_model_id in remote_task.parent_task_keys
 
-    tuples = traintuples + composite_traintuples + aggregatetuples + testtuples
+    tuples = traintuples + composite_traintuples + aggregatetuples + predicttuples + testtuples
     for t in tuples:
         assert t.status == models.Status.done, t
 
@@ -446,26 +570,43 @@ def test_compute_plan_remove_intermediary_model(factory, client, default_dataset
     data_sample_1, data_sample_2, data_sample_3, _ = default_dataset.train_data_sample_keys
 
     # register algo
-    spec = factory.create_algo(AlgoCategory.simple)
-    algo = client.add_algo(spec)
+    simple_algo_spec = factory.create_algo(AlgoCategory.simple)
+    simple_algo = client.add_algo(simple_algo_spec)
+
+    predict_algo_spec = factory.create_algo(AlgoCategory.predict)
+    predict_algo = client.add_algo(predict_algo_spec)
 
     # create a compute plan with clean_model activate
     cp_spec = factory.create_compute_plan(clean_models=True)
 
-    traintuple_spec_1 = cp_spec.create_traintuple(algo=algo, dataset=default_dataset, data_samples=[data_sample_1])
-    cp_spec.create_testtuple(
-        metrics=[default_metric],
+    traintuple_spec_1 = cp_spec.create_traintuple(
+        algo=simple_algo, dataset=default_dataset, data_samples=[data_sample_1]
+    )
+    predicttuple_spec_1 = cp_spec.create_predicttuple(
+        algo=predict_algo,
+        dataset=default_dataset,
+        data_samples=default_dataset.test_data_sample_keys,
         traintuple_spec=traintuple_spec_1,
+    )
+    cp_spec.create_testtuple(
+        algo=default_metric,
+        predicttuple_spec=predicttuple_spec_1,
         dataset=default_dataset,
         data_samples=default_dataset.test_data_sample_keys,
     )
 
     traintuple_spec_2 = cp_spec.create_traintuple(
-        algo=algo, dataset=default_dataset, data_samples=[data_sample_2], in_models=[traintuple_spec_1]
+        algo=simple_algo, dataset=default_dataset, data_samples=[data_sample_2], in_models=[traintuple_spec_1]
+    )
+    predicttuple_spec_2 = cp_spec.create_predicttuple(
+        algo=predict_algo,
+        dataset=default_dataset,
+        data_samples=default_dataset.test_data_sample_keys,
+        traintuple_spec=traintuple_spec_2,
     )
     cp_spec.create_testtuple(
-        metrics=[default_metric],
-        traintuple_spec=traintuple_spec_2,
+        algo=default_metric,
+        predicttuple_spec=predicttuple_spec_2,
         dataset=default_dataset,
         data_samples=default_dataset.test_data_sample_keys,
     )
@@ -478,7 +619,7 @@ def test_compute_plan_remove_intermediary_model(factory, client, default_dataset
     client.wait_model_deletion(traintuple_1.train.models[0].key)
 
     traintuple_spec_3 = factory.create_traintuple(
-        algo=algo,
+        algo=simple_algo,
         dataset=default_dataset,
         data_samples=[data_sample_3],
         traintuples=client.list_compute_plan_traintuples(cp.key),
@@ -644,31 +785,42 @@ if __name__ == '__main__':
 def test_compute_plan_local_folder(factory, client, default_dataset, default_metric_1):
     data_sample_1, data_sample_2, _, _ = default_dataset.train_data_sample_keys
 
-    spec = factory.create_algo(category=AlgoCategory.simple, py_script=LOCAL_FOLDER_ALGO_SCRIPT)
-    algo = client.add_algo(spec)
+    simple_algo_spec = factory.create_algo(AlgoCategory.simple, py_script=LOCAL_FOLDER_ALGO_SCRIPT)
+    simple_algo = client.add_algo(simple_algo_spec)
+
+    predict_algo_spec = factory.create_algo(AlgoCategory.predict)
+    predict_algo = client.add_algo(predict_algo_spec)
+
     cp_spec = factory.create_compute_plan()
 
     # Traintuple 1
     traintuple_spec_1 = cp_spec.create_traintuple(
-        algo=algo,
+        algo=simple_algo,
         dataset=default_dataset,
         data_samples=[data_sample_1],
     )
 
     # Traintuple 2
     traintuple_spec_2 = cp_spec.create_traintuple(
-        algo=algo,
+        algo=simple_algo,
         dataset=default_dataset,
         data_samples=[data_sample_2],
         in_models=[traintuple_spec_1],
     )
 
-    # Testtuple
-    cp_spec.create_testtuple(
-        metrics=[default_metric_1],
+    predicttuple_spec_2 = cp_spec.create_predicttuple(
+        algo=predict_algo,
         dataset=default_dataset,
         data_samples=default_dataset.test_data_sample_keys,
         traintuple_spec=traintuple_spec_2,
+    )
+
+    # Testtuple
+    cp_spec.create_testtuple(
+        algo=default_metric_1,
+        dataset=default_dataset,
+        data_samples=default_dataset.test_data_sample_keys,
+        predicttuple_spec=predicttuple_spec_2,
     )
 
     cp_added = client.add_compute_plan(cp_spec, auto_batching=False)

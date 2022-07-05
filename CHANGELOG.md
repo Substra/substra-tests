@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Changed
+
+- BREAKING: convert (test task) to (predict task + test task)
+
 ## [0.24.0] - 2022-07-05
 
 ### Changed

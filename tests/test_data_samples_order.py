@@ -44,7 +44,7 @@ class TestAlgo(tools.Algo):
         return [0, 1], [0, 2]
 
     def predict(self, X, model):
-        # Check that the order of X is the same as the one passed to add_testtuple
+        # Check that the order of X is the same as the one passed to add_predicttuple
         predict_data_sample_keys = [folder.split('/')[-1] for folder in X]
         assert predict_data_sample_keys == {predict_data_sample_keys}, predict_data_sample_keys
 
@@ -78,7 +78,7 @@ class TestCompositeAlgo(tools.CompositeAlgo):
         return [0, 1], [0, 2]
 
     def predict(self, X, head_model, trunk_model):
-        # Check that the order of X is the same as the one passed to add_testtuple
+        # Check that the order of X is the same as the one passed to add_predicttuple
         predict_data_sample_keys = [folder.split('/')[-1] for folder in X]
         assert predict_data_sample_keys == {predict_data_sample_keys}, predict_data_sample_keys
 
@@ -115,8 +115,8 @@ class Metrics(tools.Metrics):
         # y_true is a list of unordered data samples
         # since the Algo returns y==x, y_pred should respect the same order
 
-        for y, y_hat in zip(y_true, y_pred):
-            assert y == y_hat, (y, y_hat)
+        assert  y_true_data_sample_keys == y_pred_data_sample_keys, (y_true_data_sample_keys, y_pred_data_sample_keys)
+
         return 1.0
 if __name__ == "__main__":
     tools.metrics.execute(Metrics())
@@ -159,6 +159,9 @@ def test_traintuple_data_samples_relative_order(factory, client, dataset):
     algo_spec = factory.create_algo(category=AlgoCategory.simple, py_script=algo_script)
     algo = client.add_algo(algo_spec)
 
+    predict_algo_spec = factory.create_algo(category=AlgoCategory.predict, py_script=algo_script)
+    predict_algo = client.add_algo(predict_algo_spec)
+
     metric_script = TEMPLATE_METRIC_SCRIPT.format(data_sample_keys=data_sample_keys[:2])
     metric_spec = factory.create_algo(category=AlgoCategory.metric, py_script=metric_script)
     metric = client.add_algo(metric_spec)
@@ -175,9 +178,14 @@ def test_traintuple_data_samples_relative_order(factory, client, dataset):
     #  2. In the train method of the algo. If the order is incorrect, wait() will fail.
     assert traintuple.train.data_sample_keys == data_sample_keys
     client.wait(traintuple)
+    predicttuple_spec = factory.create_predicttuple(
+        algo=predict_algo, traintuple=traintuple, dataset=dataset, data_samples=data_sample_keys[:2]
+    )
+    predicttuple = client.add_predicttuple(predicttuple_spec)
+    client.wait(predicttuple)
 
     testtuple_spec = factory.create_testtuple(
-        metrics=[metric], traintuple=traintuple, dataset=dataset, data_samples=data_sample_keys[:2]
+        algo=metric, predicttuple=predicttuple, dataset=dataset, data_samples=data_sample_keys[:2]
     )
     testtuple = client.add_testtuple(testtuple_spec)
 
@@ -195,6 +203,12 @@ def test_composite_traintuple_data_samples_relative_order(factory, client, datas
     algo_spec = factory.create_algo(AlgoCategory.composite, py_script=composite_algo_script)
     composite_algo = client.add_algo(algo_spec)
 
+    predict_algo_script = TEMPLATE_COMPOSITE_ALGO_SCRIPT.format(
+        data_sample_keys=data_sample_keys, predict_data_sample_keys=data_sample_keys[:2], models=None
+    )
+    predict_algo_spec = factory.create_algo(AlgoCategory.predict, py_script=predict_algo_script)
+    predict_algo = client.add_algo(predict_algo_spec)
+
     metric_script = TEMPLATE_METRIC_SCRIPT.format(data_sample_keys=data_sample_keys[:2])
     metric_spec = factory.create_algo(category=AlgoCategory.metric, py_script=metric_script)
     metric = client.add_algo(metric_spec)
@@ -211,8 +225,13 @@ def test_composite_traintuple_data_samples_relative_order(factory, client, datas
     assert composite_traintuple.composite.data_sample_keys == data_sample_keys
     client.wait(composite_traintuple)
 
+    predicttuple_spec = factory.create_predicttuple(
+        algo=predict_algo, traintuple=composite_traintuple, dataset=dataset, data_samples=data_sample_keys[:2]
+    )
+    predicttuple = client.add_predicttuple(predicttuple_spec)
+
     testtuple_spec = factory.create_testtuple(
-        metrics=[metric], traintuple=composite_traintuple, dataset=dataset, data_samples=data_sample_keys[:2]
+        algo=metric, predicttuple=predicttuple, dataset=dataset, data_samples=data_sample_keys[:2]
     )
     testtuple = client.add_testtuple(testtuple_spec)
 

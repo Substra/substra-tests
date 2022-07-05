@@ -30,6 +30,7 @@ _OPENER = _PARENT_DIR / "assets" / "opener.py"
 _METRICS = _PARENT_DIR / "assets" / "metrics.py"
 _AGGREGATE_ALGO = _PARENT_DIR / "assets" / "aggregate_algo.py"
 _COMPOSITE_ALGO = _PARENT_DIR / "assets" / "composite_algo.py"
+_PREDICT_ALGO = _PARENT_DIR / "assets" / "composite_algo.py"
 
 _SEED = 1
 
@@ -223,6 +224,7 @@ class _Inputs(pydantic.BaseModel):
     datasets: typing.List[_InputsSubset]
     composite_algo: sb.sdk.models.Algo = None
     aggregate_algo: sb.sdk.models.Algo = None
+    predict_algo: sb.sdk.models.Algo = None
 
 
 @pytest.fixture
@@ -276,6 +278,13 @@ def inputs(datasamples_folders, factory, clients, channel, algo_dockerfile):
         dockerfile=algo_dockerfile,
     )
     results.aggregate_algo = client.add_algo(spec)
+
+    spec = factory.create_algo(
+        AlgoCategory.predict,
+        py_script=_PREDICT_ALGO.open().read(),
+        dockerfile=algo_dockerfile,
+    )
+    results.predict_algo = client.add_algo(spec)
     # ensure last registered asset is synchronized on all organizations
     channel.wait_for_asset_synchronized(results.aggregate_algo)
 
@@ -342,9 +351,18 @@ def test_mnist(factory, inputs, clients, nb_train_test_samples):
         # add testtuples for specified rounds
         if round_idx + 1 in testing_rounds:
             for idx, org_inputs in enumerate(inputs.datasets):
-                cp_spec.create_testtuple(
+                predicttuple_spec = cp_spec.create_predicttuple(
+                    algo=inputs.predict_algo,
                     traintuple_spec=composite_specs[idx],
-                    metrics=[org_inputs.metric],
+                    dataset=org_inputs.dataset,
+                    data_samples=org_inputs.dataset.test_data_sample_keys,
+                    metadata={
+                        "round_idx": round_idx,
+                    },
+                )
+                cp_spec.create_testtuple(
+                    predicttuple_spec=predicttuple_spec,
+                    algo=org_inputs.metric,
                     dataset=org_inputs.dataset,
                     data_samples=org_inputs.dataset.test_data_sample_keys,
                     metadata={

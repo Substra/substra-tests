@@ -72,6 +72,10 @@ class Client:
         key = self._client.add_composite_traintuple(spec.dict(), *args, **kwargs)
         return self._client.get_composite_traintuple(key)
 
+    def add_predicttuple(self, spec, *args, **kwargs):
+        key = self._client.add_predicttuple(spec.dict(), *args, **kwargs)
+        return self._client.get_predicttuple(key)
+
     def add_testtuple(self, spec, *args, **kwargs):
         key = self._client.add_testtuple(spec.dict(), *args, **kwargs)
         return self._client.get_testtuple(key)
@@ -129,6 +133,12 @@ class Client:
 
     def list_composite_traintuple(self, *args, **kwargs):
         return self._client.list_composite_traintuple(*args, **kwargs)
+
+    def get_predicttuple(self, *args, **kwargs):
+        return self._client.get_predicttuple(*args, **kwargs)
+
+    def list_predicttuple(self, *args, **kwargs):
+        return self._client.list_predicttuple(*args, **kwargs)
 
     def get_testtuple(self, *args, **kwargs):
         return self._client.get_testtuple(*args, **kwargs)
@@ -207,6 +217,12 @@ class Client:
         tuples = sorted(tuples, key=lambda t: t.rank)
         return tuples
 
+    def list_compute_plan_predicttuples(self, compute_plan_key):
+        filters = {"compute_plan_key": [compute_plan_key]}
+        tuples = self.list_predicttuple(filters=filters)
+        tuples = sorted(tuples, key=lambda t: t.rank)
+        return tuples
+
     def list_compute_plan_testtuples(self, compute_plan_key):
         filters = {"compute_plan_key": [compute_plan_key]}
         tuples = self.list_testtuple(filters=filters)
@@ -219,6 +235,7 @@ class Client:
             models.Dataset: self.get_dataset,
             models.Algo: self.get_algo,
             models.Traintuple: self.get_traintuple,
+            models.Predicttuple: self.get_predicttuple,
             models.Testtuple: self.get_testtuple,
             models.Aggregatetuple: self.get_aggregatetuple,
             models.CompositeTraintuple: self.get_composite_traintuple,
