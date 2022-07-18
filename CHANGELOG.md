@@ -26,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - feat: use new filters implementation for list functions (#275)
+- remove `test-ci` command, the ci run only the remote tests (#288)
 
 ## [0.22.0] - 2022-06-14
 

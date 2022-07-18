@@ -27,6 +27,10 @@ _DEFAULT_NETWORK_LOCAL_CONFIGURATION_PATH = os.path.join(_CURRENT_DIR, "../", "l
 
 _MIN_ORGANIZATIONS = 1
 
+_DEFAULT_MNIST_TRAIN_SAMPLES = 500
+
+_DEFAULT_MNIST_TEST_SAMPLES = 200
+
 
 class OrganizationCfg(pydantic.BaseModel):
     name: str
@@ -35,6 +39,11 @@ class OrganizationCfg(pydantic.BaseModel):
     user: Optional[str] = None
     password: Optional[str] = None
     shared_path: Optional[str] = None
+
+
+class MnistWorkflowCfg(pydantic.BaseModel):
+    train_samples: int = _DEFAULT_MNIST_TRAIN_SAMPLES
+    test_samples: int = _DEFAULT_MNIST_TEST_SAMPLES
 
 
 class ConnectToolsCfg(pydantic.BaseModel):
@@ -60,6 +69,7 @@ class Settings(pydantic.BaseModel):
     options: Options
     connect_tools: ConnectToolsCfg = ConnectToolsCfg()
     organizations: List[OrganizationCfg]
+    mnist_workflow: MnistWorkflowCfg = MnistWorkflowCfg()
 
     @classmethod
     def _from_yaml_file(cls, path: str) -> "Settings":

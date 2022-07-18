@@ -79,12 +79,7 @@ def clients(client_debug_local, clients):
 
 
 @pytest.fixture
-def nb_train_test_samples(pytestconfig):
-    return (int(pytestconfig.getoption("nb_train_datasamples")), int(pytestconfig.getoption("nb_test_datasamples")))
-
-
-@pytest.fixture
-def mnist_train_test(nb_train_test_samples):
+def mnist_train_test(cfg: Settings):
     """Download MNIST data using sklearn and store it to disk.
 
     This will check if MNIST is present in a cache data folder. If not it will download
@@ -100,9 +95,12 @@ def mnist_train_test(nb_train_test_samples):
 
     mnist = sk_fetch_openml(_MNIST_DATASET_NAME)
 
-    nb_train, nb_test = nb_train_test_samples
+    nb_train = cfg.mnist_workflow.train_samples
+    nb_test = cfg.mnist_workflow.test_samples
 
     assert nb_train + nb_test <= 70000, "MNIST has 70k samples"
+
+    print(f"nb of train datasamples: {nb_train}, test datasamples: {nb_test}")
 
     indices = np.arange(mnist.data.shape[0])
     rng = np.random.default_rng(seed=_SEED)
@@ -186,7 +184,7 @@ class _DatasampleFolders(pydantic.BaseModel):
 
 
 @pytest.fixture
-def datasamples_folders(tmpdir, mnist_train_test, nb_train_test_samples):
+def datasamples_folders(tmpdir, mnist_train_test):
     """Split input dataset into datasamples for each orgs.
     Total available datasamples: 70k
     """
@@ -194,9 +192,6 @@ def datasamples_folders(tmpdir, mnist_train_test, nb_train_test_samples):
     tmpdir = pathlib.Path(tmpdir)
 
     folders = [_DatasampleFolders() for _ in range(_NB_ORGS)]
-
-    nb_train_samples, nb_test_samples = nb_train_test_samples
-    print(f"nb of train datasamples: {nb_train_samples}, test datasamples: {nb_test_samples}")
 
     train_folders = _split_into_datasamples(train_path, "train", tmpdir, nb_orgs=_NB_ORGS)
     test_folders = _split_into_datasamples(test_path, "test", tmpdir, nb_orgs=_NB_ORGS)

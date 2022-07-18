@@ -13,9 +13,14 @@ pyclean:
 
 test: test-remote test-local
 
-test-remote: pyclean
+test-remote: test-remote-sdk test-remote-workflows
+
+test-remote-sdk: pyclean
 	pytest tests -rs -v --durations=0 -m "not workflows" -n $(PARALLELISM)
 
+test-remote-workflows: pyclean
+	pytest tests -v --durations=0 -m "workflows" 
+	
 test-minimal: pyclean
 	pytest tests -rs -v --durations=0 -m "not slow and not workflows" -n $(PARALLELISM)
 
@@ -27,12 +32,7 @@ test-docker: pyclean
 test-subprocess: pyclean
 	DEBUG_SPAWNER=subprocess pytest tests -rs -v --durations=0 -m "not workflows and not subprocess_skip" --local
 
-test-workflows: pyclean
-	pytest tests -v --durations=0 -m "workflows" --nb-train-datasamples $(MNIST_TRAIN_DATASAMPLES) --nb-test-datasamples $(MNIST_TEST_DATASAMPLES)
-
-test-ci: test-remote test-workflows
-
-test-all: test-local test-ci
+test-all: test-local test-remote
 
 install:
 	pip3 install -r requirements.txt

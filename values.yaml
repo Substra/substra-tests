@@ -18,3 +18,7 @@ organizations:
     user: 'org-2'
     password: 'p@sswr0d45'
     shared_path: '/tmp/org-2/servermedias'
+
+mnist_workflow:
+  train_samples: 6000
+  test_samples: 1000
