@@ -4,6 +4,8 @@ import typing
 import pydantic
 import pytest
 import substra as sb
+from substra.sdk.schemas import ComputeTaskOutput
+from substra.sdk.schemas import Permissions
 
 import substratest as sbt
 from substratest.factory import AlgoCategory
@@ -296,14 +298,6 @@ def test_mnist(factory, inputs, clients, nb_train_test_samples):
 
     aggregate_worker = client.organization_id
 
-    trunk_model_perms = [
-        sbt.factory.Permissions(
-            public=False,
-            authorized_ids=[aggregate_worker, c.organization_id],
-        )
-        for c in clients
-    ]
-
     # emtpy initialization for first round
     composite_specs = [None] * len(inputs.datasets)
     aggregate_spec = None
@@ -326,7 +320,17 @@ def test_mnist(factory, inputs, clients, nb_train_test_samples):
                 data_samples=org_inputs.train_data_sample_keys,
                 in_head_model=composite_specs[idx],
                 in_trunk_model=aggregate_spec,
-                out_trunk_model_permissions=trunk_model_perms[idx],
+                outputs={
+                    "shared": ComputeTaskOutput(
+                        permissions=Permissions(
+                            public=False,
+                            authorized_ids=[aggregate_worker, clients[idx].organization_id],
+                        )
+                    ),
+                    "local": ComputeTaskOutput(
+                        permissions=Permissions(public=False, authorized_ids=[clients[idx].organization_id])
+                    ),
+                },
                 metadata={
                     "round_idx": round_idx,
                 },

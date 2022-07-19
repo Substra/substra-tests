@@ -16,6 +16,7 @@ from substra.sdk.schemas import AlgoSpec
 from substra.sdk.schemas import CompositeTraintupleSpec
 from substra.sdk.schemas import ComputePlanPredicttupleSpec
 from substra.sdk.schemas import ComputePlanTesttupleSpec
+from substra.sdk.schemas import ComputeTaskOutput
 from substra.sdk.schemas import Permissions
 from substra.sdk.schemas import PredicttupleSpec
 from substra.sdk.schemas import TesttupleSpec
@@ -209,6 +210,17 @@ INVALID_ALGO_SCRIPT = DEFAULT_ALGO_SCRIPT.replace("train", "naitr")
 INVALID_COMPOSITE_ALGO_SCRIPT = DEFAULT_COMPOSITE_ALGO_SCRIPT.replace("train", "naitr")
 INVALID_AGGREGATE_ALGO_SCRIPT = DEFAULT_AGGREGATE_ALGO_SCRIPT.replace("aggregate", "etagergga")
 
+DEFAULT_TRAINTUPLE_OUTPUTS = {"model": ComputeTaskOutput(permissions=Permissions(public=True, authorized_ids=[]))}
+DEFAULT_AGGREGATETUPLE_OUTPUTS = {"model": ComputeTaskOutput(permissions=Permissions(public=True, authorized_ids=[]))}
+DEFAULT_PREDICTTUPLE_OUTPUTS = {
+    "predictions": ComputeTaskOutput(permissions=Permissions(public=True, authorized_ids=[]))
+}
+DEFAULT_TESTTUPLE_OUTPUTS = {"performance": ComputeTaskOutput(permissions=Permissions(public=True, authorized_ids=[]))}
+DEFAULT_COMPOSITE_TRAINTUPLE_OUTPUTS = {
+    "shared": ComputeTaskOutput(permissions=Permissions(public=True, authorized_ids=[])),
+    "local": ComputeTaskOutput(permissions=Permissions(public=True, authorized_ids=[])),
+}
+
 
 def random_uuid():
     return str(uuid.uuid4())
@@ -355,7 +367,7 @@ def _get_keys(obj, field="key"):
 
 class _ComputePlanSpecFactory:
     def create_traintuple(
-        self, algo, dataset, data_samples, in_models=None, tag="", metadata=None
+        self, algo, dataset, data_samples, in_models=None, outputs=None, tag="", metadata=None
     ) -> ComputePlanTraintupleSpec:
         in_models = in_models or []
         spec = ComputePlanTraintupleSpec(
@@ -364,6 +376,7 @@ class _ComputePlanSpecFactory:
             data_manager_key=dataset.key,
             train_data_sample_keys=_get_keys(data_samples),
             in_models_ids=[t.id for t in in_models],
+            outputs=outputs if outputs is not None else DEFAULT_TRAINTUPLE_OUTPUTS,
             tag=tag,
             metadata=metadata,
         )
@@ -371,7 +384,7 @@ class _ComputePlanSpecFactory:
         return spec
 
     def create_aggregatetuple(
-        self, aggregate_algo, worker, in_models=None, tag="", metadata=None
+        self, aggregate_algo, worker, in_models=None, outputs=None, tag="", metadata=None
     ) -> ComputePlanAggregatetupleSpec:
         in_models = in_models or []
 
@@ -383,6 +396,7 @@ class _ComputePlanSpecFactory:
             algo_key=aggregate_algo.key,
             worker=worker,
             in_models_ids=[t.id for t in in_models],
+            outputs=outputs if outputs is not None else DEFAULT_AGGREGATETUPLE_OUTPUTS,
             tag=tag,
             metadata=metadata,
         )
@@ -396,7 +410,7 @@ class _ComputePlanSpecFactory:
         data_samples=None,
         in_head_model=None,
         in_trunk_model=None,
-        out_trunk_model_permissions=None,
+        outputs=None,
         tag="",
         metadata=None,
     ) -> ComputePlanCompositeTraintupleSpec:
@@ -413,7 +427,7 @@ class _ComputePlanSpecFactory:
             train_data_sample_keys=_get_keys(data_samples),
             in_head_model_id=in_head_model.id if in_head_model else None,
             in_trunk_model_id=in_trunk_model.id if in_trunk_model else None,
-            out_trunk_model_permissions=out_trunk_model_permissions or DEFAULT_OUT_TRUNK_MODEL_PERMISSIONS,
+            outputs=outputs if outputs is not None else DEFAULT_COMPOSITE_TRAINTUPLE_OUTPUTS,
             tag=tag,
             metadata=metadata,
         )
@@ -421,7 +435,7 @@ class _ComputePlanSpecFactory:
         return spec
 
     def create_predicttuple(
-        self, algo, traintuple_spec, dataset, data_samples, tag="", metadata=None
+        self, algo, traintuple_spec, dataset, data_samples, outputs=None, tag="", metadata=None
     ) -> ComputePlanPredicttupleSpec:
         spec = ComputePlanPredicttupleSpec(
             predicttuple_id=random_uuid(),
@@ -429,6 +443,7 @@ class _ComputePlanSpecFactory:
             traintuple_id=traintuple_spec.id,
             data_manager_key=dataset.key,
             test_data_sample_keys=_get_keys(data_samples),
+            outputs=outputs if outputs is not None else DEFAULT_PREDICTTUPLE_OUTPUTS,
             tag=tag,
             metadata=metadata,
         )
@@ -436,13 +451,14 @@ class _ComputePlanSpecFactory:
         return spec
 
     def create_testtuple(
-        self, algo, predicttuple_spec, dataset, data_samples, tag="", metadata=None
+        self, algo, predicttuple_spec, dataset, data_samples, outputs=None, tag="", metadata=None
     ) -> ComputePlanTesttupleSpec:
         spec = ComputePlanTesttupleSpec(
             algo_key=algo.key,
             predicttuple_id=predicttuple_spec.predicttuple_id,
             data_manager_key=dataset.key,
             test_data_sample_keys=_get_keys(data_samples),
+            outputs=outputs if outputs is not None else DEFAULT_TESTTUPLE_OUTPUTS,
             tag=tag,
             metadata=metadata,
         )
@@ -574,6 +590,7 @@ class AssetsFactory:
         dataset=None,
         data_samples=None,
         traintuples=None,
+        outputs=None,
         tag=None,
         compute_plan_key=None,
         rank=None,
@@ -593,11 +610,20 @@ class AssetsFactory:
             tag=tag,
             metadata=metadata,
             compute_plan_key=compute_plan_key,
+            outputs=outputs if outputs is not None else DEFAULT_TRAINTUPLE_OUTPUTS,
             rank=rank,
         )
 
     def create_aggregatetuple(
-        self, algo=None, worker=None, traintuples=None, tag=None, compute_plan_key=None, rank=None, metadata=None
+        self,
+        algo=None,
+        worker=None,
+        traintuples=None,
+        outputs=None,
+        tag=None,
+        compute_plan_key=None,
+        rank=None,
+        metadata=None,
     ) -> AggregatetupleSpec:
         traintuples = traintuples or []
 
@@ -608,6 +634,7 @@ class AssetsFactory:
             algo_key=algo.key if algo else None,
             worker=worker,
             in_models_keys=[t.key for t in traintuples],
+            outputs=outputs if outputs is not None else DEFAULT_AGGREGATETUPLE_OUTPUTS,
             tag=tag,
             metadata=metadata,
             compute_plan_key=compute_plan_key,
@@ -621,6 +648,7 @@ class AssetsFactory:
         data_samples=None,
         head_traintuple=None,
         trunk_traintuple=None,
+        outputs=None,
         tag=None,
         compute_plan_key=None,
         rank=None,
@@ -644,29 +672,35 @@ class AssetsFactory:
             train_data_sample_keys=_get_keys(data_samples),
             in_head_model_key=in_head_model_key,
             in_trunk_model_key=in_trunk_model_key,
+            outputs=outputs if outputs is not None else DEFAULT_COMPOSITE_TRAINTUPLE_OUTPUTS,
             tag=tag,
             metadata=metadata,
             compute_plan_key=compute_plan_key,
             rank=rank,
-            out_trunk_model_permissions=permissions or DEFAULT_OUT_TRUNK_MODEL_PERMISSIONS,
         )
 
-    def create_predicttuple(self, algo, traintuple, dataset, data_samples, tag=None, metadata=None) -> PredicttupleSpec:
+    def create_predicttuple(
+        self, algo, traintuple, dataset, data_samples, outputs=None, tag=None, metadata=None
+    ) -> PredicttupleSpec:
         return PredicttupleSpec(
             algo_key=algo.key,
             traintuple_key=traintuple.key,
             data_manager_key=dataset.key,
             test_data_sample_keys=_get_keys(data_samples),
+            outputs=outputs if outputs is not None else DEFAULT_PREDICTTUPLE_OUTPUTS,
             tag=tag,
             metadata=metadata,
         )
 
-    def create_testtuple(self, algo, predicttuple, dataset, data_samples, tag=None, metadata=None) -> TesttupleSpec:
+    def create_testtuple(
+        self, algo, predicttuple, dataset, data_samples, outputs=None, tag=None, metadata=None
+    ) -> TesttupleSpec:
         return TesttupleSpec(
             algo_key=algo.key,
             predicttuple_key=predicttuple.key,
             data_manager_key=dataset.key,
             test_data_sample_keys=_get_keys(data_samples),
+            outputs=outputs if outputs is not None else DEFAULT_TESTTUPLE_OUTPUTS,
             tag=tag,
             metadata=metadata,
         )

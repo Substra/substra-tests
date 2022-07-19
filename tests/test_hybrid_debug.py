@@ -5,7 +5,6 @@ from substra.sdk.exceptions import InvalidRequest
 
 from substratest.factory import DEFAULT_COMPOSITE_ALGO_SCRIPT
 from substratest.factory import AlgoCategory
-from substratest.factory import Permissions
 
 
 def docker_available() -> bool:
@@ -101,7 +100,6 @@ def test_debug_compute_plan_aggregate_composite(network, client, debug_client, d
                 composite_algo=composite_algo,
                 dataset=dataset,
                 data_samples=[dataset.train_data_sample_keys[0 + round_]],
-                out_trunk_model_permissions=Permissions(public=False, authorized_ids=[debug_client.organization_id]),
                 **kwargs,
             )
             composite_traintuple_specs.append(spec)

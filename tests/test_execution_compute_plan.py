@@ -3,6 +3,7 @@ import uuid
 import pytest
 import substra
 from substra.sdk import models
+from substra.sdk.schemas import ComputeTaskOutput
 
 import substratest as sbt
 from substratest.factory import DEFAULT_COMPOSITE_ALGO_SCRIPT
@@ -477,10 +478,17 @@ def test_compute_plan_aggregate_composite_traintuples(  # noqa: C901
                 composite_algo=composite_algo,
                 dataset=dataset,
                 data_samples=[dataset.train_data_sample_keys[0 + round_]],
-                out_trunk_model_permissions=Permissions(
-                    public=False, authorized_ids=[c.organization_id for c in clients]
-                ),
                 metadata={"foo": "bar"},
+                outputs={
+                    "shared": ComputeTaskOutput(
+                        permissions=Permissions(
+                            public=False, authorized_ids=[client.organization_id for client in clients]
+                        )
+                    ),
+                    "local": ComputeTaskOutput(
+                        permissions=Permissions(public=False, authorized_ids=[clients[index].organization_id])
+                    ),
+                },
                 **kwargs,
             )
             composite_traintuple_specs.append(spec)

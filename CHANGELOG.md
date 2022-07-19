@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Changed
+
+- BREAKING: Add "outputs" field to compute task specs (#290)
 
 ## [0.25.0] - 2022-07-11
 

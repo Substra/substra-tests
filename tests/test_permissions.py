@@ -1,5 +1,6 @@
 import pytest
 import substra
+from substra.sdk.schemas import ComputeTaskOutput
 
 from substratest.factory import AlgoCategory
 from substratest.factory import Permissions
@@ -140,34 +141,33 @@ def test_download_asset_access_restricted(factory, client_1, client_2, channel):
         ),
     ],
 )
-def test_merge_permissions(permissions_1, permissions_2, expected_permissions, factory, client_1, client_2, channel):
-    """Test merge permissions from dataset and algo asset located on different organizations.
-
-    - dataset and metrics located on organization 1
-    - algo located on organization 2
-    - traintuple created on organization 2
-    """
-    # add train data samples / dataset / metric on organization 1
+def test_permissions(permissions_1, permissions_2, expected_permissions, factory, client_1, client_2, channel):
+    # add train data samples / dataset
     spec = factory.create_dataset(permissions=permissions_1)
     dataset_1 = client_1.add_dataset(spec)
     spec = factory.create_data_sample(test_only=False, datasets=[dataset_1])
     train_data_sample_1 = client_1.add_data_sample(spec)
 
-    # add algo on organization 2
+    # add algo
     spec = factory.create_algo(category=AlgoCategory.simple, permissions=permissions_2)
     algo_2 = client_2.add_algo(spec)
 
-    # add traintuple from organization 2
+    # add traintuple
     spec = factory.create_traintuple(
         algo=algo_2,
         dataset=dataset_1,
         data_samples=[train_data_sample_1],
+        outputs={"model": ComputeTaskOutput(permissions=expected_permissions)},
     )
     channel.wait_for_asset_synchronized(algo_2)
     traintuple = client_1.add_traintuple(spec)
     traintuple = client_1.wait(traintuple)
+
+    # check the compute task executed on the correct worker
     assert traintuple.train.models is not None
     assert traintuple.worker == client_1.organization_id
+
+    # check the permissions
     tuple_permissions = traintuple.train.model_permissions.process
     assert tuple_permissions.public == expected_permissions.public
     assert set(tuple_permissions.authorized_ids) == set(expected_permissions.authorized_ids)
@@ -247,11 +247,12 @@ def test_permissions_model_process(
         algo=algo_1,
         dataset=dataset_1,
         data_samples=dataset_1.train_data_sample_keys,
+        outputs={
+            "model": ComputeTaskOutput(permissions=client_1_permissions),
+        },
     )
     traintuple_1 = client_1.add_traintuple(spec)
     traintuple_1 = client_1.wait(traintuple_1)
-
-    print(spec)
 
     assert not traintuple_1.train.model_permissions.process.public
     assert set(traintuple_1.train.model_permissions.process.authorized_ids) == set(
@@ -349,7 +350,6 @@ def test_merge_permissions_denied_process(factory, clients, channel):
 @pytest.mark.remote_only  # no check on permissions with the local backend
 def test_permissions_denied_head_model_process(factory, client_1, client_2, channel):
     # setup data
-
     datasets = []
     for client in [client_1, client_2]:
 
@@ -368,24 +368,30 @@ def test_permissions_denied_head_model_process(factory, client_1, client_2, chan
 
     dataset_1, dataset_2 = datasets
 
-    # setup algo
-
+    # create algo
     spec = factory.create_algo(category=AlgoCategory.composite)
     composite_algo = client_1.add_algo(spec)
     channel.wait_for_asset_synchronized(composite_algo)  # used by client_2
 
-    # composite traintuples
-
+    # create composite task
     spec = factory.create_composite_traintuple(
         algo=composite_algo,
         dataset=dataset_1,
         data_samples=dataset_1.train_data_sample_keys,
+        outputs={
+            "shared": ComputeTaskOutput(
+                permissions=Permissions(
+                    public=False, authorized_ids=[client_1.organization_id, client_2.organization_id]
+                )
+            ),
+            "local": ComputeTaskOutput(
+                permissions=Permissions(public=False, authorized_ids=[client_1.organization_id])
+            ),
+        },
     )
 
     composite_traintuple_1 = client_1.add_composite_traintuple(spec)
-
     composite_traintuple_1 = client_1.wait(composite_traintuple_1)
-
     channel.wait_for_asset_synchronized(composite_traintuple_1)  # used by client_2
 
     spec = factory.create_composite_traintuple(

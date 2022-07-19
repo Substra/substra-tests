@@ -182,7 +182,6 @@ def test_traintuple_data_samples_relative_order(factory, client, dataset):
         algo=predict_algo, traintuple=traintuple, dataset=dataset, data_samples=data_sample_keys[:2]
     )
     predicttuple = client.add_predicttuple(predicttuple_spec)
-    client.wait(predicttuple)
 
     testtuple_spec = factory.create_testtuple(
         algo=metric, predicttuple=predicttuple, dataset=dataset, data_samples=data_sample_keys[:2]
