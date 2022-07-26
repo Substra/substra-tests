@@ -168,9 +168,9 @@ def test_permissions(permissions_1, permissions_2, expected_permissions, factory
     assert traintuple.worker == client_1.organization_id
 
     # check the permissions
-    tuple_permissions = traintuple.train.model_permissions.process
-    assert tuple_permissions.public == expected_permissions.public
-    assert set(tuple_permissions.authorized_ids) == set(expected_permissions.authorized_ids)
+    tuple_permissions = traintuple.outputs["model"].permissions
+    assert tuple_permissions.process.public == expected_permissions.public
+    assert set(tuple_permissions.process.authorized_ids) == set(expected_permissions.authorized_ids)
 
 
 @pytest.mark.remote_only  # no check on permissions with the local backend
@@ -254,8 +254,8 @@ def test_permissions_model_process(
     traintuple_1 = client_1.add_traintuple(spec)
     traintuple_1 = client_1.wait(traintuple_1)
 
-    assert not traintuple_1.train.model_permissions.process.public
-    assert set(traintuple_1.train.model_permissions.process.authorized_ids) == set(
+    assert not traintuple_1.outputs["model"].permissions.process.public
+    assert set(traintuple_1.outputs["model"].permissions.process.authorized_ids) == set(
         [client_1.organization_id] + client_1_permissions.authorized_ids
     )
 
