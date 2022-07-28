@@ -43,8 +43,8 @@ _NB_ORGS = 2
 
 
 _EXPECTED_RESULTS = {
-    (500, 200): [0.81, 0.82, 0.85, 0.88, 0.88, 0.9, 0.86, 0.89, 0.86, 0.9],  # E2E
-    (60000, 10000): [0.8422, 0.8424, 0.8982, 0.8938, 0.9224, 0.9192, 0.9436, 0.9496, 0.9496, 0.9564],  # benchmark
+    (500, 200): [0.8, 0.8, 0.8, 0.85, 0.78, 0.84, 0.78, 0.85, 0.79, 0.85],  # E2E
+    (60000, 10000): [0.8118, 0.7792, 0.9042, 0.8814, 0.9176, 0.9348, 0.9436, 0.9456, 0.9562, 0.956],  # benchmark
 }
 
 
@@ -290,7 +290,7 @@ def inputs(datasamples_folders, factory, clients, channel, algo_dockerfile):
 
 @pytest.mark.slow
 @pytest.mark.workflows
-def test_mnist(factory, inputs, clients, nb_train_test_samples):
+def test_mnist(factory, inputs, clients, cfg: Settings):
     client = clients[0]
     nb_rounds = 20
     testing_rounds = (1, 5, 10, 15, 20)
@@ -382,12 +382,14 @@ def test_mnist(factory, inputs, clients, nb_train_test_samples):
             f"perf: {list(testtuple.test.perfs.values())[0]}"
         )
 
+    nb_samples = (cfg.mnist_workflow.train_samples, cfg.mnist_workflow.test_samples)
+
     # performance should be deterministic a fixed number of samples:
-    if nb_train_test_samples in _EXPECTED_RESULTS.keys():
-        expected_perf = _EXPECTED_RESULTS[nb_train_test_samples]
+    if nb_samples in _EXPECTED_RESULTS.keys():
+        expected_perf = _EXPECTED_RESULTS[nb_samples]
         assert all(
             [
-                pytest.approx(list(testtuple.test.perfs.values())[0], perf)
+                list(testtuple.test.perfs.values())[0] == pytest.approx(perf)
                 for (perf, testtuple) in zip(expected_perf, testtuples)
             ]
         )

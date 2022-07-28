@@ -2,8 +2,6 @@ override CWD := $(shell basename $(shell pwd))
 DOCKER_IMG := $(CWD)
 DOCKER_TAG := latest
 PARALLELISM := 5
-MNIST_TRAIN_DATASAMPLES ?= 500 #number of train datasamples to use for the MNIST workflow
-MNIST_TEST_DATASAMPLES ?= 200 #number of test datasamples to use for the MNIST workflow
 
 .PHONY: pyclean test test-minimal install docker
 
