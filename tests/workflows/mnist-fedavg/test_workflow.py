@@ -9,7 +9,9 @@ from substra.sdk.schemas import Permissions
 
 import substratest as sbt
 from substratest.factory import AlgoCategory
+from substratest.factory import AugmentedDataset
 from substratest.settings import Settings
+from substratest.task_outputs import OutputIdentifiers
 
 # extra requirements located in requirements-workflows.txt
 try:
@@ -209,9 +211,12 @@ class _InputsSubset(pydantic.BaseModel):
     One subset per org.
     """
 
-    dataset: sb.sdk.models.Dataset = None
+    dataset: AugmentedDataset = None
     metric: sb.sdk.models.Algo = None
     train_data_sample_keys: typing.List[str] = []
+
+    class Config:
+        arbitrary_types_allowed = True
 
 
 class _Inputs(pydantic.BaseModel):
@@ -256,7 +261,7 @@ def inputs(datasamples_folders, factory, clients, channel, algo_dockerfile):
         res.metric = client.add_algo(spec)
 
         # refresh dataset (to be up-to-date with added samples)
-        res.dataset = client.get_dataset(res.dataset.key)
+        res.dataset = AugmentedDataset(client.get_dataset(res.dataset.key))
         # store also the train keys as the order might not be the same in the
         # dataset.train_data_sample_keys field
         res.train_data_sample_keys = train_keys
@@ -312,22 +317,26 @@ def test_mnist(factory, inputs, clients, cfg: Settings):
 
     # next rounds
     for round_idx in range(nb_rounds):
+        for idx, org_inputs in enumerate(inputs.datasets):
 
-        composite_specs = [
-            cp_spec.create_composite_traintuple(
+            if aggregate_spec:
+                input_models = inputs.composite_to_local(
+                    composite_specs[idx].composite_traintuple_id
+                ) + inputs.aggregate_to_shared(aggregate_spec.aggregatetuple_id)
+            else:
+                input_models = []
+
+            composite_specs[idx] = cp_spec.create_composite_traintuple(
                 composite_algo=inputs.composite_algo,
-                dataset=org_inputs.dataset,
-                data_samples=org_inputs.train_data_sample_keys,
-                in_head_model=composite_specs[idx],
-                in_trunk_model=aggregate_spec,
+                inputs=org_inputs.dataset.train_data_inputs + input_models,
                 outputs={
-                    "shared": ComputeTaskOutput(
+                    OutputIdentifiers.SHARED: ComputeTaskOutput(
                         permissions=Permissions(
                             public=False,
                             authorized_ids=[aggregate_worker, clients[idx].organization_id],
                         )
                     ),
-                    "local": ComputeTaskOutput(
+                    OutputIdentifiers.LOCAL: ComputeTaskOutput(
                         permissions=Permissions(public=False, authorized_ids=[clients[idx].organization_id])
                     ),
                 },
@@ -335,13 +344,13 @@ def test_mnist(factory, inputs, clients, cfg: Settings):
                     "round_idx": round_idx,
                 },
             )
-            for idx, org_inputs in enumerate(inputs.datasets)
-        ]
 
         aggregate_spec = cp_spec.create_aggregatetuple(
             aggregate_algo=inputs.aggregate_algo,
             worker=aggregate_worker,
-            in_models=composite_specs,
+            inputs=inputs.composites_to_aggregate(
+                [composite_spec.composite_traintuple_id for composite_spec in composite_specs]
+            ),
             metadata={
                 "round_idx": round_idx,
             },
@@ -352,18 +361,16 @@ def test_mnist(factory, inputs, clients, cfg: Settings):
             for idx, org_inputs in enumerate(inputs.datasets):
                 predicttuple_spec = cp_spec.create_predicttuple(
                     algo=inputs.predict_algo,
-                    traintuple_spec=composite_specs[idx],
-                    dataset=org_inputs.dataset,
-                    data_samples=org_inputs.dataset.test_data_sample_keys,
+                    inputs=org_inputs.dataset.test_data_inputs
+                    + inputs.composite_to_predict(composite_specs[idx].composite_traintuple_id),
                     metadata={
                         "round_idx": round_idx,
                     },
                 )
                 cp_spec.create_testtuple(
-                    predicttuple_spec=predicttuple_spec,
                     algo=org_inputs.metric,
-                    dataset=org_inputs.dataset,
-                    data_samples=org_inputs.dataset.test_data_sample_keys,
+                    inputs=org_inputs.dataset.test_data_inputs
+                    + inputs.predict_to_test(predicttuple_spec.predicttuple_id),
                     metadata={
                         "round_idx": round_idx,
                     },

@@ -50,8 +50,7 @@ if __name__ == '__main__':
     cp_spec = factory.create_compute_plan(tag=f"GPU test - org {default_datasets[org_idx].owner} - {nvidia_drivers}")
     cp_spec.create_traintuple(
         algo=algo,
-        dataset=default_datasets[org_idx],
-        data_samples=default_datasets[org_idx].train_data_sample_keys,
+        inputs=default_datasets[org_idx].train_data_inputs,
         metadata={"docker_cuda_version": nvidia_drivers},
     )
     cp_added = client.add_compute_plan(cp_spec)

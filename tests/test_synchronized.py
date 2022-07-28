@@ -1,6 +1,7 @@
 import pytest
 
 from substratest.factory import AlgoCategory
+from substratest.factory import AugmentedDataset
 
 
 @pytest.fixture
@@ -76,12 +77,10 @@ def test_synchronized_traintuple(clients, factory, channel, current_client):
     datasample = current_client.get_data_sample(datasample_key)
     channel.wait_for_asset_synchronized(datasample)  # required by traintuple
 
+    dataset = AugmentedDataset(current_client.get_dataset(dataset.key))
+
     # create traintuple
-    spec = factory.create_traintuple(
-        algo=algo,
-        dataset=dataset,
-        data_samples=[datasample.key],
-    )
+    spec = factory.create_traintuple(algo=algo, inputs=dataset.train_data_inputs)
     traintuple = current_client.add_traintuple(spec)
     traintuple = current_client.wait(traintuple)
     channel.wait_for_asset_synchronized(traintuple)

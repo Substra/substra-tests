@@ -3,6 +3,7 @@ import pytest
 from substra.sdk import models
 from substra.sdk.exceptions import InvalidRequest
 
+from substratest import task_inputs
 from substratest.factory import DEFAULT_COMPOSITE_ALGO_SCRIPT
 from substratest.factory import AlgoCategory
 
@@ -33,9 +34,7 @@ def test_execution_debug(client, debug_client, debug_factory, default_dataset):
     #  Add the traintuple
     # create traintuple
     spec = debug_factory.create_traintuple(
-        algo=simple_algo,
-        dataset=default_dataset,
-        data_samples=[default_dataset.train_data_sample_keys[0]],
+        algo=simple_algo, inputs=default_dataset.opener_input + default_dataset.train_data_sample_inputs[:1]
     )
     traintuple = debug_client.add_traintuple(spec)
     assert traintuple.status == models.Status.done
@@ -44,18 +43,18 @@ def test_execution_debug(client, debug_client, debug_factory, default_dataset):
     # Add the testtuple
     spec = debug_factory.create_predicttuple(
         algo=predict_algo,
-        traintuple=traintuple,
-        dataset=default_dataset,
-        data_samples=[default_dataset.test_data_sample_keys[0]],
+        inputs=default_dataset.opener_input
+        + default_dataset.train_data_sample_inputs[:1]
+        + task_inputs.train_to_predict(traintuple.key),
     )
     predicttuple = debug_client.add_predicttuple(spec)
     assert predicttuple.status == models.Status.done
 
     spec = debug_factory.create_testtuple(
         algo=metric,
-        predicttuple=predicttuple,
-        dataset=default_dataset,
-        data_samples=[default_dataset.test_data_sample_keys[0]],
+        inputs=default_dataset.opener_input
+        + default_dataset.train_data_sample_inputs[:1]
+        + task_inputs.predict_to_test(predicttuple.key),
     )
     testtuple = debug_client.add_testtuple(spec)
     assert testtuple.status == models.Status.done
@@ -81,39 +80,40 @@ def test_debug_compute_plan_aggregate_composite(network, client, debug_client, d
     predict_algo_composite = client.add_algo(spec)
 
     # launch execution
-    previous_aggregatetuple_spec = None
-    previous_composite_traintuple_specs = []
+    previous_aggregate_tuple_key = None
+    previous_composite_traintuple_keys = []
 
     cp_spec = debug_factory.create_compute_plan()
 
     for round_ in range(number_of_rounds):
         # create composite traintuple on each organization
-        composite_traintuple_specs = []
+        composite_traintuple_keys = []
         for index, dataset in enumerate(default_datasets):
-            kwargs = {}
-            if previous_aggregatetuple_spec:
-                kwargs = {
-                    "in_head_model": previous_composite_traintuple_specs[index],
-                    "in_trunk_model": previous_aggregatetuple_spec,
-                }
+
+            if previous_aggregate_tuple_key:
+                input_models = task_inputs.composite_to_local(
+                    previous_composite_traintuple_keys[index]
+                ) + task_inputs.aggregate_to_shared(previous_aggregate_tuple_key)
+
+            else:
+                input_models = []
+
             spec = cp_spec.create_composite_traintuple(
                 composite_algo=composite_algo,
-                dataset=dataset,
-                data_samples=[dataset.train_data_sample_keys[0 + round_]],
-                **kwargs,
+                inputs=dataset.opener_input + [dataset.train_data_sample_inputs[0 + round_]] + input_models,
             )
-            composite_traintuple_specs.append(spec)
+            composite_traintuple_keys.append(spec.composite_traintuple_id)
 
         # create aggregate on its organization
         spec = cp_spec.create_aggregatetuple(
             aggregate_algo=aggregate_algo,
             worker=aggregate_worker,
-            in_models=composite_traintuple_specs,
+            inputs=task_inputs.composites_to_aggregate(composite_traintuple_keys),
         )
 
         # save state of round
-        previous_aggregatetuple_spec = spec
-        previous_composite_traintuple_specs = composite_traintuple_specs
+        previous_aggregate_tuple_key = spec.aggregatetuple_id
+        previous_composite_traintuple_keys = composite_traintuple_keys
 
     metrics = []
     for index, client in enumerate(network.clients):
@@ -123,21 +123,14 @@ def test_debug_compute_plan_aggregate_composite(network, client, debug_client, d
         metrics.append(metric)
 
     # last round: create associated testtuple
-    for composite_traintuple_spec, dataset, metric in zip(
-        previous_composite_traintuple_specs, default_datasets, metrics
-    ):
+    for composite_traintuple_key, dataset, metric in zip(previous_composite_traintuple_keys, default_datasets, metrics):
 
         spec = cp_spec.create_predicttuple(
             algo=predict_algo_composite,
-            dataset=dataset,
-            data_samples=dataset.test_data_sample_keys,
-            traintuple_spec=composite_traintuple_spec,
+            inputs=dataset.train_data_inputs + task_inputs.composite_to_predict(composite_traintuple_key),
         )
         cp_spec.create_testtuple(
-            algo=metric,
-            dataset=dataset,
-            data_samples=dataset.test_data_sample_keys,
-            predicttuple_spec=spec,
+            algo=metric, inputs=dataset.train_data_inputs + task_inputs.predict_to_test(spec.predicttuple_id)
         )
 
     cp = debug_client.add_compute_plan(cp_spec)
@@ -168,8 +161,7 @@ def test_test_data_traintuple(client, debug_client, debug_factory, default_datas
     # create traintuple
     spec = debug_factory.create_traintuple(
         algo=algo,
-        dataset=default_dataset,
-        data_samples=[default_dataset.test_data_sample_keys[0]],
+        inputs=default_dataset.opener_input + default_dataset.test_data_sample_inputs[:1],
     )
 
     with pytest.raises(InvalidRequest) as e:
@@ -187,9 +179,7 @@ def test_fake_data_sample_key(client, debug_client, debug_factory, default_datas
     #  Add the traintuple
     # create traintuple
     spec = debug_factory.create_traintuple(
-        algo=algo,
-        dataset=default_dataset,
-        data_samples=["fake_key"],
+        algo=algo, inputs=default_dataset.opener_input + task_inputs.data_samples(["fake_key"])
     )
 
     with pytest.raises(InvalidRequest) as e:

@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Changed
+
+- BREAKING: Add "inputs" field to compute task specs (#306)
+
 ## [0.26.0] - 2022-07-11
 
 ### Changed

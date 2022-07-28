@@ -1,12 +1,15 @@
 import pytest
 import substra
 from substra.sdk.models import Status
+from substra.sdk.schemas import ComputeTaskOutput
 from substra.sdk.schemas import TraintupleSpec
 
 import substratest as sbt
+from substratest import task_inputs
 from substratest.factory import DEFAULT_COMPOSITE_ALGO_SCRIPT
 from substratest.factory import AlgoCategory
 from substratest.factory import Permissions
+from substratest.task_outputs import OutputIdentifiers
 
 
 @pytest.mark.slow
@@ -23,8 +26,7 @@ def test_tuples_execution_on_same_organization(factory, network, client, default
     def get_traintuple_spec() -> TraintupleSpec:
         return factory.create_traintuple(
             algo=algo,
-            dataset=default_dataset,
-            data_samples=default_dataset.train_data_sample_keys,
+            inputs=default_dataset.train_data_inputs,
             metadata={"foo": "bar"},
         )
 
@@ -47,20 +49,16 @@ def test_tuples_execution_on_same_organization(factory, network, client, default
     # create testtuple
     spec = factory.create_predicttuple(
         algo=predict_algo,
-        traintuple=traintuple,
-        dataset=default_dataset,
-        data_samples=default_dataset.test_data_sample_keys,
+        inputs=default_dataset.test_data_inputs + task_inputs.train_to_predict(traintuple.key),
     )
+
     predicttuple = client.add_predicttuple(spec)
     predicttuple = client.wait(predicttuple)
     assert predicttuple.status == Status.done
     assert predicttuple.error_type is None
 
     spec = factory.create_testtuple(
-        algo=default_metric,
-        predicttuple=predicttuple,
-        dataset=default_dataset,
-        data_samples=default_dataset.test_data_sample_keys,
+        algo=default_metric, inputs=default_dataset.test_data_inputs + task_inputs.predict_to_test(predicttuple.key)
     )
     testtuple = client.add_testtuple(spec)
     testtuple = client.wait(testtuple)
@@ -71,9 +69,7 @@ def test_tuples_execution_on_same_organization(factory, network, client, default
     # add a traintuple depending on first traintuple
     spec = factory.create_traintuple(
         algo=algo,
-        dataset=default_dataset,
-        data_samples=default_dataset.train_data_sample_keys,
-        traintuples=[traintuple],
+        inputs=default_dataset.train_data_inputs + task_inputs.trains_to_train([traintuple.key]),
         metadata=None,
     )
     traintuple = client.add_traintuple(spec)
@@ -100,12 +96,12 @@ def test_federated_learning_workflow(factory, client, default_datasets):
     # default_datasets contains datasets on each organization and
     # that has a result we can use for federated learning
     for dataset in default_datasets:
-        traintuples = [traintuple] if traintuple else []
+
+        traintuples = [traintuple.key] if traintuple else []
+
         spec = factory.create_traintuple(
             algo=algo,
-            dataset=dataset,
-            data_samples=dataset.train_data_sample_keys,
-            traintuples=traintuples,
+            inputs=dataset.train_data_inputs + task_inputs.trains_to_train(traintuples),
             tag="foo",
             rank=rank,
             compute_plan_key=compute_plan_key,
@@ -133,7 +129,6 @@ def test_tuples_execution_on_different_organizations(
 ):
     """Execution of a traintuple on organization 1 and the following testtuple on organization 2."""
     # add test data samples / dataset / metric on organization 1
-
     spec = factory.create_algo(AlgoCategory.simple)
     algo_2 = client_2.add_algo(spec)
 
@@ -146,8 +141,7 @@ def test_tuples_execution_on_different_organizations(
     # add traintuple on organization 2; should execute on organization 2 (dataset located on organization 2)
     spec = factory.create_traintuple(
         algo=algo_2,
-        dataset=default_dataset_2,
-        data_samples=default_dataset_2.train_data_sample_keys,
+        inputs=default_dataset_2.train_data_inputs,
     )
     traintuple = client_1.add_traintuple(spec)
     traintuple = client_1.wait(traintuple)
@@ -159,9 +153,7 @@ def test_tuples_execution_on_different_organizations(
     # add testtuple; should execute on organization 1 (default_dataset_1 is located on organization 1)
     spec = factory.create_predicttuple(
         algo=predict_algo_2,
-        traintuple=traintuple,
-        dataset=default_dataset_1,
-        data_samples=default_dataset_1.test_data_sample_keys,
+        inputs=default_dataset_1.test_data_inputs + task_inputs.train_to_predict(traintuple.key),
     )
     predicttuple = client_1.add_predicttuple(spec)
     predicttuple = client_1.wait(predicttuple)
@@ -171,9 +163,7 @@ def test_tuples_execution_on_different_organizations(
 
     spec = factory.create_testtuple(
         algo=default_metric_1,
-        predicttuple=predicttuple,
-        dataset=default_dataset_1,
-        data_samples=default_dataset_1.test_data_sample_keys,
+        inputs=default_dataset_1.test_data_inputs + task_inputs.predict_to_test(predicttuple.key),
     )
     testtuple = client_1.add_testtuple(spec)
     testtuple = client_1.wait(testtuple)
@@ -199,11 +189,7 @@ def test_traintuple_build_failure(dockerfile, factory, client, default_dataset):
 
     spec = factory.create_algo(AlgoCategory.simple, dockerfile=dockerfile)
     algo = client.add_algo(spec)
-    spec = factory.create_traintuple(
-        algo=algo,
-        dataset=default_dataset,
-        data_samples=default_dataset.train_data_sample_keys,
-    )
+    spec = factory.create_traintuple(algo=algo, inputs=default_dataset.train_data_inputs)
     traintuple = client.add_traintuple(spec)
     traintuple = client.wait(traintuple, raises=False)
 
@@ -213,35 +199,26 @@ def test_traintuple_build_failure(dockerfile, factory, client, default_dataset):
 
 
 @pytest.mark.slow
-def test_traintuple_execution_failure(factory, client_1, client_2, default_dataset_1):
+def test_traintuple_execution_failure(factory, network, default_dataset_1):
     """Invalid algo script is causing traintuple failure."""
 
-    spec = factory.create_dataset(logs_permission=Permissions(public=True, authorized_ids=[client_1.organization_id]))
-    dataset = client_1.add_dataset(spec)
-
-    spec = factory.create_data_sample(test_only=False, datasets=[dataset])
-    datasample = client_1.add_data_sample(spec)
-
     spec = factory.create_algo(category=AlgoCategory.simple, py_script=sbt.factory.INVALID_ALGO_SCRIPT)
-    algo = client_1.add_algo(spec)
+    algo = network.clients[0].add_algo(spec)
 
-    spec = factory.create_traintuple(
-        algo=algo,
-        dataset=dataset,
-        data_samples=[datasample],
-    )
-    if client_1.backend_mode != substra.BackendType.DEPLOYED:
+    spec = factory.create_traintuple(algo=algo, inputs=default_dataset_1.train_data_inputs)
+
+    if network.clients[0].backend_mode != substra.BackendType.DEPLOYED:
         with pytest.raises(substra.sdk.backends.local.compute.spawner.base.ExecutionError):
-            client_1.add_traintuple(spec)
+            network.clients[0].add_traintuple(spec)
     else:
-        traintuple = client_1.add_traintuple(spec)
-        traintuple = client_1.wait(traintuple, raises=False)
+        traintuple = network.clients[0].add_traintuple(spec)
+        traintuple = network.clients[0].wait(traintuple, raises=False)
 
         assert traintuple.status == Status.failed
         assert traintuple.error_type == substra.sdk.models.TaskErrorType.execution
         assert traintuple.train.models is None
 
-        for client in (client_1, client_2):
+        for client in (network.clients[0], network.clients[1]):
             logs = client.download_logs(traintuple.key)
             assert "Traceback (most recent call last):" in logs
             assert client.get_logs(traintuple.key) == logs
@@ -254,11 +231,7 @@ def test_composite_traintuple_execution_failure(factory, client, default_dataset
     spec = factory.create_algo(AlgoCategory.composite, py_script=sbt.factory.INVALID_COMPOSITE_ALGO_SCRIPT)
     algo = client.add_algo(spec)
 
-    spec = factory.create_composite_traintuple(
-        algo=algo,
-        dataset=default_dataset,
-        data_samples=default_dataset.train_data_sample_keys,
-    )
+    spec = factory.create_composite_traintuple(algo=algo, inputs=default_dataset.train_data_inputs)
     if client.backend_mode == substra.BackendType.DEPLOYED:
         composite_traintuple = client.add_composite_traintuple(spec)
         composite_traintuple = client.wait(composite_traintuple, raises=False)
@@ -286,18 +259,17 @@ def test_aggregatetuple_execution_failure(factory, client, default_dataset):
     spec = factory.create_algo(AlgoCategory.aggregate, py_script=sbt.factory.INVALID_AGGREGATE_ALGO_SCRIPT)
     aggregate_algo = client.add_algo(spec)
 
-    composite_traintuples = []
+    composite_traintuple_keys = []
     for i in [0, 1]:
         spec = factory.create_composite_traintuple(
             algo=composite_algo,
-            dataset=default_dataset,
-            data_samples=[default_dataset.train_data_sample_keys[i]],
+            inputs=default_dataset.opener_input + [default_dataset.train_data_sample_inputs[i]],
         )
-        composite_traintuples.append(client.add_composite_traintuple(spec))
+        composite_traintuple_keys.append(client.add_composite_traintuple(spec).key)
 
     spec = factory.create_aggregatetuple(
         algo=aggregate_algo,
-        traintuples=composite_traintuples,
+        inputs=task_inputs.composites_to_aggregate(composite_traintuple_keys),
         worker=client.organization_id,
     )
 
@@ -305,8 +277,8 @@ def test_aggregatetuple_execution_failure(factory, client, default_dataset):
         aggregatetuple = client.add_aggregatetuple(spec)
         aggregatetuple = client.wait(aggregatetuple, raises=False)
 
-        for composite_traintuple in composite_traintuples:
-            composite_traintuple = client.get_composite_traintuple(composite_traintuple.key)
+        for composite_traintuple_key in composite_traintuple_keys:
+            composite_traintuple = client.get_composite_traintuple(composite_traintuple_key)
             assert composite_traintuple.status == Status.done
             assert composite_traintuple.error_type is None
 
@@ -337,11 +309,7 @@ def test_composite_traintuples_execution(factory, client, default_dataset, defau
     predict_algo = client.add_algo(spec)
 
     # first composite traintuple
-    spec = factory.create_composite_traintuple(
-        algo=algo,
-        dataset=default_dataset,
-        data_samples=default_dataset.train_data_sample_keys,
-    )
+    spec = factory.create_composite_traintuple(algo=algo, inputs=default_dataset.train_data_inputs)
     composite_traintuple_1 = client.add_composite_traintuple(spec)
     composite_traintuple_1 = client.wait(composite_traintuple_1)
     assert composite_traintuple_1.status == Status.done
@@ -351,10 +319,7 @@ def test_composite_traintuples_execution(factory, client, default_dataset, defau
     # second composite traintuple
     spec = factory.create_composite_traintuple(
         algo=algo,
-        dataset=default_dataset,
-        data_samples=default_dataset.train_data_sample_keys,
-        head_traintuple=composite_traintuple_1,
-        trunk_traintuple=composite_traintuple_1,
+        inputs=default_dataset.train_data_inputs + task_inputs.composite_to_composite(composite_traintuple_1.key),
     )
     composite_traintuple_2 = client.add_composite_traintuple(spec)
     composite_traintuple_2 = client.wait(composite_traintuple_2)
@@ -365,9 +330,7 @@ def test_composite_traintuples_execution(factory, client, default_dataset, defau
     # add a 'composite' testtuple
     spec = factory.create_predicttuple(
         algo=predict_algo,
-        traintuple=composite_traintuple_2,
-        dataset=default_dataset,
-        data_samples=default_dataset.test_data_sample_keys,
+        inputs=default_dataset.test_data_inputs + task_inputs.composite_to_predict(composite_traintuple_2.key),
     )
     predicttuple = client.add_predicttuple(spec)
     predicttuple = client.wait(predicttuple)
@@ -375,10 +338,7 @@ def test_composite_traintuples_execution(factory, client, default_dataset, defau
     assert predicttuple.error_type is None
 
     spec = factory.create_testtuple(
-        algo=default_metric,
-        predicttuple=predicttuple,
-        dataset=default_dataset,
-        data_samples=default_dataset.test_data_sample_keys,
+        algo=default_metric, inputs=default_dataset.test_data_inputs + task_inputs.predict_to_test(predicttuple.key)
     )
     testtuple = client.add_testtuple(spec)
     testtuple = client.wait(testtuple)
@@ -398,7 +358,7 @@ def test_aggregatetuple(factory, client, default_metric, default_dataset):
 
     number_of_traintuples_to_aggregate = 3
 
-    train_data_sample_keys = default_dataset.train_data_sample_keys[:number_of_traintuples_to_aggregate]
+    train_data_sample_inputs = default_dataset.train_data_sample_inputs[:number_of_traintuples_to_aggregate]
 
     spec = factory.create_algo(AlgoCategory.simple)
     algo = client.add_algo(spec)
@@ -407,63 +367,49 @@ def test_aggregatetuple(factory, client, default_metric, default_dataset):
     predict_algo = client.add_algo(spec)
 
     # add traintuples
-    traintuples = []
-    for data_sample_key in train_data_sample_keys:
-        spec = factory.create_traintuple(
-            algo=algo,
-            dataset=default_dataset,
-            data_samples=[data_sample_key],
-        )
+    traintuple_keys = []
+    for data_sample_input in train_data_sample_inputs:
+        spec = factory.create_traintuple(algo=algo, inputs=default_dataset.opener_input + [data_sample_input])
         traintuple = client.add_traintuple(spec)
-        traintuples.append(traintuple)
+        traintuple_keys.append(traintuple.key)
 
     spec = factory.create_algo(AlgoCategory.aggregate)
     aggregate_algo = client.add_algo(spec)
 
     spec = factory.create_aggregatetuple(
-        algo=aggregate_algo,
-        worker=client.organization_id,
-        traintuples=traintuples,
+        algo=aggregate_algo, worker=client.organization_id, inputs=task_inputs.trains_to_aggregate(traintuple_keys)
     )
     aggregatetuple = client.add_aggregatetuple(spec)
     assert len(aggregatetuple.parent_task_keys) == number_of_traintuples_to_aggregate
 
     spec = factory.create_predicttuple(
         algo=predict_algo,
-        traintuple=aggregatetuple,
-        dataset=default_dataset,
-        data_samples=default_dataset.test_data_sample_keys,
+        inputs=default_dataset.test_data_inputs + task_inputs.aggregate_to_predict(aggregatetuple.key),
     )
     predicttuple = client.add_predicttuple(spec)
     predicttuple = client.wait(predicttuple)
 
     spec = factory.create_testtuple(
         algo=default_metric,
-        predicttuple=predicttuple,
-        dataset=default_dataset,
-        data_samples=default_dataset.test_data_sample_keys,
+        inputs=default_dataset.test_data_inputs + task_inputs.predict_to_test(predicttuple.key),
     )
     testtuple = client.add_testtuple(spec)
     testtuple = client.wait(testtuple)
 
 
 @pytest.mark.slow
-def test_aggregatetuple_chained(factory, client, default_metric, default_dataset):
+def test_aggregatetuple_chained(factory, client, default_dataset):
     """Execution of 2 chained aggregatetuple (traintuple -> aggregatetuple -> aggregatetuple)."""
 
     number_of_traintuples_to_aggregate = 1
 
-    train_data_sample_key = default_dataset.train_data_sample_keys[0]
+    train_data_sample_input = default_dataset.train_data_sample_inputs[:1]
 
     spec = factory.create_algo(AlgoCategory.simple)
     algo = client.add_algo(spec)
 
     # add traintuples
-    spec = factory.create_traintuple(
-        algo=algo,
-        dataset=default_dataset,
-        data_samples=[train_data_sample_key],
-    )
+    spec = factory.create_traintuple(algo=algo, inputs=default_dataset.opener_input + train_data_sample_input)
     traintuple = client.add_traintuple(spec)
 
     spec = factory.create_algo(AlgoCategory.aggregate)
@@ -473,7 +419,7 @@ def test_aggregatetuple_chained(factory, client, default_metric, default_dataset
     spec = factory.create_aggregatetuple(
         algo=aggregate_algo,
         worker=client.organization_id,
-        traintuples=[traintuple],
+        inputs=task_inputs.trains_to_aggregate([traintuple.key]),
     )
 
     aggregatetuple_1 = client.add_aggregatetuple(spec)
@@ -483,7 +429,7 @@ def test_aggregatetuple_chained(factory, client, default_metric, default_dataset
     spec = factory.create_aggregatetuple(
         algo=aggregate_algo,
         worker=client.organization_id,
-        traintuples=[aggregatetuple_1],
+        inputs=task_inputs.trains_to_aggregate([aggregatetuple_1.key]),
     )
 
     aggregatetuple_2 = client.add_aggregatetuple(spec)
@@ -494,24 +440,20 @@ def test_aggregatetuple_chained(factory, client, default_metric, default_dataset
 
 
 @pytest.mark.slow
-def test_aggregatetuple_traintuple(factory, client, default_metric, default_dataset):
+def test_aggregatetuple_traintuple(factory, client, default_dataset):
     """Execution of traintuple after an aggregatetuple (traintuples -> aggregatetuple -> traintuples)"""
 
     number_of_traintuples = 2
 
-    train_data_sample_keys = default_dataset.train_data_sample_keys[:number_of_traintuples]
-    train_data_sample_key_1 = train_data_sample_keys[0]
-    train_data_sample_key_2 = train_data_sample_keys[1]
+    train_data_sample_inputs = default_dataset.train_data_sample_inputs[:number_of_traintuples]
+    train_data_sample_input_1 = train_data_sample_inputs[0]
+    train_data_sample_input_2 = train_data_sample_inputs[1]
 
     spec = factory.create_algo(AlgoCategory.simple)
     algo = client.add_algo(spec)
 
     # add first part of the traintuples
-    spec = factory.create_traintuple(
-        algo=algo,
-        dataset=default_dataset,
-        data_samples=[train_data_sample_key_1],
-    )
+    spec = factory.create_traintuple(algo=algo, inputs=default_dataset.opener_input + [train_data_sample_input_1])
     traintuple_1 = client.add_traintuple(spec)
 
     spec = factory.create_algo(AlgoCategory.aggregate)
@@ -521,7 +463,7 @@ def test_aggregatetuple_traintuple(factory, client, default_metric, default_data
     spec = factory.create_aggregatetuple(
         algo=aggregate_algo,
         worker=client.organization_id,
-        traintuples=[traintuple_1],
+        inputs=task_inputs.trains_to_aggregate([traintuple_1.key]),
     )
     aggregatetuple = client.add_aggregatetuple(spec)
     assert len(aggregatetuple.parent_task_keys) == 1
@@ -529,9 +471,9 @@ def test_aggregatetuple_traintuple(factory, client, default_metric, default_data
     # add second part of the traintuples
     spec = factory.create_traintuple(
         algo=algo,
-        dataset=default_dataset,
-        data_samples=[train_data_sample_key_2],
-        traintuples=[aggregatetuple],
+        inputs=default_dataset.opener_input
+        + [train_data_sample_input_2]
+        + task_inputs.trains_to_train([aggregatetuple.key]),
     )
 
     traintuple_2 = client.add_traintuple(spec)
@@ -552,25 +494,36 @@ def test_composite_traintuple_2_organizations_to_composite_traintuple(factory, c
     composite_algo = clients[0].add_algo(spec)
 
     # composite traintuples on organization 1 and organization 2
-    composite_traintuples = []
+    composite_traintuple_keys = []
     for dataset in default_datasets:
         spec = factory.create_composite_traintuple(
             algo=composite_algo,
-            dataset=dataset,
-            data_samples=[dataset.train_data_sample_keys[0]],
-            permissions=Permissions(public=False, authorized_ids=[c.organization_id for c in clients]),
+            inputs=dataset.opener_input + dataset.train_data_sample_inputs[:1],
+            outputs={
+                OutputIdentifiers.SHARED: ComputeTaskOutput(
+                    permissions=Permissions(public=True, authorized_ids=[c.organization_id for c in clients])
+                ),
+                OutputIdentifiers.LOCAL: ComputeTaskOutput(
+                    permissions=Permissions(public=False, authorized_ids=[dataset.owner])
+                ),
+            },
         )
-        composite_traintuple_key = clients[0].add_composite_traintuple(spec)
-        composite_traintuples.append(composite_traintuple_key)
+        composite_traintuple_key = clients[0].add_composite_traintuple(spec).key
+        composite_traintuple_keys.append(composite_traintuple_key)
 
     spec = factory.create_composite_traintuple(
         algo=composite_algo,
-        dataset=default_datasets[0],
-        data_samples=default_datasets[0].train_data_sample_keys,
-        head_traintuple=composite_traintuples[0],
-        trunk_traintuple=composite_traintuples[1],
+        inputs=default_datasets[0].train_data_inputs
+        + task_inputs.composite_to_composite(composite_traintuple_keys[0], composite_traintuple_keys[1]),
         rank=1,
-        permissions=Permissions(public=False, authorized_ids=[c.organization_id for c in clients]),
+        outputs={
+            OutputIdentifiers.SHARED: ComputeTaskOutput(
+                permissions=Permissions(public=True, authorized_ids=[c.organization_id for c in clients])
+            ),
+            OutputIdentifiers.LOCAL: ComputeTaskOutput(
+                permissions=Permissions(public=False, authorized_ids=[dataset.owner])
+            ),
+        },
     )
     composite_traintuple = clients[0].add_composite_traintuple(spec)
     composite_traintuple = clients[0].wait(composite_traintuple)
@@ -622,61 +575,65 @@ def test_aggregate_composite_traintuples(factory, network, clients, default_data
     predict_algo_composite = clients[0].add_algo(spec)
 
     # launch execution
-    previous_aggregatetuple = None
-    previous_composite_traintuples = []
+    previous_aggregatetuple_key = None
+    previous_composite_traintuple_keys = []
 
     for round_ in range(number_of_rounds):
         # create composite traintuple on each organization
-        composite_traintuples = []
+        composite_traintuple_keys = []
         for index, dataset in enumerate(default_datasets):
-            kwargs = {}
-            if previous_aggregatetuple:
-                kwargs = {
-                    "head_traintuple": previous_composite_traintuples[index],
-                    "trunk_traintuple": previous_aggregatetuple,
-                }
+
+            if previous_aggregatetuple_key:
+                input_models = task_inputs.composite_to_local(
+                    previous_composite_traintuple_keys[index]
+                ) + task_inputs.aggregate_to_shared(previous_aggregatetuple_key)
+
+            else:
+                input_models = []
+
             spec = factory.create_composite_traintuple(
                 algo=composite_algo,
-                dataset=dataset,
-                data_samples=[dataset.train_data_sample_keys[0 + round_]],
-                permissions=Permissions(public=False, authorized_ids=[c.organization_id for c in clients]),
-                **kwargs,
+                inputs=[dataset.train_data_sample_inputs[0 + round_]] + dataset.opener_input + input_models,
+                outputs={
+                    OutputIdentifiers.SHARED: ComputeTaskOutput(
+                        permissions=Permissions(public=True, authorized_ids=[c.organization_id for c in clients])
+                    ),
+                    OutputIdentifiers.LOCAL: ComputeTaskOutput(
+                        permissions=Permissions(public=False, authorized_ids=[dataset.owner])
+                    ),
+                },
             )
+
             t = clients[0].add_composite_traintuple(spec)
             t = clients[0].wait(t)
-            composite_traintuples.append(t)
+            composite_traintuple_keys.append(t.key)
 
         # create aggregate on its organization
         spec = factory.create_aggregatetuple(
             algo=aggregate_algo,
             worker=aggregate_worker,
-            traintuples=composite_traintuples,
+            inputs=task_inputs.composites_to_aggregate(composite_traintuple_keys),
         )
         aggregatetuple = clients[0].add_aggregatetuple(spec)
         aggregatetuple = clients[0].wait(aggregatetuple)
 
         # save state of round
-        previous_aggregatetuple = aggregatetuple
-        previous_composite_traintuples = composite_traintuples
+        previous_aggregatetuple_key = aggregatetuple.key
+        previous_composite_traintuple_keys = composite_traintuple_keys
 
     # last round: create associated testtuple for composite and aggregate
-    for index, (traintuple, metric, dataset) in enumerate(
-        zip(previous_composite_traintuples, default_metrics, default_datasets)
+    for index, (traintuple_key, metric, dataset) in enumerate(
+        zip(previous_composite_traintuple_keys, default_metrics, default_datasets)
     ):
         spec = factory.create_predicttuple(
             algo=predict_algo_composite,
-            traintuple=traintuple,
-            dataset=dataset,
-            data_samples=dataset.test_data_sample_keys,
+            inputs=dataset.test_data_inputs + task_inputs.composite_to_predict(traintuple_key),
         )
         predicttuple = clients[0].add_predicttuple(spec)
         predicttuple = clients[0].wait(predicttuple)
 
         spec = factory.create_testtuple(
-            algo=metric,
-            predicttuple=predicttuple,
-            dataset=dataset,
-            data_samples=dataset.test_data_sample_keys,
+            algo=metric, inputs=dataset.test_data_inputs + task_inputs.predict_to_test(predicttuple.key)
         )
         testtuple = clients[0].add_testtuple(spec)
         testtuple = clients[0].wait(testtuple)
@@ -685,18 +642,14 @@ def test_aggregate_composite_traintuples(factory, network, clients, default_data
 
     spec = factory.create_predicttuple(
         algo=predict_algo,
-        traintuple=previous_aggregatetuple,
-        dataset=default_datasets[0],
-        data_samples=default_datasets[0].test_data_sample_keys,
+        inputs=default_datasets[0].test_data_inputs + task_inputs.aggregate_to_predict(previous_aggregatetuple_key),
     )
     predicttuple = clients[0].add_predicttuple(spec)
     predicttuple = clients[0].wait(predicttuple)
 
     spec = factory.create_testtuple(
         algo=default_metrics[0],
-        predicttuple=predicttuple,
-        dataset=default_datasets[0],
-        data_samples=default_datasets[0].test_data_sample_keys,
+        inputs=default_datasets[0].test_data_inputs + task_inputs.predict_to_test(predicttuple.key),
     )
     testtuple = clients[0].add_testtuple(spec)
     testtuple = clients[0].wait(testtuple)
@@ -708,8 +661,8 @@ def test_aggregate_composite_traintuples(factory, network, clients, default_data
         #
         # - One out-model download is not proxified (direct download)
         # - One out-model download is proxified (as it belongs to another org)
-        for tuple in previous_composite_traintuples:
-            assert clients[0].download_trunk_model_from_composite_traintuple(tuple.key) == b'{"value": 2.8}'
+        for key in previous_composite_traintuple_keys:
+            assert clients[0].download_trunk_model_from_composite_traintuple(key) == b'{"value": 2.8}'
 
     if network.options.enable_intermediate_model_removal:
         # Optional (if "enable_intermediate_model_removal" is True): ensure the aggregatetuple of round 1 has been
@@ -727,11 +680,7 @@ def test_aggregate_composite_traintuples(factory, network, clients, default_data
         dataset = default_datasets[0]
         algo = client.add_algo(spec)
 
-        spec = factory.create_traintuple(
-            algo=algo,
-            dataset=dataset,
-            data_samples=dataset.train_data_sample_keys,
-        )
+        spec = factory.create_traintuple(algo=algo, inputs=dataset.train_data_inputs)
         traintuple = client.add_traintuple(spec)
         traintuple = client.wait(traintuple)
         assert traintuple.status == Status.failed
@@ -750,17 +699,15 @@ def test_use_data_sample_located_in_shared_path(factory, network, client, organi
     spec.move_data_to_server(organization_cfg.shared_path, network.options.minikube)
     data_sample_key = client.add_data_sample(spec, local=False)  # should not raise
 
+    dataset = task_inputs.AugmentedDataset(client.get_dataset(dataset.key))
+
     spec = factory.create_algo(AlgoCategory.simple)
     algo = client.add_algo(spec)
 
     spec = factory.create_algo(AlgoCategory.predict)
     predict_algo = client.add_algo(spec)
 
-    spec = factory.create_traintuple(
-        algo=algo,
-        dataset=dataset,
-        data_samples=[data_sample_key],
-    )
+    spec = factory.create_traintuple(algo=algo, inputs=dataset.train_data_inputs)
     traintuple = client.add_traintuple(spec)
     traintuple = client.wait(traintuple)
     assert traintuple.status == Status.done
@@ -827,11 +774,7 @@ if __name__ == '__main__':
 """  # noqa
     spec = factory.create_algo(AlgoCategory.simple, py_script=algo_script, dockerfile=dockerfile)
     algo = client.add_algo(spec)
-    spec = factory.create_traintuple(
-        algo=algo,
-        dataset=default_dataset,
-        data_samples=default_dataset.train_data_sample_keys,
-    )
+    spec = factory.create_traintuple(algo=algo, inputs=default_dataset.train_data_inputs)
     traintuple = client.add_traintuple(spec)
     client.wait(traintuple)
 
@@ -872,11 +815,7 @@ def test_write_to_home_directory(factory, client, default_dataset):
 
     spec = factory.create_algo(AlgoCategory.simple, WRITE_TO_HOME_DIRECTORY_ALGO)
     algo = client.add_algo(spec)
-    spec = factory.create_traintuple(
-        algo=algo,
-        dataset=default_dataset,
-        data_samples=default_dataset.train_data_sample_keys,
-    )
+    spec = factory.create_traintuple(algo=algo, inputs=default_dataset.train_data_inputs)
     traintuple = client.add_traintuple(spec)
     traintuple = client.wait(traintuple)
 

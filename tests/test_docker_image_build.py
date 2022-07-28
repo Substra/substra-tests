@@ -15,10 +15,6 @@ ENTRYPOINT ["python3", "algo.py"]
 """
     spec = factory.create_algo(AlgoCategory.simple, dockerfile=dockerfile)
     algo = client.add_algo(spec)
-    spec = factory.create_traintuple(
-        algo=algo,
-        dataset=default_dataset,
-        data_samples=default_dataset.train_data_sample_keys,
-    )
+    spec = factory.create_traintuple(algo=algo, inputs=default_dataset.train_data_inputs)
     traintuple = client.add_traintuple(spec)
     traintuple = client.wait(traintuple)

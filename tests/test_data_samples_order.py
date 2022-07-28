@@ -2,6 +2,7 @@ import pytest
 from substra.sdk.models import Status
 
 import substratest as sbt
+from substratest import task_inputs
 from substratest.factory import DEFAULT_DATA_SAMPLE_FILENAME
 from substratest.factory import AlgoCategory
 
@@ -45,8 +46,8 @@ class TestAlgo(tools.Algo):
 
     def predict(self, X, model):
         # Check that the order of X is the same as the one passed to add_predicttuple
-        predict_data_sample_keys = [folder.split('/')[-1] for folder in X]
-        assert predict_data_sample_keys == {predict_data_sample_keys}, predict_data_sample_keys
+        test_data_sample_keys = [folder.split('/')[-1] for folder in X]
+        assert test_data_sample_keys == {test_data_sample_keys}, test_data_sample_keys
 
         return X
     def load_model(self, path):
@@ -79,8 +80,8 @@ class TestCompositeAlgo(tools.CompositeAlgo):
 
     def predict(self, X, head_model, trunk_model):
         # Check that the order of X is the same as the one passed to add_predicttuple
-        predict_data_sample_keys = [folder.split('/')[-1] for folder in X]
-        assert predict_data_sample_keys == {predict_data_sample_keys}, predict_data_sample_keys
+        test_data_sample_keys = [folder.split('/')[-1] for folder in X]
+        assert test_data_sample_keys == {test_data_sample_keys}, test_data_sample_keys
 
         return X
 
@@ -129,32 +130,48 @@ def _shuffle(items):
     return [items[1], items[0]] + items[2:]
 
 
+class Dataset:
+    def __init__(self, factory, client) -> None:
+        """Creates a pass through dataset only handling folder names, not actual data."""
+        # create dataset
+        spec = factory.create_dataset(py_script=OPENER_SCRIPT)
+        dataset = client.add_dataset(spec)
+
+        # create train data samples
+        for _ in range(4):
+            spec = factory.create_data_sample(datasets=[dataset], test_only=False)
+            client.add_data_sample(spec)
+
+        # create test data samples
+        for _ in range(2):
+            spec = factory.create_data_sample(datasets=[dataset], test_only=True)
+            client.add_data_sample(spec)
+
+        self.dataset = client.get_dataset(dataset.key)
+        self.train_data_sample_keys = _shuffle(self.dataset.train_data_sample_keys)
+        self.test_data_sample_keys = self.train_data_sample_keys[:2]
+        self.train_data_inputs = task_inputs.data(
+            opener_key=dataset.key,
+            data_samples_keys=self.train_data_sample_keys,
+        )
+        self.test_data_inputs = task_inputs.data(
+            opener_key=dataset.key,
+            data_samples_keys=self.test_data_sample_keys,
+        )
+
+
 @pytest.fixture
 def dataset(factory, client):
-    """Creates a pass through dataset only handling folder names, not actual data."""
-    # create dataset
-    spec = factory.create_dataset(py_script=OPENER_SCRIPT)
-    dataset = client.add_dataset(spec)
-
-    # create train data samples
-    for _ in range(4):
-        spec = factory.create_data_sample(datasets=[dataset], test_only=False)
-        client.add_data_sample(spec)
-
-    # create test data samples
-    for _ in range(2):
-        spec = factory.create_data_sample(datasets=[dataset], test_only=True)
-        client.add_data_sample(spec)
-
-    return client.get_dataset(dataset.key)
+    return Dataset(factory, client)
 
 
 def test_traintuple_data_samples_relative_order(factory, client, dataset):
-    data_sample_keys = _shuffle(dataset.train_data_sample_keys)
 
     # Format TEMPLATE_ALGO_SCRIPT with current data_sample_keys
     algo_script = TEMPLATE_ALGO_SCRIPT.format(
-        data_sample_keys=data_sample_keys, predict_data_sample_keys=data_sample_keys[:2], models=None
+        data_sample_keys=dataset.train_data_sample_keys,
+        test_data_sample_keys=dataset.test_data_sample_keys,
+        models=None,
     )
     algo_spec = factory.create_algo(category=AlgoCategory.simple, py_script=algo_script)
     algo = client.add_algo(algo_spec)
@@ -162,30 +179,28 @@ def test_traintuple_data_samples_relative_order(factory, client, dataset):
     predict_algo_spec = factory.create_algo(category=AlgoCategory.predict, py_script=algo_script)
     predict_algo = client.add_algo(predict_algo_spec)
 
-    metric_script = TEMPLATE_METRIC_SCRIPT.format(data_sample_keys=data_sample_keys[:2])
+    metric_script = TEMPLATE_METRIC_SCRIPT.format(data_sample_keys=dataset.test_data_sample_keys)
     metric_spec = factory.create_algo(category=AlgoCategory.metric, py_script=metric_script)
     metric = client.add_algo(metric_spec)
 
-    traintuple_spec = factory.create_traintuple(
-        algo=algo,
-        dataset=dataset,
-        data_samples=data_sample_keys,
-    )
+    traintuple_spec = factory.create_traintuple(algo=algo, inputs=dataset.train_data_inputs)
     traintuple = client.add_traintuple(traintuple_spec)
 
     # Ensure the order of the data sample keys is correct at 2 levels: :
     #  1. In the returned traintuple
     #  2. In the train method of the algo. If the order is incorrect, wait() will fail.
-    assert traintuple.train.data_sample_keys == data_sample_keys
+    assert traintuple.train.data_sample_keys == dataset.train_data_sample_keys
     client.wait(traintuple)
+
+    predict_input_models = task_inputs.train_to_predict(traintuple.key)
     predicttuple_spec = factory.create_predicttuple(
-        algo=predict_algo, traintuple=traintuple, dataset=dataset, data_samples=data_sample_keys[:2]
+        algo=predict_algo, inputs=dataset.test_data_inputs + predict_input_models
     )
     predicttuple = client.add_predicttuple(predicttuple_spec)
 
-    testtuple_spec = factory.create_testtuple(
-        algo=metric, predicttuple=predicttuple, dataset=dataset, data_samples=data_sample_keys[:2]
-    )
+    test_input_models = task_inputs.predict_to_test(predicttuple.key)
+
+    testtuple_spec = factory.create_testtuple(algo=metric, inputs=dataset.test_data_inputs + test_input_models)
     testtuple = client.add_testtuple(testtuple_spec)
 
     # Assert order is correct in the metric. If not, wait() will fail.
@@ -193,45 +208,50 @@ def test_traintuple_data_samples_relative_order(factory, client, dataset):
 
 
 def test_composite_traintuple_data_samples_relative_order(factory, client, dataset):
-    data_sample_keys = _shuffle(dataset.train_data_sample_keys)
-
     # Format TEMPLATE_COMPOSITE_ALGO_SCRIPT with current data_sample_keys
     composite_algo_script = TEMPLATE_COMPOSITE_ALGO_SCRIPT.format(
-        data_sample_keys=data_sample_keys, predict_data_sample_keys=data_sample_keys[:2], models=None
+        data_sample_keys=dataset.train_data_sample_keys,
+        test_data_sample_keys=dataset.test_data_sample_keys,
+        models=None,
     )
     algo_spec = factory.create_algo(AlgoCategory.composite, py_script=composite_algo_script)
     composite_algo = client.add_algo(algo_spec)
 
     predict_algo_script = TEMPLATE_COMPOSITE_ALGO_SCRIPT.format(
-        data_sample_keys=data_sample_keys, predict_data_sample_keys=data_sample_keys[:2], models=None
+        data_sample_keys=dataset.train_data_sample_keys,
+        test_data_sample_keys=dataset.test_data_sample_keys,
+        models=None,
     )
     predict_algo_spec = factory.create_algo(AlgoCategory.predict, py_script=predict_algo_script)
     predict_algo = client.add_algo(predict_algo_spec)
 
-    metric_script = TEMPLATE_METRIC_SCRIPT.format(data_sample_keys=data_sample_keys[:2])
+    metric_script = TEMPLATE_METRIC_SCRIPT.format(
+        data_sample_keys=dataset.test_data_sample_keys,
+    )
     metric_spec = factory.create_algo(category=AlgoCategory.metric, py_script=metric_script)
     metric = client.add_algo(metric_spec)
 
     traintuple_spec = factory.create_composite_traintuple(
         algo=composite_algo,
-        dataset=dataset,
-        data_samples=data_sample_keys,
+        inputs=dataset.train_data_inputs,
     )
     composite_traintuple = client.add_composite_traintuple(traintuple_spec)
     # Ensure the order of the data sample keys is correct at 2 levels: :
     #  1. In the returned composite traintuple
     #  2. In the train method of the algo. If the order is incorrect, wait() will fail.
-    assert composite_traintuple.composite.data_sample_keys == data_sample_keys
+    assert composite_traintuple.composite.data_sample_keys == dataset.train_data_sample_keys
     client.wait(composite_traintuple)
 
+    predict_input_models = task_inputs.composite_to_predict(composite_traintuple.key)
+
     predicttuple_spec = factory.create_predicttuple(
-        algo=predict_algo, traintuple=composite_traintuple, dataset=dataset, data_samples=data_sample_keys[:2]
+        algo=predict_algo, inputs=dataset.test_data_inputs + predict_input_models
     )
     predicttuple = client.add_predicttuple(predicttuple_spec)
 
-    testtuple_spec = factory.create_testtuple(
-        algo=metric, predicttuple=predicttuple, dataset=dataset, data_samples=data_sample_keys[:2]
-    )
+    test_input_models = task_inputs.predict_to_test(predicttuple.key)
+
+    testtuple_spec = factory.create_testtuple(algo=metric, inputs=dataset.test_data_inputs + test_input_models)
     testtuple = client.add_testtuple(testtuple_spec)
 
     # Assert order is correct in the metric. If not, wait() will fail.
@@ -239,7 +259,7 @@ def test_composite_traintuple_data_samples_relative_order(factory, client, datas
 
 
 @pytest.mark.slow
-def test_execution_data_sample_values(factory, network, client):
+def test_execution_data_sample_values(factory, client):
     """Check data samples order is preserved when adding data samples by batch."""
     batch_size = 10
     spec = factory.create_dataset(
@@ -299,11 +319,7 @@ if __name__ == '__main__':
     )
     algo = client.add_algo(spec)
 
-    spec = factory.create_traintuple(
-        algo=algo,
-        dataset=dataset,
-        data_samples=keys,
-    )
+    spec = factory.create_traintuple(algo=algo, inputs=task_inputs.data(opener_key=dataset.key, data_samples_keys=keys))
     traintuple = client.add_traintuple(spec)
     traintuple = client.wait(traintuple)
     assert traintuple.status == Status.done

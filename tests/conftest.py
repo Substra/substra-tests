@@ -7,6 +7,7 @@ from substra.sdk.schemas import AlgoCategory
 
 import substratest as sbt
 from substratest import settings
+from substratest.factory import AugmentedDataset
 
 TESTS_RUN_UUID = uuid.uuid4().hex  # unique uuid identifying the tests run
 
@@ -100,8 +101,8 @@ class _DataEnv:
     Represents all the assets that have been added before the tests.
     """
 
-    def __init__(self, datasets=None, metrics=None):
-        self._datasets = datasets or []
+    def __init__(self, datasets, metrics) -> None:
+        self._datasets = [AugmentedDataset(dataset) for dataset in datasets] or []
         self._metrics = metrics or []
 
     @property
