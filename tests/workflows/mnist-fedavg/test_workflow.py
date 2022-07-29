@@ -11,6 +11,11 @@ import substratest as sbt
 from substratest.factory import AlgoCategory
 from substratest.factory import AugmentedDataset
 from substratest.settings import Settings
+from substratest.task_inputs import aggregate_to_shared
+from substratest.task_inputs import composite_to_local
+from substratest.task_inputs import composite_to_predict
+from substratest.task_inputs import composites_to_aggregate
+from substratest.task_inputs import predict_to_test
 from substratest.task_outputs import OutputIdentifiers
 
 # extra requirements located in requirements-workflows.txt
@@ -320,9 +325,9 @@ def test_mnist(factory, inputs, clients, cfg: Settings):
         for idx, org_inputs in enumerate(inputs.datasets):
 
             if aggregate_spec:
-                input_models = inputs.composite_to_local(
-                    composite_specs[idx].composite_traintuple_id
-                ) + inputs.aggregate_to_shared(aggregate_spec.aggregatetuple_id)
+                input_models = composite_to_local(composite_specs[idx].composite_traintuple_id) + aggregate_to_shared(
+                    aggregate_spec.aggregatetuple_id
+                )
             else:
                 input_models = []
 
@@ -348,7 +353,7 @@ def test_mnist(factory, inputs, clients, cfg: Settings):
         aggregate_spec = cp_spec.create_aggregatetuple(
             aggregate_algo=inputs.aggregate_algo,
             worker=aggregate_worker,
-            inputs=inputs.composites_to_aggregate(
+            inputs=composites_to_aggregate(
                 [composite_spec.composite_traintuple_id for composite_spec in composite_specs]
             ),
             metadata={
@@ -362,15 +367,14 @@ def test_mnist(factory, inputs, clients, cfg: Settings):
                 predicttuple_spec = cp_spec.create_predicttuple(
                     algo=inputs.predict_algo,
                     inputs=org_inputs.dataset.test_data_inputs
-                    + inputs.composite_to_predict(composite_specs[idx].composite_traintuple_id),
+                    + composite_to_predict(composite_specs[idx].composite_traintuple_id),
                     metadata={
                         "round_idx": round_idx,
                     },
                 )
                 cp_spec.create_testtuple(
                     algo=org_inputs.metric,
-                    inputs=org_inputs.dataset.test_data_inputs
-                    + inputs.predict_to_test(predicttuple_spec.predicttuple_id),
+                    inputs=org_inputs.dataset.test_data_inputs + predict_to_test(predicttuple_spec.predicttuple_id),
                     metadata={
                         "round_idx": round_idx,
                     },
