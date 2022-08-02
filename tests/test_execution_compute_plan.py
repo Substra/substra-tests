@@ -10,6 +10,7 @@ from substratest import task_inputs
 from substratest.factory import DEFAULT_COMPOSITE_ALGO_SCRIPT
 from substratest.factory import AlgoCategory
 from substratest.factory import Permissions
+from substratest.task_inputs import InputIdentifiers
 from substratest.task_outputs import OutputIdentifiers
 
 
@@ -102,7 +103,7 @@ def test_compute_plan_simple(
 
     traintuple_1, traintuple_2, traintuple_3 = traintuples
 
-    assert len(traintuple_3.parent_task_keys) == 2
+    assert len([i for i in traintuple_3.inputs if i.identifier == InputIdentifiers.MODEL]) == 2
 
     for p in predicttuples:
         assert p.status == models.Status.done
@@ -526,9 +527,31 @@ def test_compute_plan_aggregate_composite_traintuples(  # noqa: C901
     for task in composite_traintuple_specs:
         remote_task = clients[0].get_composite_traintuple(task.id)
         if task.in_head_model_id:
-            assert task.in_head_model_id in remote_task.parent_task_keys
+            assert (
+                len(
+                    [
+                        i
+                        for i in remote_task.inputs
+                        if i.identifier == InputIdentifiers.LOCAL
+                        and i.parent_task_key == task.in_head_model_id
+                        and i.parent_task_output_identifier == InputIdentifiers.LOCAL
+                    ]
+                )
+                == 1
+            )
         if task.in_trunk_model_id:
-            assert task.in_trunk_model_id in remote_task.parent_task_keys
+            assert (
+                len(
+                    [
+                        i
+                        for i in remote_task.inputs
+                        if i.identifier == InputIdentifiers.SHARED
+                        and i.parent_task_key == task.in_trunk_model_id
+                        and i.parent_task_output_identifier == OutputIdentifiers.MODEL
+                    ]
+                )
+                == 1
+            )
 
     tuples = traintuples + composite_traintuples + aggregatetuples + predicttuples + testtuples
     for t in tuples:

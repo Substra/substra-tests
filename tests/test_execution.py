@@ -9,6 +9,7 @@ from substratest import task_inputs
 from substratest.factory import DEFAULT_COMPOSITE_ALGO_SCRIPT
 from substratest.factory import AlgoCategory
 from substratest.factory import Permissions
+from substratest.task_inputs import InputIdentifiers
 from substratest.task_outputs import OutputIdentifiers
 
 
@@ -67,9 +68,10 @@ def test_tuples_execution_on_same_organization(factory, network, client, default
     assert list(testtuple.test.perfs.values())[0] == 2
 
     # add a traintuple depending on first traintuple
+    first_traintuple_key = traintuple.key
     spec = factory.create_traintuple(
         algo=algo,
-        inputs=default_dataset.train_data_inputs + task_inputs.trains_to_train([traintuple.key]),
+        inputs=default_dataset.train_data_inputs + task_inputs.trains_to_train([first_traintuple_key]),
         metadata=None,
     )
     traintuple = client.add_traintuple(spec)
@@ -77,7 +79,9 @@ def test_tuples_execution_on_same_organization(factory, network, client, default
     assert traintuple.status == Status.done
     assert testtuple.error_type is None
     assert traintuple.metadata == {}
-    assert len(traintuple.parent_task_keys) == 1
+
+    expected_inputs = default_dataset.train_data_inputs + task_inputs.trains_to_train([first_traintuple_key])
+    assert traintuple.inputs == expected_inputs
 
 
 @pytest.mark.slow
@@ -380,7 +384,10 @@ def test_aggregatetuple(factory, client, default_metric, default_dataset):
         algo=aggregate_algo, worker=client.organization_id, inputs=task_inputs.trains_to_aggregate(traintuple_keys)
     )
     aggregatetuple = client.add_aggregatetuple(spec)
-    assert len(aggregatetuple.parent_task_keys) == number_of_traintuples_to_aggregate
+    assert (
+        len([i for i in aggregatetuple.inputs if i.identifier == InputIdentifiers.MODEL])
+        == number_of_traintuples_to_aggregate
+    )
 
     spec = factory.create_predicttuple(
         algo=predict_algo,
@@ -423,7 +430,10 @@ def test_aggregatetuple_chained(factory, client, default_dataset):
     )
 
     aggregatetuple_1 = client.add_aggregatetuple(spec)
-    assert len(aggregatetuple_1.parent_task_keys) == number_of_traintuples_to_aggregate
+    assert (
+        len([i for i in aggregatetuple_1.inputs if i.identifier == InputIdentifiers.MODEL])
+        == number_of_traintuples_to_aggregate
+    )
 
     # add second layer of aggregatetuple
     spec = factory.create_aggregatetuple(
@@ -436,7 +446,7 @@ def test_aggregatetuple_chained(factory, client, default_dataset):
     aggregatetuple_2 = client.wait(aggregatetuple_2)
     assert aggregatetuple_2.status == Status.done
     assert aggregatetuple_2.error_type is None
-    assert len(aggregatetuple_2.parent_task_keys) == 1
+    assert len([i for i in aggregatetuple_2.inputs if i.identifier == InputIdentifiers.MODEL]) == 1
 
 
 @pytest.mark.slow
@@ -466,7 +476,7 @@ def test_aggregatetuple_traintuple(factory, client, default_dataset):
         inputs=task_inputs.trains_to_aggregate([traintuple_1.key]),
     )
     aggregatetuple = client.add_aggregatetuple(spec)
-    assert len(aggregatetuple.parent_task_keys) == 1
+    assert len([i for i in aggregatetuple.inputs if i.identifier == InputIdentifiers.MODEL]) == 1
 
     # add second part of the traintuples
     spec = factory.create_traintuple(

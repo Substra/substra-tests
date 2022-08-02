@@ -5,6 +5,7 @@ import substratest as sbt
 from substratest import task_inputs
 from substratest.factory import DEFAULT_DATA_SAMPLE_FILENAME
 from substratest.factory import AlgoCategory
+from substratest.task_inputs import InputIdentifiers
 
 OPENER_SCRIPT = """
 import json
@@ -189,7 +190,9 @@ def test_traintuple_data_samples_relative_order(factory, client, dataset):
     # Ensure the order of the data sample keys is correct at 2 levels: :
     #  1. In the returned traintuple
     #  2. In the train method of the algo. If the order is incorrect, wait() will fail.
-    assert traintuple.train.data_sample_keys == dataset.train_data_sample_keys
+    assert [
+        i.asset_key for i in traintuple.inputs if i.identifier == InputIdentifiers.DATA_SAMPLE
+    ] == dataset.train_data_sample_keys
     client.wait(traintuple)
 
     predict_input_models = task_inputs.train_to_predict(traintuple.key)
@@ -239,7 +242,9 @@ def test_composite_traintuple_data_samples_relative_order(factory, client, datas
     # Ensure the order of the data sample keys is correct at 2 levels: :
     #  1. In the returned composite traintuple
     #  2. In the train method of the algo. If the order is incorrect, wait() will fail.
-    assert composite_traintuple.composite.data_sample_keys == dataset.train_data_sample_keys
+    assert [
+        i.asset_key for i in composite_traintuple.inputs if i.identifier == InputIdentifiers.DATA_SAMPLE
+    ] == dataset.train_data_sample_keys
     client.wait(composite_traintuple)
 
     predict_input_models = task_inputs.composite_to_predict(composite_traintuple.key)
