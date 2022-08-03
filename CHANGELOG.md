@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Changed
+
+- Drop Python 3.7 support (#318)
+
 ### Added
 
 - Add expiration date to skipped tests

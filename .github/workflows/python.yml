@@ -21,7 +21,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-20.04]
-        python: ["3.7", "3.8", "3.9"]
+        python: ["3.8", "3.9"]
     env:
       SUBSTRA_REF: main
       TOOLS_REF: main
