@@ -135,7 +135,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - feat: add support for Connect GitHub Bot (#175)
 - ci: workflow dispatch - be able to deactivate the sdk tests (#165)
-- chore(ci): enable/disable frontend/connectlib tests when triggering the workflow manually (#154)
+- chore(ci): enable/disable frontend/substrafl tests when triggering the workflow manually (#154)
 
 ### Changed
 
@@ -146,10 +146,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- implement the connectlib e2e tests (#126)
+- implement the substrafl e2e tests (#126)
 - ci: export events logs (#136)
 - add logs permission to dataset (#130)
-- ci: Be able to run only the connectlib tests (#165 #173 #179)
+- ci: Be able to run only the substrafl tests (#165 #173 #179)
 
 ### Changed
 

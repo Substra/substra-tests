@@ -149,7 +149,7 @@ def _split_into_datasamples(
     """Split h5 file into datasample folders.
 
     Each datasample contains a single row to create a workflow similar to what is done
-    in connectlib.
+    in substrafl.
 
     Returns a list of folders for each org.
     """
