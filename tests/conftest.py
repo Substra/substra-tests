@@ -11,6 +11,8 @@ from substratest.factory import AugmentedDataset
 
 TESTS_RUN_UUID = uuid.uuid4().hex  # unique uuid identifying the tests run
 
+pytest_plugins = ["pytest_skipuntil"]
+
 
 def pytest_report_header(config):
     """Print network configuration in pytest header to help configuration debugging."""
