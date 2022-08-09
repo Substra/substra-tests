@@ -1,4 +1,5 @@
 import os
+import time
 import uuid
 
 import pytest
@@ -218,3 +219,60 @@ def test_error_get_asset_not_found(asset_type, client):
     method = getattr(client, f"get_{asset_type.name}")
     with pytest.raises(substra.exceptions.NotFound):
         method(str(uuid.uuid4()))
+
+
+@pytest.mark.parametrize(
+    "asset_name,asset_params",
+    [
+        ("algo", {"category": AlgoCategory.simple}),
+        ("compute_plan", {}),
+        ("dataset", {}),
+    ],
+)
+def test_update_name(asset_name, asset_params, client, factory):
+    create_spec_method = getattr(factory, f"create_{asset_name}")
+
+    add_method = getattr(client, f"add_{asset_name}")
+    update_method = getattr(client, f"update_{asset_name}")
+    get_method = getattr(client, f"get_{asset_name}")
+
+    # create asset
+    spec = create_spec_method(**asset_params)
+    asset = add_method(spec)
+
+    # update asset
+    new_name = "updated name"
+    update_method(asset, new_name)
+
+    time.sleep(0.5)
+    updated_asset = get_method(asset.key)
+
+    assert updated_asset.name != asset.name
+    assert updated_asset.name == new_name
+
+
+@pytest.mark.remote_only
+@pytest.mark.parametrize(
+    "asset_name,asset_params",
+    [
+        ("algo", {"category": AlgoCategory.simple}),
+        ("compute_plan", {}),
+        ("dataset", {}),
+    ],
+)
+def test_update_name_unauthorized(asset_name, asset_params, clients, factory):
+    if len(clients) < 2:
+        pytest.skip("requires at least 2 organizations")
+    create_spec_method = getattr(factory, f"create_{asset_name}")
+
+    add_method = getattr(clients[0], f"add_{asset_name}")
+    update_method = getattr(clients[1], f"update_{asset_name}")
+
+    # create asset
+    spec = create_spec_method(**asset_params)
+    asset = add_method(spec)
+
+    # update asset from different user
+    new_name = "updated name"
+    with pytest.raises(substra.exceptions.AuthorizationError):
+        update_method(asset, new_name)

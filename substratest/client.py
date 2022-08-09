@@ -295,3 +295,12 @@ class Client:
 
             time.sleep(self.future_polling_period)
             model = self._client.get_model(model_key)
+
+    def update_algo(self, algo, name, *args, **kwargs):
+        return self._client.update_algo(algo.key, name, *args, **kwargs)
+
+    def update_compute_plan(self, compute_plan, name, *args, **kwargs):
+        return self._client.update_compute_plan(compute_plan.key, name, *args, **kwargs)
+
+    def update_dataset(self, dataset, name, *args, **kwargs):
+        return self._client.update_dataset(dataset.key, name, *args, **kwargs)

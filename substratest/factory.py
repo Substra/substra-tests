@@ -19,6 +19,9 @@ from substra.sdk.schemas import Permissions
 from substra.sdk.schemas import PredicttupleSpec
 from substra.sdk.schemas import TesttupleSpec
 from substra.sdk.schemas import TraintupleSpec
+from substra.sdk.schemas import UpdateAlgoSpec
+from substra.sdk.schemas import UpdateComputePlanSpec
+from substra.sdk.schemas import UpdateDatasetSpec
 
 from substratest.fl_interface import FLAlgoInputs
 from substratest.fl_interface import FLAlgoOutputs
@@ -504,7 +507,7 @@ class ComputePlanSpec(_ComputePlanSpecFactory, substra.sdk.schemas.ComputePlanSp
     pass
 
 
-class UpdateComputePlanSpec(_ComputePlanSpecFactory, substra.sdk.schemas.UpdateComputePlanSpec):
+class UpdateComputePlanTuplesSpec(_ComputePlanSpecFactory, substra.sdk.schemas.UpdateComputePlanTuplesSpec):
     pass
 
 
@@ -734,11 +737,21 @@ class AssetsFactory:
         )
 
     def add_compute_plan_tuples(self, compute_plan):
-        return UpdateComputePlanSpec(
+        return UpdateComputePlanTuplesSpec(
             traintuples=[],
             composite_traintuples=[],
             aggregatetuples=[],
             testtuples=[],
             predicttuples=[],
             key=compute_plan.key,
+            name=compute_plan.name,
         )
+
+    def update_algo(self, name):
+        return UpdateAlgoSpec(name=name)
+
+    def update_compute_plan(self, name):
+        return UpdateComputePlanSpec(name=name)
+
+    def update_dataset(self, name):
+        return UpdateDatasetSpec(name=name)
