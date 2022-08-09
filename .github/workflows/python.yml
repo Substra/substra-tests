@@ -81,7 +81,6 @@ jobs:
           pip install --no-cache-dir ./substra
           pip install --no-cache-dir -r requirements.txt
           pip install -r requirements-workflows.txt
-          pip install torch==1.10.2
       - name: Test
         run: |
           start=`date +%s`

@@ -9,6 +9,4 @@ mnist_workflow:
 
 ## run locally with docker or subprocess
 
-
-`pip install torch==1.10.2`
 `DEBUG_SPAWNER=subprocess pytest tests -v --durations=0 -m "workflows" --local`
