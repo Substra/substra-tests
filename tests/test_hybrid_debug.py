@@ -3,9 +3,9 @@ import pytest
 from substra.sdk import models
 from substra.sdk.exceptions import InvalidRequest
 
-from substratest import task_inputs
 from substratest.factory import DEFAULT_COMPOSITE_ALGO_SCRIPT
 from substratest.factory import AlgoCategory
+from substratest.fl_interface import FLTaskInputGenerator
 
 
 def docker_available() -> bool:
@@ -45,7 +45,7 @@ def test_execution_debug(client, debug_client, debug_factory, default_dataset):
         algo=predict_algo,
         inputs=default_dataset.opener_input
         + default_dataset.train_data_sample_inputs[:1]
-        + task_inputs.train_to_predict(traintuple.key),
+        + FLTaskInputGenerator.train_to_predict(traintuple.key),
     )
     predicttuple = debug_client.add_predicttuple(spec)
     assert predicttuple.status == models.Status.done
@@ -54,7 +54,7 @@ def test_execution_debug(client, debug_client, debug_factory, default_dataset):
         algo=metric,
         inputs=default_dataset.opener_input
         + default_dataset.train_data_sample_inputs[:1]
-        + task_inputs.predict_to_test(predicttuple.key),
+        + FLTaskInputGenerator.predict_to_test(predicttuple.key),
     )
     testtuple = debug_client.add_testtuple(spec)
     assert testtuple.status == models.Status.done
@@ -91,9 +91,9 @@ def test_debug_compute_plan_aggregate_composite(network, client, debug_client, d
         for index, dataset in enumerate(default_datasets):
 
             if previous_aggregate_tuple_key:
-                input_models = task_inputs.composite_to_local(
+                input_models = FLTaskInputGenerator.composite_to_local(
                     previous_composite_traintuple_keys[index]
-                ) + task_inputs.aggregate_to_shared(previous_aggregate_tuple_key)
+                ) + FLTaskInputGenerator.aggregate_to_shared(previous_aggregate_tuple_key)
 
             else:
                 input_models = []
@@ -108,7 +108,7 @@ def test_debug_compute_plan_aggregate_composite(network, client, debug_client, d
         spec = cp_spec.create_aggregatetuple(
             aggregate_algo=aggregate_algo,
             worker=aggregate_worker,
-            inputs=task_inputs.composites_to_aggregate(composite_traintuple_keys),
+            inputs=FLTaskInputGenerator.composites_to_aggregate(composite_traintuple_keys),
         )
 
         # save state of round
@@ -127,10 +127,10 @@ def test_debug_compute_plan_aggregate_composite(network, client, debug_client, d
 
         spec = cp_spec.create_predicttuple(
             algo=predict_algo_composite,
-            inputs=dataset.train_data_inputs + task_inputs.composite_to_predict(composite_traintuple_key),
+            inputs=dataset.train_data_inputs + FLTaskInputGenerator.composite_to_predict(composite_traintuple_key),
         )
         cp_spec.create_testtuple(
-            algo=metric, inputs=dataset.train_data_inputs + task_inputs.predict_to_test(spec.predicttuple_id)
+            algo=metric, inputs=dataset.train_data_inputs + FLTaskInputGenerator.predict_to_test(spec.predicttuple_id)
         )
 
     cp = debug_client.add_compute_plan(cp_spec)
@@ -179,7 +179,7 @@ def test_fake_data_sample_key(client, debug_client, debug_factory, default_datas
     #  Add the traintuple
     # create traintuple
     spec = debug_factory.create_traintuple(
-        algo=algo, inputs=default_dataset.opener_input + task_inputs.data_samples(["fake_key"])
+        algo=algo, inputs=default_dataset.opener_input + FLTaskInputGenerator.data_samples(["fake_key"])
     )
 
     with pytest.raises(InvalidRequest) as e:

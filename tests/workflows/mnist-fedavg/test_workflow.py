@@ -4,19 +4,13 @@ import typing
 import pydantic
 import pytest
 import substra as sb
-from substra.sdk.schemas import ComputeTaskOutput
-from substra.sdk.schemas import Permissions
 
 import substratest as sbt
 from substratest.factory import AlgoCategory
 from substratest.factory import AugmentedDataset
+from substratest.fl_interface import FLTaskInputGenerator
+from substratest.fl_interface import FLTaskOutputGenerator
 from substratest.settings import Settings
-from substratest.task_inputs import aggregate_to_shared
-from substratest.task_inputs import composite_to_local
-from substratest.task_inputs import composite_to_predict
-from substratest.task_inputs import composites_to_aggregate
-from substratest.task_inputs import predict_to_test
-from substratest.task_outputs import OutputIdentifiers
 
 # extra requirements located in requirements-workflows.txt
 try:
@@ -325,26 +319,19 @@ def test_mnist(factory, inputs, clients, cfg: Settings):
         for idx, org_inputs in enumerate(inputs.datasets):
 
             if aggregate_spec:
-                input_models = composite_to_local(composite_specs[idx].composite_traintuple_id) + aggregate_to_shared(
-                    aggregate_spec.aggregatetuple_id
-                )
+                input_models = FLTaskInputGenerator.composite_to_local(
+                    composite_specs[idx].composite_traintuple_id
+                ) + FLTaskInputGenerator.aggregate_to_shared(aggregate_spec.aggregatetuple_id)
             else:
                 input_models = []
 
             composite_specs[idx] = cp_spec.create_composite_traintuple(
                 composite_algo=inputs.composite_algo,
                 inputs=org_inputs.dataset.train_data_inputs + input_models,
-                outputs={
-                    OutputIdentifiers.SHARED: ComputeTaskOutput(
-                        permissions=Permissions(
-                            public=False,
-                            authorized_ids=[aggregate_worker, clients[idx].organization_id],
-                        )
-                    ),
-                    OutputIdentifiers.LOCAL: ComputeTaskOutput(
-                        permissions=Permissions(public=False, authorized_ids=[clients[idx].organization_id])
-                    ),
-                },
+                outputs=FLTaskOutputGenerator.composite_traintuple(
+                    shared_authorized_ids=[aggregate_worker, clients[idx].organization_id],
+                    local_authorized_ids=[clients[idx].organization_id],
+                ),
                 metadata={
                     "round_idx": round_idx,
                 },
@@ -353,7 +340,7 @@ def test_mnist(factory, inputs, clients, cfg: Settings):
         aggregate_spec = cp_spec.create_aggregatetuple(
             aggregate_algo=inputs.aggregate_algo,
             worker=aggregate_worker,
-            inputs=composites_to_aggregate(
+            inputs=FLTaskInputGenerator.composites_to_aggregate(
                 [composite_spec.composite_traintuple_id for composite_spec in composite_specs]
             ),
             metadata={
@@ -367,14 +354,15 @@ def test_mnist(factory, inputs, clients, cfg: Settings):
                 predicttuple_spec = cp_spec.create_predicttuple(
                     algo=inputs.predict_algo,
                     inputs=org_inputs.dataset.test_data_inputs
-                    + composite_to_predict(composite_specs[idx].composite_traintuple_id),
+                    + FLTaskInputGenerator.composite_to_predict(composite_specs[idx].composite_traintuple_id),
                     metadata={
                         "round_idx": round_idx,
                     },
                 )
                 cp_spec.create_testtuple(
                     algo=org_inputs.metric,
-                    inputs=org_inputs.dataset.test_data_inputs + predict_to_test(predicttuple_spec.predicttuple_id),
+                    inputs=org_inputs.dataset.test_data_inputs
+                    + FLTaskInputGenerator.predict_to_test(predicttuple_spec.predicttuple_id),
                     metadata={
                         "round_idx": round_idx,
                     },

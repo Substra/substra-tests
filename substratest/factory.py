@@ -9,8 +9,6 @@ import uuid
 
 import pydantic
 import substra
-from substra.sdk.schemas import ALGO_INPUT_IDENTIFIER_DATASAMPLES
-from substra.sdk.schemas import ALGO_INPUT_IDENTIFIER_OPENER
 from substra.sdk.schemas import AggregatetupleSpec
 from substra.sdk.schemas import AlgoCategory
 from substra.sdk.schemas import AlgoSpec
@@ -22,13 +20,11 @@ from substra.sdk.schemas import PredicttupleSpec
 from substra.sdk.schemas import TesttupleSpec
 from substra.sdk.schemas import TraintupleSpec
 
-from substratest import task_inputs
-from substratest.task_outputs import DEFAULT_AGGREGATETUPLE_OUTPUTS
-from substratest.task_outputs import DEFAULT_COMPOSITE_TRAINTUPLE_OUTPUTS
-from substratest.task_outputs import DEFAULT_PREDICTTUPLE_OUTPUTS
-from substratest.task_outputs import DEFAULT_TESTTUPLE_OUTPUTS
-from substratest.task_outputs import DEFAULT_TRAINTUPLE_OUTPUTS
-from substratest.task_outputs import OutputIdentifiers
+from substratest.fl_interface import FLAlgoInputs
+from substratest.fl_interface import FLAlgoOutputs
+from substratest.fl_interface import FLTaskInputGenerator
+from substratest.fl_interface import FLTaskOutputGenerator
+from substratest.fl_interface import InputIdentifiers
 
 from . import utils
 from .settings import Settings
@@ -332,16 +328,16 @@ class AugmentedDataset:
         self.owner = dataset.owner
         self.train_data_sample_keys = dataset.train_data_sample_keys
         self.test_data_sample_keys = dataset.test_data_sample_keys
-        self.opener_input = task_inputs.opener(dataset.key)
-        self.train_data_sample_inputs = task_inputs.data_samples(self.train_data_sample_keys)
-        self.test_data_sample_inputs = task_inputs.data_samples(self.test_data_sample_keys)
-        self.train_data_inputs = task_inputs.data(
+        self.opener_input = FLTaskInputGenerator.opener(dataset.key)
+        self.train_data_sample_inputs = FLTaskInputGenerator.data_samples(self.train_data_sample_keys)
+        self.test_data_sample_inputs = FLTaskInputGenerator.data_samples(self.test_data_sample_keys)
+        self.train_data_inputs = FLTaskInputGenerator.tuple(
             opener_key=dataset.key,
-            data_samples_keys=self.train_data_sample_keys,
+            data_sample_keys=self.train_data_sample_keys,
         )
-        self.test_data_inputs = task_inputs.data(
+        self.test_data_inputs = FLTaskInputGenerator.tuple(
             opener_key=dataset.key,
-            data_samples_keys=self.test_data_sample_keys,
+            data_sample_keys=self.test_data_sample_keys,
         )
 
 
@@ -365,26 +361,28 @@ class ComputePlanCompositeTraintupleSpec(substra.sdk.schemas.ComputePlanComposit
 
 # All of those will be removed when inputs consumers will be merge
 def _get_data_manager_from_inputs(inputs):
-    data_manager_keys = [inp.asset_key for inp in inputs if inp.identifier == ALGO_INPUT_IDENTIFIER_OPENER]
+    data_manager_keys = [inp.asset_key for inp in inputs if inp.identifier == InputIdentifiers.opener]
     assert len(data_manager_keys) == 1
     return data_manager_keys[0]
 
 
 def _get_data_samples_from_inputs(inputs):
-    data_samples = [inp.asset_key for inp in inputs if inp.identifier == ALGO_INPUT_IDENTIFIER_DATASAMPLES]
+    data_samples = [inp.asset_key for inp in inputs if inp.identifier == InputIdentifiers.datasamples]
     return data_samples
 
 
 def _get_in_models_from_inputs(inputs):
     in_models = [
-        t.parent_task_key for t in inputs if t.identifier in (OutputIdentifiers.MODEL, OutputIdentifiers.SHARED)
+        t.parent_task_key
+        for t in inputs
+        if t.identifier in (InputIdentifiers.models, InputIdentifiers.model, InputIdentifiers.shared)
     ]
     return in_models
 
 
 def _get_head_trunk_model_from_inputs(inputs):
-    in_head_model_key = [t.parent_task_key for t in inputs if t.identifier == OutputIdentifiers.LOCAL]
-    in_trunk_model_key = [t.parent_task_key for t in inputs if t.identifier == OutputIdentifiers.SHARED]
+    in_head_model_key = [t.parent_task_key for t in inputs if t.identifier == InputIdentifiers.local]
+    in_trunk_model_key = [t.parent_task_key for t in inputs if t.identifier == InputIdentifiers.shared]
     assert len(in_head_model_key) <= 1
     assert len(in_trunk_model_key) <= 1
     in_head_model_key = in_head_model_key[0] if len(in_head_model_key) == 1 else None
@@ -395,13 +393,13 @@ def _get_head_trunk_model_from_inputs(inputs):
 
 
 def _get_predict_tuple_from_inputs(inputs):
-    predictions = [t.parent_task_key for t in inputs if t.identifier == OutputIdentifiers.PREDICTIONS]
+    predictions = [t.parent_task_key for t in inputs if t.identifier == InputIdentifiers.predictions]
     assert len(predictions) == 1
     return predictions[0]
 
 
 def _get_train_tuple_from_inputs(inputs):
-    traintuple_ids = [t.parent_task_key for t in inputs if t.identifier == OutputIdentifiers.MODEL]
+    traintuple_ids = [t.parent_task_key for t in inputs if t.identifier == InputIdentifiers.model]
 
     assert len(traintuple_ids) == 1
     traintuple_id = traintuple_ids[0]
@@ -419,7 +417,7 @@ class _ComputePlanSpecFactory:
             train_data_sample_keys=_get_data_samples_from_inputs(inputs),
             in_models_ids=_get_in_models_from_inputs(inputs),
             inputs=inputs or [],
-            outputs=outputs if outputs is not None else DEFAULT_TRAINTUPLE_OUTPUTS,
+            outputs=outputs if outputs is not None else FLTaskOutputGenerator.traintuple(),
             tag=tag,
             metadata=metadata,
         )
@@ -436,7 +434,7 @@ class _ComputePlanSpecFactory:
             worker=worker,
             in_models_ids=_get_in_models_from_inputs(inputs),
             inputs=inputs or [],
-            outputs=outputs if outputs is not None else DEFAULT_AGGREGATETUPLE_OUTPUTS,
+            outputs=outputs if outputs is not None else FLTaskOutputGenerator.aggregatetuple(),
             tag=tag,
             metadata=metadata,
         )
@@ -462,7 +460,7 @@ class _ComputePlanSpecFactory:
             in_head_model_id=in_head_model,
             in_trunk_model_id=in_trunk_model,
             inputs=inputs or [],
-            outputs=outputs if outputs is not None else DEFAULT_COMPOSITE_TRAINTUPLE_OUTPUTS,
+            outputs=outputs if outputs is not None else FLTaskOutputGenerator.composite_traintuple(),
             tag=tag,
             metadata=metadata,
         )
@@ -480,7 +478,7 @@ class _ComputePlanSpecFactory:
             data_manager_key=_get_data_manager_from_inputs(inputs),
             test_data_sample_keys=_get_data_samples_from_inputs(inputs),
             inputs=inputs or [],
-            outputs=outputs if outputs is not None else DEFAULT_PREDICTTUPLE_OUTPUTS,
+            outputs=outputs if outputs is not None else FLTaskOutputGenerator.predicttuple(),
             tag=tag,
             metadata=metadata,
         )
@@ -494,7 +492,7 @@ class _ComputePlanSpecFactory:
             data_manager_key=_get_data_manager_from_inputs(inputs),
             test_data_sample_keys=_get_data_samples_from_inputs(inputs),
             inputs=inputs or [],
-            outputs=outputs if outputs is not None else DEFAULT_TESTTUPLE_OUTPUTS,
+            outputs=outputs if outputs is not None else FLTaskOutputGenerator.testtuple(),
             tag=tag,
             metadata=metadata,
         )
@@ -613,6 +611,8 @@ class AssetsFactory:
 
         return AlgoSpec(
             category=category,
+            inputs=FLAlgoInputs[category],
+            outputs=FLAlgoOutputs[category],
             name=name,
             description=str(description_path),
             file=str(algo_zip),
@@ -640,7 +640,7 @@ class AssetsFactory:
             metadata=metadata,
             compute_plan_key=compute_plan_key,
             inputs=inputs or [],
-            outputs=outputs if outputs is not None else DEFAULT_TRAINTUPLE_OUTPUTS,
+            outputs=outputs if outputs is not None else FLTaskOutputGenerator.traintuple(),
             rank=rank,
         )
 
@@ -661,7 +661,7 @@ class AssetsFactory:
             worker=worker,
             in_models_keys=_get_in_models_from_inputs(inputs),
             inputs=inputs or [],
-            outputs=outputs if outputs is not None else DEFAULT_AGGREGATETUPLE_OUTPUTS,
+            outputs=outputs if outputs is not None else FLTaskOutputGenerator.aggregatetuple(),
             tag=tag,
             metadata=metadata,
             compute_plan_key=compute_plan_key,
@@ -688,7 +688,7 @@ class AssetsFactory:
             in_head_model_key=in_head_model_key,
             in_trunk_model_key=in_trunk_model_key,
             inputs=inputs or [],
-            outputs=outputs if outputs is not None else DEFAULT_COMPOSITE_TRAINTUPLE_OUTPUTS,
+            outputs=outputs if outputs is not None else FLTaskOutputGenerator.composite_traintuple(),
             tag=tag,
             metadata=metadata,
             compute_plan_key=compute_plan_key,
@@ -702,7 +702,7 @@ class AssetsFactory:
             data_manager_key=_get_data_manager_from_inputs(inputs),
             test_data_sample_keys=_get_data_samples_from_inputs(inputs),
             inputs=inputs or [],
-            outputs=outputs if outputs is not None else DEFAULT_PREDICTTUPLE_OUTPUTS,
+            outputs=outputs if outputs is not None else FLTaskOutputGenerator.predicttuple(),
             tag=tag,
             metadata=metadata,
         )
@@ -714,7 +714,7 @@ class AssetsFactory:
             data_manager_key=_get_data_manager_from_inputs(inputs),
             test_data_sample_keys=_get_data_samples_from_inputs(inputs),
             inputs=inputs or [],
-            outputs=outputs if outputs is not None else DEFAULT_TESTTUPLE_OUTPUTS,
+            outputs=outputs if outputs is not None else FLTaskOutputGenerator.testtuple(),
             tag=tag,
             metadata=metadata,
         )

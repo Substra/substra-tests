@@ -2,10 +2,10 @@ import pytest
 from substra.sdk.models import Status
 
 import substratest as sbt
-from substratest import task_inputs
 from substratest.factory import DEFAULT_DATA_SAMPLE_FILENAME
 from substratest.factory import AlgoCategory
-from substratest.task_inputs import InputIdentifiers
+from substratest.fl_interface import FLTaskInputGenerator
+from substratest.fl_interface import InputIdentifiers
 
 OPENER_SCRIPT = """
 import json
@@ -151,13 +151,13 @@ class Dataset:
         self.dataset = client.get_dataset(dataset.key)
         self.train_data_sample_keys = _shuffle(self.dataset.train_data_sample_keys)
         self.test_data_sample_keys = self.train_data_sample_keys[:2]
-        self.train_data_inputs = task_inputs.data(
+        self.train_data_inputs = FLTaskInputGenerator.tuple(
             opener_key=dataset.key,
-            data_samples_keys=self.train_data_sample_keys,
+            data_sample_keys=self.train_data_sample_keys,
         )
-        self.test_data_inputs = task_inputs.data(
+        self.test_data_inputs = FLTaskInputGenerator.tuple(
             opener_key=dataset.key,
-            data_samples_keys=self.test_data_sample_keys,
+            data_sample_keys=self.test_data_sample_keys,
         )
 
 
@@ -191,17 +191,17 @@ def test_traintuple_data_samples_relative_order(factory, client, dataset):
     #  1. In the returned traintuple
     #  2. In the train method of the algo. If the order is incorrect, wait() will fail.
     assert [
-        i.asset_key for i in traintuple.inputs if i.identifier == InputIdentifiers.DATA_SAMPLE
+        i.asset_key for i in traintuple.inputs if i.identifier == InputIdentifiers.datasamples
     ] == dataset.train_data_sample_keys
     client.wait(traintuple)
 
-    predict_input_models = task_inputs.train_to_predict(traintuple.key)
+    predict_input_models = FLTaskInputGenerator.train_to_predict(traintuple.key)
     predicttuple_spec = factory.create_predicttuple(
         algo=predict_algo, inputs=dataset.test_data_inputs + predict_input_models
     )
     predicttuple = client.add_predicttuple(predicttuple_spec)
 
-    test_input_models = task_inputs.predict_to_test(predicttuple.key)
+    test_input_models = FLTaskInputGenerator.predict_to_test(predicttuple.key)
 
     testtuple_spec = factory.create_testtuple(algo=metric, inputs=dataset.test_data_inputs + test_input_models)
     testtuple = client.add_testtuple(testtuple_spec)
@@ -243,18 +243,18 @@ def test_composite_traintuple_data_samples_relative_order(factory, client, datas
     #  1. In the returned composite traintuple
     #  2. In the train method of the algo. If the order is incorrect, wait() will fail.
     assert [
-        i.asset_key for i in composite_traintuple.inputs if i.identifier == InputIdentifiers.DATA_SAMPLE
+        i.asset_key for i in composite_traintuple.inputs if i.identifier == InputIdentifiers.datasamples
     ] == dataset.train_data_sample_keys
     client.wait(composite_traintuple)
 
-    predict_input_models = task_inputs.composite_to_predict(composite_traintuple.key)
+    predict_input_models = FLTaskInputGenerator.composite_to_predict(composite_traintuple.key)
 
     predicttuple_spec = factory.create_predicttuple(
         algo=predict_algo, inputs=dataset.test_data_inputs + predict_input_models
     )
     predicttuple = client.add_predicttuple(predicttuple_spec)
 
-    test_input_models = task_inputs.predict_to_test(predicttuple.key)
+    test_input_models = FLTaskInputGenerator.predict_to_test(predicttuple.key)
 
     testtuple_spec = factory.create_testtuple(algo=metric, inputs=dataset.test_data_inputs + test_input_models)
     testtuple = client.add_testtuple(testtuple_spec)
@@ -324,7 +324,9 @@ if __name__ == '__main__':
     )
     algo = client.add_algo(spec)
 
-    spec = factory.create_traintuple(algo=algo, inputs=task_inputs.data(opener_key=dataset.key, data_samples_keys=keys))
+    spec = factory.create_traintuple(
+        algo=algo, inputs=FLTaskInputGenerator.tuple(opener_key=dataset.key, data_sample_keys=keys)
+    )
     traintuple = client.add_traintuple(spec)
     traintuple = client.wait(traintuple)
     assert traintuple.status == Status.done
