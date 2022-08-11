@@ -5,8 +5,8 @@ import substra
 from substra.sdk import models
 
 import substratest as sbt
-from substratest.factory import DEFAULT_COMPOSITE_ALGO_SCRIPT
 from substratest.factory import AlgoCategory
+from substratest.fl_interface import FL_ALGO_PREDICT_COMPOSITE
 from substratest.fl_interface import FLTaskInputGenerator
 from substratest.fl_interface import FLTaskOutputGenerator
 from substratest.fl_interface import InputIdentifiers
@@ -450,7 +450,7 @@ def test_compute_plan_aggregate_composite_traintuples(  # noqa: C901
     aggregate_algo = clients[0].add_algo(spec)
     spec = factory.create_algo(AlgoCategory.predict)
     predict_algo = clients[0].add_algo(spec)
-    spec = factory.create_algo(AlgoCategory.predict, py_script=DEFAULT_COMPOSITE_ALGO_SCRIPT)
+    spec = factory.create_algo(FL_ALGO_PREDICT_COMPOSITE)
     predict_algo_composite = clients[0].add_algo(spec)
 
     # launch execution

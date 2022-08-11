@@ -4,9 +4,9 @@ from substra.sdk.models import Status
 from substra.sdk.schemas import TraintupleSpec
 
 import substratest as sbt
-from substratest.factory import DEFAULT_COMPOSITE_ALGO_SCRIPT
 from substratest.factory import AlgoCategory
 from substratest.factory import AugmentedDataset
+from substratest.fl_interface import FL_ALGO_PREDICT_COMPOSITE
 from substratest.fl_interface import FLTaskInputGenerator
 from substratest.fl_interface import FLTaskOutputGenerator
 from substratest.fl_interface import InputIdentifiers
@@ -306,10 +306,7 @@ def test_composite_traintuples_execution(factory, client, default_dataset, defau
     spec = factory.create_algo(AlgoCategory.composite)
     algo = client.add_algo(spec)
 
-    # here we need to use the composite algo script instead of the default predict algo, because
-    # the predict function needs to take as input the 2 out-models from the composite task, not just
-    # 1 model like for train tasks.
-    spec = factory.create_algo(AlgoCategory.predict, py_script=DEFAULT_COMPOSITE_ALGO_SCRIPT)
+    spec = factory.create_algo(FL_ALGO_PREDICT_COMPOSITE)
     predict_algo = client.add_algo(spec)
 
     # first composite traintuple
@@ -577,7 +574,7 @@ def test_aggregate_composite_traintuples(factory, network, clients, default_data
     aggregate_algo = clients[0].add_algo(spec)
     spec = factory.create_algo(AlgoCategory.predict)
     predict_algo = clients[0].add_algo(spec)
-    spec = factory.create_algo(AlgoCategory.predict, py_script=DEFAULT_COMPOSITE_ALGO_SCRIPT)
+    spec = factory.create_algo(FL_ALGO_PREDICT_COMPOSITE)
     predict_algo_composite = clients[0].add_algo(spec)
 
     # launch execution

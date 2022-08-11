@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Fixed
+
+- Fix the tests so that the task execution uses inputs/outputs
+
 ### Added
 
 - Added tests for update name methods

@@ -3,8 +3,8 @@ import pytest
 from substra.sdk import models
 from substra.sdk.exceptions import InvalidRequest
 
-from substratest.factory import DEFAULT_COMPOSITE_ALGO_SCRIPT
 from substratest.factory import AlgoCategory
+from substratest.fl_interface import FL_ALGO_PREDICT_COMPOSITE
 from substratest.fl_interface import FLTaskInputGenerator
 
 
@@ -76,7 +76,7 @@ def test_debug_compute_plan_aggregate_composite(network, client, debug_client, d
     composite_algo = client.add_algo(spec)
     spec = debug_factory.create_algo(AlgoCategory.aggregate)
     aggregate_algo = client.add_algo(spec)
-    spec = debug_factory.create_algo(AlgoCategory.predict, py_script=DEFAULT_COMPOSITE_ALGO_SCRIPT)
+    spec = debug_factory.create_algo(FL_ALGO_PREDICT_COMPOSITE)
     predict_algo_composite = client.add_algo(spec)
 
     # launch execution

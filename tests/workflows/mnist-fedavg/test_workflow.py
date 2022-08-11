@@ -8,6 +8,7 @@ import substra as sb
 import substratest as sbt
 from substratest.factory import AlgoCategory
 from substratest.factory import AugmentedDataset
+from substratest.fl_interface import FL_ALGO_PREDICT_COMPOSITE
 from substratest.fl_interface import FLTaskInputGenerator
 from substratest.fl_interface import FLTaskOutputGenerator
 from substratest.settings import Settings
@@ -281,7 +282,7 @@ def inputs(datasamples_folders, factory, clients, channel, algo_dockerfile):
     results.aggregate_algo = client.add_algo(spec)
 
     spec = factory.create_algo(
-        AlgoCategory.predict,
+        FL_ALGO_PREDICT_COMPOSITE,
         py_script=_PREDICT_ALGO.open().read(),
         dockerfile=algo_dockerfile,
     )

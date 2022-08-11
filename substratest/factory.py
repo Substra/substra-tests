@@ -23,6 +23,7 @@ from substra.sdk.schemas import UpdateAlgoSpec
 from substra.sdk.schemas import UpdateComputePlanSpec
 from substra.sdk.schemas import UpdateDatasetSpec
 
+from substratest.fl_interface import FL_ALGO_PREDICT_COMPOSITE
 from substratest.fl_interface import FLAlgoInputs
 from substratest.fl_interface import FLAlgoOutputs
 from substratest.fl_interface import FLTaskInputGenerator
@@ -322,6 +323,7 @@ DEFAULT_ALGO_SCRIPTS = {
     AlgoCategory.composite: DEFAULT_COMPOSITE_ALGO_SCRIPT,
     AlgoCategory.aggregate: DEFAULT_AGGREGATE_ALGO_SCRIPT,
     AlgoCategory.predict: DEFAULT_ALGO_SCRIPT,
+    FL_ALGO_PREDICT_COMPOSITE: DEFAULT_COMPOSITE_ALGO_SCRIPT,
 }
 
 
@@ -395,17 +397,17 @@ def _get_head_trunk_model_from_inputs(inputs):
     return in_head_model_key, in_trunk_model_key
 
 
-def _get_predict_tuple_from_inputs(inputs):
+def _get_predict_tuple_from_inputs_for_testtuple(inputs):
     predictions = [t.parent_task_key for t in inputs if t.identifier == InputIdentifiers.predictions]
     assert len(predictions) == 1
     return predictions[0]
 
 
-def _get_train_tuple_from_inputs(inputs):
-    traintuple_ids = [t.parent_task_key for t in inputs if t.identifier == InputIdentifiers.model]
+def _get_train_tuple_from_inputs_for_predicttuple(inputs):
+    traintuple_ids = set(t.parent_task_key for t in inputs if t.parent_task_key is not None)
 
     assert len(traintuple_ids) == 1
-    traintuple_id = traintuple_ids[0]
+    traintuple_id = traintuple_ids.pop()
 
     return traintuple_id
 
@@ -477,7 +479,7 @@ class _ComputePlanSpecFactory:
         spec = ComputePlanPredicttupleSpec(
             predicttuple_id=random_uuid(),
             algo_key=algo.key,
-            traintuple_id=_get_train_tuple_from_inputs(inputs),
+            traintuple_id=_get_train_tuple_from_inputs_for_predicttuple(inputs),
             data_manager_key=_get_data_manager_from_inputs(inputs),
             test_data_sample_keys=_get_data_samples_from_inputs(inputs),
             inputs=inputs or [],
@@ -491,7 +493,7 @@ class _ComputePlanSpecFactory:
     def create_testtuple(self, algo, inputs=None, outputs=None, tag="", metadata=None) -> ComputePlanTesttupleSpec:
         spec = ComputePlanTesttupleSpec(
             algo_key=algo.key,
-            predicttuple_id=_get_predict_tuple_from_inputs(inputs),
+            predicttuple_id=_get_predict_tuple_from_inputs_for_testtuple(inputs),
             data_manager_key=_get_data_manager_from_inputs(inputs),
             test_data_sample_keys=_get_data_samples_from_inputs(inputs),
             inputs=inputs or [],
@@ -612,8 +614,11 @@ class AssetsFactory:
             ("Dockerfile", dockerfile),
         )
 
+        spec_category = category
+        if category == FL_ALGO_PREDICT_COMPOSITE:
+            spec_category = substra.schemas.AlgoCategory.predict
         return AlgoSpec(
-            category=category,
+            category=spec_category,
             inputs=FLAlgoInputs[category],
             outputs=FLAlgoOutputs[category],
             name=name,
@@ -701,7 +706,7 @@ class AssetsFactory:
     def create_predicttuple(self, algo, inputs=None, outputs=None, tag=None, metadata=None) -> PredicttupleSpec:
         return PredicttupleSpec(
             algo_key=algo.key,
-            traintuple_key=_get_train_tuple_from_inputs(inputs),
+            traintuple_key=_get_train_tuple_from_inputs_for_predicttuple(inputs),
             data_manager_key=_get_data_manager_from_inputs(inputs),
             test_data_sample_keys=_get_data_samples_from_inputs(inputs),
             inputs=inputs or [],
@@ -713,7 +718,7 @@ class AssetsFactory:
     def create_testtuple(self, algo, inputs=None, outputs=None, tag=None, metadata=None) -> TesttupleSpec:
         return TesttupleSpec(
             algo_key=algo.key,
-            predicttuple_key=_get_predict_tuple_from_inputs(inputs),
+            predicttuple_key=_get_predict_tuple_from_inputs_for_testtuple(inputs),
             data_manager_key=_get_data_manager_from_inputs(inputs),
             test_data_sample_keys=_get_data_samples_from_inputs(inputs),
             inputs=inputs or [],
