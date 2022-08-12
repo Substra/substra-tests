@@ -1,5 +1,5 @@
+import copy
 import os
-import time
 import uuid
 
 import pytest
@@ -229,7 +229,7 @@ def test_error_get_asset_not_found(asset_type, client):
         ("dataset", {}),
     ],
 )
-def test_update_name(asset_name, asset_params, client, factory):
+def test_update_name(asset_name, asset_params, client, factory, channel):
     create_spec_method = getattr(factory, f"create_{asset_name}")
 
     add_method = getattr(client, f"add_{asset_name}")
@@ -239,12 +239,21 @@ def test_update_name(asset_name, asset_params, client, factory):
     # create asset
     spec = create_spec_method(**asset_params)
     asset = add_method(spec)
+    # Compute plan are created with None value as duration, but for filtering and sorting purpose
+    # remote api's get_compute_plan returns 0 as duration instead. We need to set it to 0
+    # here instead of None for wait_for_asset_synchronized to pass on compute plan.
+    if asset_name == "compute_plan":
+        asset.duration = 0
+    channel.wait_for_asset_synchronized(asset)
 
     # update asset
     new_name = "updated name"
     update_method(asset, new_name)
 
-    time.sleep(0.5)
+    expected_asset = copy.deepcopy(asset)
+    expected_asset.name = new_name
+
+    channel.wait_for_asset_synchronized(expected_asset)
     updated_asset = get_method(asset.key)
 
     assert updated_asset.name != asset.name
@@ -260,7 +269,7 @@ def test_update_name(asset_name, asset_params, client, factory):
         ("dataset", {}),
     ],
 )
-def test_update_name_unauthorized(asset_name, asset_params, clients, factory):
+def test_update_name_unauthorized(asset_name, asset_params, clients, factory, channel):
     if len(clients) < 2:
         pytest.skip("requires at least 2 organizations")
     create_spec_method = getattr(factory, f"create_{asset_name}")
@@ -271,6 +280,13 @@ def test_update_name_unauthorized(asset_name, asset_params, clients, factory):
     # create asset
     spec = create_spec_method(**asset_params)
     asset = add_method(spec)
+
+    # Compute plan are created with None value as duration, but for filtering and sorting purpose
+    # remote api's get_compute_plan returns 0 as duration instead. We need to set it to 0
+    # here instead of None for wait_for_asset_synchronized to pass on compute plan.
+    if asset_name == "compute_plan":
+        asset.duration = 0
+    channel.wait_for_asset_synchronized(asset)
 
     # update asset from different user
     new_name = "updated name"
