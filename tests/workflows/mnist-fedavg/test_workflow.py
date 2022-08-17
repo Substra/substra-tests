@@ -67,19 +67,15 @@ def check_imports():
 
 
 @pytest.fixture
-def clients(client_debug_local, clients):
+def clients(clients):
     """Override clients fixture to return one client per org.
 
     The compute plan shape does not depend depend on the network topology (that is to
     say the number of orgs). The compute plan shape will be exactly the same with /
     without the local debug mode.
     """
-    if client_debug_local:
-        assert len(clients) == 1
-        return [clients[0]] * _NB_ORGS
-    else:
-        assert len(clients) >= _NB_ORGS
-        return clients[:_NB_ORGS]
+    assert len(clients) >= _NB_ORGS
+    return clients[:_NB_ORGS]
 
 
 @pytest.fixture
@@ -236,9 +232,6 @@ def inputs(datasamples_folders, factory, clients, channel, algo_dockerfile):
 
     for org_idx, (client, folders, res) in enumerate(zip(clients, datasamples_folders, results.datasets)):
         spec = factory.create_dataset(py_script=_OPENER.open().read())
-        spec.metadata = {
-            sb.sdk.DEBUG_OWNER: f"Org{org_idx+1}MSP",
-        }
         res.dataset = client.add_dataset(spec)
 
         train_keys = client.add_data_samples(

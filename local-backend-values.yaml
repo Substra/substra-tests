@@ -2,6 +2,9 @@ options:
   enable_intermediate_model_removal: False
   enable_model_download: True
 organizations:
-  - name: 'local-backend'
-    msp_id: 'local-backend'
+  - name: 'MyOrg1'
+    msp_id: 'MyOrg1MSP'
+    address: ''
+  - name: 'MyOrg2'
+    msp_id: 'MyOrg2MSP'
     address: ''

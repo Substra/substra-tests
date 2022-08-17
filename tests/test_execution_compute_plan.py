@@ -126,14 +126,13 @@ def test_compute_plan_simple(
     assert traintuple_1.rank == 0
     assert traintuple_2.rank == 0
     assert traintuple_3.rank == 1
-    assert predicttuple.rank == 2  # TODO to verify
+    assert predicttuple.rank == 2
     assert testtuple.rank == predicttuple.rank
 
     # check testtuple perfs
     assert len(testtuple.test.perfs) == 1
-    assert set(testtuple.test.perfs.values()) == {
-        4,
-    }
+    assert len(set(testtuple.test.perfs.values())) == 1
+    assert list(testtuple.test.perfs.values())[0] == pytest.approx(4)
 
     # check compute plan perfs
     performances = client_1.get_performances(cp.key)
