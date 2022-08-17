@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## [0.29.0] - 2022-08-17
+
 ### Fixed
 
 - Fix the tests so that the task execution uses inputs/outputs
@@ -15,7 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Added tests for update name methods
 
-## [0.28.0] - 2022-08.09
+## [0.28.0] - 2022-08-09
 
 ### Changed
 
@@ -25,7 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Add expiration date to skipped tests
 
-## [0.27.0] - 2022-08.01
+## [0.27.0] - 2022-08-01
 
 ### Changed
 
