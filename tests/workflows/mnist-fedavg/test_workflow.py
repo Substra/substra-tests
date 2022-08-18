@@ -230,7 +230,7 @@ def inputs(datasamples_folders, factory, clients, channel, algo_dockerfile):
     """Register for each orgs substra inputs (dataset, datasamples and metric)."""
     results = _Inputs(datasets=[_InputsSubset() for _ in range(_NB_ORGS)])
 
-    for org_idx, (client, folders, res) in enumerate(zip(clients, datasamples_folders, results.datasets)):
+    for (client, folders, res) in zip(clients, datasamples_folders, results.datasets):
         spec = factory.create_dataset(py_script=_OPENER.open().read())
         res.dataset = client.add_dataset(spec)
 
