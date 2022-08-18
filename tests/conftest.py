@@ -161,20 +161,8 @@ def debug_factory(request, cfg):
         yield f
 
 
-def get_client(cfg, client_debug_local, org):
-    return sbt.Client(
-        debug=client_debug_local,
-        organization_id=org.msp_id,
-        address=org.address,
-        user=org.user,
-        password=org.password,
-        future_timeout=cfg.options.future_timeout,
-        future_polling_period=cfg.options.future_polling_period,
-    )
-
-
 @pytest.fixture(scope="session")
-def network(cfg, client_debug_local, client):
+def network(cfg, client_debug_local):
     """Network fixture.
 
     Network must be started outside of the tests environment and the network is kept
@@ -184,8 +172,17 @@ def network(cfg, client_debug_local, client):
 
     Returns an instance of the `Network` class.
     """
-    clients = [client] + [
-        get_client(cfg, client_debug_local, org) for org in cfg.organizations if org != client.organization_id
+    clients = [
+        sbt.Client(
+            debug=client_debug_local,
+            organization_id=n.msp_id,
+            address=n.address,
+            user=n.user,
+            password=n.password,
+            future_timeout=cfg.options.future_timeout,
+            future_polling_period=cfg.options.future_polling_period,
+        )
+        for n in cfg.organizations
     ]
     return Network(
         options=cfg.options,
@@ -323,9 +320,9 @@ def organization_cfg(cfg):
 
 
 @pytest.fixture(scope="session")
-def client(cfg, client_debug_local):
+def client(network):
     """Client fixture (first organization)."""
-    return get_client(cfg, client_debug_local, cfg.organizations[0])
+    return network.clients[0]
 
 
 @pytest.fixture
