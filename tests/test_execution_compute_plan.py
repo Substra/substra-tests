@@ -840,4 +840,4 @@ def test_compute_plan_local_folder(factory, client, default_dataset, default_met
     testtuples = client.list_compute_plan_testtuples(cp.key)
     # performance is retrieved only on get, not list
     testtuple = client.get_testtuple(testtuples[0].key)
-    assert list(testtuple.test.perfs.values())[0] == 20
+    assert list(testtuple.test.perfs.values())[0] == pytest.approx(20)

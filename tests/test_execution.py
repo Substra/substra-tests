@@ -65,7 +65,7 @@ def test_tuples_execution_on_same_organization(factory, network, client, default
     testtuple = client.wait(testtuple)
     assert testtuple.status == Status.done
     assert testtuple.error_type is None
-    assert list(testtuple.test.perfs.values())[0] == 2
+    assert list(testtuple.test.perfs.values())[0] == pytest.approx(2)
 
     # add a traintuple depending on first traintuple
     first_traintuple_key = traintuple.key
@@ -174,7 +174,7 @@ def test_tuples_execution_on_different_organizations(
     assert testtuple.status == Status.done
     assert testtuple.error_type is None
     assert testtuple.worker == client_1.organization_id
-    assert list(testtuple.test.perfs.values())[0] == 2
+    assert list(testtuple.test.perfs.values())[0] == pytest.approx(2)
 
 
 @pytest.mark.skipuntil(reason="to fix, see issue connect-tests#254", until="2022-08-22")
@@ -347,7 +347,7 @@ def test_composite_traintuples_execution(factory, client, default_dataset, defau
     testtuple = client.wait(testtuple)
     assert testtuple.status == Status.done
     assert testtuple.error_type is None
-    assert list(testtuple.test.perfs.values())[0] == 32
+    assert list(testtuple.test.perfs.values())[0] == pytest.approx(32)
 
     # list composite traintuple
     composite_traintuples = client.list_composite_traintuple()
@@ -637,7 +637,7 @@ def test_aggregate_composite_traintuples(factory, network, clients, default_data
         testtuple = clients[0].add_testtuple(spec)
         testtuple = clients[0].wait(testtuple)
         # y_true: [20], y_pred: [52.0], result: 32.0
-        assert list(testtuple.test.perfs.values())[0] == 32 + index
+        assert list(testtuple.test.perfs.values())[0] == pytest.approx(32 + index)
 
     spec = factory.create_predicttuple(
         algo=predict_algo,
@@ -654,7 +654,7 @@ def test_aggregate_composite_traintuples(factory, network, clients, default_data
     testtuple = clients[0].add_testtuple(spec)
     testtuple = clients[0].wait(testtuple)
     # y_true: [20], y_pred: [28.0], result: 8.0
-    assert list(testtuple.test.perfs.values())[0] == 8
+    assert list(testtuple.test.perfs.values())[0] == pytest.approx(8)
 
     if network.options.enable_model_download:
         # Optional (if "enable_model_download" is True): ensure we can export out-models.
@@ -736,7 +736,7 @@ def test_use_data_sample_located_in_shared_path(factory, network, client, organi
     testtuple = client.wait(testtuple)
     assert testtuple.status == Status.done
     assert testtuple.error_type is None
-    assert list(testtuple.test.perfs.values())[0] == 2
+    assert list(testtuple.test.perfs.values())[0] == pytest.approx(2)
 
 
 @pytest.mark.subprocess_skip
