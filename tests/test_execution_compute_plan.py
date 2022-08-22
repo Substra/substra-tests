@@ -841,3 +841,30 @@ def test_compute_plan_local_folder(factory, client, default_dataset, default_met
     # performance is retrieved only on get, not list
     testtuple = client.get_testtuple(testtuples[0].key)
     assert list(testtuple.test.perfs.values())[0] == pytest.approx(20)
+
+
+@pytest.mark.slow
+@pytest.mark.remote_only
+def test_compute_plan_transient_outputs(factory, client, default_dataset):
+    """
+    Create a simple compute plan with tasks using transient inputs, check if the flag is set
+    """
+    data_sample_1_input, _, _, _ = default_dataset.train_data_sample_inputs
+
+    # Register the Algo
+    simple_algo_spec = factory.create_algo(AlgoCategory.simple)
+    simple_algo = client.add_algo(simple_algo_spec)
+
+    cp_spec = factory.create_compute_plan()
+    traintuple_spec_1 = cp_spec.create_traintuple(
+        algo=simple_algo,
+        inputs=default_dataset.opener_input + [data_sample_1_input],
+        outputs=FLTaskOutputGenerator.traintuple(transient=True),
+    )
+
+    cp_added = client.add_compute_plan(cp_spec)
+    client.wait(cp_added)
+
+    traintuple_1 = client.get_traintuple(traintuple_spec_1.traintuple_id)
+
+    assert traintuple_1.outputs[OutputIdentifiers.model].is_transient is True

@@ -287,8 +287,12 @@ class FLTaskOutputGenerator:
     "Generates task outputs based on Input and OutputIdentifiers"
 
     @staticmethod
-    def traintuple(authorized_ids=None):
-        return {OutputIdentifiers.model: ComputeTaskOutputSpec(permissions=_permission_from_ids(authorized_ids))}
+    def traintuple(authorized_ids=None, transient=False):
+        return {
+            OutputIdentifiers.model: ComputeTaskOutputSpec(
+                permissions=_permission_from_ids(authorized_ids), transient=transient
+            )
+        }
 
     @staticmethod
     def aggregatetuple(authorized_ids=None):
