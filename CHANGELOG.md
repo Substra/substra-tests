@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+## [0.30.0] - 2022-08-22
+
 - Added a test for transient outputs
 
 ## [0.29.0] - 2022-08-17
