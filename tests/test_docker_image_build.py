@@ -6,8 +6,15 @@ from substratest.factory import AlgoCategory
 @pytest.mark.subprocess_skip
 def test_base_connect_tools_image(factory, client, default_dataset):
     """Test that an algo created with the base connect-tools image instead of the minimal works"""
-    dockerfile = """
-FROM gcr.io/connect-314908/connect-tools:latest-nvidiacuda11.6.0-base-ubuntu20.04-python3.7
+
+    suffix = "-minimal"
+    if factory.default_tools_image.endswith(suffix):
+        connect_tool_image = factory.default_tools_image[: -len(suffix)]
+    else:
+        connect_tool_image = factory.default_tools_image
+
+    dockerfile = f"""
+FROM {connect_tool_image}
 
 COPY algo.py .
 

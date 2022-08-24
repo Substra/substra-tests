@@ -30,8 +30,12 @@ class ModelAggregator(tools.AggregateAlgo):
     Algo that aggregates models by simply averaging them as in FedAvg
     """
 
-    def aggregate(self, inmodels, rank):
+    def aggregate(self, inputs, outputs):
         # get layers
+        inmodels = []
+        for m_path in inputs["models"]:
+            inmodels.append(self.load_model(m_path))
+
         model = inmodels[0]
         model_state_dict = model.state_dict()
 
@@ -45,17 +49,22 @@ class ModelAggregator(tools.AggregateAlgo):
 
         model.load_state_dict(model_state_dict)
 
-        return model
+        self.save_model(model, outputs["model"])
 
-    def predict(self, X, model):
+    def predict(self, inputs, outputs):
+        X = inputs["X"]
         X = torch.FloatTensor(X)
+
+        model = self.load_model(inputs["model"])
         model.eval()
         # add the context manager to reduce computation overhead
         with torch.no_grad():
             y_pred = model(X)
 
         y_pred = y_pred.data.cpu().numpy()
-        return np.argmax(y_pred, axis=1)
+        pred = np.argmax(y_pred, axis=1)
+
+        self.save_predictions(pred, outputs["predictions"])
 
     def load_model(self, path):
         return torch.load(path)
@@ -76,6 +85,10 @@ class ModelAggregator(tools.AggregateAlgo):
 
     def save_trunk_model(self, model, path):
         self.save_model(model, path)
+
+    def save_predictions(self, predictions, predictions_path):
+        np.save(predictions_path, predictions)
+        shutil.move(str(predictions_path) + ".npy", predictions_path)
 
 
 if __name__ == "__main__":

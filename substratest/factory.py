@@ -29,6 +29,7 @@ from substratest.fl_interface import FLAlgoOutputs
 from substratest.fl_interface import FLTaskInputGenerator
 from substratest.fl_interface import FLTaskOutputGenerator
 from substratest.fl_interface import InputIdentifiers
+from substratest.fl_interface import OutputIdentifiers
 
 from . import utils
 from .settings import Settings
@@ -71,23 +72,25 @@ class TestOpener(tools.Opener):
         res = [30] * n_samples
         print(f'fake_y: {{res}}')
         return res
-    def get_predictions(self, path):
-        with open(path) as f:
-            return json.load(f)
-    def save_predictions(self, y_pred, path):
-        with open(path, 'w') as f:
-            return json.dump(y_pred, f)
 """
 
 TEMPLATED_DEFAULT_METRICS_SCRIPT = string.Template(
-    """
+    f"""
 import json
 import substratools as tools
+
 class TestMetrics(tools.Metrics):
-    def score(self, y_true, y_pred):
+    def score(self, inputs, outputs):
+        y_true = inputs['{InputIdentifiers.y}']
+        y_pred = self.load_predictions(inputs['{InputIdentifiers.predictions}'])
         res = sum(y_pred) - sum(y_true)
         print(f'metrics, y_true: {{y_true}}, y_pred: {{y_pred}}, result: {{res}}')
-        return res + $offset
+        tools.save_performance(res + $offset, outputs['{OutputIdentifiers.performance}'])
+
+    def load_predictions(self, path):
+        with open(path) as f:
+            return json.load(f)
+
 if __name__ == '__main__':
     tools.metrics.execute(TestMetrics())
 """
@@ -96,8 +99,18 @@ if __name__ == '__main__':
 DEFAULT_ALGO_SCRIPT = f"""
 import json
 import substratools as tools
+
 class TestAlgo(tools.Algo):
-    def train(self, X, y, models, rank):
+    def train(self, inputs, outputs):
+
+        X = inputs['{InputIdentifiers.X}']
+        y = inputs['{InputIdentifiers.y}']
+        rank = inputs['{InputIdentifiers.rank}']
+
+        models = []
+        for m_path in inputs['{InputIdentifiers.models}']:
+            models.append(self.load_model(m_path))
+
         print(f'Train, get X: {{X}}, y: {{y}}, models: {{models}}')
 
         ratio = sum(y) / sum(X)
@@ -111,12 +124,15 @@ class TestAlgo(tools.Algo):
             res = {{'value': avg + err }}
 
         print(f'Train, return {{res}}')
-        return res
+        self.save_model(res, outputs['{OutputIdentifiers.model}'])
 
-    def predict(self, X, model):
+    def predict(self, inputs, outputs):
+        X = inputs['{InputIdentifiers.X}']
+        model = self.load_model(inputs['{InputIdentifiers.model}'])
+
         res = [x * model['value'] for x in X]
         print(f'Predict, get X: {{X}}, model: {{model}}, return {{res}}')
-        return res
+        self.save_predictions(res, outputs['{OutputIdentifiers.predictions}'])
 
     def load_model(self, path):
         with open(path) as f:
@@ -125,6 +141,10 @@ class TestAlgo(tools.Algo):
     def save_model(self, model, path):
         with open(path, 'w') as f:
             return json.dump(model, f)
+
+    def save_predictions(self, predictions, path):
+        with open(path, 'w') as f:
+            return json.dump(predictions, f)
 
 if __name__ == '__main__':
     tools.algo.execute(TestAlgo())
@@ -133,24 +153,41 @@ if __name__ == '__main__':
 DEFAULT_AGGREGATE_ALGO_SCRIPT = f"""
 import json
 import substratools as tools
+
 class TestAggregateAlgo(tools.AggregateAlgo):
-    def aggregate(self, models, rank):
+    def aggregate(self, inputs, outputs):
+        rank = inputs['{InputIdentifiers.rank}']
+        models = []
+        for m_path in inputs['{InputIdentifiers.models}']:
+            models.append(self.load_model(m_path))
+
         print(f'Aggregate models: {{models}}')
         values = [m['value'] for m in models]
         avg = sum(values) / len(values)
         res = {{'value': avg}}
         print(f'Aggregate result: {{res}}')
-        return res
-    def predict(self, X, model):
+        self.save_model(res, outputs['{OutputIdentifiers.model}'])
+
+    def predict(self, inputs, outputs):
+        X = inputs['{InputIdentifiers.X}']
+        model = self.load_model(inputs['{InputIdentifiers.model}'])
+
         res = [x * model['value'] for x in X]
         print(f'Predict, get X: {{X}}, model: {{model}}, return {{res}}')
-        return res
+        self.save_predictions(res, outputs['{OutputIdentifiers.predictions}'])
+
     def load_model(self, path):
         with open(path) as f:
             return json.load(f)
+
     def save_model(self, model, path):
         with open(path, 'w') as f:
             return json.dump(model, f)
+
+    def save_predictions(self, predictions, path):
+        with open(path, 'w') as f:
+            return json.dump(predictions, f)
+
 if __name__ == '__main__':
     tools.algo.execute(TestAggregateAlgo())
 """  # noqa
@@ -161,7 +198,13 @@ DEFAULT_COMPOSITE_ALGO_SCRIPT = f"""
 import json
 import substratools as tools
 class TestCompositeAlgo(tools.CompositeAlgo):
-    def train(self, X, y, head_model, trunk_model, rank):
+    def train(self, inputs, outputs):
+        X = inputs['{InputIdentifiers.X}']
+        y = inputs['{InputIdentifiers.y}']
+        head_model = self.load_head_model(inputs['{InputIdentifiers.local}']) if inputs['{InputIdentifiers.local}'] else None
+        trunk_model = self.load_trunk_model(inputs['{InputIdentifiers.shared}']) if inputs['{InputIdentifiers.shared}'] else None
+        rank = inputs['{InputIdentifiers.rank}']
+
 
         print(f'Composite algo train X: {{X}}, y: {{y}}, head_model: {{head_model}}, trunk_model: {{trunk_model}}')
 
@@ -179,16 +222,25 @@ class TestCompositeAlgo(tools.CompositeAlgo):
         else:
             res_trunk = ratio
 
-        res = {{'value' : res_head + err_head }}, {{'value' : res_trunk + err_trunk }}
-        print(f'Composite algo train head, trunk result: {{res}}')
-        return res
+        res_head_model = {{'value' : res_head + err_head }}
+        res_trunk_model =  {{'value' : res_trunk + err_trunk }}
 
-    def predict(self, X, head_model, trunk_model):
+        print(f'Composite algo train head, trunk result: {{res_head_model}}, {{res_trunk_model}}')
+        self.save_head_model(res_head_model, outputs['{OutputIdentifiers.local}'])
+        self.save_trunk_model(res_trunk_model, outputs['{OutputIdentifiers.shared}'])
+
+
+    def predict(self, inputs, outputs):
+        X = inputs['{InputIdentifiers.X}']
+        head_model = self.load_head_model(inputs['{InputIdentifiers.local}'])
+        trunk_model = self.load_trunk_model(inputs['{InputIdentifiers.shared}'])
+
         print(f'Composite algo predict X: {{X}}, head_model: {{head_model}}, trunk_model: {{trunk_model}}')
         ratio_sum = head_model['value'] + trunk_model['value']
         res = [x * ratio_sum for x in X]
         print(f'Composite algo predict result: {{res}}')
-        return res
+
+        self.save_predictions(res, outputs['{OutputIdentifiers.predictions}'])
 
     def load_head_model(self, path):
         return self._load_model(path)
@@ -209,6 +261,10 @@ class TestCompositeAlgo(tools.CompositeAlgo):
     def _save_model(self, model, path):
         with open(path, 'w') as f:
             return json.dump(model, f)
+
+    def save_predictions(self, predictions, path):
+        with open(path, 'w') as f:
+            return json.dump(predictions, f)
 
 if __name__ == '__main__':
     tools.algo.execute(TestCompositeAlgo())

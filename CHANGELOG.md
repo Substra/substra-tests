@@ -7,9 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
-### Added
+- chore: change the assets and tools algo to feed with inputs outputs dictionary. (#256)
 
 ## [0.30.0] - 2022-08-22
+
+### Added
 
 - Added a test for transient outputs
 

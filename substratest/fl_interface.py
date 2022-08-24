@@ -21,6 +21,9 @@ class InputIdentifiers(str, Enum):
     performance = "performance"
     opener = "opener"
     datasamples = "datasamples"
+    X = "X"
+    y = "y"
+    rank = "rank"
 
 
 class OutputIdentifiers(str, Enum):

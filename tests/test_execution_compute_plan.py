@@ -759,8 +759,10 @@ LOCAL_FOLDER_ALGO_SCRIPT = f"""
 import json
 import substratools as tools
 import os
+
 class TestAlgo(tools.Algo):
-    def train(self, X, y, models, rank):
+    def train(self, inputs, outputs):
+
         state_file = os.path.join(self.compute_plan_path + "/state.json")
         state = None
 
@@ -778,12 +780,15 @@ class TestAlgo(tools.Algo):
         res = {{'value': state["factor"] * 2 }}
 
         print(f'Train, return {{res}}')
-        return res
+        self.save_model(res, outputs['{OutputIdentifiers.model}'])
 
-    def predict(self, X, model):
+    def predict(self, inputs, outputs):
+        X = inputs['{InputIdentifiers.X}']
+        model = self.load_model(inputs['{InputIdentifiers.model}'])
+
         res = [x * model['value'] for x in X]
         print(f'Predict, get X: {{X}}, model: {{model}}, return {{res}}')
-        return res
+        self.save_predictions(res, outputs['{OutputIdentifiers.predictions}'])
 
     def load_model(self, path):
         with open(path) as f:
@@ -792,6 +797,10 @@ class TestAlgo(tools.Algo):
     def save_model(self, model, path):
         with open(path, 'w') as f:
             return json.dump(model, f)
+
+    def save_predictions(self, predictions, path):
+        with open(path, 'w') as f:
+            return json.dump(predictions, f)
 
 if __name__ == '__main__':
     tools.algo.execute(TestAlgo())

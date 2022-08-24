@@ -1,6 +1,7 @@
 import pytest
 
 from substratest.factory import AlgoCategory
+from substratest.fl_interface import OutputIdentifiers
 
 
 @pytest.mark.skip("Need an environment with GPUs")
@@ -24,9 +25,9 @@ import substratools as tools
 import torch
 
 class TestAlgo(tools.Algo):
-    def train(self, X, y, models, rank):
+    def train(self, inputs, outputs):
         assert torch.cuda.is_available()
-        return ['test']
+        self.save_model(['test'], outputs['{OutputIdentifiers.model}'])
 
     def predict(self, X, model):
         assert torch.cuda.is_available()

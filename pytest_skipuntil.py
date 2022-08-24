@@ -1,6 +1,7 @@
 """custom plugin to fail skipped tests after a given date"""
-import pytest
 from datetime import date
+
+import pytest
 
 SKIPUNTIL_MARK = "skipuntil"
 

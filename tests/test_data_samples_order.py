@@ -7,6 +7,7 @@ from substratest.factory import AlgoCategory
 from substratest.fl_interface import FL_ALGO_PREDICT_COMPOSITE
 from substratest.fl_interface import FLTaskInputGenerator
 from substratest.fl_interface import InputIdentifiers
+from substratest.fl_interface import OutputIdentifiers
 
 OPENER_SCRIPT = """
 import json
@@ -28,64 +29,90 @@ class TestOpener(tools.Opener):
             return json.dump(y_pred, f)
 """
 
-TEMPLATE_ALGO_SCRIPT = """
+TEMPLATE_ALGO_SCRIPT = f"""
 import json
 import substratools as tools
+
+
 class TestAlgo(tools.Algo):
-    def train(self, X, y, models, rank):
+    def train(self, inputs, outputs):
+
+        X = inputs['{InputIdentifiers.X}']
+        y = inputs['{InputIdentifiers.y}']
+        rank = inputs['{InputIdentifiers.rank}']
+
+        models = []
+        for m_path in inputs['{InputIdentifiers.models}']:
+            models.append(self.load_model(m_path))
+
         # Check that the order of X is the same as the one passed to add_traintuple
         X_data_sample_keys = [folder.split('/')[-1] for folder in X]
-        assert X_data_sample_keys == {data_sample_keys}, X_data_sample_keys
+        assert X_data_sample_keys == {{data_sample_keys}}, X_data_sample_keys
 
         # Check that the order of y is the same as the one passed to add_traintuple
         y_data_sample_keys = [folder.split('/')[-1] for folder in y]
-        assert y_data_sample_keys == {data_sample_keys}, y_data_sample_keys
+        assert y_data_sample_keys == {{data_sample_keys}}, y_data_sample_keys
 
         # Check that the order of X is the same as the order of y
         assert X_data_sample_keys == y_data_sample_keys
+        self.save_model(([0, 1], [0, 2]), outputs['{OutputIdentifiers.model}'])
 
-        return [0, 1], [0, 2]
-
-    def predict(self, X, model):
+    def predict(self, inputs, outputs):
         # Check that the order of X is the same as the one passed to add_predicttuple
+        X = inputs['{InputIdentifiers.X}']
+        model = self.load_model(inputs['{InputIdentifiers.model}'])
         test_data_sample_keys = [folder.split('/')[-1] for folder in X]
-        assert test_data_sample_keys == {test_data_sample_keys}, test_data_sample_keys
+        assert test_data_sample_keys == {{test_data_sample_keys}}, test_data_sample_keys
+        self.save_predictions(X, outputs['{OutputIdentifiers.predictions}'])
 
-        return X
     def load_model(self, path):
         with open(path) as f:
             return json.load(f)
+
     def save_model(self, model, path):
         with open(path, 'w') as f:
             return json.dump(model, f)
+
+    def save_predictions(self, predictions, path):
+        with open(path, 'w') as f:
+            return json.dump(predictions, f)
+
 if __name__ == '__main__':
     tools.algo.execute(TestAlgo())
 """
 
-TEMPLATE_COMPOSITE_ALGO_SCRIPT = """
+TEMPLATE_COMPOSITE_ALGO_SCRIPT = f"""
 import json
 import substratools as tools
+
 class TestCompositeAlgo(tools.CompositeAlgo):
-    def train(self, X, y, head_model, trunk_model, rank):
+    def train(self, inputs, outputs):
         # Check that the order of X is the same as the one passed to add_traintuple
+
+        X = inputs['{InputIdentifiers.X}']
+        y = inputs['{InputIdentifiers.y}']
+
         X_data_sample_keys = [folder.split('/')[-1] for folder in X]
-        assert X_data_sample_keys == {data_sample_keys}, X_data_sample_keys
+        assert X_data_sample_keys == {{data_sample_keys}}, X_data_sample_keys
 
         # Check that the order of y is the same as the one passed to add_traintuple
         y_data_sample_keys = [folder.split('/')[-1] for folder in y]
-        assert y_data_sample_keys == {data_sample_keys}, y_data_sample_keys
+        assert y_data_sample_keys == {{data_sample_keys}}, y_data_sample_keys
 
         # Check that the order of X is the same as the order of y
         assert X_data_sample_keys == y_data_sample_keys
 
-        return [0, 1], [0, 2]
+        self.save_head_model([0, 1], outputs['{OutputIdentifiers.local}'])
+        self.save_trunk_model([0, 2], outputs['{OutputIdentifiers.shared}'])
 
-    def predict(self, X, head_model, trunk_model):
+    def predict(self, inputs, outputs):
         # Check that the order of X is the same as the one passed to add_predicttuple
-        test_data_sample_keys = [folder.split('/')[-1] for folder in X]
-        assert test_data_sample_keys == {test_data_sample_keys}, test_data_sample_keys
+        X = inputs['{InputIdentifiers.X}']
 
-        return X
+        test_data_sample_keys = [folder.split('/')[-1] for folder in X]
+        assert test_data_sample_keys == {{test_data_sample_keys}}, test_data_sample_keys
+
+        self.save_predictions(X, outputs['{OutputIdentifiers.predictions}'])
 
     def load_head_model(self, path):
         return self._load_model(path)
@@ -101,26 +128,38 @@ class TestCompositeAlgo(tools.CompositeAlgo):
     def _save_model(self, model, path):
         with open(path, 'w') as f:
             return json.dump(model, f)
+    def save_predictions(self, predictions, path):
+        with open(path, 'w') as f:
+            return json.dump(predictions, f)
 if __name__ == '__main__':
     tools.algo.execute(TestCompositeAlgo())
 """
 
-TEMPLATE_METRIC_SCRIPT = """
+TEMPLATE_METRIC_SCRIPT = f"""
 import substratools as tools
+
+import json
 class Metrics(tools.Metrics):
-    def score(self, y_true, y_pred):
+    def score(self, inputs, outputs):
+        y_true = inputs['{InputIdentifiers.y}']
+        y_pred = self.load_predictions(inputs['{InputIdentifiers.predictions}'])
         y_pred_data_sample_keys = [folder.split('/')[-1] for folder in y_pred]
-        assert y_pred_data_sample_keys == {data_sample_keys}
+        assert y_pred_data_sample_keys == {{data_sample_keys}}
 
         y_true_data_sample_keys = [folder.split('/')[-1] for folder in y_true]
-        assert y_true_data_sample_keys == {data_sample_keys}
+        assert y_true_data_sample_keys == {{data_sample_keys}}
 
         # y_true is a list of unordered data samples
         # since the Algo returns y==x, y_pred should respect the same order
 
         assert  y_true_data_sample_keys == y_pred_data_sample_keys, (y_true_data_sample_keys, y_pred_data_sample_keys)
 
-        return 1.0
+        tools.save_performance(1.0, outputs['{OutputIdentifiers.performance}'])
+
+    def load_predictions(self, path):
+        with open(path) as f:
+            return json.load(f)
+
 if __name__ == "__main__":
     tools.metrics.execute(Metrics())
 """
@@ -287,11 +326,6 @@ class TestOpener(tools.Opener):
         return
     def fake_y(self, n_samples=None):
         return
-    def get_predictions(self, path):
-        return 0
-    def save_predictions(self, y_pred, path):
-        with open(path, 'w') as f:
-            return json.dump(y_pred, f)
 """
     )
     dataset = client.add_dataset(spec)
@@ -306,19 +340,25 @@ class TestOpener(tools.Opener):
 import json
 import substratools as tools
 import os
+
 class TestAlgo(tools.Algo):
-    def train(self, X, y, models, rank):
+    def train(self, inputs, outputs):
+
+        X = inputs['{InputIdentifiers.X}']
         assert X == list(range({batch_size})), X
-        return 0
-    def predict(self, X, model):
-        return 1
+        self.save_model(0, outputs['{OutputIdentifiers.model}'])
+
+    def predict(self, inputs, outputs):
+        self.save_predictions(1, outputs['{OutputIdentifiers.predictions}'])
     def load_model(self, path):
         with open(path) as f:
             return json.load(f)
     def save_model(self, model, path):
         with open(path, 'w') as f:
             return json.dump(model, f)
-
+    def save_predictions(self, predictions, path):
+        with open(path, 'w') as f:
+            return json.dump(predictions, f)
 if __name__ == '__main__':
     tools.algo.execute(TestAlgo())
 """,

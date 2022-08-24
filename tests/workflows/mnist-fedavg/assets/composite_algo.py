@@ -60,11 +60,19 @@ def _fit(model, X, y, batch_size, num_updates, rank):
 
 
 class ModelComp(tools.CompositeAlgo):
-    def train(self, X, y, head_model, trunk_model, rank):
+    def train(self, inputs, outputs):
         torch.manual_seed(_SEED)  # initialize model weights
         torch.use_deterministic_algorithms(True)
-        head_model = head_model or torch.nn.Module()
-        trunk_model = trunk_model or Network()
+
+        head_model_path = inputs["local"]
+        trunk_model_path = inputs["shared"]
+
+        head_model = self.load_head_model(head_model_path) if head_model_path is not None else torch.nn.Module()
+        trunk_model = self.load_trunk_model(trunk_model_path) if trunk_model_path is not None else Network()
+
+        X = inputs["X"]
+        y = inputs["y"]
+        rank = inputs["rank"]
 
         _fit(
             trunk_model,
@@ -75,18 +83,25 @@ class ModelComp(tools.CompositeAlgo):
             rank=rank,
         )
 
-        return head_model, trunk_model
+        self.save_head_model(head_model, outputs["local"])
+        self.save_trunk_model(trunk_model, outputs["shared"])
 
-    def predict(self, X, head_model, trunk_model):
+    def predict(self, inputs, outputs):
 
+        trunk_model = self.load_trunk_model(inputs["shared"])
+
+        X = inputs["X"]
         X = torch.FloatTensor(X)
         trunk_model.eval()
+
         # add the context manager to reduce computation overhead
         with torch.no_grad():
             y_pred = trunk_model(X)
 
         y_pred = y_pred.data.cpu().numpy()
-        return np.argmax(y_pred, axis=1)
+        pred = np.argmax(y_pred, axis=1)
+
+        self.save_predictions(pred, outputs["predictions"])
 
     def load_model(self, path):
         return torch.load(path)
@@ -107,6 +122,10 @@ class ModelComp(tools.CompositeAlgo):
 
     def save_trunk_model(self, model, path):
         self.save_model(model, path)
+
+    def save_predictions(self, predictions, predictions_path):
+        np.save(predictions_path, predictions)
+        shutil.move(str(predictions_path) + ".npy", predictions_path)
 
 
 if __name__ == "__main__":

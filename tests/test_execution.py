@@ -10,6 +10,7 @@ from substratest.fl_interface import FL_ALGO_PREDICT_COMPOSITE
 from substratest.fl_interface import FLTaskInputGenerator
 from substratest.fl_interface import FLTaskOutputGenerator
 from substratest.fl_interface import InputIdentifiers
+from substratest.fl_interface import OutputIdentifiers
 
 
 @pytest.mark.slow
@@ -748,17 +749,19 @@ def test_user_creates_model_folder(factory, client, default_dataset):
     algo_script = f"""
 import json
 import substratools as tools
+
 from pathlib import Path
 class TestAlgo(tools.Algo):
-    def train(self, X, y, models, rank):
+    def train(self, inputs, outputs):
         model_path = Path.cwd() / 'model' / 'model'
         assert model_path.is_file()
         loaded = json.loads(model_path.read_text())
         assert loaded == {{'name':'Jane'}}
-        return dict()
+        self.save_model(dict(), outputs['{OutputIdentifiers.model}'])
 
-    def predict(self, X, model):
-        return None
+
+    def predict(self, inputs, outputs):
+        self.save_predictions(None, outputs['{OutputIdentifiers.predictions}'])
 
     def load_model(self, path):
         with open(path) as f:
@@ -767,6 +770,10 @@ class TestAlgo(tools.Algo):
     def save_model(self, model, path):
         with open(path, 'w') as f:
             return json.dump(model, f)
+
+    def save_predictions(self, predictions, path):
+        with open(path, 'w') as f:
+            return json.dump(predictions, f)
 
 if __name__ == '__main__':
     tools.algo.execute(TestAlgo())
@@ -781,19 +788,23 @@ if __name__ == '__main__':
 WRITE_TO_HOME_DIRECTORY_ALGO = f"""
 import json
 import substratools as tools
+
 class TestAlgo(tools.Algo):
-    def train(self, X, y, models, rank):
+    def train(self, inputs, outputs):
 
         from pathlib import Path
         with open(f"{{str(Path.home())}}/foo", "w") as f:
             f.write("test")
 
-        return {{'value': 42 }}
+        self.save_model({{'value': 42 }}, outputs['{OutputIdentifiers.model}'])
 
-    def predict(self, X, model):
+    def predict(self, inputs, outputs):
+        X = inputs['{InputIdentifiers.X}']
+        model = self.load_model(inputs['{InputIdentifiers.model}'])
+
         res = [x * model['value'] for x in X]
         print(f'Predict, get X: {{X}}, model: {{model}}, return {{res}}')
-        return res
+        self.save_predictions(res, outputs['{OutputIdentifiers.predictions}'])
 
     def load_model(self, path):
         with open(path) as f:
@@ -802,6 +813,10 @@ class TestAlgo(tools.Algo):
     def save_model(self, model, path):
         with open(path, 'w') as f:
             return json.dump(model, f)
+
+    def save_predictions(self, predictions, path):
+        with open(path, 'w') as f:
+            return json.dump(predictions, f)
 
 if __name__ == '__main__':
     tools.algo.execute(TestAlgo())
