@@ -3,6 +3,7 @@ import tempfile
 import time
 from typing import Optional
 
+import requests
 import substra
 from substra.sdk import models
 from substra.sdk.models import ComputePlanStatus
@@ -13,6 +14,24 @@ from . import errors
 
 DATASET_DOWNLOAD_FILENAME = "opener.py"
 ALGO_DOWNLOAD_FILENAME = "algo.tar.gz"
+
+
+class _APIClient:
+    def __init__(self, url: str, auth_token: str) -> None:
+        self._base_url = url
+        self._headers = {
+            "Authorization": f"Token {auth_token}",
+            "Accept": "application/json;version=0.0",
+        }
+
+    def _get(self, path: str) -> requests.Response:
+        url = self._base_url + path
+        response = requests.get(url, headers=self._headers)
+        response.raise_for_status()
+        return response
+
+    def get_compute_task_profiling(self, task_key: str):
+        return self._get(f"/task_profiling/{task_key}/").json()
 
 
 class Client:
@@ -39,6 +58,7 @@ class Client:
         self._client = substra.Client(debug=debug, url=address, insecure=False, token=token)
         if not token:
             token = self._client.login(user, password)
+        self._api_client = _APIClient(address, token)
         self.backend_mode = self._client.backend_mode
         self.token = token
         self.future_timeout = future_timeout
@@ -304,3 +324,6 @@ class Client:
 
     def update_dataset(self, dataset, name, *args, **kwargs):
         return self._client.update_dataset(dataset.key, name, *args, **kwargs)
+
+    def get_compute_task_profiling(self, task_key: str):
+        return self._api_client.get_compute_task_profiling(task_key)

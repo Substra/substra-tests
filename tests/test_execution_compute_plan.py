@@ -877,3 +877,27 @@ def test_compute_plan_transient_outputs(factory, client, default_dataset):
     traintuple_1 = client.get_traintuple(traintuple_spec_1.traintuple_id)
 
     assert traintuple_1.outputs[OutputIdentifiers.model].is_transient is True
+
+
+@pytest.mark.slow
+@pytest.mark.remote_only
+def test_compute_task_profile(factory, client, default_dataset):
+    """
+    Creates a simple task to check that tasks profiles are correctly produced
+    """
+    data_sample_1_input, _, _, _ = default_dataset.train_data_sample_inputs
+    simple_algo_spec = factory.create_algo(AlgoCategory.simple)
+    simple_algo = client.add_algo(simple_algo_spec)
+
+    cp_spec = factory.create_compute_plan()
+    traintuple_spec_1 = cp_spec.create_traintuple(
+        algo=simple_algo,
+        inputs=default_dataset.opener_input + [data_sample_1_input],
+        outputs=FLTaskOutputGenerator.traintuple(transient=True),
+    )
+
+    cp_added = client.add_compute_plan(cp_spec)
+    client.wait(cp_added)
+
+    traintuple_1_profile = client.get_compute_task_profiling(traintuple_spec_1.traintuple_id)
+    assert len(traintuple_1_profile["execution_rundown"]) == 4

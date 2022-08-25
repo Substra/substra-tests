@@ -7,7 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Changed
 - chore: change the assets and tools algo to feed with inputs outputs dictionary. (#256)
+
+### Added
+
+- A test for task profiling reports
 
 ## [0.30.0] - 2022-08-22
 
