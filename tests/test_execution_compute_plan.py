@@ -127,7 +127,7 @@ def test_compute_plan_simple(
     assert traintuple_2.rank == 0
     assert traintuple_3.rank == 1
     assert predicttuple.rank == 2
-    assert testtuple.rank == predicttuple.rank
+    assert testtuple.rank == predicttuple.rank + 1
 
     # check testtuple perfs
     assert len(testtuple.test.perfs) == 1
