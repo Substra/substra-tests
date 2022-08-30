@@ -10,14 +10,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.31.0] - 2022-08-29
 
 ### Removed
+
 - local folder tests
 
 ### Changed
+
 - chore: change the assets and tools algo to feed with inputs outputs dictionary. (#256)
 
 ### Added
 
 - A test for task profiling reports
+
+### Fixed
+
+- fix the test_base_connect_tools_image test.
 
 ## [0.30.0] - 2022-08-22
 
