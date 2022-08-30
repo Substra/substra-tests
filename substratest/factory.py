@@ -588,7 +588,7 @@ class AssetsFactory:
 
     @property
     def default_tools_image(self):
-        return self._cfg.connect_tools.image_local if self._client_debug_local else self._cfg.connect_tools.image_remote
+        return self._cfg.substra_tools.image_local if self._client_debug_local else self._cfg.substra_tools.image_remote
 
     # We need to adapt the image base name base on the fact that we run the cp in the docker context (debug)
     # or the kaniko pod (remote) to be able to pull the image

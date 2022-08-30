@@ -52,7 +52,7 @@ _EXPECTED_RESULTS = {
 
 @pytest.fixture
 def algo_dockerfile(cfg: Settings) -> str:
-    return f"FROM {cfg.connect_tools.image_workflows}\n" f"COPY algo.py .\n" f'ENTRYPOINT ["python3", "algo.py"]\n'
+    return f"FROM {cfg.substra_tools.image_workflows}\n" f"COPY algo.py .\n" f'ENTRYPOINT ["python3", "algo.py"]\n'
 
 
 @pytest.fixture(autouse=True)

@@ -4,17 +4,17 @@ from substratest.factory import AlgoCategory
 
 
 @pytest.mark.subprocess_skip
-def test_base_connect_tools_image(factory, cfg, client, default_dataset):
-    """Test that an algo created with the base connect-tools image instead of the minimal works"""
+def test_base_substra_tools_image(factory, cfg, client, default_dataset):
+    """Test that an algo created with the base substra-tools image instead of the minimal works"""
 
     suffix = "-minimal"
-    if cfg.connect_tools.image_local.endswith(suffix):
-        connect_tool_image = cfg.connect_tools.image_local[: -len(suffix)]
+    if cfg.substra_tools.image_local.endswith(suffix):
+        substra_tools_image = cfg.substra_tools.image_local[: -len(suffix)]
     else:
-        connect_tool_image = cfg.connect_tools.image_local
+        substra_tools_image = cfg.substra_tools.image_local
 
     dockerfile = f"""
-FROM {connect_tool_image}
+FROM {substra_tools_image}
 
 COPY algo.py .
 

@@ -24,7 +24,7 @@ def pytest_report_header(config):
     ]
     for n in cfg.organizations:
         messages.append(f"  - organization: name={n.name} msp_id={n.msp_id} address={n.address}")
-    messages.append(f"connect tools images: {cfg.connect_tools}")
+    messages.append(f"substra tools images: {cfg.substra_tools}")
     return messages
 
 

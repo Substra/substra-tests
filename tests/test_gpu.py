@@ -12,7 +12,7 @@ def test_gpu(factory, client, org_idx, default_datasets):
 
     # Need the base image, the minimal image does not have pip
     dockerfile = f"""
-FROM gcr.io/connect-314908/connect-tools:latest-{nvidia_drivers}-python3.7
+FROM gcr.io/connect-314908/substra-tools:latest-{nvidia_drivers}-python3.7
 
 RUN python3 -m pip install torch==1.11.0
 COPY algo.py .

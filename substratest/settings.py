@@ -12,16 +12,16 @@ _CURRENT_DIR = os.path.dirname(__file__)
 _DEFAULT_NETWORK_CONFIGURATION_PATH = os.path.join(_CURRENT_DIR, "../", "values.yaml")
 _SUBSTRA_TESTS_CONFIG_FILEPATH = os.getenv("SUBSTRA_TESTS_CONFIG_FILEPATH", _DEFAULT_NETWORK_CONFIGURATION_PATH)
 
-_DEFAULT_CONNECT_TOOLS_TAG_LOCAL = (
+_DEFAULT_SUBSTRA_TOOLS_TAG_LOCAL = (
     f"latest-nvidiacuda11.6.0-base-ubuntu20.04-python{sys.version_info.major}.{sys.version_info.minor}"
 )
-_DEFAULT_CONNECT_TOOLS_TAG_REMOTE = "latest"
+_DEFAULT_SUBSTRA_TOOLS_TAG_REMOTE = "latest"
 
-_DEFAULT_CONNECT_TOOLS_IMAGE_REMOTE = f"owkin/connect-tools:{_DEFAULT_CONNECT_TOOLS_TAG_REMOTE}-minimal"
-_DEFAULT_CONNECT_TOOLS_IMAGE_LOCAL = f"gcr.io/connect-314908/connect-tools:{_DEFAULT_CONNECT_TOOLS_TAG_LOCAL}-minimal"
+_DEFAULT_SUBSTRA_TOOLS_IMAGE_REMOTE = f"owkin/substra-tools:{_DEFAULT_SUBSTRA_TOOLS_TAG_REMOTE}-minimal"
+_DEFAULT_SUBSTRA_TOOLS_IMAGE_LOCAL = f"gcr.io/connect-314908/substra-tools:{_DEFAULT_SUBSTRA_TOOLS_TAG_LOCAL}-minimal"
 
-_DEFAULT_CONNECT_TOOLS_IMAGE_WORKFLOWS = (
-    f"gcr.io/connect-314908/connect-tools:{_DEFAULT_CONNECT_TOOLS_TAG_REMOTE}-workflows"
+_DEFAULT_SUBSTRA_TOOLS_IMAGE_WORKFLOWS = (
+    f"gcr.io/connect-314908/substra-tools:{_DEFAULT_SUBSTRA_TOOLS_TAG_REMOTE}-workflows"
 )
 
 _DEFAULT_NETWORK_LOCAL_CONFIGURATION_PATH = os.path.join(_CURRENT_DIR, "../", "local-backend-values.yaml")
@@ -47,10 +47,10 @@ class MnistWorkflowCfg(pydantic.BaseModel):
     test_samples: int = _DEFAULT_MNIST_TEST_SAMPLES
 
 
-class ConnectToolsCfg(pydantic.BaseModel):
-    image_remote: str = _DEFAULT_CONNECT_TOOLS_IMAGE_REMOTE
-    image_local: str = _DEFAULT_CONNECT_TOOLS_IMAGE_LOCAL
-    image_workflows: str = _DEFAULT_CONNECT_TOOLS_IMAGE_WORKFLOWS
+class SubstraToolsCfg(pydantic.BaseModel):
+    image_remote: str = _DEFAULT_SUBSTRA_TOOLS_IMAGE_REMOTE
+    image_local: str = _DEFAULT_SUBSTRA_TOOLS_IMAGE_LOCAL
+    image_workflows: str = _DEFAULT_SUBSTRA_TOOLS_IMAGE_WORKFLOWS
 
 
 class Options(pydantic.BaseModel):
@@ -68,7 +68,7 @@ class Settings(pydantic.BaseModel):
 
     path: str
     options: Options
-    connect_tools: ConnectToolsCfg = ConnectToolsCfg()
+    substra_tools: SubstraToolsCfg = SubstraToolsCfg()
     organizations: List[OrganizationCfg]
     mnist_workflow: MnistWorkflowCfg = MnistWorkflowCfg()
 

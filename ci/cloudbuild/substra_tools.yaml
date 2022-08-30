@@ -17,7 +17,7 @@ steps:
     args:
       - "clone"
       - "git@github.com:${_GIT_REPOSITORY}"
-      - "connect-tools"
+      - "substra-tools"
       - "--depth=1"
       - "--branch=${_BRANCH}"
     volumes:
@@ -29,7 +29,7 @@ steps:
       - --destination=${_GCR_HOST}/$PROJECT_ID/${_IMAGE}:ci-${_COMMIT}
       - --cache=${_KANIKO_CACHE_ENABLED}
       - --dockerfile=${_DOCKERFILE}
-      - --context=connect-tools
+      - --context=substra-tools
       - --cache-ttl=${_KANIKO_CACHE_TTL}
 
 tags:
@@ -38,13 +38,13 @@ tags:
 substitutions:
   _GCR_HOST: "gcr.io"
   _BUILD_TAG: "connect-tests"
-  _IMAGE: "connect-tools"
+  _IMAGE: "substra-tools"
   _COMMIT: "HEAD"
   _BRANCH: "main"
   _DOCKERFILE: "Dockerfile"
   _KANIKO_CACHE_ENABLED: "true"
   _KANIKO_CACHE_TTL: "168h"
-  _GIT_REPOSITORY: "SubstraFoundation/connect-tools.git"
+  _GIT_REPOSITORY: "SubstraFoundation/substra-tools.git"
   _SSH_KEY_SECRET: "projects/602744764353/secrets/connect-e2e-deploy-key/versions/3"
 timeout: 1200s
 availableSecrets:

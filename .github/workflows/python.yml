@@ -39,11 +39,11 @@ jobs:
           token: ${{ secrets.OWLFRED_PAT }}
           ref: ${{ env.SUBSTRA_REF }}
 
-      - name: checkout connect tools
+      - name: checkout substra tools
         uses: actions/checkout@v2
         with:
           repository: owkin/connect-tools
-          path: connect-tools
+          path: substra-tools
           token: ${{ secrets.OWLFRED_PAT }}
           ref: ${{ env.TOOLS_REF }}
 
@@ -77,7 +77,7 @@ jobs:
 
       - name: Install requirements
         run: |
-          pip install --no-cache-dir ./connect-tools
+          pip install --no-cache-dir ./substra-tools
           pip install --no-cache-dir ./substra
           pip install --no-cache-dir -r requirements.txt
           pip install -r requirements-workflows.txt
