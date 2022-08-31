@@ -744,7 +744,7 @@ def test_user_creates_model_folder(factory, client, default_dataset):
     """Check that the model folder is not overwritten by connect"""
     dockerfile = (
         f"FROM {factory.default_tools_image}\nCOPY algo.py .\nRUN mkdir model\n"
-        + 'RUN echo \'{"name":"Jane"}\' >> model/model\nENTRYPOINT ["python3", "algo.py"]\n'
+        + 'RUN echo \'{"name":"Jane"}\' >> model/model\nENTRYPOINT ["python3", "algo.py", "--method-name", "train"]\n'
     )
     algo_script = f"""
 import json

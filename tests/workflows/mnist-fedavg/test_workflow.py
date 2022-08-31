@@ -6,6 +6,7 @@ import pytest
 import substra as sb
 
 import substratest as sbt
+from substratest.factory import DEFAULT_ALGO_METHOD_NAME
 from substratest.factory import AlgoCategory
 from substratest.factory import AugmentedDataset
 from substratest.fl_interface import FL_ALGO_PREDICT_COMPOSITE
@@ -52,7 +53,11 @@ _EXPECTED_RESULTS = {
 
 @pytest.fixture
 def algo_dockerfile(cfg: Settings) -> str:
-    return f"FROM {cfg.substra_tools.image_workflows}\n" f"COPY algo.py .\n" f'ENTRYPOINT ["python3", "algo.py"]\n'
+    return (
+        f"FROM {cfg.substra_tools.image_workflows}\n"
+        f"COPY algo.py .\n"
+        f'ENTRYPOINT ["python3", "algo.py", "--method-name", "{{method_name}}"]\n'
+    )
 
 
 @pytest.fixture(autouse=True)
@@ -248,9 +253,13 @@ def inputs(datasamples_folders, factory, clients, channel, algo_dockerfile):
                 data_manager_keys=[res.dataset.key],
             )
         )
+
+        metric_dockerfile = algo_dockerfile.format(method_name=DEFAULT_ALGO_METHOD_NAME[AlgoCategory.metric])
+
         spec = factory.create_algo(
-            category=AlgoCategory.metric, dockerfile=algo_dockerfile, py_script=_METRICS.open().read()
+            category=AlgoCategory.metric, dockerfile=metric_dockerfile, py_script=_METRICS.open().read()
         )
+
         res.metric = client.add_algo(spec)
 
         # refresh dataset (to be up-to-date with added samples)
@@ -263,21 +272,21 @@ def inputs(datasamples_folders, factory, clients, channel, algo_dockerfile):
     spec = factory.create_algo(
         AlgoCategory.composite,
         py_script=_COMPOSITE_ALGO.open().read(),
-        dockerfile=algo_dockerfile,
+        dockerfile=algo_dockerfile.format(method_name=DEFAULT_ALGO_METHOD_NAME[AlgoCategory.composite]),
     )
     results.composite_algo = client.add_algo(spec)
 
     spec = factory.create_algo(
         AlgoCategory.aggregate,
         py_script=_AGGREGATE_ALGO.open().read(),
-        dockerfile=algo_dockerfile,
+        dockerfile=algo_dockerfile.format(method_name=DEFAULT_ALGO_METHOD_NAME[AlgoCategory.aggregate]),
     )
     results.aggregate_algo = client.add_algo(spec)
 
     spec = factory.create_algo(
         FL_ALGO_PREDICT_COMPOSITE,
         py_script=_PREDICT_ALGO.open().read(),
-        dockerfile=algo_dockerfile,
+        dockerfile=algo_dockerfile.format(method_name=DEFAULT_ALGO_METHOD_NAME[FL_ALGO_PREDICT_COMPOSITE]),
     )
     results.predict_algo = client.add_algo(spec)
     # ensure last registered asset is synchronized on all organizations

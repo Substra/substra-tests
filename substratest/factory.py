@@ -270,6 +270,15 @@ if __name__ == '__main__':
     tools.algo.execute(TestCompositeAlgo())
 """  # noqa
 
+DEFAULT_ALGO_METHOD_NAME = {
+    AlgoCategory.simple: "train",
+    AlgoCategory.composite: "train",
+    AlgoCategory.aggregate: "aggregate",
+    AlgoCategory.predict: "predict",
+    AlgoCategory.metric: "score",
+    FL_ALGO_PREDICT_COMPOSITE: "predict",
+}
+
 INVALID_ALGO_SCRIPT = DEFAULT_ALGO_SCRIPT.replace("train", "naitr")
 INVALID_COMPOSITE_ALGO_SCRIPT = DEFAULT_COMPOSITE_ALGO_SCRIPT.replace("train", "naitr")
 INVALID_AGGREGATE_ALGO_SCRIPT = DEFAULT_AGGREGATE_ALGO_SCRIPT.replace("aggregate", "etagergga")
@@ -590,11 +599,14 @@ class AssetsFactory:
     def default_tools_image(self):
         return self._cfg.substra_tools.image_local if self._client_debug_local else self._cfg.substra_tools.image_remote
 
-    # We need to adapt the image base name base on the fact that we run the cp in the docker context (debug)
+    # We need to adapt the image base name base on the fact that
+    # we run the cp in the docker context (debug)
     # or the kaniko pod (remote) to be able to pull the image
-    @property
-    def default_algo_dockerfile(self):
-        return f'FROM {self.default_tools_image}\nCOPY algo.py .\nENTRYPOINT ["python3", "algo.py"]\n'
+    def default_algo_dockerfile(self, method_name):
+        return (
+            f"FROM {self.default_tools_image}\nCOPY algo.py .\n"
+            f'ENTRYPOINT ["python3", "algo.py", "--method-name", "{method_name}"]\n'
+        )
 
     def create_data_sample(self, content=None, datasets=None, test_only=False):
         idx = self._data_sample_counter.inc()
@@ -662,7 +674,7 @@ class AssetsFactory:
         except KeyError:
             raise Exception("Invalid algo category", category)
 
-        dockerfile = dockerfile or self.default_algo_dockerfile
+        dockerfile = dockerfile or self.default_algo_dockerfile(method_name=DEFAULT_ALGO_METHOD_NAME[category])
 
         algo_zip = utils.create_archive(
             tmpdir / "algo",

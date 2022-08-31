@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- chore: change the Dockerfile `ENTRYPOINT` definition of algorithm relying on `substratools` to pass the method to execute under the `--method-name` argument
 - chore: rename connect-tools to substra-tools
 
 ## [0.31.0] - 2022-08-29
