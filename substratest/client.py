@@ -1,4 +1,3 @@
-import os
 import tempfile
 import time
 from typing import Optional
@@ -7,13 +6,9 @@ import requests
 import substra
 from substra.sdk import models
 from substra.sdk.models import ComputePlanStatus
-from substra.sdk.models import ModelType
 from substra.sdk.models import Status
 
 from . import errors
-
-DATASET_DOWNLOAD_FILENAME = "opener.py"
-ALGO_DOWNLOAD_FILENAME = "algo.tar.gz"
 
 
 class _APIClient:
@@ -171,33 +166,25 @@ class Client:
 
     def download_opener(self, key):
         with tempfile.TemporaryDirectory() as tmp:
-            self._client.download_dataset(key, tmp)
-            path = os.path.join(tmp, DATASET_DOWNLOAD_FILENAME)
+            path = self._client.download_dataset(key, tmp)
             with open(path, "rb") as f:
                 return f.read()
 
     def download_algo(self, key):
         with tempfile.TemporaryDirectory() as tmp:
-            self._client.download_algo(key, tmp)
-            path = os.path.join(tmp, ALGO_DOWNLOAD_FILENAME)
+            path = self._client.download_algo(key, tmp)
             with open(path, "rb") as f:
                 return f.read()
 
     def download_model(self, key):
         with tempfile.TemporaryDirectory() as tmp:
-            self._client.download_model(key, tmp)
-            path = os.path.join(tmp, f"model_{key}")
+            path = self._client.download_model(key, tmp)
             with open(path, "rb") as f:
                 return f.read()
 
     def download_trunk_model_from_composite_traintuple(self, composite_traintuple_key):
         with tempfile.TemporaryDirectory() as tmp:
-            self._client.download_trunk_model_from_composite_traintuple(composite_traintuple_key, tmp)
-            tuple = self.get_composite_traintuple(composite_traintuple_key)
-            for model in tuple.composite.models:
-                if model.category == ModelType.simple:
-                    model_key = model.key
-            path = os.path.join(tmp, f"model_{model_key}")
+            path = self._client.download_trunk_model_from_composite_traintuple(composite_traintuple_key, tmp)
             with open(path, "rb") as f:
                 return f.read()
 
