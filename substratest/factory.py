@@ -108,7 +108,7 @@ class TestAlgo(tools.Algo):
         rank = inputs['{InputIdentifiers.rank}']
 
         models = []
-        for m_path in inputs['{InputIdentifiers.models}']:
+        for m_path in inputs.get('{InputIdentifiers.models}', []):
             models.append(self.load_model(m_path))
 
         print(f'Train, get X: {{X}}, y: {{y}}, models: {{models}}')
@@ -201,9 +201,9 @@ class TestCompositeAlgo(tools.CompositeAlgo):
     def train(self, inputs, outputs):
         X = inputs['{InputIdentifiers.X}']
         y = inputs['{InputIdentifiers.y}']
-        head_model = self.load_head_model(inputs['{InputIdentifiers.local}']) if inputs['{InputIdentifiers.local}'] else None
-        trunk_model = self.load_trunk_model(inputs['{InputIdentifiers.shared}']) if inputs['{InputIdentifiers.shared}'] else None
         rank = inputs['{InputIdentifiers.rank}']
+        head_model = self.load_head_model(inputs['{InputIdentifiers.local}']) if inputs.get('{InputIdentifiers.local}') else None
+        trunk_model = self.load_trunk_model(inputs['{InputIdentifiers.shared}']) if inputs.get('{InputIdentifiers.shared}') else None
 
 
         print(f'Composite algo train X: {{X}}, y: {{y}}, head_model: {{head_model}}, trunk_model: {{trunk_model}}')

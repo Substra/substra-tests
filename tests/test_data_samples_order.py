@@ -42,7 +42,7 @@ class TestAlgo(tools.Algo):
         rank = inputs['{InputIdentifiers.rank}']
 
         models = []
-        for m_path in inputs['{InputIdentifiers.models}']:
+        for m_path in inputs.get('{InputIdentifiers.models}', []):
             models.append(self.load_model(m_path))
 
         # Check that the order of X is the same as the one passed to add_traintuple

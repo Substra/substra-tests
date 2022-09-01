@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- fix(tests): safe getter for optional inputs
 - chore: change the Dockerfile `ENTRYPOINT` definition of algorithm relying on `substratools` to pass the method to execute under the `--method-name` argument
 - chore: rename connect-tools to substra-tools
 - tests: download tests optimized using the new substra feature: download function return the path to the downloaded file.
