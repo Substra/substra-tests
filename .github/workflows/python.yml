@@ -10,10 +10,6 @@ on:
   schedule:
     - cron: "12 3 * * 2-6" # every Tuesday to Saturday at 3:12 AM
 
-env:
-  GCP_SERVICE_ACCOUNT: "e2e-tests@connect-314908.iam.gserviceaccount.com"
-  GCP_SERVICE_ACCOUNT_KEY: "keys/connect-314908-3902714646d9.json.gpg"
-
 jobs:
   test:
     name: test-py-${{ matrix.python }}
@@ -28,34 +24,22 @@ jobs:
       SRC_DIRS: substratest tests ci
 
     steps:
-      - name: checkout connect-tests
+      - name: checkout repository
         uses: actions/checkout@v2
 
-      - name: checkout connect SDK
+      - name: checkout substra
         uses: actions/checkout@v2
         with:
-          repository: owkin/substra
+          repository: Substra/substra
           path: substra
-          token: ${{ secrets.OWLFRED_PAT }}
           ref: ${{ env.SUBSTRA_REF }}
 
       - name: checkout substra tools
         uses: actions/checkout@v2
         with:
-          repository: owkin/connect-tools
+          repository: Substra/substra-tools
           path: substra-tools
-          token: ${{ secrets.OWLFRED_PAT }}
           ref: ${{ env.TOOLS_REF }}
-
-      - name: Open GCP key
-        env:
-          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
-        run: gpg --quiet --batch --yes --decrypt --passphrase="$GPG_PASSPHRASE" --output ./keys/gcp_sa_key.json "${GCP_SERVICE_ACCOUNT_KEY}"
-
-      - name: Docker login
-        run: |
-          gcloud auth activate-service-account "${GCP_SERVICE_ACCOUNT}" --key-file=./keys/gcp_sa_key.json
-          gcloud auth configure-docker 'gcr.io'
 
       - uses: actions/setup-python@v2
         with:
@@ -81,6 +65,7 @@ jobs:
           pip install --no-cache-dir ./substra
           pip install --no-cache-dir -r requirements.txt
           pip install -r requirements-workflows.txt
+
       - name: Test
         run: |
           start=`date +%s`
