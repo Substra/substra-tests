@@ -1,19 +1,19 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "connect-tests.fullname" . }}
+  name: {{ include "substra-tests.fullname" . }}
   labels:
-{{ include "connect-tests.labels" . | indent 4 }}
+{{ include "substra-tests.labels" . | indent 4 }}
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app.kubernetes.io/name: {{ include "connect-tests.name" . }}
+      app.kubernetes.io/name: {{ include "substra-tests.name" . }}
       app.kubernetes.io/instance: {{ .Release.Name }}
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: {{ include "connect-tests.name" . }}
+        app.kubernetes.io/name: {{ include "substra-tests.name" . }}
         app.kubernetes.io/instance: {{ .Release.Name }}
     spec:
     {{- with .Values.imagePullSecrets }}

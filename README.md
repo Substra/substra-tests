@@ -1,4 +1,4 @@
-# substra-tests [![Python](https://github.com/owkin/connect-tests/actions/workflows/python.yml/badge.svg)](https://github.com/owkin/connect-tests/actions/workflows/python.yml)
+# substra-tests [![Python](https://github.com/Substra/substra-tests/actions/workflows/python.yml/badge.svg)](https://github.com/Substra/substra-tests/actions/workflows/python.yml)
 
 Substra end-to-end (e2e) tests
 
@@ -111,7 +111,7 @@ pre-commit install
 
 ## Code owners additional responsibilities
 
-This repository contains the end to end tests definition. They validate there is no regression on all core features of Connect. These tests are run on a daily basis by the whole Engineering team, thus the stability of the tests are critical. For this reason, the code owners of this repository have additinal responsibilities (on top of the ones listed in the [contributing guide](https://github.com/owkin/tech-team/blob/main/CONTRIBUTING.md#maintainer--code-owner)):
+This repository contains the end to end tests definition. They validate there is no regression on all core features of Substra. These tests are run on a daily basis by the whole Engineering team, thus the stability of the tests are critical. For this reason, the code owners of this repository have additinal responsibilities (on top of the ones listed in the [contributing guide](https://github.com/owkin/tech-team/blob/main/CONTRIBUTING.md#maintainer--code-owner)):
 - Ensure good quality of the code defining the tests. It includes the substratest library that provides tools to write the tests.
 - Ensure the end to end tests pipeline is stable. Each Software Engineer is strongly encouraged to investigate and fix a nightly failure or a faulty test. The code owners are the *guardians* of the stability of the tests (on the main branches). Their role is to make sure at all times the Software Engineers can rely on those tests to spot regression errors.
 - In case of nightly failure or failure on the main branches, ensure the issue is tracked (through Github Issues) and fixed.

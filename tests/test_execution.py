@@ -741,7 +741,7 @@ def test_use_data_sample_located_in_shared_path(factory, network, client, organi
 
 @pytest.mark.subprocess_skip
 def test_user_creates_model_folder(factory, client, default_dataset):
-    """Check that the model folder is not overwritten by connect"""
+    """Check that the model folder is not overwritten by substra"""
     dockerfile = (
         f"FROM {factory.default_tools_image}\nCOPY algo.py .\nRUN mkdir model\n"
         + 'RUN echo \'{"name":"Jane"}\' >> model/model\nENTRYPOINT ["python3", "algo.py", "--method-name", "train"]\n'
