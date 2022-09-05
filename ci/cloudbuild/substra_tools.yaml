@@ -37,7 +37,7 @@ tags:
   - ${_IMAGE}
 substitutions:
   _GCR_HOST: "gcr.io"
-  _BUILD_TAG: "connect-tests"
+  _BUILD_TAG: "substra-tests"
   _IMAGE: "substra-tools"
   _COMMIT: "HEAD"
   _BRANCH: "main"

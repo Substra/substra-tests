@@ -208,7 +208,7 @@ def datasamples_folders(tmpdir, mnist_train_test):
 
 
 class _InputsSubset(pydantic.BaseModel):
-    """Inputs objects required to launch a FL pipeline on a Connect org.
+    """Inputs objects required to launch a FL pipeline on a Substra org.
     One subset per org.
     """
 
@@ -221,7 +221,7 @@ class _InputsSubset(pydantic.BaseModel):
 
 
 class _Inputs(pydantic.BaseModel):
-    """Inputs objects required to launch a FL pipeline on a Connect Network."""
+    """Inputs objects required to launch a FL pipeline on a Substra Network."""
 
     # XXX datasets must have the same order as the clients fixture
     datasets: typing.List[_InputsSubset]
