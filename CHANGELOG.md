@@ -22,7 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- chore: change the assets and tools algo to feed with inputs outputs dictionary. (#256)
+- chore: change the assets and tools algo to feed with inputs outputs dictionary. 
 
 ### Added
 
@@ -52,7 +52,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Drop Python 3.7 support (#318)
+- Drop Python 3.7 support 
 
 ### Added
 
@@ -62,13 +62,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- BREAKING: Add "inputs" field to compute task specs (#306)
+- BREAKING: Add "inputs" field to compute task specs 
 
 ## [0.26.0] - 2022-07-11
 
 ### Changed
 
-- BREAKING: Add "outputs" field to compute task specs (#290)
+- BREAKING: Add "outputs" field to compute task specs 
 
 ## [0.25.0] - 2022-07-11
 
@@ -80,109 +80,109 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Stop using metrics APIs, use algo APIs instead (#286)
-- Following the change in substra, rename `Client.update_compute_plan` in `Client.add_compute_plan_tuples` (#294)
+- Stop using metrics APIs, use algo APIs instead 
+- Following the change in substra, rename `Client.update_compute_plan` in `Client.add_compute_plan_tuples` 
 
 ## [0.23.0] - 2022-06-27
 
 ### Changed
 
-- feat: use new filters implementation for list functions (#275)
-- remove `test-ci` command, the ci run only the remote tests (#288)
+- feat: use new filters implementation for list functions 
+- remove `test-ci` command, the ci run only the remote tests 
 
 ## [0.22.0] - 2022-06-14
 
 ### Added
 
-- workflow: configurable number of datasamples to use for Mnist (#264)
+- workflow: configurable number of datasamples to use for Mnist 
 
 ### Changed
 
-- feat: rename node to organization (#282)
+- feat: rename node to organization 
 
 ## [0.21.0] - 2022-06-07
 
 ### Added
 
-- wait for tuple error type (#274)
+- wait for tuple error type 
 
 ## [0.20.0] - 2022-05-30
 
 ### Added
 
-- feat: add slack bot for sdk local tests (publish on #component_substra_sdk with the Substra-CI app) (#270)
+- feat: add slack bot for sdk local tests (publish on #component_substra_sdk with the Substra-CI app) 
 
 ### Changed
 
-- feat: in subprocess mode, errors are now caught as `ExecutionError` (#271)
+- feat: in subprocess mode, errors are now caught as `ExecutionError` 
 
 ## [0.19.0] - 2022-05-23
 
 ### Added
 
-- Test if the GPU is seen from the algo (#248)
+- Test if the GPU is seen from the algo 
 
 ## [0.18.0] - 2022-05-16
 
 ### Changed
 
-- BREAKING CHANGE: add mandatory name field to compute plan (#257)
+- BREAKING CHANGE: add mandatory name field to compute plan 
 
 ## [0.17.0] - 2022-05-09
 
 ### Added
 
 - BREAKING CHANGE: feat!: update tests to give a key to ComputePlanSpec
-- Add a test on GPU support, skipped by default (#248)
+- Add a test on GPU support, skipped by default 
 
 ## [0.16.0] - 2022-05-03
 
 ### Added
 
-- test: get_performances from a compute plan key (#243)
+- test: get_performances from a compute plan key 
 - test: test the base docker image with kaniko #245
 
 ### Changed
 
-- chore: refactor config (#246)
+- chore: refactor config 
 
 ### Fixed
 
-- fix: add missing type hint import (#247)
+- fix: add missing type hint import 
 
 ## [0.15.0] - 2022-04-19
 
 ### Changed
 
-- feat: fully covering debug mode test (#230)
+- feat: fully covering debug mode test 
 
 ### Fixed
 
-- fix: set remote tag to latest (#241)
-- fix: permissions head model test (#240)
+- fix: set remote tag to latest 
+- fix: permissions head model test 
 
 ## [0.14.0] - 2022-04-11
 
 ### Added
 
-- ci: option to chose orchestrator mode (#170)
+- ci: option to chose orchestrator mode 
 
 ### Changed
 
-- ci: metric endpoint now returns 404 instead of 400 for non-uuid keys in retrieve calls (#206)
-- ci: algo endpoint now returns 404 instead of 400 for non-uuid keys in retrieve calls (#207)
-- ci: datamanager endpoint now returns 404 instead of 400 for non-uuid keys in retrieve calls (#209)
-- ci: tuple endpoints now returns 404 instead of 400 for non-uuid keys in retrieve calls (#216)
-- ci: compute plan endpoint now returns 404 instead of 400 for non-uuid keys in retrieve calls (#219)
-- feat: use latest connect-tools image by default (#237)
+- ci: metric endpoint now returns 404 instead of 400 for non-uuid keys in retrieve calls 
+- ci: algo endpoint now returns 404 instead of 400 for non-uuid keys in retrieve calls 
+- ci: datamanager endpoint now returns 404 instead of 400 for non-uuid keys in retrieve calls 
+- ci: tuple endpoints now returns 404 instead of 400 for non-uuid keys in retrieve calls 
+- ci: compute plan endpoint now returns 404 instead of 400 for non-uuid keys in retrieve calls 
+- feat: use latest connect-tools image by default 
 
 ## [0.13.0] - 2022-03-01
 
 ### Added
 
-- feat: add support for Connect GitHub Bot (#175)
-- ci: workflow dispatch - be able to deactivate the sdk tests (#165)
-- chore(ci): enable/disable frontend/substrafl tests when triggering the workflow manually (#154)
+- feat: add support for Connect GitHub Bot 
+- ci: workflow dispatch - be able to deactivate the sdk tests 
+- chore(ci): enable/disable frontend/substrafl tests when triggering the workflow manually 
 
 ### Changed
 
@@ -193,99 +193,99 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- implement the substrafl e2e tests (#126)
-- ci: export events logs (#136)
-- add logs permission to dataset (#130)
+- implement the substrafl e2e tests 
+- ci: export events logs 
+- add logs permission to dataset 
 - ci: Be able to run only the substrafl tests (#165 #173 #179)
 
 ### Changed
 
-- increase coverage of algo.list view (#137)
+- increase coverage of algo.list view 
 - ci: the main branches of the substra and connect-tools repositories are now main (#143 #144 #146)
 
 ### Fixed
 
-- ci: fix links in slack messages (#138)
+- ci: fix links in slack messages 
 
 ## [0.11.0] - 2022-01-10
 
 ### Added
 
-- add frontend testing, improve slack reporting (#53)
-- test error type in tuple api responses (#119)
+- add frontend testing, improve slack reporting 
+- test error type in tuple api responses 
 
 ### Changed
 
-- algo writes in the home directory (#111)
+- algo writes in the home directory 
 - format code with Black and isort
-- update acceptable concommit subject pattern (#122)
-- more compact Slack reports + add e2e tests duration (#128)
+- update acceptable concommit subject pattern 
+- more compact Slack reports + add e2e tests duration 
 
 ### Fixed
 
-- GHA workflow slack reporting condition (#121)
-- handle absent test duration in slack reporting (#131)
+- GHA workflow slack reporting condition 
+- handle absent test duration in slack reporting 
 
 ## [0.10.0] - 2021-12-01
 
 ### Added
 
-- test on algo download (#109)
+- test on algo download 
 
 ### Changed
 
-- update tests for compatibility with backend (#107)
-- improve tests coverage on task compatibility (#92)
+- update tests for compatibility with backend 
+- improve tests coverage on task compatibility 
 
 ## [0.9.0] - 2021-11-02
 
 ### Added
 
-- test returned task counts with cp (#91)
-- add default values for user inputs (#99)
-- test start end date integration (#93)
-- use kaniko prepolutaed images (#95)
-- add echo step of workflow inputs (#90)
-- make repo branches configurable for e2e tests in github action (#86)
-- enforce conventional PR titles (#84)
-- multiple metrics per testtask (#74)
+- test returned task counts with cp 
+- add default values for user inputs 
+- test start end date integration 
+- use kaniko prepolutaed images 
+- add echo step of workflow inputs 
+- make repo branches configurable for e2e tests in github action 
+- enforce conventional PR titles 
+- multiple metrics per testtask 
 
 ### Changed
 
-- rename tests.test_debug module (#103)
-- improve code for local images (#102)
-- update skaffold version (#80)
-- update the webhook to target a new channel (#81)
-- Retry a bit when images fail building (#79)
+- rename tests.test_debug module 
+- improve code for local images 
+- update skaffold version 
+- update the webhook to target a new channel 
+- Retry a bit when images fail building 
 
 ### Fixed
 
-- handle canceled and failed cp in client.wait method (#100)
-- task registration on a disabled model should fail (#97)
-- remove the random id generator that fails everyday (#98)
-- remove a pipe to avoid a broken pipe error (#94)
-- missing inputs field (#89)
-- fix workflow indentation (#88)
-- add helm couchdb repo (#85)
-- do not fail if output adds extra lines (#83)
-- update metric and testtuple add for the mnist workflow (#82)
-- access the local folder path properly instead of using a hardcoded path (#76)
+- handle canceled and failed cp in client.wait method 
+- task registration on a disabled model should fail 
+- remove the random id generator that fails everyday 
+- remove a pipe to avoid a broken pipe error 
+- missing inputs field 
+- fix workflow indentation 
+- add helm couchdb repo 
+- do not fail if output adds extra lines 
+- update metric and testtuple add for the mnist workflow 
+- access the local folder path properly instead of using a hardcoded path 
 
 ## [0.8.0] - 2021-10-04
 
 ### Added
 
-- Option to `run-ci.py` to create a cluster with multiple kubernetes nodes (#37)
-- Options `--no-cleanup` and `--use-cluster` to `run-ci.py` (#39)
-- `cleanup.py` in addition to `run-ci.py` (#49)
-- Orchestrator (#2)
-- Run nightly tests in standalone and distributed mode (#63)
-- Twuni helm repo (#65)
+- Option to `run-ci.py` to create a cluster with multiple kubernetes nodes 
+- Options `--no-cleanup` and `--use-cluster` to `run-ci.py` 
+- `cleanup.py` in addition to `run-ci.py` 
+- Orchestrator 
+- Run nightly tests in standalone and distributed mode 
+- Twuni helm repo 
 
 ### Changed
 
-- Unify all algos into one (#61)
-- Testtuple after aggregate tuple (#32)
+- Unify all algos into one 
+- Testtuple after aggregate tuple 
 
 ### Removed
 
