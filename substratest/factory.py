@@ -304,7 +304,7 @@ class Counter:
         return self._idx
 
 
-class _Spec(pydantic.BaseModel, abc.ABC):
+class _Spec(pydantic.BaseModel, abc.ABC):  # noqa: B024
     """Asset specification base class."""
 
 
