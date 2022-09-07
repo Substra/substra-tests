@@ -64,8 +64,8 @@ class ModelComp(tools.CompositeAlgo):
         torch.manual_seed(_SEED)  # initialize model weights
         torch.use_deterministic_algorithms(True)
 
-        head_model_path = inputs["local"]
-        trunk_model_path = inputs["shared"]
+        head_model_path = inputs.get("local")
+        trunk_model_path = inputs.get("shared")
 
         head_model = self.load_head_model(head_model_path) if head_model_path is not None else torch.nn.Module()
         trunk_model = self.load_trunk_model(trunk_model_path) if trunk_model_path is not None else Network()
