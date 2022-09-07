@@ -1,0 +1,22 @@
+apiVersion: skaffold/v1beta13
+kind: Config
+build:
+  artifacts:
+    - image: substra/substra-tests
+      context: .
+      docker:
+        dockerfile: docker/substra-tests/Dockerfile
+deploy:
+  statusCheckDeadlineSeconds: 300
+  helm:
+    releases:
+      - name: substra-tests
+        chartPath: charts/substra-tests
+        namespace: substra-tests
+        imageStrategy:
+          helm: {}
+        values:
+          image: substra/substra-tests
+    flags:
+      install: ["--create-namespace"]
+

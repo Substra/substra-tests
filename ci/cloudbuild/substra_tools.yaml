@@ -1,0 +1,53 @@
+---
+steps:
+  - name: "gcr.io/cloud-builders/git"
+    secretEnv: ["SSH_KEY"]
+    entrypoint: "bash"
+    args:
+      - -c
+      - |
+        echo -n "$$SSH_KEY" > /root/.ssh/id_rsa
+        chmod 400 /root/.ssh/id_rsa
+        cp known_hosts.github /root/.ssh/known_hosts
+    volumes:
+      - name: "ssh"
+        path: /root/.ssh
+
+  - name: "gcr.io/cloud-builders/git"
+    args:
+      - "clone"
+      - "git@github.com:${_GIT_REPOSITORY}"
+      - "substra-tools"
+      - "--depth=1"
+      - "--branch=${_BRANCH}"
+    volumes:
+      - name: "ssh"
+        path: /root/.ssh
+
+  - name: "gcr.io/kaniko-project/executor:v1.3.0"
+    args:
+      - --destination=${_GCR_HOST}/$PROJECT_ID/${_IMAGE}:ci-${_COMMIT}
+      - --cache=${_KANIKO_CACHE_ENABLED}
+      - --dockerfile=${_DOCKERFILE}
+      - --context=substra-tools
+      - --cache-ttl=${_KANIKO_CACHE_TTL}
+
+tags:
+  - ${_BUILD_TAG}
+  - ${_IMAGE}
+substitutions:
+  _GCR_HOST: "gcr.io"
+  _BUILD_TAG: "substra-tests"
+  _IMAGE: "substra-tools"
+  _COMMIT: "HEAD"
+  _BRANCH: "main"
+  _DOCKERFILE: "Dockerfile"
+  _KANIKO_CACHE_ENABLED: "true"
+  _KANIKO_CACHE_TTL: "168h"
+  _GIT_REPOSITORY: "SubstraFoundation/substra-tools.git"
+  _SSH_KEY_SECRET: "projects/602744764353/secrets/connect-e2e-deploy-key/versions/3"
+timeout: 1200s
+availableSecrets:
+  secretManager:
+    - versionName: ${_SSH_KEY_SECRET}
+      env: "SSH_KEY"

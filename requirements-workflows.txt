@@ -1,0 +1,11 @@
+# this file contains the extra requirements needed to run the end to end workflows.
+# they have been separated from the tests main requirements to keep the main tests
+# dependencies as light as possible.
+h5py==3.7.0
+numpy==1.23.1
+pandas==1.4.3
+scikit-learn==1.1.1
+
+# Use the same version as in the substra-tools workflow image
+# otherwise torch is reinstalled, that takes a long time
+torch==1.12.0

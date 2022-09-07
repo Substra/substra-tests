@@ -1,0 +1,84 @@
+name: Python
+
+on:
+  push:
+    branches:
+      - "main"
+  pull_request:
+    branches:
+      - "main"
+  schedule:
+    - cron: "12 3 * * 2-6" # every Tuesday to Saturday at 3:12 AM
+
+jobs:
+  test:
+    name: test-py-${{ matrix.python }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-20.04]
+        python: ["3.8", "3.9"]
+    env:
+      SUBSTRA_REF: main
+      TOOLS_REF: main
+      SRC_DIRS: substratest tests ci
+
+    steps:
+      - name: checkout repository
+        uses: actions/checkout@v3
+
+      - name: checkout substra
+        uses: actions/checkout@v3
+        with:
+          repository: Substra/substra
+          path: substra
+          ref: ${{ env.SUBSTRA_REF }}
+
+      - name: checkout substra tools
+        uses: actions/checkout@v3
+        with:
+          repository: Substra/substra-tools
+          path: substra-tools
+          ref: ${{ env.TOOLS_REF }}
+
+      - uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python }}
+
+      - name: Install tools
+        run: pip install -r <(egrep "flake|black|isort" requirements.txt)
+
+      - name: Check formatting - Black
+        run: |
+          black --check --diff $SRC_DIRS
+
+      - name: Check formatting - isort
+        run: |
+          isort --check $SRC_DIRS
+
+      - name: Lint
+        run: flake8 $SRC_DIRS
+
+      - name: Install requirements
+        run: |
+          pip install --no-cache-dir ./substra-tools
+          pip install --no-cache-dir ./substra
+          pip install --no-cache-dir -r requirements.txt
+          pip install -r requirements-workflows.txt
+
+      - name: Test
+        run: |
+          start=`date +%s`
+          python -u ./run-local-test.py \
+            --write-summary-to-file ./.slack_message
+          end=`date +%s`
+          echo "LOCAL_TESTS_DURATION_SECONDS=$((end-start))" >> $GITHUB_ENV
+
+      - if: always() && github.event_name == 'schedule'
+        name: Send Slack report
+        run: |
+          ./send-slack-report.py '${{ secrets.SLACK_WEBHOOK }}' .slack_message \
+          --title 'SDK local tests' \
+          --status '${{ job.status }}' \
+          --link 'https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}' \
+          --duration-seconds "${LOCAL_TESTS_DURATION_SECONDS}"
