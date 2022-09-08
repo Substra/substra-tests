@@ -1,5 +1,6 @@
 import tempfile
 import time
+import typing
 from typing import Optional
 
 import requests
@@ -188,7 +189,7 @@ class Client:
             with open(path, "rb") as f:
                 return f.read()
 
-    def get_task_models(self, compute_task_key: str) -> list[substra.models.OutModel]:
+    def get_task_models(self, compute_task_key: str) -> typing.List[substra.models.OutModel]:
         return self._client.list_model(filters={"compute_task_key": [compute_task_key]})
 
     def get_logs(self, tuple_key):
