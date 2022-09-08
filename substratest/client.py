@@ -188,6 +188,9 @@ class Client:
             with open(path, "rb") as f:
                 return f.read()
 
+    def get_task_models(self, compute_task_key: str) -> list[substra.models.OutModel]:
+        return self._client.list_model(filters={"compute_task_key": [compute_task_key]})
+
     def get_logs(self, tuple_key):
         return self._client.get_logs(tuple_key)
 
