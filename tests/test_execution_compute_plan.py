@@ -5,7 +5,9 @@ import substra
 from substra.sdk import models
 
 import substratest as sbt
+from substratest.client import Client
 from substratest.factory import AlgoCategory
+from substratest.factory import AssetsFactory
 from substratest.fl_interface import FL_ALGO_PREDICT_COMPOSITE
 from substratest.fl_interface import FLTaskInputGenerator
 from substratest.fl_interface import FLTaskOutputGenerator
@@ -757,11 +759,11 @@ def test_compute_plan_no_batching(factory, client, default_dataset):
 
 @pytest.mark.slow
 @pytest.mark.remote_only
-def test_compute_plan_transient_outputs(factory, client, default_dataset):
+def test_compute_plan_transient_outputs(factory: AssetsFactory, client: Client, default_dataset):
     """
     Create a simple compute plan with tasks using transient inputs, check if the flag is set
     """
-    data_sample_1_input, _, _, _ = default_dataset.train_data_sample_inputs
+    data_sample_1_input, data_sample_2_input, _, _ = default_dataset.train_data_sample_inputs
 
     # Register the Algo
     simple_algo_spec = factory.create_algo(AlgoCategory.simple)
@@ -774,12 +776,35 @@ def test_compute_plan_transient_outputs(factory, client, default_dataset):
         outputs=FLTaskOutputGenerator.traintuple(transient=True),
     )
 
+    cp_spec.create_traintuple(
+        algo=simple_algo,
+        inputs=default_dataset.opener_input
+        + [data_sample_2_input]
+        + FLTaskInputGenerator.trains_to_train([traintuple_spec_1.traintuple_id]),
+    )
+
     cp_added = client.add_compute_plan(cp_spec)
     client.wait(cp_added)
 
     traintuple_1 = client.get_traintuple(traintuple_spec_1.traintuple_id)
-
     assert traintuple_1.outputs[OutputIdentifiers.model].is_transient is True
+
+    # Validate that the transient model is properly deleted
+    model = client.get_task_models(traintuple_spec_1.traintuple_id)[0]
+    client.wait_model_deletion(model.key)
+
+    # Validate that we can't create a new task that use this model
+    traintuple_spec_3 = factory.create_traintuple(
+        algo=simple_algo,
+        inputs=default_dataset.opener_input
+        + [data_sample_2_input]
+        + FLTaskInputGenerator.trains_to_train([traintuple_spec_1.traintuple_id]),
+    )
+
+    with pytest.raises(substra.exceptions.InvalidRequest) as err:
+        client.add_traintuple(traintuple_spec_3)
+
+    assert "has been disabled" in str(err.value)
 
 
 @pytest.mark.slow

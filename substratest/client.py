@@ -1,5 +1,6 @@
 import tempfile
 import time
+import typing
 from typing import Optional
 
 import requests
@@ -187,6 +188,9 @@ class Client:
             path = self._client.download_trunk_model_from_composite_traintuple(composite_traintuple_key, tmp)
             with open(path, "rb") as f:
                 return f.read()
+
+    def get_task_models(self, compute_task_key: str) -> typing.List[substra.models.OutModel]:
+        return self._client.list_model(filters={"compute_task_key": [compute_task_key]})
 
     def get_logs(self, tuple_key):
         return self._client.get_logs(tuple_key)
