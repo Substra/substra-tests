@@ -13,20 +13,10 @@ OPENER_SCRIPT = """
 import json
 import substratools as tools
 class TestOpener(tools.Opener):
-    def get_X(self, folders):
+    def get_data(self, folders):
         return folders
-    def get_y(self, folders):
-        return folders
-    def fake_X(self, n_samples=None):
+    def fake_data(self, n_samples=None):
         pass
-    def fake_y(self, n_samples=None):
-        pass
-    def get_predictions(self, path):
-        with open(path) as f:
-            return json.load(f)
-    def save_predictions(self, y_pred, path):
-        with open(path, 'w') as f:
-            return json.dump(y_pred, f)
 """
 
 TEMPLATE_ALGO_SCRIPT = f"""
@@ -313,18 +303,14 @@ import json
 import os
 import substratools as tools
 class TestOpener(tools.Opener):
-    def get_X(self, folders):
+    def get_data(self, folders):
         res = []
         for folder in folders:
             path = os.path.join(folder, '{DEFAULT_DATA_SAMPLE_FILENAME}')
             with open(path, 'r') as f:
                 res.append(int(f.read()))
         return res
-    def get_y(self, folders):
-        return folders
-    def fake_X(self, n_samples=None):
-        return
-    def fake_y(self, n_samples=None):
+    def fake_data(self, n_samples=None):
         return
 """
     )

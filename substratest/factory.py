@@ -42,36 +42,27 @@ import json
 import os
 import substratools as tools
 class TestOpener(tools.Opener):
-    def get_X(self, folders):
-        res = []
+    def get_data(self, folders):
+        X, y = [], []
         for folder in folders:
             with open(os.path.join(folder, '{DEFAULT_DATA_SAMPLE_FILENAME}'), 'r') as f:
                 reader = csv.reader(f)
                 for row in reader:
                     res.append(int(row[0]))
-        print(f'get_X: {{res}}')
-        return res  # returns a list of 1's
-    def get_y(self, folders):
-        res = []
-        for folder in folders:
-            with open(os.path.join(folder, '{DEFAULT_DATA_SAMPLE_FILENAME}'), 'r') as f:
-                reader = csv.reader(f)
-                for row in reader:
                     res.append(int(row[1]))
-        print(f'get_y: {{res}}')
-        return res  # returns a list of 2's
-    def fake_X(self, n_samples=None):
+
+        print(f'X: {{X}}') # returns a list of 1's
+        print(f'y: {{y}}') # returns a list of 2's
+        return X, y
+
+    def fake_data(self, n_samples=None):
         if n_samples is None:
             n_samples = 1
-        res = [10] * n_samples
-        print(f'fake_X: {{res}}')
-        return res
-    def fake_y(self, n_samples=None):
-        if n_samples is None:
-            n_samples = 1
-        res = [30] * n_samples
-        print(f'fake_y: {{res}}')
-        return res
+        X = [10] * n_samples
+        y = [30] * n_samples
+        print(f'fake X: {{X}}')
+        print(f'fake y: {{y}}')
+        return X, y
 """
 
 TEMPLATED_DEFAULT_METRICS_SCRIPT = string.Template(

@@ -6,22 +6,13 @@ import substratools as tools
 
 
 class OrganizationOpener(tools.Opener):
-    def get_X(self, folders):
+    def get_data(self, folders):
         """Load data."""
         assert len(folders) == 1, "Supporting only one data sample for the whole dataset"
-        path = os.path.join(folders[0], "x.npy")
-        return np.load(path)
+        X_path = os.path.join(folders[0], "x.npy")
+        y_path = os.path.join(folders[0], "y.npy")
+        return np.load(X_path), np.load(y_path)
 
-    def get_y(self, folders):
-        """Load labels."""
-        assert len(folders) == 1, "Supporting only one data sample for the whole dataset"
-        path = os.path.join(folders[0], "y.npy")
-        return np.load(path)
-
-    def fake_X(self, n_samples=None):
+    def fake_data(self, n_samples=None):
         """Generate false data."""
-        raise NotImplementedError
-
-    def fake_y(self, n_samples=None):
-        """Generate false labels."""
         raise NotImplementedError
