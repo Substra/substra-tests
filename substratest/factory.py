@@ -71,8 +71,8 @@ import json
 import substratools as tools
 
 class TestMetrics(tools.Metrics):
-    def score(self, inputs, outputs):
-        y_true = inputs['{InputIdentifiers.y}']
+    def score(self, inputs, outputs, task_properties):
+        y_true = inputs['{InputIdentifiers.datasamples}'][1]
         y_pred = self.load_predictions(inputs['{InputIdentifiers.predictions}'])
         res = sum(y_pred) - sum(y_true)
         print(f'metrics, y_true: {{y_true}}, y_pred: {{y_pred}}, result: {{res}}')
@@ -92,11 +92,11 @@ import json
 import substratools as tools
 
 class TestAlgo(tools.Algo):
-    def train(self, inputs, outputs):
+    def train(self, inputs, outputs, task_properties):
 
-        X = inputs['{InputIdentifiers.X}']
-        y = inputs['{InputIdentifiers.y}']
-        rank = inputs['{InputIdentifiers.rank}']
+        X = inputs['{InputIdentifiers.datasamples}'][0]
+        y = inputs['{InputIdentifiers.datasamples}'][1]
+        rank = task_properties['{InputIdentifiers.rank}']
 
         models = []
         for m_path in inputs.get('{InputIdentifiers.models}', []):
@@ -117,8 +117,8 @@ class TestAlgo(tools.Algo):
         print(f'Train, return {{res}}')
         self.save_model(res, outputs['{OutputIdentifiers.model}'])
 
-    def predict(self, inputs, outputs):
-        X = inputs['{InputIdentifiers.X}']
+    def predict(self, inputs, outputs, task_properties):
+        X = inputs['{InputIdentifiers.datasamples}'][0]
         model = self.load_model(inputs['{InputIdentifiers.model}'])
 
         res = [x * model['value'] for x in X]
@@ -146,8 +146,8 @@ import json
 import substratools as tools
 
 class TestAggregateAlgo(tools.AggregateAlgo):
-    def aggregate(self, inputs, outputs):
-        rank = inputs['{InputIdentifiers.rank}']
+    def aggregate(self, inputs, outputs, task_properties):
+        rank = task_properties['{InputIdentifiers.rank}']
         models = []
         for m_path in inputs['{InputIdentifiers.models}']:
             models.append(self.load_model(m_path))
@@ -159,8 +159,8 @@ class TestAggregateAlgo(tools.AggregateAlgo):
         print(f'Aggregate result: {{res}}')
         self.save_model(res, outputs['{OutputIdentifiers.model}'])
 
-    def predict(self, inputs, outputs):
-        X = inputs['{InputIdentifiers.X}']
+    def predict(self, inputs, outputs, task_properties):
+        X = inputs['{InputIdentifiers.datasamples}'][0]
         model = self.load_model(inputs['{InputIdentifiers.model}'])
 
         res = [x * model['value'] for x in X]
@@ -189,10 +189,10 @@ DEFAULT_COMPOSITE_ALGO_SCRIPT = f"""
 import json
 import substratools as tools
 class TestCompositeAlgo(tools.CompositeAlgo):
-    def train(self, inputs, outputs):
-        X = inputs['{InputIdentifiers.X}']
-        y = inputs['{InputIdentifiers.y}']
-        rank = inputs['{InputIdentifiers.rank}']
+    def train(self, inputs, outputs, task_properties):
+        X = inputs['{InputIdentifiers.datasamples}'][0]
+        y = inputs['{InputIdentifiers.datasamples}'][1]
+        rank = task_properties['{InputIdentifiers.rank}']
         head_model = self.load_head_model(inputs['{InputIdentifiers.local}']) if inputs.get('{InputIdentifiers.local}') else None
         trunk_model = self.load_trunk_model(inputs['{InputIdentifiers.shared}']) if inputs.get('{InputIdentifiers.shared}') else None
 
@@ -221,8 +221,8 @@ class TestCompositeAlgo(tools.CompositeAlgo):
         self.save_trunk_model(res_trunk_model, outputs['{OutputIdentifiers.shared}'])
 
 
-    def predict(self, inputs, outputs):
-        X = inputs['{InputIdentifiers.X}']
+    def predict(self, inputs, outputs, task_properties):
+        X = inputs['{InputIdentifiers.datasamples}'][0]
         head_model = self.load_head_model(inputs['{InputIdentifiers.local}'])
         trunk_model = self.load_trunk_model(inputs['{InputIdentifiers.shared}'])
 

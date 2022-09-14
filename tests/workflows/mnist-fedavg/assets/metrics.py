@@ -4,7 +4,7 @@ from sklearn.metrics import accuracy_score
 
 
 class OrganizationMetrics(tools.Metrics):
-    def score(self, inputs, outputs):
+    def score(self, inputs, outputs, task_properties):
         y_true = inputs["y"]
         y_pred = self.load_predictions(inputs["predictions"])
         perf = accuracy_score(y_true=y_true, y_pred=y_pred)

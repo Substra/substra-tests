@@ -25,7 +25,7 @@ import substratools as tools
 import torch
 
 class TestAlgo(tools.Algo):
-    def train(self, inputs, outputs):
+    def train(self, inputs, outputs, task_properties):
         assert torch.cuda.is_available()
         self.save_model(['test'], outputs['{OutputIdentifiers.model}'])
 

@@ -60,7 +60,7 @@ def _fit(model, X, y, batch_size, num_updates, rank):
 
 
 class ModelComp(tools.CompositeAlgo):
-    def train(self, inputs, outputs):
+    def train(self, inputs, outputs, task_properties):
         torch.manual_seed(_SEED)  # initialize model weights
         torch.use_deterministic_algorithms(True)
 
@@ -86,7 +86,7 @@ class ModelComp(tools.CompositeAlgo):
         self.save_head_model(head_model, outputs["local"])
         self.save_trunk_model(trunk_model, outputs["shared"])
 
-    def predict(self, inputs, outputs):
+    def predict(self, inputs, outputs, task_properties):
 
         trunk_model = self.load_trunk_model(inputs["shared"])
 

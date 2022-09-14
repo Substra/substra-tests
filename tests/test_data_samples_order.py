@@ -25,11 +25,11 @@ import substratools as tools
 
 
 class TestAlgo(tools.Algo):
-    def train(self, inputs, outputs):
+    def train(self, inputs, outputs, task_properties):
 
-        X = inputs['{InputIdentifiers.X}']
-        y = inputs['{InputIdentifiers.y}']
-        rank = inputs['{InputIdentifiers.rank}']
+        X = inputs['{InputIdentifiers.datasamples}'][0]
+        y = inputs['{InputIdentifiers.datasamples}'][1]
+        rank = task_properties['{InputIdentifiers.rank}']
 
         models = []
         for m_path in inputs.get('{InputIdentifiers.models}', []):
@@ -47,9 +47,9 @@ class TestAlgo(tools.Algo):
         assert X_data_sample_keys == y_data_sample_keys
         self.save_model(([0, 1], [0, 2]), outputs['{OutputIdentifiers.model}'])
 
-    def predict(self, inputs, outputs):
+    def predict(self, inputs, outputs, task_properties):
         # Check that the order of X is the same as the one passed to add_predicttuple
-        X = inputs['{InputIdentifiers.X}']
+        X = inputs['{InputIdentifiers.datasamples}'][0]
         model = self.load_model(inputs['{InputIdentifiers.model}'])
         test_data_sample_keys = [folder.split('/')[-1] for folder in X]
         assert test_data_sample_keys == {{test_data_sample_keys}}, test_data_sample_keys
@@ -76,11 +76,11 @@ import json
 import substratools as tools
 
 class TestCompositeAlgo(tools.CompositeAlgo):
-    def train(self, inputs, outputs):
+    def train(self, inputs, outputs, task_properties):
         # Check that the order of X is the same as the one passed to add_traintuple
 
-        X = inputs['{InputIdentifiers.X}']
-        y = inputs['{InputIdentifiers.y}']
+        X = inputs['{InputIdentifiers.datasamples}'][0]
+        y = inputs['{InputIdentifiers.datasamples}'][1]
 
         X_data_sample_keys = [folder.split('/')[-1] for folder in X]
         assert X_data_sample_keys == {{data_sample_keys}}, X_data_sample_keys
@@ -95,9 +95,9 @@ class TestCompositeAlgo(tools.CompositeAlgo):
         self.save_head_model([0, 1], outputs['{OutputIdentifiers.local}'])
         self.save_trunk_model([0, 2], outputs['{OutputIdentifiers.shared}'])
 
-    def predict(self, inputs, outputs):
+    def predict(self, inputs, outputs, task_properties):
         # Check that the order of X is the same as the one passed to add_predicttuple
-        X = inputs['{InputIdentifiers.X}']
+        X = inputs['{InputIdentifiers.datasamples}'][0]
 
         test_data_sample_keys = [folder.split('/')[-1] for folder in X]
         assert test_data_sample_keys == {{test_data_sample_keys}}, test_data_sample_keys
@@ -130,8 +130,8 @@ import substratools as tools
 
 import json
 class Metrics(tools.Metrics):
-    def score(self, inputs, outputs):
-        y_true = inputs['{InputIdentifiers.y}']
+    def score(self, inputs, outputs, task_properties):
+        y_true = inputs['{InputIdentifiers.datasamples}'][1]
         y_pred = self.load_predictions(inputs['{InputIdentifiers.predictions}'])
         y_pred_data_sample_keys = [folder.split('/')[-1] for folder in y_pred]
         assert y_pred_data_sample_keys == {{data_sample_keys}}
@@ -328,13 +328,13 @@ import substratools as tools
 import os
 
 class TestAlgo(tools.Algo):
-    def train(self, inputs, outputs):
+    def train(self, inputs, outputs, task_properties):
 
-        X = inputs['{InputIdentifiers.X}']
+        X = inputs['{InputIdentifiers.datasamples}'][0]
         assert X == list(range({batch_size})), X
         self.save_model(0, outputs['{OutputIdentifiers.model}'])
 
-    def predict(self, inputs, outputs):
+    def predict(self, inputs, outputs, task_properties):
         self.save_predictions(1, outputs['{OutputIdentifiers.predictions}'])
     def load_model(self, path):
         with open(path) as f:

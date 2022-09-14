@@ -30,7 +30,7 @@ class ModelAggregator(tools.AggregateAlgo):
     Algo that aggregates models by simply averaging them as in FedAvg
     """
 
-    def aggregate(self, inputs, outputs):
+    def aggregate(self, inputs, outputs, task_properties):
         # get layers
         inmodels = []
         for m_path in inputs["models"]:
@@ -51,7 +51,7 @@ class ModelAggregator(tools.AggregateAlgo):
 
         self.save_model(model, outputs["model"])
 
-    def predict(self, inputs, outputs):
+    def predict(self, inputs, outputs, task_properties):
         X = inputs["X"]
         X = torch.FloatTensor(X)
 
