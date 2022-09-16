@@ -48,8 +48,8 @@ class TestOpener(tools.Opener):
             with open(os.path.join(folder, '{DEFAULT_DATA_SAMPLE_FILENAME}'), 'r') as f:
                 reader = csv.reader(f)
                 for row in reader:
-                    res.append(int(row[0]))
-                    res.append(int(row[1]))
+                    X.append(int(row[0]))
+                    y.append(int(row[1]))
 
         print(f'X: {{X}}') # returns a list of 1's
         print(f'y: {{y}}') # returns a list of 2's

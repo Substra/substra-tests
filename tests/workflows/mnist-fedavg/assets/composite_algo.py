@@ -70,8 +70,8 @@ class ModelComp(tools.CompositeAlgo):
         head_model = self.load_head_model(head_model_path) if head_model_path is not None else torch.nn.Module()
         trunk_model = self.load_trunk_model(trunk_model_path) if trunk_model_path is not None else Network()
 
-        X = inputs["X"]
-        y = inputs["y"]
+        X = inputs["datasamples"]["X"]
+        y = inputs["datasamples"]["y"]
         rank = inputs["rank"]
 
         _fit(
@@ -90,7 +90,7 @@ class ModelComp(tools.CompositeAlgo):
 
         trunk_model = self.load_trunk_model(inputs["shared"])
 
-        X = inputs["X"]
+        X = inputs["datasamples"]["X"]
         X = torch.FloatTensor(X)
         trunk_model.eval()
 

@@ -52,7 +52,7 @@ class ModelAggregator(tools.AggregateAlgo):
         self.save_model(model, outputs["model"])
 
     def predict(self, inputs, outputs, task_properties):
-        X = inputs["X"]
+        X = inputs["datasamples"]["X"]
         X = torch.FloatTensor(X)
 
         model = self.load_model(inputs["models"])
