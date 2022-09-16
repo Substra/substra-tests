@@ -72,7 +72,7 @@ class ModelComp(tools.CompositeAlgo):
 
         X = inputs["datasamples"]["X"]
         y = inputs["datasamples"]["y"]
-        rank = inputs["rank"]
+        rank = task_properties["rank"]
 
         _fit(
             trunk_model,
