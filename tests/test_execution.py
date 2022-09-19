@@ -82,7 +82,8 @@ def test_tuples_execution_on_same_organization(factory, network, client, default
     assert traintuple.metadata == {}
 
     expected_inputs = default_dataset.train_data_inputs + FLTaskInputGenerator.trains_to_train([first_traintuple_key])
-    assert traintuple.inputs == expected_inputs
+
+    assert FLTaskInputGenerator.inputs_to_specs(traintuple.inputs) == expected_inputs
 
 
 @pytest.mark.slow

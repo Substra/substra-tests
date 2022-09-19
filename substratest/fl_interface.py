@@ -1,4 +1,5 @@
 from enum import Enum
+from typing import List
 
 from substra.sdk.schemas import AlgoInputSpec
 from substra.sdk.schemas import AlgoOutputSpec
@@ -131,7 +132,12 @@ class FLTaskInputGenerator:
 
     @staticmethod
     def opener(opener_key):
-        return [InputRef(identifier=InputIdentifiers.opener, asset_key=opener_key)]
+        return [
+            InputRef(
+                identifier=InputIdentifiers.opener,
+                asset_key=opener_key,
+            )
+        ]
 
     @staticmethod
     def data_samples(data_sample_keys):
@@ -276,6 +282,18 @@ class FLTaskInputGenerator:
                 parent_task_key=model_key,
                 parent_task_output_identifier=OutputIdentifiers.shared,
             )
+        ]
+
+    @staticmethod
+    def inputs_to_specs(task_inputs: List[InputRef]) -> List[InputRef]:
+        return [
+            InputRef(
+                identifier=input.identifier,
+                asset_key=input.asset_key,
+                parent_task_key=input.parent_task_key,
+                parent_task_output_identifier=input.parent_task_output_identifier,
+            )
+            for input in task_inputs
         ]
 
 
