@@ -9,4 +9,4 @@ mnist_workflow:
 
 ## run locally with docker or subprocess
 
-`DEBUG_SPAWNER=subprocess pytest tests -v --durations=0 -m "workflows" --local`
+`pytest tests -v --durations=0 -m "workflows" --subprocess`

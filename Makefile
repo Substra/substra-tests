@@ -25,13 +25,13 @@ test-minimal: pyclean
 test-local: test-subprocess test-docker test-subprocess-workflows
 
 test-docker: pyclean
-	DEBUG_SPAWNER=docker pytest tests -rs -v --durations=0 -m "not workflows" --local
+	pytest tests -rs -v --durations=0 -m "not workflows" --docker
 
 test-subprocess: pyclean
-	DEBUG_SPAWNER=subprocess pytest tests -rs -v --durations=0 -m "not workflows and not subprocess_skip" --local
+	pytest tests -rs -v --durations=0 -m "not workflows and not subprocess_skip" --subprocess
 
 test-subprocess-workflows: pyclean
-	DEBUG_SPAWNER=subprocess pytest tests -v --durations=0 -m "workflows" --local
+	pytest tests -v --durations=0 -m "workflows" --subprocess
 
 test-all: test-local test-remote
 
