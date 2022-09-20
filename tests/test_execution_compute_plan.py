@@ -579,9 +579,8 @@ def test_compute_plan_aggregate_composite_traintuples(  # noqa: C901
     # Check that permissions were correctly set
     for task in composite_traintuples:
         task = clients[0].get_composite_traintuple(task.key)
-        trunks = [model for model in task.composite.models if model.category == models.ModelType.simple]
-        for trunk in trunks:
-            assert len(trunk.permissions.process.authorized_ids) == len(clients)
+        trunk = task.outputs[OutputIdentifiers.shared].value
+        assert len(trunk.permissions.process.authorized_ids) == len(clients)
 
 
 def test_compute_plan_circular_dependency_failure(factory, client, default_dataset):
