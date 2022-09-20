@@ -25,13 +25,13 @@ test-minimal: pyclean
 test-local: test-subprocess test-docker test-subprocess-workflows
 
 test-docker: pyclean
-	pytest tests -rs -v --durations=0 -m "not workflows" --docker
+	pytest tests -rs -v --durations=0 -m "not workflows" --mode=docker
 
 test-subprocess: pyclean
-	pytest tests -rs -v --durations=0 -m "not workflows and not subprocess_skip" --subprocess
+	pytest tests -rs -v --durations=0 -m "not workflows and not subprocess_skip" --mode=subprocess
 
 test-subprocess-workflows: pyclean
-	pytest tests -v --durations=0 -m "workflows" --subprocess
+	pytest tests -v --durations=0 -m "workflows" --mode=subprocess
 
 test-all: test-local test-remote
 

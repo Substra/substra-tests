@@ -57,7 +57,7 @@ def pytest_addoption(parser):
     """Command line arguments to configure the network to be local or remote"""
     parser.addoption(
         "--mode",
-        choice=["subprocess", "docker", "remote"],
+        choices=["subprocess", "docker", "remote"],
         default="remote",
         help="Choose the mode on which to run the tests",
     )
@@ -79,8 +79,8 @@ def pytest_collection_modifyitems(config, items):
     """Skip the remote tests if local backend and local tests if remote backend.
     By default, run only on the remote backend.
     """
-    mode = config.getoption("--mode")
-    if mode == "remote":
+    mode = substra.BackendType(config.getoption("--mode"))
+    if mode != substra.BackendType.REMOTE:
         skip_marker = pytest.mark.skip(reason="remove the --local option to run")
         keyword = "remote_only"
     else:
@@ -149,7 +149,7 @@ def cfg(client_mode):
     if client_mode == substra.BackendType.REMOTE:
         return settings.Settings.load()
     else:
-        return settings.Settings.load_local_backend(client_mode)
+        return settings.Settings.load_local_backend()
 
 
 @pytest.fixture

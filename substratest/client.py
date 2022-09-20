@@ -38,7 +38,7 @@ class Client:
 
     def __init__(
         self,
-        debug: bool,
+        backend_type: substra.BackendType,
         organization_id: str,
         address: str,
         user: str,
@@ -51,7 +51,7 @@ class Client:
         super().__init__()
 
         self.organization_id = organization_id
-        self._client = substra.Client(debug=debug, url=address, insecure=False, token=token)
+        self._client = substra.Client(backend_type=backend_type, url=address, insecure=False, token=token)
         if not token:
             token = self._client.login(user, password)
         self._api_client = _APIClient(address, token)
