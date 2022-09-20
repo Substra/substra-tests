@@ -17,8 +17,8 @@ test-remote-sdk: pyclean
 	pytest tests -rs -v --durations=0 -m "not workflows" -n $(PARALLELISM)
 
 test-remote-workflows: pyclean
-	pytest tests -v --durations=0 -m "workflows" 
-	
+	pytest tests -v --durations=0 -m "workflows"
+
 test-minimal: pyclean
 	pytest tests -rs -v --durations=0 -m "not slow and not workflows" -n $(PARALLELISM)
 

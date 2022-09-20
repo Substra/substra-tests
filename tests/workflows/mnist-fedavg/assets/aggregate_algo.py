@@ -55,7 +55,7 @@ class ModelAggregator(tools.AggregateAlgo):
         X = inputs["X"]
         X = torch.FloatTensor(X)
 
-        model = self.load_model(inputs["model"])
+        model = self.load_model(inputs["models"])
         model.eval()
         # add the context manager to reduce computation overhead
         with torch.no_grad():

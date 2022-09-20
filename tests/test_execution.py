@@ -211,7 +211,7 @@ def test_traintuple_execution_failure(factory, network, default_dataset_1):
 
     spec = factory.create_traintuple(algo=algo, inputs=default_dataset_1.train_data_inputs)
 
-    if network.clients[0].backend_mode != substra.BackendType.DEPLOYED:
+    if network.clients[0].backend_mode != substra.BackendType.REMOTE:
         with pytest.raises(substra.sdk.backends.local.compute.spawner.base.ExecutionError):
             network.clients[0].add_traintuple(spec)
     else:
@@ -236,7 +236,7 @@ def test_composite_traintuple_execution_failure(factory, client, default_dataset
     algo = client.add_algo(spec)
 
     spec = factory.create_composite_traintuple(algo=algo, inputs=default_dataset.train_data_inputs)
-    if client.backend_mode == substra.BackendType.DEPLOYED:
+    if client.backend_mode == substra.BackendType.REMOTE:
         composite_traintuple = client.add_composite_traintuple(spec)
         composite_traintuple = client.wait(composite_traintuple, raises=False)
 
@@ -277,7 +277,7 @@ def test_aggregatetuple_execution_failure(factory, client, default_dataset):
         worker=client.organization_id,
     )
 
-    if client.backend_mode == substra.BackendType.DEPLOYED:
+    if client.backend_mode == substra.BackendType.REMOTE:
         aggregatetuple = client.add_aggregatetuple(spec)
         aggregatetuple = client.wait(aggregatetuple, raises=False)
 
