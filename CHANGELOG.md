@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+- Update the Client, it takes a backend type instead of debug=True + env variable to set the spawner - (#210)
+
 ## [0.33.0] - 2022-09-19
 
 ### Removed
