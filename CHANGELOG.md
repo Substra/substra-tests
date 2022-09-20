@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Added
+
+- Test case for `__` invalid in metadata key
+
 ## [0.35.0] - 2022-10-03
 
 ### Removed
