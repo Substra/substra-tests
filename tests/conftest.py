@@ -345,17 +345,17 @@ def channel(cfg, network):
 
 
 @pytest.fixture(scope="session")
-def debug_client(cfg, client):
+def hybrid_client(cfg, client):
     """
-    Client fixture in debug mode (first organization).
+    Client fixture in hybrid mode (first organization).
     Use it with @pytest.mark.remote_only
     """
     organization = cfg.organizations[0]
-    # Debug client and client share the same
+    # Hybrid client and client share the same
     # token, otherwise when one connects the other
     # is disconnected.
     return sbt.Client(
-        debug=True,
+        backend_type=substra.BackendType.LOCAL_DOCKER,
         organization_id=organization.msp_id,
         address=organization.address,
         user=organization.user,

@@ -21,7 +21,7 @@ pytestmark = pytest.mark.skipif(not docker_available(), reason="requires docker"
 
 @pytest.mark.remote_only
 @pytest.mark.slow
-def test_execution_debug(client, debug_client, debug_factory, default_dataset):
+def test_execution_debug(client, hybrid_client, debug_factory, default_dataset):
 
     spec = debug_factory.create_algo(AlgoCategory.simple)
     simple_algo = client.add_algo(spec)
@@ -36,7 +36,7 @@ def test_execution_debug(client, debug_client, debug_factory, default_dataset):
     spec = debug_factory.create_traintuple(
         algo=simple_algo, inputs=default_dataset.opener_input + default_dataset.train_data_sample_inputs[:1]
     )
-    traintuple = debug_client.add_traintuple(spec)
+    traintuple = hybrid_client.add_traintuple(spec)
     assert traintuple.status == models.Status.done
     assert len(traintuple.train.models) != 0
 
@@ -47,7 +47,7 @@ def test_execution_debug(client, debug_client, debug_factory, default_dataset):
         + default_dataset.train_data_sample_inputs[:1]
         + FLTaskInputGenerator.train_to_predict(traintuple.key),
     )
-    predicttuple = debug_client.add_predicttuple(spec)
+    predicttuple = hybrid_client.add_predicttuple(spec)
     assert predicttuple.status == models.Status.done
 
     spec = debug_factory.create_testtuple(
@@ -56,19 +56,19 @@ def test_execution_debug(client, debug_client, debug_factory, default_dataset):
         + default_dataset.train_data_sample_inputs[:1]
         + FLTaskInputGenerator.predict_to_test(predicttuple.key),
     )
-    testtuple = debug_client.add_testtuple(spec)
+    testtuple = hybrid_client.add_testtuple(spec)
     assert testtuple.status == models.Status.done
     assert list(testtuple.test.perfs.values())[0] == 3
 
 
 @pytest.mark.remote_only
 @pytest.mark.slow
-def test_debug_compute_plan_aggregate_composite(network, client, debug_client, debug_factory, default_datasets):
+def test_debug_compute_plan_aggregate_composite(network, client, hybrid_client, debug_factory, default_datasets):
     """
     Debug / Compute plan version of the
     `test_aggregate_composite_traintuples` method from `test_execution.py`
     """
-    aggregate_worker = debug_client.organization_id
+    aggregate_worker = hybrid_client.organization_id
     number_of_rounds = 2
 
     # register algos on first organization
@@ -133,8 +133,8 @@ def test_debug_compute_plan_aggregate_composite(network, client, debug_client, d
             algo=metric, inputs=dataset.train_data_inputs + FLTaskInputGenerator.predict_to_test(spec.predicttuple_id)
         )
 
-    cp = debug_client.add_compute_plan(cp_spec)
-    traintuples = debug_client.list_compute_plan_traintuples(cp.key)
+    cp = hybrid_client.add_compute_plan(cp_spec)
+    traintuples = hybrid_client.list_compute_plan_traintuples(cp.key)
     composite_traintuples = client.list_compute_plan_composite_traintuples(cp.key)
     aggregatetuples = client.list_compute_plan_aggregatetuples(cp.key)
     predicttuples = client.list_compute_plan_predicttuples(cp.key)
@@ -146,13 +146,13 @@ def test_debug_compute_plan_aggregate_composite(network, client, debug_client, d
 
 
 @pytest.mark.remote_only
-def test_debug_download_dataset(debug_client, default_dataset):
-    debug_client.download_opener(default_dataset.key)
+def test_debug_download_dataset(hybrid_client, default_dataset):
+    hybrid_client.download_opener(default_dataset.key)
 
 
 @pytest.mark.remote_only
 @pytest.mark.slow
-def test_test_data_traintuple(client, debug_client, debug_factory, default_dataset):
+def test_test_data_traintuple(client, hybrid_client, debug_factory, default_dataset):
     """Check that we can't use test data samples for traintuples"""
     spec = debug_factory.create_algo(AlgoCategory.simple)
     algo = client.add_algo(spec)
@@ -165,13 +165,13 @@ def test_test_data_traintuple(client, debug_client, debug_factory, default_datas
     )
 
     with pytest.raises(InvalidRequest) as e:
-        debug_client.add_traintuple(spec)
+        hybrid_client.add_traintuple(spec)
     assert "Cannot create train task with test data" in str(e.value)
 
 
 @pytest.mark.remote_only
 @pytest.mark.slow
-def test_fake_data_sample_key(client, debug_client, debug_factory, default_dataset):
+def test_fake_data_sample_key(client, hybrid_client, debug_factory, default_dataset):
     """Check that a traintuple can't run with a fake train_data_sample_keys"""
     spec = debug_factory.create_algo(AlgoCategory.simple)
     algo = client.add_algo(spec)
@@ -183,5 +183,5 @@ def test_fake_data_sample_key(client, debug_client, debug_factory, default_datas
     )
 
     with pytest.raises(InvalidRequest) as e:
-        debug_client.add_traintuple(spec)
+        hybrid_client.add_traintuple(spec)
     assert "Could not get all the data_samples in the database with the given data_sample_keys" in str(e.value)
