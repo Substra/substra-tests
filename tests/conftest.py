@@ -3,6 +3,7 @@ import typing
 import uuid
 
 import pytest
+import substra
 from substra.sdk.schemas import AlgoCategory
 
 import substratest as sbt
@@ -55,9 +56,10 @@ def pytest_configure(config):
 def pytest_addoption(parser):
     """Command line arguments to configure the network to be local or remote"""
     parser.addoption(
-        "--local",
-        action="store_true",
-        help="Run the tests on the local backend only. Otherwise run the tests only on the remote backend.",
+        "--mode",
+        choices=["subprocess", "docker", "remote"],
+        default="remote",
+        help="Choose the mode on which to run the tests",
     )
     parser.addoption(
         "--nb-train-datasamples",
@@ -77,8 +79,8 @@ def pytest_collection_modifyitems(config, items):
     """Skip the remote tests if local backend and local tests if remote backend.
     By default, run only on the remote backend.
     """
-    local = config.getoption("--local")
-    if local:
+    mode = substra.BackendType(config.getoption("--mode"))
+    if mode != substra.BackendType.REMOTE:
         skip_marker = pytest.mark.skip(reason="remove the --local option to run")
         keyword = "remote_only"
     else:
@@ -90,11 +92,9 @@ def pytest_collection_modifyitems(config, items):
 
 
 @pytest.fixture(scope="session")
-def client_debug_local(request):
-    local = request.config.getoption("--local")
-    if local:
-        return True
-    return False
+def client_mode(request):
+    mode = request.config.getoption("--mode")
+    return substra.BackendType(mode)
 
 
 class _DataEnv:
@@ -129,23 +129,26 @@ class Network:
 
 
 @pytest.fixture
-def factory(request, cfg, client_debug_local):
+def factory(request, cfg, client_mode):
     """Factory fixture.
 
     Provide class methods to simply create asset specification in order to add them
     to the substra framework.
     """
     name = f"{TESTS_RUN_UUID}_{request.node.name}"
-    with sbt.AssetsFactory(name=name, cfg=cfg, client_debug_local=client_debug_local) as f:
+    with sbt.AssetsFactory(
+        name=name,
+        cfg=cfg,
+        client_debug_local=(client_mode in [substra.BackendType.LOCAL_SUBPROCESS, substra.BackendType.LOCAL_DOCKER]),
+    ) as f:
         yield f
 
 
 @pytest.fixture(scope="session")
-def cfg(client_debug_local):
-    if not client_debug_local:
+def cfg(client_mode):
+    if client_mode == substra.BackendType.REMOTE:
         return settings.Settings.load()
     else:
-        # TODO check what enable_intermediate_model_removal does
         return settings.Settings.load_local_backend()
 
 
@@ -162,7 +165,7 @@ def debug_factory(request, cfg):
 
 
 @pytest.fixture(scope="session")
-def network(cfg, client_debug_local):
+def network(cfg, client_mode):
     """Network fixture.
 
     Network must be started outside of the tests environment and the network is kept
@@ -174,7 +177,7 @@ def network(cfg, client_debug_local):
     """
     clients = [
         sbt.Client(
-            debug=client_debug_local,
+            backend_type=client_mode,
             organization_id=n.msp_id,
             address=n.address,
             user=n.user,
@@ -191,7 +194,7 @@ def network(cfg, client_debug_local):
 
 
 @pytest.fixture(scope="session")
-def default_data_env(cfg, network, client_debug_local):
+def default_data_env(cfg, network, client_mode):
     """Fixture with pre-existing assets in all organizations.
 
     The following assets will be created for each organization:
@@ -207,7 +210,11 @@ def default_data_env(cfg, network, client_debug_local):
     """
     factory_name = f"{TESTS_RUN_UUID}_global"
 
-    with sbt.AssetsFactory(name=factory_name, cfg=cfg, client_debug_local=client_debug_local) as f:
+    with sbt.AssetsFactory(
+        name=factory_name,
+        cfg=cfg,
+        client_debug_local=(client_mode in [substra.BackendType.LOCAL_SUBPROCESS, substra.BackendType.LOCAL_DOCKER]),
+    ) as f:
         datasets = []
         metrics = []
         for index, client in enumerate(network.clients):
@@ -338,17 +345,17 @@ def channel(cfg, network):
 
 
 @pytest.fixture(scope="session")
-def debug_client(cfg, client):
+def hybrid_client(cfg, client):
     """
-    Client fixture in debug mode (first organization).
+    Client fixture in hybrid mode (first organization).
     Use it with @pytest.mark.remote_only
     """
     organization = cfg.organizations[0]
-    # Debug client and client share the same
+    # Hybrid client and client share the same
     # token, otherwise when one connects the other
     # is disconnected.
     return sbt.Client(
-        debug=True,
+        backend_type=substra.BackendType.LOCAL_DOCKER,
         organization_id=organization.msp_id,
         address=organization.address,
         user=organization.user,

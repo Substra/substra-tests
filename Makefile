@@ -17,21 +17,21 @@ test-remote-sdk: pyclean
 	pytest tests -rs -v --durations=0 -m "not workflows" -n $(PARALLELISM)
 
 test-remote-workflows: pyclean
-	pytest tests -v --durations=0 -m "workflows" 
-	
+	pytest tests -v --durations=0 -m "workflows"
+
 test-minimal: pyclean
 	pytest tests -rs -v --durations=0 -m "not slow and not workflows" -n $(PARALLELISM)
 
 test-local: test-subprocess test-docker test-subprocess-workflows
 
 test-docker: pyclean
-	DEBUG_SPAWNER=docker pytest tests -rs -v --durations=0 -m "not workflows" --local
+	pytest tests -rs -v --durations=0 -m "not workflows" --mode=docker
 
 test-subprocess: pyclean
-	DEBUG_SPAWNER=subprocess pytest tests -rs -v --durations=0 -m "not workflows and not subprocess_skip" --local
+	pytest tests -rs -v --durations=0 -m "not workflows and not subprocess_skip" --mode=subprocess
 
 test-subprocess-workflows: pyclean
-	DEBUG_SPAWNER=subprocess pytest tests -v --durations=0 -m "workflows" --local
+	pytest tests -v --durations=0 -m "workflows" --mode=subprocess
 
 test-all: test-local test-remote
 
