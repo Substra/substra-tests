@@ -70,7 +70,8 @@ TEMPLATED_DEFAULT_METRICS_SCRIPT = string.Template(
 import json
 import substratools as tools
 
-class TestMetrics(tools.Metrics):
+
+class TestMetrics(tools.MetricAlgo):
     def score(self, inputs, outputs, task_properties):
         y_true = inputs['{InputIdentifiers.datasamples}'][1]
         y_pred = self.load_predictions(inputs['{InputIdentifiers.predictions}'])
@@ -83,7 +84,7 @@ class TestMetrics(tools.Metrics):
             return json.load(f)
 
 if __name__ == '__main__':
-    tools.metrics.execute(TestMetrics())
+    tools.algo.execute(TestMetrics())
 """
 )  # noqa
 
