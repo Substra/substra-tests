@@ -3,7 +3,7 @@ import substratools as tools
 from sklearn.metrics import accuracy_score
 
 
-class OrganizationMetrics(tools.Metrics):
+class OrganizationMetrics(tools.MetricAlgo):
     def score(self, inputs, outputs, task_properties):
         y_true = inputs["datasamples"]["y"]
         y_pred = self.load_predictions(inputs["predictions"])
@@ -16,4 +16,4 @@ class OrganizationMetrics(tools.Metrics):
 
 
 if __name__ == "__main__":
-    tools.metrics.execute(OrganizationMetrics())
+    tools.algo.execute(OrganizationMetrics())

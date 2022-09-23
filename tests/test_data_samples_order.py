@@ -111,7 +111,8 @@ TEMPLATE_METRIC_SCRIPT = f"""
 import substratools as tools
 
 import json
-class Metrics(tools.Metrics):
+
+class Metrics(tools.MetricAlgo):
     def score(self, inputs, outputs, task_properties):
         datasamples = inputs['{InputIdentifiers.datasamples}']
         y_pred = self.load_predictions(inputs['{InputIdentifiers.predictions}'])
@@ -133,7 +134,7 @@ class Metrics(tools.Metrics):
             return json.load(f)
 
 if __name__ == "__main__":
-    tools.metrics.execute(Metrics())
+    tools.algo.execute(Metrics())
 """
 
 
