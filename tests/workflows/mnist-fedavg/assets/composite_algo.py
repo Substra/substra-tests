@@ -60,7 +60,7 @@ def _fit(model, X, y, batch_size, num_updates, rank):
 
 
 class ModelComp(tools.CompositeAlgo):
-    def train(self, inputs, outputs):
+    def train(self, inputs, outputs, task_properties):
         torch.manual_seed(_SEED)  # initialize model weights
         torch.use_deterministic_algorithms(True)
 
@@ -70,9 +70,9 @@ class ModelComp(tools.CompositeAlgo):
         head_model = self.load_head_model(head_model_path) if head_model_path is not None else torch.nn.Module()
         trunk_model = self.load_trunk_model(trunk_model_path) if trunk_model_path is not None else Network()
 
-        X = inputs["X"]
-        y = inputs["y"]
-        rank = inputs["rank"]
+        X = inputs["datasamples"]["X"]
+        y = inputs["datasamples"]["y"]
+        rank = task_properties["rank"]
 
         _fit(
             trunk_model,
@@ -86,11 +86,11 @@ class ModelComp(tools.CompositeAlgo):
         self.save_head_model(head_model, outputs["local"])
         self.save_trunk_model(trunk_model, outputs["shared"])
 
-    def predict(self, inputs, outputs):
+    def predict(self, inputs, outputs, task_properties):
 
         trunk_model = self.load_trunk_model(inputs["shared"])
 
-        X = inputs["X"]
+        X = inputs["datasamples"]["X"]
         X = torch.FloatTensor(X)
         trunk_model.eval()
 

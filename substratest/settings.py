@@ -1,5 +1,6 @@
 """Global settings for all tests environment."""
 import os
+
 import sys
 from typing import List
 from typing import Optional
@@ -16,6 +17,7 @@ _DEFAULT_SUBSTRA_TOOLS_TAG_LOCAL = (
     f"latest-nvidiacuda11.6.0-base-ubuntu20.04-python{sys.version_info.major}.{sys.version_info.minor}"
 )
 _DEFAULT_SUBSTRA_TOOLS_TAG_REMOTE = "latest"
+
 
 _DEFAULT_SUBSTRA_TOOLS_IMAGE_REMOTE = f"substra/substra-tools:{_DEFAULT_SUBSTRA_TOOLS_TAG_REMOTE}-minimal"
 _DEFAULT_SUBSTRA_TOOLS_IMAGE_LOCAL = f"ghcr.io/substra/substra-tools:{_DEFAULT_SUBSTRA_TOOLS_TAG_LOCAL}-minimal"

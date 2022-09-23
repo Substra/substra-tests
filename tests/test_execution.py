@@ -752,7 +752,7 @@ import substratools as tools
 
 from pathlib import Path
 class TestAlgo(tools.Algo):
-    def train(self, inputs, outputs):
+    def train(self, inputs, outputs, task_properties):
         model_path = Path.cwd() / 'model' / 'model'
         assert model_path.is_file()
         loaded = json.loads(model_path.read_text())
@@ -760,7 +760,7 @@ class TestAlgo(tools.Algo):
         self.save_model(dict(), outputs['{OutputIdentifiers.model}'])
 
 
-    def predict(self, inputs, outputs):
+    def predict(self, inputs, outputs, task_properties):
         self.save_predictions(None, outputs['{OutputIdentifiers.predictions}'])
 
     def load_model(self, path):
@@ -790,7 +790,7 @@ import json
 import substratools as tools
 
 class TestAlgo(tools.Algo):
-    def train(self, inputs, outputs):
+    def train(self, inputs, outputs, task_properties):
 
         from pathlib import Path
         with open(f"{{str(Path.home())}}/foo", "w") as f:
@@ -798,8 +798,8 @@ class TestAlgo(tools.Algo):
 
         self.save_model({{'value': 42 }}, outputs['{OutputIdentifiers.model}'])
 
-    def predict(self, inputs, outputs):
-        X = inputs['{InputIdentifiers.X}']
+    def predict(self, inputs, outputs, task_properties):
+        X = inputs['{InputIdentifiers.datasamples}'][0]
         model = self.load_model(inputs['{InputIdentifiers.model}'])
 
         res = [x * model['value'] for x in X]
