@@ -12,15 +12,10 @@ _CURRENT_DIR = os.path.dirname(__file__)
 _DEFAULT_NETWORK_CONFIGURATION_PATH = os.path.join(_CURRENT_DIR, "../", "values.yaml")
 _SUBSTRA_TESTS_CONFIG_FILEPATH = os.getenv("SUBSTRA_TESTS_CONFIG_FILEPATH", _DEFAULT_NETWORK_CONFIGURATION_PATH)
 
-# TODO: revert before merge
-# _DEFAULT_SUBSTRA_TOOLS_TAG_LOCAL = (
-#     f"latest-nvidiacuda11.6.0-base-ubuntu20.04-python{sys.version_info.major}.{sys.version_info.minor}"
-# )
-# _DEFAULT_SUBSTRA_TOOLS_TAG_REMOTE = "latest"
 _DEFAULT_SUBSTRA_TOOLS_TAG_LOCAL = (
-    f"metrics_to_generic-nvidiacuda11.6.0-base-ubuntu20.04-python{sys.version_info.major}.{sys.version_info.minor}"
+    f"latest-nvidiacuda11.6.0-base-ubuntu20.04-python{sys.version_info.major}.{sys.version_info.minor}"
 )
-_DEFAULT_SUBSTRA_TOOLS_TAG_REMOTE = "metrics_to_generic"
+_DEFAULT_SUBSTRA_TOOLS_TAG_REMOTE = "latest"
 
 _DEFAULT_SUBSTRA_TOOLS_IMAGE_REMOTE = f"substra/substra-tools:{_DEFAULT_SUBSTRA_TOOLS_TAG_REMOTE}-minimal"
 _DEFAULT_SUBSTRA_TOOLS_IMAGE_LOCAL = f"ghcr.io/substra/substra-tools:{_DEFAULT_SUBSTRA_TOOLS_TAG_LOCAL}-minimal"
