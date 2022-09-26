@@ -674,11 +674,7 @@ class AssetsFactory:
             ("Dockerfile", dockerfile),
         )
 
-        spec_category = category
-        if category == FL_ALGO_PREDICT_COMPOSITE:
-            spec_category = substra.schemas.AlgoCategory.predict
         return AlgoSpec(
-            category=spec_category,
             inputs=FLAlgoInputs[category],
             outputs=FLAlgoOutputs[category],
             name=name,
