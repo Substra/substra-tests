@@ -178,33 +178,38 @@ def test_tuples_execution_on_different_organizations(
     assert list(testtuple.test.perfs.values())[0] == pytest.approx(2)
 
 
-@pytest.mark.remote_only
 @pytest.mark.slow
-@pytest.mark.parametrize(
-    "dockerfile",
-    [
-        "INVALID DOCKERFILE",
-        "FROM scratch\nENTRYPOINT invalid_entrypoint_form",
-        'FROM scratch\nENTRYPOINT ["python", "script.py"]\nRUN invalid command',
-    ],
-)
-def test_traintuple_build_failure(dockerfile, factory, client, default_dataset):
-    """Invalid Dockerfile is causing traintuple failure."""
+@pytest.mark.subprocess_skip
+def test_algo_build_failure(factory, network, default_dataset_1):
+    """Invalid Dockerfile is causing compute task failure."""
 
-    spec = factory.create_algo(AlgoCategory.simple, dockerfile=dockerfile)
-    algo = client.add_algo(spec)
-    spec = factory.create_traintuple(algo=algo, inputs=default_dataset.train_data_inputs)
-    traintuple = client.add_traintuple(spec)
-    traintuple = client.wait(traintuple, raises=False)
+    dockerfile = factory.default_algo_dockerfile(method_name=sbt.factory.DEFAULT_ALGO_METHOD_NAME[AlgoCategory.simple])
+    dockerfile += "\nRUN invalid_command"
+    spec = factory.create_algo(category=AlgoCategory.simple, dockerfile=dockerfile)
+    algo = network.clients[0].add_algo(spec)
 
-    assert traintuple.status == Status.failed
-    assert traintuple.error_type == substra.sdk.models.TaskErrorType.build
-    assert traintuple.train.models is None
+    spec = factory.create_traintuple(algo=algo, inputs=default_dataset_1.train_data_inputs)
+
+    if network.clients[0].backend_mode != substra.BackendType.REMOTE:
+        with pytest.raises(substra.sdk.backends.local.compute.spawner.base.BuildError):
+            network.clients[0].add_traintuple(spec)
+    else:
+        traintuple = network.clients[0].add_traintuple(spec)
+        traintuple = network.clients[0].wait(traintuple, raises=False)
+
+        assert traintuple.status == Status.failed
+        assert traintuple.error_type == substra.sdk.models.TaskErrorType.build
+        assert traintuple.train.models is None
+
+        for client in (network.clients[0], network.clients[1]):
+            logs = client.download_logs(traintuple.key)
+            assert "invalid_command: not found" in logs
+            assert client.get_logs(traintuple.key) == logs
 
 
 @pytest.mark.slow
-def test_traintuple_execution_failure(factory, network, default_dataset_1):
-    """Invalid algo script is causing traintuple failure."""
+def test_task_execution_failure(factory, network, default_dataset_1):
+    """Invalid algo script is causing compute task failure."""
 
     spec = factory.create_algo(category=AlgoCategory.simple, py_script=sbt.factory.INVALID_ALGO_SCRIPT)
     algo = network.clients[0].add_algo(spec)
