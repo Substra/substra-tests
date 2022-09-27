@@ -6,9 +6,8 @@ from substra.sdk import models
 
 import substratest as sbt
 from substratest.client import Client
-from substratest.factory import AlgoCategory
 from substratest.factory import AssetsFactory
-from substratest.fl_interface import FL_ALGO_PREDICT_COMPOSITE
+from substratest.fl_interface import AlgoCategory
 from substratest.fl_interface import FLTaskInputGenerator
 from substratest.fl_interface import FLTaskOutputGenerator
 from substratest.fl_interface import InputIdentifiers

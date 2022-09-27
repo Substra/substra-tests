@@ -1,7 +1,7 @@
 import pytest
 
 from substratest.factory import DEFAULT_ALGO_METHOD_NAME
-from substratest.factory import AlgoCategory
+from substratest.fl_interface import AlgoCategory
 
 
 @pytest.mark.subprocess_skip

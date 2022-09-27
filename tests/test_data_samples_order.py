@@ -3,8 +3,7 @@ from substra.sdk.models import Status
 
 import substratest as sbt
 from substratest.factory import DEFAULT_DATA_SAMPLE_FILENAME
-from substratest.factory import AlgoCategory
-from substratest.fl_interface import FL_ALGO_PREDICT_COMPOSITE
+from substratest.fl_interface import AlgoCategory
 from substratest.fl_interface import FLTaskInputGenerator
 from substratest.fl_interface import InputIdentifiers
 from substratest.fl_interface import OutputIdentifiers

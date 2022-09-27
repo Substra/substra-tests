@@ -4,11 +4,11 @@ import uuid
 
 import pytest
 import substra
-from substra.sdk.schemas import AlgoCategory
 
 import substratest as sbt
 from substratest import settings
 from substratest.factory import AugmentedDataset
+from substratest.fl_interface import AlgoCategory
 
 TESTS_RUN_UUID = uuid.uuid4().hex  # unique uuid identifying the tests run
 
