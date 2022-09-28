@@ -6,7 +6,7 @@ from substra.sdk.schemas import TraintupleSpec
 import substratest as sbt
 from substratest.factory import AlgoCategory
 from substratest.factory import AugmentedDataset
-from substratest.fl_interface import FL_ALGO_PREDICT_COMPOSITE
+from substratest.fl_interface import AlgoCategory.predict_composite
 from substratest.fl_interface import FLTaskInputGenerator
 from substratest.fl_interface import FLTaskOutputGenerator
 from substratest.fl_interface import InputIdentifiers
@@ -311,7 +311,7 @@ def test_composite_traintuples_execution(factory, client, default_dataset, defau
     spec = factory.create_algo(AlgoCategory.composite)
     algo = client.add_algo(spec)
 
-    spec = factory.create_algo(FL_ALGO_PREDICT_COMPOSITE)
+    spec = factory.create_algo(AlgoCategory.predict_composite)
     predict_algo = client.add_algo(spec)
 
     # first composite traintuple
@@ -579,7 +579,7 @@ def test_aggregate_composite_traintuples(factory, network, clients, default_data
     aggregate_algo = clients[0].add_algo(spec)
     spec = factory.create_algo(AlgoCategory.predict)
     predict_algo = clients[0].add_algo(spec)
-    spec = factory.create_algo(FL_ALGO_PREDICT_COMPOSITE)
+    spec = factory.create_algo(AlgoCategory.predict_composite)
     predict_algo_composite = clients[0].add_algo(spec)
 
     # launch execution

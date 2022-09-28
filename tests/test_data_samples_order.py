@@ -237,7 +237,7 @@ def test_composite_traintuple_data_samples_relative_order(factory, client, datas
         test_data_sample_keys=dataset.test_data_sample_keys,
         models=None,
     )
-    predict_algo_spec = factory.create_algo(FL_ALGO_PREDICT_COMPOSITE, py_script=predict_algo_script)
+    predict_algo_spec = factory.create_algo(AlgoCategory.predict_composite, py_script=predict_algo_script)
     predict_algo = client.add_algo(predict_algo_spec)
 
     metric_script = TEMPLATE_METRIC_SCRIPT.format(

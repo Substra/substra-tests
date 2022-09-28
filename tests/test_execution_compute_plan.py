@@ -450,7 +450,7 @@ def test_compute_plan_aggregate_composite_traintuples(  # noqa: C901
     aggregate_algo = clients[0].add_algo(spec)
     spec = factory.create_algo(AlgoCategory.predict)
     predict_algo = clients[0].add_algo(spec)
-    spec = factory.create_algo(FL_ALGO_PREDICT_COMPOSITE)
+    spec = factory.create_algo(AlgoCategory.predict_composite)
     predict_algo_composite = clients[0].add_algo(spec)
 
     # launch execution
