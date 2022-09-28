@@ -9,7 +9,14 @@ from substra.sdk.schemas import Permissions
 
 PUBLIC_PERMISSIONS = Permissions(public=True, authorized_ids=[])
 
-FL_ALGO_PREDICT_COMPOSITE = "ALGO_PREDICT_COMPOSITE"
+
+class AlgoCategory(str, Enum):
+    simple = "ALGO_SIMPLE"
+    composite = "ALGO_COMPOSITE"
+    aggregate = "ALGO_AGGREGATE"
+    metric = "ALGO_METRIC"
+    predict = "ALGO_PREDICT"
+    predict_composite = "ALGO_PREDICT_COMPOSITE"
 
 
 class InputIdentifiers(str, Enum):

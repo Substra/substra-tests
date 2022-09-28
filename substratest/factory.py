@@ -10,7 +10,6 @@ import uuid
 import pydantic
 import substra
 from substra.sdk.schemas import AggregatetupleSpec
-from substra.sdk.schemas import AlgoCategory
 from substra.sdk.schemas import AlgoSpec
 from substra.sdk.schemas import CompositeTraintupleSpec
 from substra.sdk.schemas import ComputePlanPredicttupleSpec
@@ -23,7 +22,7 @@ from substra.sdk.schemas import UpdateAlgoSpec
 from substra.sdk.schemas import UpdateComputePlanSpec
 from substra.sdk.schemas import UpdateDatasetSpec
 
-from substratest.fl_interface import FL_ALGO_PREDICT_COMPOSITE
+from substratest.fl_interface import AlgoCategory
 from substratest.fl_interface import FLAlgoInputs
 from substratest.fl_interface import FLAlgoOutputs
 from substratest.fl_interface import FLTaskInputGenerator
@@ -268,7 +267,7 @@ DEFAULT_ALGO_METHOD_NAME = {
     AlgoCategory.aggregate: "aggregate",
     AlgoCategory.predict: "predict",
     AlgoCategory.metric: "score",
-    FL_ALGO_PREDICT_COMPOSITE: "predict",
+    AlgoCategory.predict_composite: "predict",
 }
 
 INVALID_ALGO_SCRIPT = DEFAULT_ALGO_SCRIPT.replace("train", "naitr")
@@ -380,7 +379,7 @@ DEFAULT_ALGO_SCRIPTS = {
     AlgoCategory.composite: DEFAULT_COMPOSITE_ALGO_SCRIPT,
     AlgoCategory.aggregate: DEFAULT_AGGREGATE_ALGO_SCRIPT,
     AlgoCategory.predict: DEFAULT_ALGO_SCRIPT,
-    FL_ALGO_PREDICT_COMPOSITE: DEFAULT_COMPOSITE_ALGO_SCRIPT,
+    AlgoCategory.predict_composite: DEFAULT_COMPOSITE_ALGO_SCRIPT,
 }
 
 
@@ -674,11 +673,7 @@ class AssetsFactory:
             ("Dockerfile", dockerfile),
         )
 
-        spec_category = category
-        if category == FL_ALGO_PREDICT_COMPOSITE:
-            spec_category = substra.schemas.AlgoCategory.predict
         return AlgoSpec(
-            category=spec_category,
             inputs=FLAlgoInputs[category],
             outputs=FLAlgoOutputs[category],
             name=name,

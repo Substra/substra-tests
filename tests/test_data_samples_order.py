@@ -3,8 +3,7 @@ from substra.sdk.models import Status
 
 import substratest as sbt
 from substratest.factory import DEFAULT_DATA_SAMPLE_FILENAME
-from substratest.factory import AlgoCategory
-from substratest.fl_interface import FL_ALGO_PREDICT_COMPOSITE
+from substratest.fl_interface import AlgoCategory
 from substratest.fl_interface import FLTaskInputGenerator
 from substratest.fl_interface import InputIdentifiers
 from substratest.fl_interface import OutputIdentifiers
@@ -238,7 +237,7 @@ def test_composite_traintuple_data_samples_relative_order(factory, client, datas
         test_data_sample_keys=dataset.test_data_sample_keys,
         models=None,
     )
-    predict_algo_spec = factory.create_algo(FL_ALGO_PREDICT_COMPOSITE, py_script=predict_algo_script)
+    predict_algo_spec = factory.create_algo(AlgoCategory.predict_composite, py_script=predict_algo_script)
     predict_algo = client.add_algo(predict_algo_spec)
 
     metric_script = TEMPLATE_METRIC_SCRIPT.format(
