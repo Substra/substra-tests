@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Removed
+
+- category field from algo as it's not required anymore
+
 ## [0.34.0] - 2022-09-26
 
 - Update the Client, it takes a backend type instead of debug=True + env variable to set the spawner - (#210)
