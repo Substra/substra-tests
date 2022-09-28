@@ -4,7 +4,6 @@ from substra.sdk import models
 from substra.sdk.exceptions import InvalidRequest
 
 from substratest.factory import AlgoCategory
-from substratest.fl_interface import AlgoCategory.predict_composite
 from substratest.fl_interface import FLTaskInputGenerator
 
 

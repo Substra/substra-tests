@@ -6,7 +6,6 @@ from substra.sdk.schemas import TraintupleSpec
 import substratest as sbt
 from substratest.factory import AlgoCategory
 from substratest.factory import AugmentedDataset
-from substratest.fl_interface import AlgoCategory.predict_composite
 from substratest.fl_interface import FLTaskInputGenerator
 from substratest.fl_interface import FLTaskOutputGenerator
 from substratest.fl_interface import InputIdentifiers

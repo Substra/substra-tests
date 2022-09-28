@@ -9,7 +9,6 @@ import substratest as sbt
 from substratest.factory import DEFAULT_ALGO_METHOD_NAME
 from substratest.factory import AlgoCategory
 from substratest.factory import AugmentedDataset
-from substratest.fl_interface import AlgoCategory.predict_composite
 from substratest.fl_interface import FLTaskInputGenerator
 from substratest.fl_interface import FLTaskOutputGenerator
 from substratest.settings import Settings
