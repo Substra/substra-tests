@@ -5,7 +5,7 @@ from substratest.fl_interface import AlgoCategory
 
 
 @pytest.mark.subprocess_skip
-def test_base_substra_tools_image(factory, cfg, client, default_dataset):
+def test_base_substra_tools_image(factory, cfg, client, default_dataset, worker):
     """Test that an algo created with the base substra-tools image instead of the minimal works"""
 
     suffix = "-minimal"
@@ -25,6 +25,10 @@ ENTRYPOINT ["python3", "algo.py", "--method-name", "{DEFAULT_ALGO_METHOD_NAME[al
 """
     spec = factory.create_algo(algo_category, dockerfile=dockerfile)
     algo = client.add_algo(spec)
-    spec = factory.create_traintuple(algo=algo, inputs=default_dataset.train_data_inputs)
+    spec = factory.create_traintuple(
+        algo=algo,
+        inputs=default_dataset.train_data_inputs,
+        worker=worker,
+    )
     traintuple = client.add_task(spec)
     traintuple = client.wait(traintuple)

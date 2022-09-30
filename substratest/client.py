@@ -143,9 +143,9 @@ class Client:
             with open(path, "rb") as f:
                 return f.read()
 
-    def download_trunk_model_from_composite_traintuple(self, composite_traintuple_key):
+    def download_model_from_task(self, task_key, identifier):
         with tempfile.TemporaryDirectory() as tmp:
-            path = self._client.download_trunk_model_from_composite_traintuple(composite_traintuple_key, tmp)
+            path = self._client.download_model_from_task(task_key, identifier=identifier, folder=tmp)
             with open(path, "rb") as f:
                 return f.read()
 
@@ -171,7 +171,7 @@ class Client:
         self._client.link_dataset_with_data_samples(dataset.key, data_samples)
 
     def list_compute_plan_tasks(self, compute_plan_key):
-        return self.list_task(filters={"compute_plan_key": [compute_plan_key]}, order_by="rank", ascending=True)
+        return self.list_task(filters={"compute_plan_key": [compute_plan_key]})
 
     def get(self, asset):
         """Asset getter (valid only for first class asset)."""
@@ -247,3 +247,6 @@ class Client:
 
     def get_compute_task_profiling(self, task_key: str):
         return self._api_client.get_compute_task_profiling(task_key)
+
+    def organization_info(self):
+        return self._client.organization_info()

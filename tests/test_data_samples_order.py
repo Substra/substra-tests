@@ -178,7 +178,7 @@ def dataset(factory, client):
     return Dataset(factory, client)
 
 
-def test_task_data_samples_relative_order(factory, client, dataset):
+def test_task_data_samples_relative_order(factory, client, dataset, worker):
 
     # Format TEMPLATE_ALGO_SCRIPT with current data_sample_keys
     algo_script = TEMPLATE_ALGO_SCRIPT.format(
@@ -196,7 +196,7 @@ def test_task_data_samples_relative_order(factory, client, dataset):
     metric_spec = factory.create_algo(category=AlgoCategory.metric, py_script=metric_script)
     metric = client.add_algo(metric_spec)
 
-    traintuple_spec = factory.create_traintuple(algo=algo, inputs=dataset.train_data_inputs)
+    traintuple_spec = factory.create_traintuple(algo=algo, inputs=dataset.train_data_inputs, worker=worker)
     traintuple = client.add_task(traintuple_spec)
 
     # Ensure the order of the data sample keys is correct at 2 levels: :
@@ -209,20 +209,22 @@ def test_task_data_samples_relative_order(factory, client, dataset):
 
     predict_input_models = FLTaskInputGenerator.train_to_predict(traintuple.key)
     predicttuple_spec = factory.create_predicttuple(
-        algo=predict_algo, inputs=dataset.test_data_inputs + predict_input_models
+        algo=predict_algo, inputs=dataset.test_data_inputs + predict_input_models, worker=worker
     )
     predicttuple = client.add_task(predicttuple_spec)
 
     test_input_models = FLTaskInputGenerator.predict_to_test(predicttuple.key)
 
-    testtuple_spec = factory.create_testtuple(algo=metric, inputs=dataset.test_data_inputs + test_input_models)
+    testtuple_spec = factory.create_testtuple(
+        algo=metric, inputs=dataset.test_data_inputs + test_input_models, worker=worker
+    )
     testtuple = client.add_task(testtuple_spec)
 
     # Assert order is correct in the metric. If not, wait() will fail.
     client.wait(testtuple)
 
 
-def test_composite_traintuple_data_samples_relative_order(factory, client, dataset):
+def test_composite_traintuple_data_samples_relative_order(factory, client, dataset, worker):
     # Format TEMPLATE_COMPOSITE_ALGO_SCRIPT with current data_sample_keys
     composite_algo_script = TEMPLATE_COMPOSITE_ALGO_SCRIPT.format(
         data_sample_keys=dataset.train_data_sample_keys,
@@ -247,8 +249,7 @@ def test_composite_traintuple_data_samples_relative_order(factory, client, datas
     metric = client.add_algo(metric_spec)
 
     traintuple_spec = factory.create_composite_traintuple(
-        algo=composite_algo,
-        inputs=dataset.train_data_inputs,
+        algo=composite_algo, inputs=dataset.train_data_inputs, worker=worker
     )
     composite_traintuple = client.add_task(traintuple_spec)
     # Ensure the order of the data sample keys is correct at 2 levels: :
@@ -262,13 +263,15 @@ def test_composite_traintuple_data_samples_relative_order(factory, client, datas
     predict_input_models = FLTaskInputGenerator.composite_to_predict(composite_traintuple.key)
 
     predicttuple_spec = factory.create_predicttuple(
-        algo=predict_algo, inputs=dataset.test_data_inputs + predict_input_models
+        algo=predict_algo, inputs=dataset.test_data_inputs + predict_input_models, worker=worker
     )
     predicttuple = client.add_task(predicttuple_spec)
 
     test_input_models = FLTaskInputGenerator.predict_to_test(predicttuple.key)
 
-    testtuple_spec = factory.create_testtuple(algo=metric, inputs=dataset.test_data_inputs + test_input_models)
+    testtuple_spec = factory.create_testtuple(
+        algo=metric, inputs=dataset.test_data_inputs + test_input_models, worker=worker
+    )
     testtuple = client.add_task(testtuple_spec)
 
     # Assert order is correct in the metric. If not, wait() will fail.
@@ -276,7 +279,7 @@ def test_composite_traintuple_data_samples_relative_order(factory, client, datas
 
 
 @pytest.mark.slow
-def test_execution_data_sample_values(factory, client):
+def test_execution_data_sample_values(factory, client, worker):
     """Check data samples order is preserved when adding data samples by batch."""
     batch_size = 10
     spec = factory.create_dataset(
@@ -334,7 +337,9 @@ if __name__ == '__main__':
     algo = client.add_algo(spec)
 
     spec = factory.create_traintuple(
-        algo=algo, inputs=FLTaskInputGenerator.tuple(opener_key=dataset.key, data_sample_keys=keys)
+        algo=algo,
+        inputs=FLTaskInputGenerator.tuple(opener_key=dataset.key, data_sample_keys=keys),
+        worker=worker,
     )
     traintuple = client.add_task(spec)
     traintuple = client.wait(traintuple)

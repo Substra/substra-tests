@@ -5,7 +5,7 @@ from substratest.fl_interface import OutputIdentifiers
 
 
 @pytest.mark.skip("Need an environment with GPUs")
-def test_gpu(factory, client, org_idx, default_datasets):
+def test_gpu(factory, client, org_idx, default_datasets, workers):
     """Test that the task can see the GPU"""
     org_idx = 0
     nvidia_drivers = "nvidiacuda11.6.0-base-ubuntu20.04"
@@ -53,6 +53,7 @@ if __name__ == '__main__':
         algo=algo,
         inputs=default_datasets[org_idx].train_data_inputs,
         metadata={"docker_cuda_version": nvidia_drivers},
+        workers=workers[org_idx],
     )
     cp_added = client.add_compute_plan(cp_spec)
     client.wait(cp_added)

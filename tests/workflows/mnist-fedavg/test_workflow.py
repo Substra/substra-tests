@@ -11,6 +11,7 @@ from substratest.factory import AlgoCategory
 from substratest.factory import AugmentedDataset
 from substratest.fl_interface import FLTaskInputGenerator
 from substratest.fl_interface import FLTaskOutputGenerator
+from substratest.fl_interface import OutputIdentifiers
 from substratest.settings import Settings
 
 # extra requirements located in requirements-workflows.txt
@@ -380,7 +381,7 @@ def test_mnist(factory, inputs, clients, cfg: Settings):
         print(
             f"testtuple({testtuple.worker}) - rank {testtuple.rank} "
             f"- round {testtuple.metadata['round_idx']} "
-            f"perf: {list(testtuple.test.perfs.values())[0]}"
+            f"perf: {testtuple.outputs[OutputIdentifiers.performance]}"
         )
 
     nb_samples = (cfg.mnist_workflow.train_samples, cfg.mnist_workflow.test_samples)
@@ -390,7 +391,7 @@ def test_mnist(factory, inputs, clients, cfg: Settings):
         expected_perf = _EXPECTED_RESULTS[nb_samples]
         assert all(
             [
-                list(testtuple.test.perfs.values())[0] == pytest.approx(perf)
+                testtuple.outputs[OutputIdentifiers.performance].value == pytest.approx(perf)
                 for (perf, testtuple) in zip(expected_perf, testtuples)
             ]
         )
@@ -398,4 +399,6 @@ def test_mnist(factory, inputs, clients, cfg: Settings):
         # check perf is as good as expected: after 20 rounds we expect a performance of
         # around 0.86. To avoid a flaky test a lower performance is expected.
         mininum_expected_perf = 0.85
-        assert all([list(testtuple.test.perfs.values())[0] > mininum_expected_perf for testtuple in testtuples])
+        assert all(
+            [testtuple.outputs[OutputIdentifiers.performance] > mininum_expected_perf for testtuple in testtuples]
+        )

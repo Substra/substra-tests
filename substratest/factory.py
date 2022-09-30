@@ -9,15 +9,10 @@ import uuid
 
 import pydantic
 import substra
-from substra.sdk.schemas import AggregatetupleSpec
 from substra.sdk.schemas import AlgoSpec
-from substra.sdk.schemas import CompositeTraintupleSpec
-from substra.sdk.schemas import ComputePlanPredicttupleSpec
-from substra.sdk.schemas import ComputePlanTesttupleSpec
+from substra.sdk.schemas import ComputePlanTaskSpec
 from substra.sdk.schemas import Permissions
-from substra.sdk.schemas import PredicttupleSpec
-from substra.sdk.schemas import TesttupleSpec
-from substra.sdk.schemas import TraintupleSpec
+from substra.sdk.schemas import TaskSpec
 from substra.sdk.schemas import UpdateAlgoSpec
 from substra.sdk.schemas import UpdateComputePlanSpec
 from substra.sdk.schemas import UpdateDatasetSpec
@@ -402,162 +397,86 @@ class AugmentedDataset:
         )
 
 
-class ComputePlanTraintupleSpec(substra.sdk.schemas.ComputePlanTraintupleSpec):
-    @property
-    def id(self):
-        return self.traintuple_id
-
-
-class ComputePlanAggregatetupleSpec(substra.sdk.schemas.ComputePlanAggregatetupleSpec):
-    @property
-    def id(self):
-        return self.aggregatetuple_id
-
-
-class ComputePlanCompositeTraintupleSpec(substra.sdk.schemas.ComputePlanCompositeTraintupleSpec):
-    @property
-    def id(self):
-        return self.composite_traintuple_id
-
-
-# All of those will be removed when inputs consumers will be merge
-def _get_data_manager_from_inputs(inputs):
-    data_manager_keys = [inp.asset_key for inp in inputs if inp.identifier == InputIdentifiers.opener]
-    assert len(data_manager_keys) == 1
-    return data_manager_keys[0]
-
-
-def _get_data_samples_from_inputs(inputs):
-    data_samples = [inp.asset_key for inp in inputs if inp.identifier == InputIdentifiers.datasamples]
-    return data_samples
-
-
-def _get_in_models_from_inputs(inputs):
-    in_models = [
-        t.parent_task_key
-        for t in inputs
-        if t.identifier in (InputIdentifiers.models, InputIdentifiers.model, InputIdentifiers.shared)
-    ]
-    return in_models
-
-
-def _get_head_trunk_model_from_inputs(inputs):
-    in_head_model_key = [t.parent_task_key for t in inputs if t.identifier == InputIdentifiers.local]
-    in_trunk_model_key = [t.parent_task_key for t in inputs if t.identifier == InputIdentifiers.shared]
-    assert len(in_head_model_key) <= 1
-    assert len(in_trunk_model_key) <= 1
-    in_head_model_key = in_head_model_key[0] if len(in_head_model_key) == 1 else None
-    in_trunk_model_key = in_trunk_model_key[0] if len(in_trunk_model_key) == 1 else None
-    assert type(in_head_model_key) == type(in_trunk_model_key)
-
-    return in_head_model_key, in_trunk_model_key
-
-
-def _get_predict_tuple_from_inputs_for_testtuple(inputs):
-    predictions = [t.parent_task_key for t in inputs if t.identifier == InputIdentifiers.predictions]
-    assert len(predictions) == 1
-    return predictions[0]
-
-
-def _get_train_tuple_from_inputs_for_predicttuple(inputs):
-    traintuple_ids = set(t.parent_task_key for t in inputs if t.parent_task_key is not None)
-
-    assert len(traintuple_ids) == 1
-    traintuple_id = traintuple_ids.pop()
-
-    return traintuple_id
-
-
 class _ComputePlanSpecFactory:
-    def create_traintuple(self, algo, inputs=None, outputs=None, tag="", metadata=None) -> ComputePlanTraintupleSpec:
+    def create_traintuple(self, algo, worker, inputs=None, outputs=None, tag="", metadata=None) -> ComputePlanTaskSpec:
 
-        spec = ComputePlanTraintupleSpec(
+        spec = ComputePlanTaskSpec(
             algo_key=algo.key,
-            traintuple_id=random_uuid(),
-            data_manager_key=_get_data_manager_from_inputs(inputs),
-            train_data_sample_keys=_get_data_samples_from_inputs(inputs),
-            in_models_ids=_get_in_models_from_inputs(inputs),
+            task_id=random_uuid(),
             inputs=inputs or [],
             outputs=outputs if outputs is not None else FLTaskOutputGenerator.traintuple(),
             tag=tag,
             metadata=metadata,
+            worker=worker,
         )
-        self.traintuples.append(spec)
+        self.tasks.append(spec)
         return spec
 
     def create_aggregatetuple(
         self, aggregate_algo, worker, inputs=None, outputs=None, tag="", metadata=None
-    ) -> ComputePlanAggregatetupleSpec:
+    ) -> ComputePlanTaskSpec:
 
-        spec = ComputePlanAggregatetupleSpec(
-            aggregatetuple_id=random_uuid(),
+        spec = ComputePlanTaskSpec(
+            task_id=random_uuid(),
             algo_key=aggregate_algo.key,
             worker=worker,
-            in_models_ids=_get_in_models_from_inputs(inputs),
             inputs=inputs or [],
             outputs=outputs if outputs is not None else FLTaskOutputGenerator.aggregatetuple(),
             tag=tag,
             metadata=metadata,
         )
-        self.aggregatetuples.append(spec)
+        self.tasks.append(spec)
         return spec
 
     def create_composite_traintuple(
         self,
         composite_algo,
+        worker,
         inputs=None,
         outputs=None,
         tag="",
         metadata=None,
-    ) -> ComputePlanCompositeTraintupleSpec:
+    ) -> ComputePlanTaskSpec:
 
-        in_head_model, in_trunk_model = _get_head_trunk_model_from_inputs(inputs)
-
-        spec = ComputePlanCompositeTraintupleSpec(
-            composite_traintuple_id=random_uuid(),
+        spec = ComputePlanTaskSpec(
+            task_id=random_uuid(),
             algo_key=composite_algo.key,
-            data_manager_key=_get_data_manager_from_inputs(inputs),
-            train_data_sample_keys=_get_data_samples_from_inputs(inputs),
-            in_head_model_id=in_head_model,
-            in_trunk_model_id=in_trunk_model,
             inputs=inputs or [],
             outputs=outputs if outputs is not None else FLTaskOutputGenerator.composite_traintuple(),
             tag=tag,
             metadata=metadata,
+            worker=worker,
         )
-        self.composite_traintuples.append(spec)
+        self.tasks.append(spec)
         return spec
 
     def create_predicttuple(
-        self, algo, inputs=None, outputs=None, tag="", metadata=None
-    ) -> ComputePlanPredicttupleSpec:
+        self, algo, worker, inputs=None, outputs=None, tag="", metadata=None
+    ) -> ComputePlanTaskSpec:
 
-        spec = ComputePlanPredicttupleSpec(
-            predicttuple_id=random_uuid(),
+        spec = ComputePlanTaskSpec(
+            task_id=random_uuid(),
             algo_key=algo.key,
-            traintuple_id=_get_train_tuple_from_inputs_for_predicttuple(inputs),
-            data_manager_key=_get_data_manager_from_inputs(inputs),
-            test_data_sample_keys=_get_data_samples_from_inputs(inputs),
             inputs=inputs or [],
             outputs=outputs if outputs is not None else FLTaskOutputGenerator.predicttuple(),
             tag=tag,
             metadata=metadata,
+            worker=worker,
         )
-        self.predicttuples.append(spec)
+        self.tasks.append(spec)
         return spec
 
-    def create_testtuple(self, algo, inputs=None, outputs=None, tag="", metadata=None) -> ComputePlanTesttupleSpec:
-        spec = ComputePlanTesttupleSpec(
+    def create_testtuple(self, algo, worker, inputs=None, outputs=None, tag="", metadata=None) -> ComputePlanTaskSpec:
+        spec = ComputePlanTaskSpec(
+            task_id=random_uuid(),
             algo_key=algo.key,
-            predicttuple_id=_get_predict_tuple_from_inputs_for_testtuple(inputs),
-            data_manager_key=_get_data_manager_from_inputs(inputs),
-            test_data_sample_keys=_get_data_samples_from_inputs(inputs),
             inputs=inputs or [],
             outputs=outputs if outputs is not None else FLTaskOutputGenerator.testtuple(),
             tag=tag,
             metadata=metadata,
+            worker=worker,
         )
-        self.testtuples.append(spec)
+        self.tasks.append(spec)
         return spec
 
 
@@ -692,19 +611,18 @@ class AssetsFactory:
         compute_plan_key=None,
         rank=None,
         metadata=None,
-    ) -> TraintupleSpec:
+        worker=None,
+    ) -> TaskSpec:
 
-        return TraintupleSpec(
+        return TaskSpec(
             algo_key=algo.key if algo else None,
-            data_manager_key=_get_data_manager_from_inputs(inputs),
-            train_data_sample_keys=_get_data_samples_from_inputs(inputs),
-            in_models_keys=_get_in_models_from_inputs(inputs),
             tag=tag,
             metadata=metadata,
             compute_plan_key=compute_plan_key,
             inputs=inputs or [],
             outputs=outputs if outputs is not None else FLTaskOutputGenerator.traintuple(),
             rank=rank,
+            worker=worker,
         )
 
     def create_aggregatetuple(
@@ -717,12 +635,11 @@ class AssetsFactory:
         compute_plan_key=None,
         rank=None,
         metadata=None,
-    ) -> AggregatetupleSpec:
+    ) -> TaskSpec:
 
-        return AggregatetupleSpec(
+        return TaskSpec(
             algo_key=algo.key if algo else None,
             worker=worker,
-            in_models_keys=_get_in_models_from_inputs(inputs),
             inputs=inputs or [],
             outputs=outputs if outputs is not None else FLTaskOutputGenerator.aggregatetuple(),
             tag=tag,
@@ -740,56 +657,44 @@ class AssetsFactory:
         compute_plan_key=None,
         rank=None,
         metadata=None,
-    ) -> CompositeTraintupleSpec:
+        worker=None,
+    ) -> TaskSpec:
 
-        in_head_model_key, in_trunk_model_key = _get_head_trunk_model_from_inputs(inputs)
-
-        return CompositeTraintupleSpec(
+        return TaskSpec(
             algo_key=algo.key if algo else None,
-            data_manager_key=_get_data_manager_from_inputs(inputs),
-            train_data_sample_keys=_get_data_samples_from_inputs(inputs),
-            in_head_model_key=in_head_model_key,
-            in_trunk_model_key=in_trunk_model_key,
             inputs=inputs or [],
             outputs=outputs if outputs is not None else FLTaskOutputGenerator.composite_traintuple(),
             tag=tag,
             metadata=metadata,
             compute_plan_key=compute_plan_key,
             rank=rank,
+            worker=worker,
         )
 
-    def create_predicttuple(self, algo, inputs=None, outputs=None, tag=None, metadata=None) -> PredicttupleSpec:
-        return PredicttupleSpec(
+    def create_predicttuple(self, algo, worker, inputs=None, outputs=None, tag=None, metadata=None) -> TaskSpec:
+        return TaskSpec(
             algo_key=algo.key,
-            traintuple_key=_get_train_tuple_from_inputs_for_predicttuple(inputs),
-            data_manager_key=_get_data_manager_from_inputs(inputs),
-            test_data_sample_keys=_get_data_samples_from_inputs(inputs),
             inputs=inputs or [],
             outputs=outputs if outputs is not None else FLTaskOutputGenerator.predicttuple(),
             tag=tag,
             metadata=metadata,
+            worker=worker,
         )
 
-    def create_testtuple(self, algo, inputs=None, outputs=None, tag=None, metadata=None) -> TesttupleSpec:
-        return TesttupleSpec(
+    def create_testtuple(self, algo, worker, inputs=None, outputs=None, tag=None, metadata=None) -> TaskSpec:
+        return TaskSpec(
             algo_key=algo.key,
-            predicttuple_key=_get_predict_tuple_from_inputs_for_testtuple(inputs),
-            data_manager_key=_get_data_manager_from_inputs(inputs),
-            test_data_sample_keys=_get_data_samples_from_inputs(inputs),
             inputs=inputs or [],
             outputs=outputs if outputs is not None else FLTaskOutputGenerator.testtuple(),
             tag=tag,
             metadata=metadata,
+            worker=worker,
         )
 
     def create_compute_plan(self, key=None, tag="", name="Test compute plan", clean_models=False, metadata=None):
         return ComputePlanSpec(
             key=key or random_uuid(),
-            traintuples=[],
-            composite_traintuples=[],
-            aggregatetuples=[],
-            testtuples=[],
-            predicttuples=[],
+            tasks=[],
             tag=tag,
             name=name,
             metadata=metadata,
@@ -798,11 +703,7 @@ class AssetsFactory:
 
     def add_compute_plan_tuples(self, compute_plan):
         return UpdateComputePlanTuplesSpec(
-            traintuples=[],
-            composite_traintuples=[],
-            aggregatetuples=[],
-            testtuples=[],
-            predicttuples=[],
+            tasks=[],
             key=compute_plan.key,
             name=compute_plan.name,
         )

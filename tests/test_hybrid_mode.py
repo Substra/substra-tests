@@ -5,6 +5,7 @@ from substra.sdk.exceptions import InvalidRequest
 
 from substratest.factory import AlgoCategory
 from substratest.fl_interface import FLTaskInputGenerator
+from substratest.fl_interface import OutputIdentifiers
 
 
 def docker_available() -> bool:
@@ -33,7 +34,9 @@ def test_execution_debug(client, hybrid_client, debug_factory, default_dataset):
     #  Add the traintuple
     # create traintuple
     spec = debug_factory.create_traintuple(
-        algo=simple_algo, inputs=default_dataset.opener_input + default_dataset.train_data_sample_inputs[:1]
+        algo=simple_algo,
+        inputs=default_dataset.opener_input + default_dataset.train_data_sample_inputs[:1],
+        worker=hybrid_client.organization_info().organization_id,
     )
     traintuple = hybrid_client.add_task(spec)
     assert traintuple.status == models.Status.done
@@ -45,6 +48,7 @@ def test_execution_debug(client, hybrid_client, debug_factory, default_dataset):
         inputs=default_dataset.opener_input
         + default_dataset.train_data_sample_inputs[:1]
         + FLTaskInputGenerator.train_to_predict(traintuple.key),
+        worker=hybrid_client.organization_info().organization_id,
     )
     predicttuple = hybrid_client.add_task(spec)
     assert predicttuple.status == models.Status.done
@@ -54,10 +58,11 @@ def test_execution_debug(client, hybrid_client, debug_factory, default_dataset):
         inputs=default_dataset.opener_input
         + default_dataset.train_data_sample_inputs[:1]
         + FLTaskInputGenerator.predict_to_test(predicttuple.key),
+        worker=hybrid_client.organization_info().organization_id,
     )
     testtuple = hybrid_client.add_task(spec)
     assert testtuple.status == models.Status.done
-    assert list(testtuple.test.perfs.values())[0] == 3
+    assert testtuple.outputs[OutputIdentifiers.performance].value == 3
 
 
 @pytest.mark.remote_only
@@ -67,7 +72,7 @@ def test_debug_compute_plan_aggregate_composite(network, client, hybrid_client, 
     Debug / Compute plan version of the
     `test_aggregate_composite_traintuples` method from `test_execution.py`
     """
-    aggregate_worker = hybrid_client.organization_id
+    worker = hybrid_client.organization_id
     number_of_rounds = 2
 
     # register algos on first organization
@@ -100,13 +105,14 @@ def test_debug_compute_plan_aggregate_composite(network, client, hybrid_client, 
             spec = cp_spec.create_composite_traintuple(
                 composite_algo=composite_algo,
                 inputs=dataset.opener_input + [dataset.train_data_sample_inputs[0 + round_]] + input_models,
+                worker=worker,
             )
             composite_traintuple_keys.append(spec.composite_traintuple_id)
 
         # create aggregate on its organization
         spec = cp_spec.create_aggregatetuple(
             aggregate_algo=aggregate_algo,
-            worker=aggregate_worker,
+            worker=worker,
             inputs=FLTaskInputGenerator.composites_to_aggregate(composite_traintuple_keys),
         )
 
@@ -127,9 +133,12 @@ def test_debug_compute_plan_aggregate_composite(network, client, hybrid_client, 
         spec = cp_spec.create_predicttuple(
             algo=predict_algo_composite,
             inputs=dataset.train_data_inputs + FLTaskInputGenerator.composite_to_predict(composite_traintuple_key),
+            worker=worker,
         )
         cp_spec.create_testtuple(
-            algo=metric, inputs=dataset.train_data_inputs + FLTaskInputGenerator.predict_to_test(spec.predicttuple_id)
+            algo=metric,
+            inputs=dataset.train_data_inputs + FLTaskInputGenerator.predict_to_test(spec.predicttuple_id),
+            worker=worker,
         )
 
     cp = hybrid_client.add_compute_plan(cp_spec)
@@ -161,6 +170,7 @@ def test_test_data_traintuple(client, hybrid_client, debug_factory, default_data
     spec = debug_factory.create_traintuple(
         algo=algo,
         inputs=default_dataset.opener_input + default_dataset.test_data_sample_inputs[:1],
+        worker=hybrid_client.organization_info().organization_id,
     )
 
     with pytest.raises(InvalidRequest) as e:
@@ -178,7 +188,9 @@ def test_fake_data_sample_key(client, hybrid_client, debug_factory, default_data
     #  Add the traintuple
     # create traintuple
     spec = debug_factory.create_traintuple(
-        algo=algo, inputs=default_dataset.opener_input + FLTaskInputGenerator.data_samples(["fake_key"])
+        algo=algo,
+        inputs=default_dataset.opener_input + FLTaskInputGenerator.data_samples(["fake_key"]),
+        worker=hybrid_client.organization_info().organization_id,
     )
 
     with pytest.raises(InvalidRequest) as e:
