@@ -389,7 +389,8 @@ def test_mnist(factory, inputs, clients, cfg: Settings, workers: typing.List[str
     cp = client.wait(cp, timeout=30 * 60 * 60)
 
     # display all testtuples performances
-    testtuples = client.list_compute_plan_tasks(cp.key)
+    tasks = client.list_compute_plan_tasks(cp.key)
+    testtuples = [t for t in tasks if OutputIdentifiers.performance in t.outputs]
     testtuples = sorted(testtuples, key=lambda x: (x.rank, x.worker))
     for testtuple in testtuples:
         print(
