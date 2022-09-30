@@ -88,13 +88,13 @@ def test_compute_plan_simple(
     assert cp.end_date is not None
     assert cp.duration is not None
 
-    traintuples = client_1.list_compute_plan_traintuples(cp.key)
+    traintuples = client_1.list_compute_plan_tasks(cp.key)
     assert len(traintuples) == 3
 
-    predicttuples = client_1.list_compute_plan_predicttuples(cp.key)
+    predicttuples = client_1.list_compute_plan_tasks(cp.key)
     assert len(predicttuples) == 1
 
-    testtuples = client_1.list_compute_plan_testtuples(cp.key)
+    testtuples = client_1.list_compute_plan_tasks(cp.key)
     assert len(testtuples) == 1
 
     # check all tuples are done and check they have been executed on the expected organization
@@ -113,8 +113,8 @@ def test_compute_plan_simple(
     for t in testtuples:
         assert t.status == models.Status.done
 
-    testtuple = client_1.get_testtuple(testtuples[0].key)
-    predicttuple = client_1.get_predicttuple(predicttuples[0].key)
+    testtuple = client_1.get_task(testtuples[0].key)
+    predicttuple = client_1.get_task(predicttuples[0].key)
 
     # check tuples metadata
     assert traintuple_1.metadata == {}
@@ -239,9 +239,9 @@ def test_compute_plan_single_client_success(factory, client, default_dataset, de
 
     # All the train/test tuples should succeed
     for t in (
-        client.list_compute_plan_traintuples(cp.key)
-        + client.list_compute_plan_predicttuples(cp.key)
-        + client.list_compute_plan_testtuples(cp.key)
+        client.list_compute_plan_tasks(cp.key)
+        + client.list_compute_plan_tasks(cp.key)
+        + client.list_compute_plan_tasks(cp.key)
     ):
         assert t.status == models.Status.done
 
@@ -334,9 +334,9 @@ def test_compute_plan_update(factory, client, default_dataset, default_metric):
     # All the train/test tuples should succeed
     cp_added = client.get_compute_plan(cp.key)
     cp = client.wait(cp_added)
-    traintuples = client.list_compute_plan_traintuples(cp.key)
-    predicttuples = client.list_compute_plan_predicttuples(cp.key)
-    testtuples = client.list_compute_plan_testtuples(cp.key)
+    traintuples = client.list_compute_plan_tasks(cp.key)
+    predicttuples = client.list_compute_plan_tasks(cp.key)
+    testtuples = client.list_compute_plan_tasks(cp.key)
     tuples = traintuples + predicttuples + testtuples
     assert len(tuples) == 9
     for t in tuples:
@@ -532,14 +532,14 @@ def test_compute_plan_aggregate_composite_traintuples(  # noqa: C901
     cp_added = clients[0].add_compute_plan(cp_spec)
     cp = clients[0].wait(cp_added)
 
-    traintuples = clients[0].list_compute_plan_traintuples(cp.key)
-    composite_traintuples = clients[0].list_compute_plan_composite_traintuples(cp.key)
-    aggregatetuples = clients[0].list_compute_plan_aggregatetuples(cp.key)
-    predicttuples = clients[0].list_compute_plan_predicttuples(cp.key)
-    testtuples = clients[0].list_compute_plan_testtuples(cp.key)
+    traintuples = clients[0].list_compute_plan_tasks(cp.key)
+    composite_traintuples = clients[0].list_compute_plan_tasks(cp.key)
+    aggregatetuples = clients[0].list_compute_plan_tasks(cp.key)
+    predicttuples = clients[0].list_compute_plan_tasks(cp.key)
+    testtuples = clients[0].list_compute_plan_tasks(cp.key)
 
     for task in composite_traintuple_specs:
-        remote_task = clients[0].get_composite_traintuple(task.id)
+        remote_task = clients[0].get_task(task.id)
         if task.in_head_model_id:
             assert (
                 len(
@@ -577,7 +577,7 @@ def test_compute_plan_aggregate_composite_traintuples(  # noqa: C901
 
     # Check that permissions were correctly set
     for task in composite_traintuples:
-        task = clients[0].get_composite_traintuple(task.key)
+        task = clients[0].get_task(task.key)
         trunk = task.outputs[OutputIdentifiers.shared].value
         assert len(trunk.permissions.process.authorized_ids) == len(clients)
 
@@ -632,7 +632,7 @@ def test_execution_compute_plan_canceled(factory, client, default_dataset, cfg):
 
     # wait the first traintuple to be executed to ensure that the compute plan is launched
     # and tuples are scheduled in the celery workers
-    first_traintuple = [t for t in client.list_compute_plan_traintuples(cp.key) if t.rank == 0][0]
+    first_traintuple = [t for t in client.list_compute_plan_tasks(cp.key) if t.rank == 0][0]
     first_traintuple = client.wait(first_traintuple)
     assert first_traintuple.status == models.Status.done
 
@@ -644,7 +644,7 @@ def test_execution_compute_plan_canceled(factory, client, default_dataset, cfg):
     assert cp.duration is not None
 
     # check that the status of the done tuple as not been updated
-    first_traintuple = [t for t in client.list_compute_plan_traintuples(cp.key) if t.rank == 0][0]
+    first_traintuple = [t for t in client.list_compute_plan_tasks(cp.key) if t.rank == 0][0]
     assert first_traintuple.status == models.Status.done
 
 
@@ -663,7 +663,7 @@ def test_compute_plan_no_batching(factory, client, default_dataset):
     cp_added = client.add_compute_plan(cp_spec, auto_batching=False)
     cp = client.wait(cp_added)
 
-    traintuples = client.list_compute_plan_traintuples(cp.key)
+    traintuples = client.list_compute_plan_tasks(cp.key)
     assert len(traintuples) == 1
     assert all([tuple_.status == models.Status.done for tuple_ in traintuples])
 
@@ -679,7 +679,7 @@ def test_compute_plan_no_batching(factory, client, default_dataset):
     cp_added = client.add_compute_plan_tuples(cp_spec, auto_batching=False)
     cp = client.wait(cp_added)
 
-    traintuples = client.list_compute_plan_traintuples(cp.key)
+    traintuples = client.list_compute_plan_tasks(cp.key)
     assert len(traintuples) == 2
     assert all([tuple_.status == models.Status.done for tuple_ in traintuples])
 
@@ -713,7 +713,7 @@ def test_compute_plan_transient_outputs(factory: AssetsFactory, client: Client, 
     cp_added = client.add_compute_plan(cp_spec)
     client.wait(cp_added)
 
-    traintuple_1 = client.get_traintuple(traintuple_spec_1.traintuple_id)
+    traintuple_1 = client.get_task(traintuple_spec_1.traintuple_id)
     assert traintuple_1.outputs[OutputIdentifiers.model].is_transient is True
 
     # Validate that the transient model is properly deleted
@@ -729,7 +729,7 @@ def test_compute_plan_transient_outputs(factory: AssetsFactory, client: Client, 
     )
 
     with pytest.raises(substra.exceptions.InvalidRequest) as err:
-        client.add_traintuple(traintuple_spec_3)
+        client.add_task(traintuple_spec_3)
 
     assert "has been disabled" in str(err.value)
 

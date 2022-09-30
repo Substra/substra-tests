@@ -163,7 +163,7 @@ def test_permissions(permissions_1, permissions_2, expected_permissions, factory
         outputs=FLTaskOutputGenerator.traintuple(authorized_ids=expected_permissions.authorized_ids),
     )
     channel.wait_for_asset_synchronized(algo_2)
-    traintuple = client_1.add_traintuple(spec)
+    traintuple = client_1.add_task(spec)
     traintuple = client_1.wait(traintuple)
 
     # check the compute task executed on the correct worker
@@ -201,10 +201,10 @@ def test_permissions_denied_process(factory, client_1, client_2, channel):
     spec = factory.create_traintuple(algo=algo_2, inputs=dataset_1.train_data_inputs)
 
     with pytest.raises(substra.exceptions.AuthorizationError):
-        client_2.add_traintuple(spec)
+        client_2.add_task(spec)
 
     with pytest.raises(substra.exceptions.AuthorizationError):
-        client_1.add_traintuple(spec)
+        client_1.add_task(spec)
 
 
 @pytest.mark.remote_only  # no check on permissions with the local backend
@@ -248,7 +248,7 @@ def test_permissions_model_process(
         inputs=dataset_1.train_data_inputs,
         outputs=FLTaskOutputGenerator.traintuple(authorized_ids=client_1_permissions.authorized_ids),
     )
-    traintuple_1 = client_1.add_traintuple(spec)
+    traintuple_1 = client_1.add_task(spec)
     traintuple_1 = client_1.wait(traintuple_1)
 
     assert not traintuple_1.outputs[OutputIdentifiers.model].permissions.process.public
@@ -261,12 +261,12 @@ def test_permissions_model_process(
     )
 
     if expected_success:
-        traintuple_2 = client_2.add_traintuple(spec)
+        traintuple_2 = client_2.add_task(spec)
 
         client_2.wait(traintuple_2)
     else:
         with pytest.raises(substra.exceptions.AuthorizationError):
-            traintuple_2 = client_2.add_traintuple(spec)
+            traintuple_2 = client_2.add_task(spec)
 
 
 @pytest.mark.remote_only  # no check on permissions with the local backend
@@ -327,7 +327,7 @@ def test_merge_permissions_denied_process(factory, clients, channel):
 
         # add traintuple from node 2
         spec = factory.create_traintuple(algo=algo_2, inputs=dataset_1.train_data_inputs)
-        traintuple_2 = client_2.add_traintuple(spec)
+        traintuple_2 = client_2.add_task(spec)
         traintuple_2 = client_2.wait(traintuple_2)
         channel.wait_for_asset_synchronized(traintuple_2)  # used by client_3
 
@@ -338,7 +338,7 @@ def test_merge_permissions_denied_process(factory, clients, channel):
         )
 
         with pytest.raises(substra.exceptions.AuthorizationError):
-            client_3.add_predicttuple(spec)
+            client_3.add_task(spec)
 
 
 @pytest.mark.remote_only  # no check on permissions with the local backend
@@ -377,7 +377,7 @@ def test_permissions_denied_head_model_process(factory, client_1, client_2, chan
         ),
     )
 
-    composite_traintuple_1 = client_1.add_composite_traintuple(spec)
+    composite_traintuple_1 = client_1.add_task(spec)
     composite_traintuple_1 = client_1.wait(composite_traintuple_1)
     channel.wait_for_asset_synchronized(composite_traintuple_1)  # used by client_2
 
@@ -386,4 +386,4 @@ def test_permissions_denied_head_model_process(factory, client_1, client_2, chan
         inputs=dataset_2.train_data_inputs + FLTaskInputGenerator.composite_to_composite(composite_traintuple_1.key),
     )
     with pytest.raises(substra.exceptions.AuthorizationError):
-        client_2.add_composite_traintuple(spec)
+        client_2.add_task(spec)

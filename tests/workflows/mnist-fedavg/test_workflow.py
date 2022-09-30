@@ -374,7 +374,7 @@ def test_mnist(factory, inputs, clients, cfg: Settings):
     cp = client.wait(cp, timeout=30 * 60 * 60)
 
     # display all testtuples performances
-    testtuples = client.list_compute_plan_testtuples(cp.key)
+    testtuples = client.list_compute_plan_tasks(cp.key)
     testtuples = sorted(testtuples, key=lambda x: (x.rank, x.worker))
     for testtuple in testtuples:
         print(
