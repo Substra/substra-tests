@@ -84,6 +84,17 @@ def clients(clients):
 
 
 @pytest.fixture
+def workers(clients):
+    """Override workers fixture to return one worker per org.
+
+    The compute plan shape does not depend depend on the network topology (that is to
+    say the number of orgs). The compute plan shape will be exactly the same with /
+    without the local debug mode.
+    """
+    return [client.organization_info().organization_id for client in clients]
+
+
+@pytest.fixture
 def mnist_train_test(cfg: Settings):
     """Download MNIST data using sklearn and store it to disk.
 
@@ -297,7 +308,7 @@ def inputs(datasamples_folders, factory, clients, channel, algo_dockerfile):
 
 @pytest.mark.slow
 @pytest.mark.workflows
-def test_mnist(factory, inputs, clients, cfg: Settings):
+def test_mnist(factory, inputs, clients, cfg: Settings, workers: typing.List[str]):
     client = clients[0]
     nb_rounds = 20
     testing_rounds = (1, 5, 10, 15, 20)
@@ -323,8 +334,8 @@ def test_mnist(factory, inputs, clients, cfg: Settings):
 
             if aggregate_spec:
                 input_models = FLTaskInputGenerator.composite_to_local(
-                    composite_specs[idx].composite_traintuple_id
-                ) + FLTaskInputGenerator.aggregate_to_shared(aggregate_spec.aggregatetuple_id)
+                    composite_specs[idx].task_id
+                ) + FLTaskInputGenerator.aggregate_to_shared(aggregate_spec.task_id)
             else:
                 input_models = []
 
@@ -338,13 +349,14 @@ def test_mnist(factory, inputs, clients, cfg: Settings):
                 metadata={
                     "round_idx": round_idx,
                 },
+                worker=workers[idx],
             )
 
         aggregate_spec = cp_spec.create_aggregatetuple(
             aggregate_algo=inputs.aggregate_algo,
             worker=aggregate_worker,
             inputs=FLTaskInputGenerator.composites_to_aggregate(
-                [composite_spec.composite_traintuple_id for composite_spec in composite_specs]
+                [composite_spec.task_id for composite_spec in composite_specs]
             ),
             metadata={
                 "round_idx": round_idx,
@@ -357,18 +369,20 @@ def test_mnist(factory, inputs, clients, cfg: Settings):
                 predicttuple_spec = cp_spec.create_predicttuple(
                     algo=inputs.predict_algo,
                     inputs=org_inputs.dataset.test_data_inputs
-                    + FLTaskInputGenerator.composite_to_predict(composite_specs[idx].composite_traintuple_id),
+                    + FLTaskInputGenerator.composite_to_predict(composite_specs[idx].task_id),
                     metadata={
                         "round_idx": round_idx,
                     },
+                    worker=workers[idx],
                 )
                 cp_spec.create_testtuple(
                     algo=org_inputs.metric,
                     inputs=org_inputs.dataset.test_data_inputs
-                    + FLTaskInputGenerator.predict_to_test(predicttuple_spec.predicttuple_id),
+                    + FLTaskInputGenerator.predict_to_test(predicttuple_spec.task_id),
                     metadata={
                         "round_idx": round_idx,
                     },
+                    worker=workers[idx],
                 )
 
     cp = client.add_compute_plan(cp_spec)
