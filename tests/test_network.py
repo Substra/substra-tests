@@ -156,6 +156,7 @@ def test_asset_with_metadata(factory, client, asset_name, params, metadata, meta
     [
         {"foo" * 40: "bar"},
         {"foo": "bar" * 40},
+        {"foo__bar": "40"},
     ],
 )
 def test_asset_with_invalid_metadata(factory, client, asset_name, params, metadata):
