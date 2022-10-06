@@ -24,27 +24,26 @@ import json
 import substratools as tools
 import torch
 
-class TestAlgo(tools.Algo):
-    def train(self, inputs, outputs, task_properties):
-        assert torch.cuda.is_available()
-        self.save_model(['test'], outputs['{OutputIdentifiers.model}'])
+def train(inputs, outputs, task_properties):
+    assert torch.cuda.is_available()
+    save_model(['test'], outputs['{OutputIdentifiers.model}'])
 
-    def predict(self, X, model):
-        assert torch.cuda.is_available()
-        res = [x * model['value'] for x in X]
-        print(f'Predict, get X: {{X}}, model: {{model}}, return {{res}}')
-        return res
+def predict(X, model):
+    assert torch.cuda.is_available()
+    res = [x * model['value'] for x in X]
+    print(f'Predict, get X: {{X}}, model: {{model}}, return {{res}}')
+    return res
 
-    def load_model(self, path):
-        with open(path) as f:
-            return json.load(f)
+def load_model(path):
+    with open(path) as f:
+        return json.load(f)
 
-    def save_model(self, model, path):
-        with open(path, 'w') as f:
-            return json.dump(model, f)
+def save_model(model, path):
+    with open(path, 'w') as f:
+        return json.dump(model, f)
 
 if __name__ == '__main__':
-    tools.algo.execute(TestAlgo())
+    tools.function.execute_cli([train, predict])
 """  # noqa
     spec = factory.create_algo(AlgoCategory.simple, dockerfile=dockerfile, py_script=script)
     algo = client.add_algo(spec)
