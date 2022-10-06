@@ -511,7 +511,7 @@ class AssetsFactory:
     def default_algo_dockerfile(self, method_name):
         return (
             f"FROM {self.default_tools_image}\nCOPY algo.py .\n"
-            f'ENTRYPOINT ["python3", "algo.py", "--method-name", "{method_name}"]\n'
+            f'ENTRYPOINT ["python3", "algo.py", "--function-name", "{method_name}"]\n'
         )
 
     def create_data_sample(self, content=None, datasets=None, test_only=False):

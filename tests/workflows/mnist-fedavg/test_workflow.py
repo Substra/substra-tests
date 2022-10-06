@@ -56,7 +56,7 @@ def algo_dockerfile(cfg: Settings) -> str:
     return (
         f"FROM {cfg.substra_tools.image_workflows}\n"
         f"COPY algo.py .\n"
-        f'ENTRYPOINT ["python3", "algo.py", "--method-name", "{{method_name}}"]\n'
+        f'ENTRYPOINT ["python3", "algo.py", "--function-name", "{{method_name}}"]\n'
     )
 
 
