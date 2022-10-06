@@ -216,7 +216,7 @@ def test_algo_build_failure(factory, network, default_dataset_1, worker):
 
         assert traintuple.status == Status.failed
         assert traintuple.error_type == substra.sdk.models.TaskErrorType.build
-        assert traintuple.outputs.get(OutputIdentifiers.model) is None
+        assert traintuple.outputs[OutputIdentifiers.model].value is None
 
         for client in (network.clients[0], network.clients[1]):
             logs = client.download_logs(traintuple.key)
@@ -242,7 +242,7 @@ def test_task_execution_failure(factory, network, default_dataset_1, worker):
 
         assert traintuple.status == Status.failed
         assert traintuple.error_type == substra.sdk.models.TaskErrorType.execution
-        assert traintuple.outputs.get(OutputIdentifiers.model) is None
+        assert traintuple.outputs[OutputIdentifiers.model].value is None
 
         for client in (network.clients[0], network.clients[1]):
             logs = client.download_logs(traintuple.key)
@@ -264,8 +264,8 @@ def test_composite_traintuple_execution_failure(factory, client, default_dataset
 
         assert composite_traintuple.status == Status.failed
         assert composite_traintuple.error_type == substra.sdk.models.TaskErrorType.execution
-        assert composite_traintuple.get(OutputIdentifiers.local) is None
-        assert composite_traintuple.get(OutputIdentifiers.shared) is None
+        assert composite_traintuple[OutputIdentifiers.local].value is None
+        assert composite_traintuple[OutputIdentifiers.shared].value is None
         assert "Traceback (most recent call last):" in client.download_logs(composite_traintuple.key)
 
     elif client.backend_mode in (substra.BackendType.LOCAL_SUBPROCESS, substra.BackendType.LOCAL_DOCKER):
@@ -312,7 +312,7 @@ def test_aggregatetuple_execution_failure(factory, client, default_dataset, work
 
         assert aggregatetuple.status == Status.failed
         assert aggregatetuple.error_type == substra.sdk.models.TaskErrorType.execution
-        assert aggregatetuple.outputs.get(OutputIdentifiers.model) is None
+        assert aggregatetuple.outputs[OutputIdentifiers.model].value is None
         assert "Traceback (most recent call last):" in client.download_logs(aggregatetuple.key)
 
     elif client.backend_mode in (substra.BackendType.LOCAL_SUBPROCESS, substra.BackendType.LOCAL_DOCKER):
