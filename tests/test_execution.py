@@ -216,7 +216,7 @@ def test_algo_build_failure(factory, network, default_dataset_1, worker):
 
         assert traintuple.status == Status.failed
         assert traintuple.error_type == substra.sdk.models.TaskErrorType.build
-        assert traintuple.train.models is None
+        assert traintuple.outputs.get(OutputIdentifiers.model) is None
 
         for client in (network.clients[0], network.clients[1]):
             logs = client.download_logs(traintuple.key)
@@ -242,7 +242,7 @@ def test_task_execution_failure(factory, network, default_dataset_1, worker):
 
         assert traintuple.status == Status.failed
         assert traintuple.error_type == substra.sdk.models.TaskErrorType.execution
-        assert traintuple.train.models is None
+        assert traintuple.outputs.get(OutputIdentifiers.model) is None
 
         for client in (network.clients[0], network.clients[1]):
             logs = client.download_logs(traintuple.key)
@@ -264,7 +264,8 @@ def test_composite_traintuple_execution_failure(factory, client, default_dataset
 
         assert composite_traintuple.status == Status.failed
         assert composite_traintuple.error_type == substra.sdk.models.TaskErrorType.execution
-        assert composite_traintuple.composite.models is None
+        assert composite_traintuple.get(OutputIdentifiers.local) is None
+        assert composite_traintuple.get(OutputIdentifiers.shared) is None
         assert "Traceback (most recent call last):" in client.download_logs(composite_traintuple.key)
 
     elif client.backend_mode in (substra.BackendType.LOCAL_SUBPROCESS, substra.BackendType.LOCAL_DOCKER):
@@ -311,7 +312,7 @@ def test_aggregatetuple_execution_failure(factory, client, default_dataset, work
 
         assert aggregatetuple.status == Status.failed
         assert aggregatetuple.error_type == substra.sdk.models.TaskErrorType.execution
-        assert aggregatetuple.aggregate.models is None
+        assert aggregatetuple.outputs.get(OutputIdentifiers.model) is None
         assert "Traceback (most recent call last):" in client.download_logs(aggregatetuple.key)
 
     elif client.backend_mode in (substra.BackendType.LOCAL_SUBPROCESS, substra.BackendType.LOCAL_DOCKER):
@@ -763,7 +764,7 @@ def test_use_data_sample_located_in_shared_path(factory, network, client, organi
     traintuple = client.wait(traintuple)
     assert traintuple.status == Status.done
     assert traintuple.error_type is None
-    assert len(traintuple.train.models) == 1
+    assert traintuple.outputs[OutputIdentifiers.model].value is not None
 
     # create testtuple
     spec = factory.create_predicttuple(

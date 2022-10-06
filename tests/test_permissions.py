@@ -168,7 +168,7 @@ def test_permissions(permissions_1, permissions_2, expected_permissions, factory
     traintuple = client_1.wait(traintuple)
 
     # check the compute task executed on the correct worker
-    assert traintuple.train.models is not None
+    assert traintuple.outputs[OutputIdentifiers.model].value is not None
     assert traintuple.worker == client_1.organization_id
 
     # check the permissions

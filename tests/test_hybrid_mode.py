@@ -40,7 +40,7 @@ def test_execution_debug(client, hybrid_client, debug_factory, default_dataset):
     )
     traintuple = hybrid_client.add_task(spec)
     assert traintuple.status == models.Status.done
-    assert len(traintuple.train.models) != 0
+    assert traintuple.outputs[OutputIdentifiers.model].value is not None
 
     # Add the testtuple
     spec = debug_factory.create_predicttuple(
