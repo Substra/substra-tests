@@ -382,7 +382,7 @@ def test_compute_plan_single_client_failure(factory, client, default_dataset, de
     predicttuple_spec_1 = cp_spec.create_predicttuple(
         algo=predict_algo,
         inputs=default_dataset.test_data_inputs
-        + FLTaskInputGenerator.train_to_predict(traintuple_spec_1.traintuple_id),
+        + FLTaskInputGenerator.train_to_predict(traintuple_spec_1.task_id),
         worker=worker,
     )
     cp_spec.create_testtuple(
@@ -396,13 +396,13 @@ def test_compute_plan_single_client_failure(factory, client, default_dataset, de
         algo=simple_algo,
         inputs=default_dataset.opener_input
         + [data_sample_2_input]
-        + FLTaskInputGenerator.trains_to_train([traintuple_spec_1.traintuple_id]),
+        + FLTaskInputGenerator.trains_to_train([traintuple_spec_1.task_id]),
         worker=worker,
     )
     predicttuple_spec_2 = cp_spec.create_predicttuple(
         algo=predict_algo,
         inputs=default_dataset.test_data_inputs
-        + FLTaskInputGenerator.train_to_predict(traintuple_spec_2.traintuple_id),
+        + FLTaskInputGenerator.train_to_predict(traintuple_spec_2.task_id),
         worker=worker,
     )
 
@@ -417,14 +417,14 @@ def test_compute_plan_single_client_failure(factory, client, default_dataset, de
         algo=simple_algo,
         inputs=default_dataset.opener_input
         + [data_sample_3_input]
-        + FLTaskInputGenerator.trains_to_train([traintuple_spec_2.traintuple_id]),
+        + FLTaskInputGenerator.trains_to_train([traintuple_spec_2.task_id]),
         worker=worker,
     )
 
     predicttuple_spec_3 = cp_spec.create_predicttuple(
         algo=predict_algo,
         inputs=default_dataset.test_data_inputs
-        + FLTaskInputGenerator.train_to_predict(traintuple_spec_3.traintuple_id),
+        + FLTaskInputGenerator.train_to_predict(traintuple_spec_3.task_id),
         worker=worker,
     )
     cp_spec.create_testtuple(
@@ -638,7 +638,7 @@ def test_execution_compute_plan_canceled(factory, client, default_dataset, cfg, 
 
     for _ in range(nb_traintuples):
         input_models = (
-            FLTaskInputGenerator.trains_to_train([previous_traintuple.traintuple_id])
+            FLTaskInputGenerator.trains_to_train([previous_traintuple.task_id])
             if previous_traintuple is not None
             else []
         )
@@ -695,7 +695,7 @@ def test_compute_plan_no_batching(factory, client, default_dataset, worker):
         algo=algo,
         inputs=default_dataset.opener_input
         + default_dataset.train_data_sample_inputs[1:2]
-        + FLTaskInputGenerator.trains_to_train([traintuple_spec_1.traintuple_id]),
+        + FLTaskInputGenerator.trains_to_train([traintuple_spec_1.task_id]),
         metadata={"foo": "bar"},
         worker=worker,
     )
@@ -724,24 +724,25 @@ def test_compute_plan_transient_outputs(factory: AssetsFactory, client: Client, 
         algo=simple_algo,
         inputs=default_dataset.opener_input + [data_sample_1_input],
         outputs=FLTaskOutputGenerator.traintuple(transient=True),
+        worker=worker,
     )
 
     cp_spec.create_traintuple(
         algo=simple_algo,
         inputs=default_dataset.opener_input
         + [data_sample_2_input]
-        + FLTaskInputGenerator.trains_to_train([traintuple_spec_1.traintuple_id]),
+        + FLTaskInputGenerator.trains_to_train([traintuple_spec_1.task_id]),
         worker=worker,
     )
 
     cp_added = client.add_compute_plan(cp_spec)
     client.wait(cp_added)
 
-    traintuple_1 = client.get_task(traintuple_spec_1.traintuple_id)
+    traintuple_1 = client.get_task(traintuple_spec_1.task_id)
     assert traintuple_1.outputs[OutputIdentifiers.model].is_transient is True
 
     # Validate that the transient model is properly deleted
-    model = client.get_task_models(traintuple_spec_1.traintuple_id)[0]
+    model = client.get_task_models(traintuple_spec_1.task_id)[0]
     client.wait_model_deletion(model.key)
 
     # Validate that we can't create a new task that use this model
@@ -749,7 +750,7 @@ def test_compute_plan_transient_outputs(factory: AssetsFactory, client: Client, 
         algo=simple_algo,
         inputs=default_dataset.opener_input
         + [data_sample_2_input]
-        + FLTaskInputGenerator.trains_to_train([traintuple_spec_1.traintuple_id]),
+        + FLTaskInputGenerator.trains_to_train([traintuple_spec_1.task_id]),
         worker=worker,
     )
 
@@ -780,5 +781,5 @@ def test_compute_task_profile(factory, client, default_dataset, worker):
     cp_added = client.add_compute_plan(cp_spec)
     client.wait(cp_added)
 
-    traintuple_1_profile = client.get_compute_task_profiling(traintuple_spec_1.traintuple_id)
+    traintuple_1_profile = client.get_compute_task_profiling(traintuple_spec_1.task_id)
     assert len(traintuple_1_profile["execution_rundown"]) == 4

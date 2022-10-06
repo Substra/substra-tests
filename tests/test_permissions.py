@@ -153,7 +153,7 @@ def test_permissions(permissions_1, permissions_2, expected_permissions, factory
     dataset_1 = AugmentedDataset(client_1.get_dataset(dataset_1.key))
 
     # add algo
-    spec = factory.create_algo(category=AlgoCategory.simple, permissions=permissions_2, worker=workers[1])
+    spec = factory.create_algo(category=AlgoCategory.simple, permissions=permissions_2)
     algo_2 = client_2.add_algo(spec)
 
     # add traintuple
@@ -261,7 +261,8 @@ def test_permissions_model_process(
     spec = factory.create_traintuple(
         algo=algo_2,
         inputs=dataset_2.train_data_inputs
-        + FLTaskInputGenerator.trains_to_train([traintuple_1.key], worker=workers[1]),
+        + FLTaskInputGenerator.trains_to_train([traintuple_1.key]),
+        worker=workers[0],
     )
 
     if expected_success:

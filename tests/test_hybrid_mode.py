@@ -107,7 +107,7 @@ def test_debug_compute_plan_aggregate_composite(network, client, hybrid_client, 
                 inputs=dataset.opener_input + [dataset.train_data_sample_inputs[0 + round_]] + input_models,
                 worker=worker,
             )
-            composite_traintuple_keys.append(spec.composite_traintuple_id)
+            composite_traintuple_keys.append(spec.task_id)
 
         # create aggregate on its organization
         spec = cp_spec.create_aggregatetuple(
@@ -117,7 +117,7 @@ def test_debug_compute_plan_aggregate_composite(network, client, hybrid_client, 
         )
 
         # save state of round
-        previous_aggregate_tuple_key = spec.aggregatetuple_id
+        previous_aggregate_tuple_key = spec.task_id
         previous_composite_traintuple_keys = composite_traintuple_keys
 
     metrics = []
