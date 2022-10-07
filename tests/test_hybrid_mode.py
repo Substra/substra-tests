@@ -158,6 +158,7 @@ def test_debug_download_dataset(hybrid_client, default_dataset):
     hybrid_client.download_opener(default_dataset.key)
 
 
+@pytest.mark.skip(reason="Deprecated test case, to remove with test_only field.")
 @pytest.mark.remote_only
 @pytest.mark.slow
 def test_test_data_traintuple(client, hybrid_client, debug_factory, default_dataset):

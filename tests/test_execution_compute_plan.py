@@ -439,7 +439,6 @@ def test_compute_plan_single_client_failure(factory, client, default_dataset, de
     cp = client.wait(cp_added, raises=False)
 
     assert cp.status == "PLAN_STATUS_FAILED"
-    assert cp.failed_task.category == "TASK_TRAIN"
     assert cp.end_date is not None
     assert cp.duration is not None
 
