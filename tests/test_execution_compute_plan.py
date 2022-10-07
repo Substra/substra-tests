@@ -15,7 +15,14 @@ from substratest.fl_interface import OutputIdentifiers
 
 
 def test_compute_plan_simple(
-    factory, client_1, client_2, default_dataset_1, default_dataset_2, default_metrics, channel
+    factory,
+    client_1,
+    client_2,
+    default_dataset_1,
+    default_dataset_2,
+    default_metrics,
+    channel,
+    workers,
 ):
     """Execution of a compute plan containing multiple traintuples:
     - 1 traintuple executed on organization 1
@@ -44,36 +51,33 @@ def test_compute_plan_simple(
     )
 
     traintuple_spec_1 = cp_spec.create_traintuple(
-        algo=simple_algo_2,
-        inputs=default_dataset_1.train_data_inputs,
-        metadata=None,
+        algo=simple_algo_2, inputs=default_dataset_1.train_data_inputs, metadata=None, worker=workers[0]
     )
 
     traintuple_spec_2 = cp_spec.create_traintuple(
-        algo=simple_algo_2,
-        inputs=default_dataset_2.train_data_inputs,
-        metadata={},
+        algo=simple_algo_2, inputs=default_dataset_2.train_data_inputs, metadata={}, worker=workers[1]
     )
 
     traintuple_spec_3 = cp_spec.create_traintuple(
         algo=simple_algo_2,
         inputs=default_dataset_1.train_data_inputs
-        + FLTaskInputGenerator.trains_to_train([traintuple_spec_1.traintuple_id, traintuple_spec_2.traintuple_id]),
+        + FLTaskInputGenerator.trains_to_train([traintuple_spec_1.task_id, traintuple_spec_2.task_id]),
         metadata={"foo": "bar"},
+        worker=workers[0],
     )
 
     predicttuple_spec_3 = cp_spec.create_predicttuple(
         algo=predict_algo_2,
-        inputs=default_dataset_1.test_data_inputs
-        + FLTaskInputGenerator.train_to_predict(traintuple_spec_3.traintuple_id),
+        inputs=default_dataset_1.test_data_inputs + FLTaskInputGenerator.train_to_predict(traintuple_spec_3.task_id),
         metadata={"foo": "bar"},
+        worker=workers[0],
     )
 
-    cp_spec.create_testtuple(
+    testtuple_spec = cp_spec.create_testtuple(
         algo=default_metrics[0],
-        inputs=default_dataset_1.test_data_inputs
-        + FLTaskInputGenerator.predict_to_test(predicttuple_spec_3.predicttuple_id),
+        inputs=default_dataset_1.test_data_inputs + FLTaskInputGenerator.predict_to_test(predicttuple_spec_3.task_id),
         metadata={"foo": "bar"},
+        worker=workers[0],
     )
 
     # submit compute plan and wait for it to complete
@@ -88,33 +92,23 @@ def test_compute_plan_simple(
     assert cp.end_date is not None
     assert cp.duration is not None
 
-    traintuples = client_1.list_compute_plan_traintuples(cp.key)
-    assert len(traintuples) == 3
+    tasks = client_1.list_compute_plan_tasks(cp.key)
+    assert len(tasks) == 5
 
-    predicttuples = client_1.list_compute_plan_predicttuples(cp.key)
-    assert len(predicttuples) == 1
-
-    testtuples = client_1.list_compute_plan_testtuples(cp.key)
-    assert len(testtuples) == 1
-
-    # check all tuples are done and check they have been executed on the expected organization
-    for t in traintuples:
+    # check all tasks are done and check they have been executed on the expected organization
+    for t in tasks:
         assert t.status == models.Status.done
         assert t.start_date is not None
         assert t.end_date is not None
 
-    traintuple_1, traintuple_2, traintuple_3 = traintuples
+    traintuple_1 = [t for t in tasks if t.key == traintuple_spec_1.task_id][0]
+    traintuple_2 = [t for t in tasks if t.key == traintuple_spec_2.task_id][0]
+    traintuple_3 = [t for t in tasks if t.key == traintuple_spec_3.task_id][0]
 
     assert len([i for i in traintuple_3.inputs if i.identifier == InputIdentifiers.models]) == 2
 
-    for p in predicttuples:
-        assert p.status == models.Status.done
-
-    for t in testtuples:
-        assert t.status == models.Status.done
-
-    testtuple = client_1.get_testtuple(testtuples[0].key)
-    predicttuple = client_1.get_predicttuple(predicttuples[0].key)
+    predicttuple = [t for t in tasks if t.key == predicttuple_spec_3.task_id][0]
+    testtuple = [t for t in tasks if t.key == testtuple_spec.task_id][0]
 
     # check tuples metadata
     assert traintuple_1.metadata == {}
@@ -131,14 +125,13 @@ def test_compute_plan_simple(
     assert testtuple.rank == predicttuple.rank + 1
 
     # check testtuple perfs
-    assert len(testtuple.test.perfs) == 1
-    assert len(set(testtuple.test.perfs.values())) == 1
-    assert list(testtuple.test.perfs.values())[0] == pytest.approx(4)
+    assert len(testtuple.outputs) == 1
+    assert testtuple.outputs[OutputIdentifiers.performance].value == pytest.approx(4)
 
     # check compute plan perfs
     performances = client_1.get_performances(cp.key)
     assert all(len(val) == 1 for val in performances.dict().values())
-    assert set(testtuple.test.perfs.values()) == set(performances.performance)
+    assert testtuple.outputs[OutputIdentifiers.performance].value == performances.performance[0]
 
     # XXX as the first two tuples have the same rank, there is currently no way to know
     #     which one will be returned first
@@ -149,9 +142,9 @@ def test_compute_plan_simple(
     assert testtuple.worker == client_1.organization_id
 
     # check mapping
-    traintuple_id_1 = traintuple_spec_1.traintuple_id
-    traintuple_id_2 = traintuple_spec_2.traintuple_id
-    traintuple_id_3 = traintuple_spec_3.traintuple_id
+    traintuple_id_1 = traintuple_spec_1.task_id
+    traintuple_id_2 = traintuple_spec_2.task_id
+    traintuple_id_3 = traintuple_spec_3.task_id
     generated_ids = [traintuple_id_1, traintuple_id_2, traintuple_id_3]
     rank_0_traintuple_keys = [traintuple_1.key, traintuple_2.key]
     assert set(generated_ids) == set([traintuple_id_1, traintuple_id_2, traintuple_id_3])
@@ -160,7 +153,7 @@ def test_compute_plan_simple(
 
 
 @pytest.mark.slow
-def test_compute_plan_single_client_success(factory, client, default_dataset, default_metric):
+def test_compute_plan_single_client_success(factory, client, default_dataset, default_metric, worker):
     """A compute plan with 3 traintuples and 3 associated testtuples"""
 
     # Create a compute plan with 3 steps:
@@ -180,53 +173,57 @@ def test_compute_plan_single_client_success(factory, client, default_dataset, de
     cp_spec = factory.create_compute_plan()
 
     traintuple_spec_1 = cp_spec.create_traintuple(
-        algo=simple_algo, inputs=default_dataset.opener_input + [data_sample_1_input]
+        algo=simple_algo,
+        inputs=default_dataset.opener_input + [data_sample_1_input],
+        worker=worker,
     )
 
     predicttuple_spec_1 = cp_spec.create_predicttuple(
         algo=predict_algo,
-        inputs=default_dataset.test_data_inputs
-        + FLTaskInputGenerator.train_to_predict(traintuple_spec_1.traintuple_id),
+        inputs=default_dataset.test_data_inputs + FLTaskInputGenerator.train_to_predict(traintuple_spec_1.task_id),
+        worker=worker,
     )
 
     cp_spec.create_testtuple(
         algo=default_metric,
-        inputs=default_dataset.test_data_inputs
-        + FLTaskInputGenerator.predict_to_test(predicttuple_spec_1.predicttuple_id),
+        inputs=default_dataset.test_data_inputs + FLTaskInputGenerator.predict_to_test(predicttuple_spec_1.task_id),
+        worker=worker,
     )
 
     traintuple_spec_2 = cp_spec.create_traintuple(
         algo=simple_algo,
         inputs=default_dataset.opener_input
         + [data_sample_2_input]
-        + FLTaskInputGenerator.trains_to_train([traintuple_spec_1.traintuple_id]),
+        + FLTaskInputGenerator.trains_to_train([traintuple_spec_1.task_id]),
+        worker=worker,
     )
     predicttuple_spec_2 = cp_spec.create_predicttuple(
         algo=predict_algo,
-        inputs=default_dataset.test_data_inputs
-        + FLTaskInputGenerator.train_to_predict(traintuple_spec_2.traintuple_id),
+        inputs=default_dataset.test_data_inputs + FLTaskInputGenerator.train_to_predict(traintuple_spec_2.task_id),
+        worker=worker,
     )
     cp_spec.create_testtuple(
         algo=default_metric,
-        inputs=default_dataset.test_data_inputs
-        + FLTaskInputGenerator.predict_to_test(predicttuple_spec_2.predicttuple_id),
+        inputs=default_dataset.test_data_inputs + FLTaskInputGenerator.predict_to_test(predicttuple_spec_2.task_id),
+        worker=worker,
     )
 
     traintuple_spec_3 = cp_spec.create_traintuple(
         algo=simple_algo,
         inputs=default_dataset.opener_input
         + [data_sample_3_input]
-        + FLTaskInputGenerator.trains_to_train([traintuple_spec_2.traintuple_id]),
+        + FLTaskInputGenerator.trains_to_train([traintuple_spec_2.task_id]),
+        worker=worker,
     )
     predicttuple_spec_3 = cp_spec.create_predicttuple(
         algo=predict_algo,
-        inputs=default_dataset.test_data_inputs
-        + FLTaskInputGenerator.train_to_predict(traintuple_spec_3.traintuple_id),
+        inputs=default_dataset.test_data_inputs + FLTaskInputGenerator.train_to_predict(traintuple_spec_3.task_id),
+        worker=worker,
     )
     cp_spec.create_testtuple(
         algo=default_metric,
-        inputs=default_dataset.test_data_inputs
-        + FLTaskInputGenerator.predict_to_test(predicttuple_spec_3.predicttuple_id),
+        inputs=default_dataset.test_data_inputs + FLTaskInputGenerator.predict_to_test(predicttuple_spec_3.task_id),
+        worker=worker,
     )
 
     # Submit compute plan and wait for it to complete
@@ -239,15 +236,15 @@ def test_compute_plan_single_client_success(factory, client, default_dataset, de
 
     # All the train/test tuples should succeed
     for t in (
-        client.list_compute_plan_traintuples(cp.key)
-        + client.list_compute_plan_predicttuples(cp.key)
-        + client.list_compute_plan_testtuples(cp.key)
+        client.list_compute_plan_tasks(cp.key)
+        + client.list_compute_plan_tasks(cp.key)
+        + client.list_compute_plan_tasks(cp.key)
     ):
         assert t.status == models.Status.done
 
 
 @pytest.mark.slow
-def test_compute_plan_update(factory, client, default_dataset, default_metric):
+def test_compute_plan_update(factory, client, default_dataset, default_metric, worker):
     """A compute plan with 3 traintuples and 3 associated testtuples.
 
     This is done by sending 3 requests (one create and two updates).
@@ -265,19 +262,21 @@ def test_compute_plan_update(factory, client, default_dataset, default_metric):
 
     cp_spec = factory.create_compute_plan()
     traintuple_spec_1 = cp_spec.create_traintuple(
-        algo=simple_algo, inputs=default_dataset.opener_input + [data_sample_1_input]
+        algo=simple_algo,
+        inputs=default_dataset.opener_input + [data_sample_1_input],
+        worker=worker,
     )
 
     predicttuple_spec_1 = cp_spec.create_predicttuple(
         algo=predict_algo,
-        inputs=default_dataset.test_data_inputs
-        + FLTaskInputGenerator.train_to_predict(traintuple_spec_1.traintuple_id),
+        inputs=default_dataset.test_data_inputs + FLTaskInputGenerator.train_to_predict(traintuple_spec_1.task_id),
+        worker=worker,
     )
 
     cp_spec.create_testtuple(
         algo=default_metric,
-        inputs=default_dataset.test_data_inputs
-        + FLTaskInputGenerator.predict_to_test(predicttuple_spec_1.predicttuple_id),
+        inputs=default_dataset.test_data_inputs + FLTaskInputGenerator.predict_to_test(predicttuple_spec_1.task_id),
+        worker=worker,
     )
     cp = client.add_compute_plan(cp_spec, auto_batching=True, batch_size=1)
 
@@ -288,20 +287,21 @@ def test_compute_plan_update(factory, client, default_dataset, default_metric):
         algo=simple_algo,
         inputs=default_dataset.opener_input
         + [data_sample_2_input]
-        + FLTaskInputGenerator.trains_to_train([traintuple_spec_1.traintuple_id]),
+        + FLTaskInputGenerator.trains_to_train([traintuple_spec_1.task_id]),
         metadata={"foo": "bar"},
+        worker=worker,
     )
     predicttuple_spec_2 = cp_spec.create_predicttuple(
         algo=predict_algo,
-        inputs=default_dataset.test_data_inputs
-        + FLTaskInputGenerator.train_to_predict(traintuple_spec_2.traintuple_id),
+        inputs=default_dataset.test_data_inputs + FLTaskInputGenerator.train_to_predict(traintuple_spec_2.task_id),
         metadata={"foo": "bar"},
+        worker=worker,
     )
-    cp_spec.create_testtuple(
+    testtuple_spec_2 = cp_spec.create_testtuple(
         algo=default_metric,
-        inputs=default_dataset.test_data_inputs
-        + FLTaskInputGenerator.predict_to_test(predicttuple_spec_2.predicttuple_id),
+        inputs=default_dataset.test_data_inputs + FLTaskInputGenerator.predict_to_test(predicttuple_spec_2.task_id),
         metadata={"foo": "bar"},
+        worker=worker,
     )
     cp = client.add_compute_plan_tuples(cp_spec, auto_batching=True, batch_size=1)
 
@@ -312,12 +312,13 @@ def test_compute_plan_update(factory, client, default_dataset, default_metric):
         algo=simple_algo,
         inputs=default_dataset.opener_input
         + [data_sample_3_input]
-        + FLTaskInputGenerator.trains_to_train([traintuple_spec_2.traintuple_id]),
+        + FLTaskInputGenerator.trains_to_train([traintuple_spec_2.task_id]),
+        worker=worker,
     )
     predicttuple_spec_3 = cp_spec.create_predicttuple(
         algo=predict_algo,
-        inputs=default_dataset.test_data_inputs
-        + FLTaskInputGenerator.train_to_predict(traintuple_spec_3.traintuple_id),
+        inputs=default_dataset.test_data_inputs + FLTaskInputGenerator.train_to_predict(traintuple_spec_3.task_id),
+        worker=worker,
     )
     cp = client.add_compute_plan_tuples(cp_spec)
 
@@ -326,31 +327,32 @@ def test_compute_plan_update(factory, client, default_dataset, default_metric):
     cp_spec = factory.add_compute_plan_tuples(cp)
     cp_spec.create_testtuple(
         algo=default_metric,
-        inputs=default_dataset.test_data_inputs
-        + FLTaskInputGenerator.predict_to_test(predicttuple_spec_3.predicttuple_id),
+        inputs=default_dataset.test_data_inputs + FLTaskInputGenerator.predict_to_test(predicttuple_spec_3.task_id),
+        worker=worker,
     )
     cp = client.add_compute_plan_tuples(cp_spec)
 
     # All the train/test tuples should succeed
     cp_added = client.get_compute_plan(cp.key)
     cp = client.wait(cp_added)
-    traintuples = client.list_compute_plan_traintuples(cp.key)
-    predicttuples = client.list_compute_plan_predicttuples(cp.key)
-    testtuples = client.list_compute_plan_testtuples(cp.key)
-    tuples = traintuples + predicttuples + testtuples
-    assert len(tuples) == 9
-    for t in tuples:
+    tasks = client.list_compute_plan_tasks(cp.key)
+    assert len(tasks) == 9
+    for t in tasks:
         assert t.status == models.Status.done
 
     # Check tuples metadata
-    assert traintuples[1].metadata == {"foo": "bar"}
-    assert predicttuples[1].metadata == {"foo": "bar"}
-    assert testtuples[1].metadata == {"foo": "bar"}
+    traintuple = client.get_task(traintuple_spec_2.task_id)
+    predicttuple = client.get_task(predicttuple_spec_2.task_id)
+    testtuple = client.get_task(testtuple_spec_2.task_id)
+
+    assert traintuple.metadata == {"foo": "bar"}
+    assert predicttuple.metadata == {"foo": "bar"}
+    assert testtuple.metadata == {"foo": "bar"}
 
 
 @pytest.mark.slow
 @pytest.mark.remote_only
-def test_compute_plan_single_client_failure(factory, client, default_dataset, default_metric):
+def test_compute_plan_single_client_failure(factory, client, default_dataset, default_metric, worker):
     """In a compute plan with 3 traintuples, failing the root traintuple
     should cancel its descendents and the associated testtuples"""
 
@@ -373,53 +375,63 @@ def test_compute_plan_single_client_failure(factory, client, default_dataset, de
     cp_spec = factory.create_compute_plan()
 
     traintuple_spec_1 = cp_spec.create_traintuple(
-        algo=simple_algo, inputs=default_dataset.opener_input + [data_sample_1_input]
+        algo=simple_algo,
+        inputs=default_dataset.opener_input + [data_sample_1_input],
+        worker=worker,
     )
     predicttuple_spec_1 = cp_spec.create_predicttuple(
         algo=predict_algo,
         inputs=default_dataset.test_data_inputs
-        + FLTaskInputGenerator.train_to_predict(traintuple_spec_1.traintuple_id),
+        + FLTaskInputGenerator.train_to_predict(traintuple_spec_1.task_id),
+        worker=worker,
     )
     cp_spec.create_testtuple(
         algo=default_metric,
         inputs=default_dataset.test_data_inputs
-        + FLTaskInputGenerator.predict_to_test(predicttuple_spec_1.predicttuple_id),
+        + FLTaskInputGenerator.predict_to_test(predicttuple_spec_1.task_id),
+        worker=worker,
     )
 
     traintuple_spec_2 = cp_spec.create_traintuple(
         algo=simple_algo,
         inputs=default_dataset.opener_input
         + [data_sample_2_input]
-        + FLTaskInputGenerator.trains_to_train([traintuple_spec_1.traintuple_id]),
+        + FLTaskInputGenerator.trains_to_train([traintuple_spec_1.task_id]),
+        worker=worker,
     )
     predicttuple_spec_2 = cp_spec.create_predicttuple(
         algo=predict_algo,
         inputs=default_dataset.test_data_inputs
-        + FLTaskInputGenerator.train_to_predict(traintuple_spec_2.traintuple_id),
+        + FLTaskInputGenerator.train_to_predict(traintuple_spec_2.task_id),
+        worker=worker,
     )
 
     cp_spec.create_testtuple(
         algo=default_metric,
         inputs=default_dataset.test_data_inputs
-        + FLTaskInputGenerator.predict_to_test(predicttuple_spec_2.predicttuple_id),
+        + FLTaskInputGenerator.predict_to_test(predicttuple_spec_2.task_id),
+        worker=worker,
     )
 
     traintuple_spec_3 = cp_spec.create_traintuple(
         algo=simple_algo,
         inputs=default_dataset.opener_input
         + [data_sample_3_input]
-        + FLTaskInputGenerator.trains_to_train([traintuple_spec_2.traintuple_id]),
+        + FLTaskInputGenerator.trains_to_train([traintuple_spec_2.task_id]),
+        worker=worker,
     )
 
     predicttuple_spec_3 = cp_spec.create_predicttuple(
         algo=predict_algo,
         inputs=default_dataset.test_data_inputs
-        + FLTaskInputGenerator.train_to_predict(traintuple_spec_3.traintuple_id),
+        + FLTaskInputGenerator.train_to_predict(traintuple_spec_3.task_id),
+        worker=worker,
     )
     cp_spec.create_testtuple(
         algo=default_metric,
         inputs=default_dataset.test_data_inputs
-        + FLTaskInputGenerator.predict_to_test(predicttuple_spec_3.predicttuple_id),
+        + FLTaskInputGenerator.predict_to_test(predicttuple_spec_3.task_id),
+        worker=worker,
     )
 
     # Submit compute plan and wait for it to complete
@@ -427,7 +439,6 @@ def test_compute_plan_single_client_failure(factory, client, default_dataset, de
     cp = client.wait(cp_added, raises=False)
 
     assert cp.status == "PLAN_STATUS_FAILED"
-    assert cp.failed_task.category == "TASK_TRAIN"
     assert cp.end_date is not None
     assert cp.duration is not None
 
@@ -435,7 +446,11 @@ def test_compute_plan_single_client_failure(factory, client, default_dataset, de
 # FIXME: test_compute_plan_aggregate_composite_traintuples is too complex, consider refactoring
 @pytest.mark.slow  # noqa: C901
 def test_compute_plan_aggregate_composite_traintuples(  # noqa: C901
-    factory, clients, default_datasets, default_metrics
+    factory,
+    clients,
+    default_datasets,
+    default_metrics,
+    workers,
 ):
     """
     Compute plan version of the `test_aggregate_composite_traintuples` method from `test_execution.py`
@@ -465,9 +480,9 @@ def test_compute_plan_aggregate_composite_traintuples(  # noqa: C901
         for index, dataset in enumerate(default_datasets):
             if previous_aggregatetuple_spec is not None:
                 local_input = FLTaskInputGenerator.composite_to_local(
-                    previous_composite_traintuple_specs[index].composite_traintuple_id
+                    previous_composite_traintuple_specs[index].task_id
                 )
-                shared_input = FLTaskInputGenerator.aggregate_to_shared(previous_aggregatetuple_spec.aggregatetuple_id)
+                shared_input = FLTaskInputGenerator.aggregate_to_shared(previous_aggregatetuple_spec.task_id)
 
             else:
                 local_input = []
@@ -479,11 +494,11 @@ def test_compute_plan_aggregate_composite_traintuples(  # noqa: C901
                 + [dataset.train_data_sample_inputs[0 + round_]]
                 + local_input
                 + shared_input,
-                metadata={"foo": "bar"},
                 outputs=FLTaskOutputGenerator.composite_traintuple(
                     shared_authorized_ids=[client.organization_id for client in clients],
                     local_authorized_ids=[clients[index].organization_id],
                 ),
+                worker=workers[index],
             )
 
             composite_traintuple_specs.append(spec)
@@ -493,12 +508,8 @@ def test_compute_plan_aggregate_composite_traintuples(  # noqa: C901
             aggregate_algo=aggregate_algo,
             worker=aggregate_worker,
             inputs=FLTaskInputGenerator.composites_to_aggregate(
-                [
-                    composite_traintuple_spec.composite_traintuple_id
-                    for composite_traintuple_spec in composite_traintuple_specs
-                ]
+                [composite_traintuple_spec.task_id for composite_traintuple_spec in composite_traintuple_specs]
             ),
-            metadata={"foo": "bar"},
         )
 
         # save state of round
@@ -506,96 +517,100 @@ def test_compute_plan_aggregate_composite_traintuples(  # noqa: C901
         previous_composite_traintuple_specs = composite_traintuple_specs
 
     # last round: create associated testtuple
-    for composite_traintuple, dataset, metric in zip(
-        previous_composite_traintuple_specs, default_datasets, default_metrics
+    for composite_traintuple, dataset, metric, worker in zip(
+        previous_composite_traintuple_specs, default_datasets, default_metrics, workers
     ):
         spec = cp_spec.create_predicttuple(
             algo=predict_algo_composite,
-            inputs=dataset.test_data_inputs
-            + FLTaskInputGenerator.composite_to_predict(composite_traintuple.composite_traintuple_id),
+            inputs=dataset.test_data_inputs + FLTaskInputGenerator.composite_to_predict(composite_traintuple.task_id),
+            worker=worker,
         )
         cp_spec.create_testtuple(
-            algo=metric, inputs=dataset.test_data_inputs + FLTaskInputGenerator.predict_to_test(spec.predicttuple_id)
+            algo=metric,
+            inputs=dataset.test_data_inputs + FLTaskInputGenerator.predict_to_test(spec.task_id),
+            worker=worker,
         )
 
     predicttuple_from_aggregate_spec = cp_spec.create_predicttuple(
         algo=predict_algo,
         inputs=default_datasets[0].test_data_inputs
-        + FLTaskInputGenerator.aggregate_to_predict(previous_aggregatetuple_spec.aggregatetuple_id),
+        + FLTaskInputGenerator.aggregate_to_predict(previous_aggregatetuple_spec.task_id),
+        worker=workers[0],
     )
     cp_spec.create_testtuple(
         algo=metric,
         inputs=default_datasets[0].test_data_inputs
-        + FLTaskInputGenerator.predict_to_test(predicttuple_from_aggregate_spec.predicttuple_id),
+        + FLTaskInputGenerator.predict_to_test(predicttuple_from_aggregate_spec.task_id),
+        worker=workers[0],
     )
 
     cp_added = clients[0].add_compute_plan(cp_spec)
     cp = clients[0].wait(cp_added)
 
-    traintuples = clients[0].list_compute_plan_traintuples(cp.key)
-    composite_traintuples = clients[0].list_compute_plan_composite_traintuples(cp.key)
-    aggregatetuples = clients[0].list_compute_plan_aggregatetuples(cp.key)
-    predicttuples = clients[0].list_compute_plan_predicttuples(cp.key)
-    testtuples = clients[0].list_compute_plan_testtuples(cp.key)
+    tasks = clients[0].list_compute_plan_tasks(cp.key)
 
     for task in composite_traintuple_specs:
-        remote_task = clients[0].get_composite_traintuple(task.id)
-        if task.in_head_model_id:
+        remote_task = clients[0].get_task(task.task_id)
+        if len(task.inputs) > 2:
             assert (
                 len(
                     [
                         i
                         for i in remote_task.inputs
                         if i.identifier == InputIdentifiers.local
-                        and i.parent_task_key == task.in_head_model_id
+                        and i.parent_task_key
+                        == [x for x in task.inputs if x.identifier == InputIdentifiers.local][0].parent_task_key
                         and i.parent_task_output_identifier == InputIdentifiers.local
                     ]
                 )
                 == 1
             )
-        if task.in_trunk_model_id:
+        print(task.inputs)
+        if len(task.inputs) > 2:
             assert (
                 len(
                     [
                         i
                         for i in remote_task.inputs
                         if i.identifier == InputIdentifiers.shared
-                        and i.parent_task_key == task.in_trunk_model_id
+                        and i.parent_task_key
+                        == [x for x in task.inputs if x.identifier == InputIdentifiers.shared][0].parent_task_key
                         and i.parent_task_output_identifier == OutputIdentifiers.model
                     ]
                 )
                 == 1
             )
 
-    tuples = traintuples + composite_traintuples + aggregatetuples + predicttuples + testtuples
-    for t in tuples:
+    for t in tasks:
         assert t.status == models.Status.done, t
 
-    # Check tuples metadata
-    for tuple in composite_traintuples + aggregatetuples:
-        assert tuple.metadata == {"foo": "bar"}
-
     # Check that permissions were correctly set
-    for task in composite_traintuples:
-        task = clients[0].get_composite_traintuple(task.key)
+    for task_id in [ct.task_id for ct in composite_traintuple_specs]:
+        task = clients[0].get_task(task_id)
         trunk = task.outputs[OutputIdentifiers.shared].value
         assert len(trunk.permissions.process.authorized_ids) == len(clients)
 
 
-def test_compute_plan_circular_dependency_failure(factory, client, default_dataset):
+def test_compute_plan_circular_dependency_failure(factory, client, default_dataset, worker):
     spec = factory.create_algo(AlgoCategory.simple)
     algo = client.add_algo(spec)
 
     cp_spec = factory.create_compute_plan()
 
-    traintuple_spec_1 = cp_spec.create_traintuple(inputs=default_dataset.train_data_inputs, algo=algo)
+    traintuple_spec_1 = cp_spec.create_traintuple(
+        inputs=default_dataset.train_data_inputs,
+        algo=algo,
+        worker=worker,
+    )
 
-    traintuple_spec_2 = cp_spec.create_traintuple(inputs=default_dataset.train_data_inputs, algo=algo)
+    traintuple_spec_2 = cp_spec.create_traintuple(
+        inputs=default_dataset.train_data_inputs,
+        algo=algo,
+        worker=worker,
+    )
 
-    traintuple_spec_1.in_models_ids.append(traintuple_spec_2.id)
-    traintuple_spec_2.in_models_ids.append(traintuple_spec_1.id)
-    traintuple_spec_1.inputs.append(FLTaskInputGenerator.trains_to_train([traintuple_spec_2.id])[0])
-    traintuple_spec_2.inputs.append(FLTaskInputGenerator.trains_to_train([traintuple_spec_1.id])[0])
+    traintuple_spec_1.inputs.append(FLTaskInputGenerator.trains_to_train([traintuple_spec_2.task_id])[0])
+    traintuple_spec_2.inputs.append(FLTaskInputGenerator.trains_to_train([traintuple_spec_1.task_id])[0])
 
     with pytest.raises(substra.exceptions.InvalidRequest) as e:
         client.add_compute_plan(cp_spec)
@@ -605,7 +620,7 @@ def test_compute_plan_circular_dependency_failure(factory, client, default_datas
 
 @pytest.mark.slow
 @pytest.mark.remote_only
-def test_execution_compute_plan_canceled(factory, client, default_dataset, cfg):
+def test_execution_compute_plan_canceled(factory, client, default_dataset, cfg, worker):
     # XXX A canceled compute plan can be done if the it is canceled while it last tuples
     #     are executing on the workers. The compute plan status will in this case change
     #     from canceled to done.
@@ -622,17 +637,21 @@ def test_execution_compute_plan_canceled(factory, client, default_dataset, cfg):
 
     for _ in range(nb_traintuples):
         input_models = (
-            FLTaskInputGenerator.trains_to_train([previous_traintuple.traintuple_id])
+            FLTaskInputGenerator.trains_to_train([previous_traintuple.task_id])
             if previous_traintuple is not None
             else []
         )
-        previous_traintuple = cp_spec.create_traintuple(algo=algo, inputs=inputs + input_models)
+        previous_traintuple = cp_spec.create_traintuple(
+            algo=algo,
+            inputs=inputs + input_models,
+            worker=worker,
+        )
 
     cp = client.add_compute_plan(cp_spec)
 
     # wait the first traintuple to be executed to ensure that the compute plan is launched
     # and tuples are scheduled in the celery workers
-    first_traintuple = [t for t in client.list_compute_plan_traintuples(cp.key) if t.rank == 0][0]
+    first_traintuple = [t for t in client.list_compute_plan_tasks(cp.key) if t.rank == 0][0]
     first_traintuple = client.wait(first_traintuple)
     assert first_traintuple.status == models.Status.done
 
@@ -644,13 +663,13 @@ def test_execution_compute_plan_canceled(factory, client, default_dataset, cfg):
     assert cp.duration is not None
 
     # check that the status of the done tuple as not been updated
-    first_traintuple = [t for t in client.list_compute_plan_traintuples(cp.key) if t.rank == 0][0]
+    first_traintuple = [t for t in client.list_compute_plan_tasks(cp.key) if t.rank == 0][0]
     assert first_traintuple.status == models.Status.done
 
 
 @pytest.mark.slow
 @pytest.mark.remote_only
-def test_compute_plan_no_batching(factory, client, default_dataset):
+def test_compute_plan_no_batching(factory, client, default_dataset, worker):
 
     spec = factory.create_algo(AlgoCategory.simple)
     algo = client.add_algo(spec)
@@ -658,12 +677,14 @@ def test_compute_plan_no_batching(factory, client, default_dataset):
     # Create a compute plan
     cp_spec = factory.create_compute_plan()
     traintuple_spec_1 = cp_spec.create_traintuple(
-        algo=algo, inputs=default_dataset.opener_input + default_dataset.train_data_sample_inputs[:1]
+        algo=algo,
+        inputs=default_dataset.opener_input + default_dataset.train_data_sample_inputs[:1],
+        worker=worker,
     )
     cp_added = client.add_compute_plan(cp_spec, auto_batching=False)
     cp = client.wait(cp_added)
 
-    traintuples = client.list_compute_plan_traintuples(cp.key)
+    traintuples = client.list_compute_plan_tasks(cp.key)
     assert len(traintuples) == 1
     assert all([tuple_.status == models.Status.done for tuple_ in traintuples])
 
@@ -673,20 +694,21 @@ def test_compute_plan_no_batching(factory, client, default_dataset):
         algo=algo,
         inputs=default_dataset.opener_input
         + default_dataset.train_data_sample_inputs[1:2]
-        + FLTaskInputGenerator.trains_to_train([traintuple_spec_1.traintuple_id]),
+        + FLTaskInputGenerator.trains_to_train([traintuple_spec_1.task_id]),
         metadata={"foo": "bar"},
+        worker=worker,
     )
     cp_added = client.add_compute_plan_tuples(cp_spec, auto_batching=False)
     cp = client.wait(cp_added)
 
-    traintuples = client.list_compute_plan_traintuples(cp.key)
+    traintuples = client.list_compute_plan_tasks(cp.key)
     assert len(traintuples) == 2
     assert all([tuple_.status == models.Status.done for tuple_ in traintuples])
 
 
 @pytest.mark.slow
 @pytest.mark.remote_only
-def test_compute_plan_transient_outputs(factory: AssetsFactory, client: Client, default_dataset):
+def test_compute_plan_transient_outputs(factory: AssetsFactory, client: Client, default_dataset, worker: str):
     """
     Create a simple compute plan with tasks using transient inputs, check if the flag is set
     """
@@ -701,23 +723,25 @@ def test_compute_plan_transient_outputs(factory: AssetsFactory, client: Client, 
         algo=simple_algo,
         inputs=default_dataset.opener_input + [data_sample_1_input],
         outputs=FLTaskOutputGenerator.traintuple(transient=True),
+        worker=worker,
     )
 
     cp_spec.create_traintuple(
         algo=simple_algo,
         inputs=default_dataset.opener_input
         + [data_sample_2_input]
-        + FLTaskInputGenerator.trains_to_train([traintuple_spec_1.traintuple_id]),
+        + FLTaskInputGenerator.trains_to_train([traintuple_spec_1.task_id]),
+        worker=worker,
     )
 
     cp_added = client.add_compute_plan(cp_spec)
     client.wait(cp_added)
 
-    traintuple_1 = client.get_traintuple(traintuple_spec_1.traintuple_id)
+    traintuple_1 = client.get_task(traintuple_spec_1.task_id)
     assert traintuple_1.outputs[OutputIdentifiers.model].is_transient is True
 
     # Validate that the transient model is properly deleted
-    model = client.get_task_models(traintuple_spec_1.traintuple_id)[0]
+    model = client.get_task_models(traintuple_spec_1.task_id)[0]
     client.wait_model_deletion(model.key)
 
     # Validate that we can't create a new task that use this model
@@ -725,18 +749,19 @@ def test_compute_plan_transient_outputs(factory: AssetsFactory, client: Client, 
         algo=simple_algo,
         inputs=default_dataset.opener_input
         + [data_sample_2_input]
-        + FLTaskInputGenerator.trains_to_train([traintuple_spec_1.traintuple_id]),
+        + FLTaskInputGenerator.trains_to_train([traintuple_spec_1.task_id]),
+        worker=worker,
     )
 
     with pytest.raises(substra.exceptions.InvalidRequest) as err:
-        client.add_traintuple(traintuple_spec_3)
+        client.add_task(traintuple_spec_3)
 
     assert "has been disabled" in str(err.value)
 
 
 @pytest.mark.slow
 @pytest.mark.remote_only
-def test_compute_task_profile(factory, client, default_dataset):
+def test_compute_task_profile(factory, client, default_dataset, worker):
     """
     Creates a simple task to check that tasks profiles are correctly produced
     """
@@ -749,10 +774,11 @@ def test_compute_task_profile(factory, client, default_dataset):
         algo=simple_algo,
         inputs=default_dataset.opener_input + [data_sample_1_input],
         outputs=FLTaskOutputGenerator.traintuple(transient=True),
+        worker=worker,
     )
 
     cp_added = client.add_compute_plan(cp_spec)
     client.wait(cp_added)
 
-    traintuple_1_profile = client.get_compute_task_profiling(traintuple_spec_1.traintuple_id)
+    traintuple_1_profile = client.get_compute_task_profiling(traintuple_spec_1.task_id)
     assert len(traintuple_1_profile["execution_rundown"]) == 4

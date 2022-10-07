@@ -332,10 +332,22 @@ def client(network):
     return network.clients[0]
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def clients(network):
     """Clients fixture (all organizations)."""
     return network.clients
+
+
+@pytest.fixture(scope="session")
+def worker(client):
+    """Clients fixture (all organizations)."""
+    return client.organization_info().organization_id
+
+
+@pytest.fixture(scope="session")
+def workers(clients):
+    """Clients fixture (all organizations)."""
+    return [client.organization_info().organization_id for client in clients]
 
 
 @pytest.fixture(scope="session")

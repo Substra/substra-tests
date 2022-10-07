@@ -11,6 +11,7 @@ from substratest.factory import AlgoCategory
 from substratest.factory import AugmentedDataset
 from substratest.fl_interface import FLTaskInputGenerator
 from substratest.fl_interface import FLTaskOutputGenerator
+from substratest.fl_interface import OutputIdentifiers
 from substratest.settings import Settings
 
 # extra requirements located in requirements-workflows.txt
@@ -80,6 +81,17 @@ def clients(clients):
     """
     assert len(clients) >= _NB_ORGS
     return clients[:_NB_ORGS]
+
+
+@pytest.fixture
+def workers(clients):
+    """Override workers fixture to return one worker per org.
+
+    The compute plan shape does not depend depend on the network topology (that is to
+    say the number of orgs). The compute plan shape will be exactly the same with /
+    without the local debug mode.
+    """
+    return [client.organization_info().organization_id for client in clients]
 
 
 @pytest.fixture
@@ -296,7 +308,7 @@ def inputs(datasamples_folders, factory, clients, channel, algo_dockerfile):
 
 @pytest.mark.slow
 @pytest.mark.workflows
-def test_mnist(factory, inputs, clients, cfg: Settings):
+def test_mnist(factory, inputs, clients, cfg: Settings, workers: typing.List[str]):
     client = clients[0]
     nb_rounds = 20
     testing_rounds = (1, 5, 10, 15, 20)
@@ -322,8 +334,8 @@ def test_mnist(factory, inputs, clients, cfg: Settings):
 
             if aggregate_spec:
                 input_models = FLTaskInputGenerator.composite_to_local(
-                    composite_specs[idx].composite_traintuple_id
-                ) + FLTaskInputGenerator.aggregate_to_shared(aggregate_spec.aggregatetuple_id)
+                    composite_specs[idx].task_id
+                ) + FLTaskInputGenerator.aggregate_to_shared(aggregate_spec.task_id)
             else:
                 input_models = []
 
@@ -337,13 +349,14 @@ def test_mnist(factory, inputs, clients, cfg: Settings):
                 metadata={
                     "round_idx": round_idx,
                 },
+                worker=workers[idx],
             )
 
         aggregate_spec = cp_spec.create_aggregatetuple(
             aggregate_algo=inputs.aggregate_algo,
             worker=aggregate_worker,
             inputs=FLTaskInputGenerator.composites_to_aggregate(
-                [composite_spec.composite_traintuple_id for composite_spec in composite_specs]
+                [composite_spec.task_id for composite_spec in composite_specs]
             ),
             metadata={
                 "round_idx": round_idx,
@@ -356,31 +369,34 @@ def test_mnist(factory, inputs, clients, cfg: Settings):
                 predicttuple_spec = cp_spec.create_predicttuple(
                     algo=inputs.predict_algo,
                     inputs=org_inputs.dataset.test_data_inputs
-                    + FLTaskInputGenerator.composite_to_predict(composite_specs[idx].composite_traintuple_id),
+                    + FLTaskInputGenerator.composite_to_predict(composite_specs[idx].task_id),
                     metadata={
                         "round_idx": round_idx,
                     },
+                    worker=workers[idx],
                 )
                 cp_spec.create_testtuple(
                     algo=org_inputs.metric,
                     inputs=org_inputs.dataset.test_data_inputs
-                    + FLTaskInputGenerator.predict_to_test(predicttuple_spec.predicttuple_id),
+                    + FLTaskInputGenerator.predict_to_test(predicttuple_spec.task_id),
                     metadata={
                         "round_idx": round_idx,
                     },
+                    worker=workers[idx],
                 )
 
     cp = client.add_compute_plan(cp_spec)
     cp = client.wait(cp, timeout=30 * 60 * 60)
 
     # display all testtuples performances
-    testtuples = client.list_compute_plan_testtuples(cp.key)
+    tasks = client.list_compute_plan_tasks(cp.key)
+    testtuples = [t for t in tasks if OutputIdentifiers.performance in t.outputs]
     testtuples = sorted(testtuples, key=lambda x: (x.rank, x.worker))
     for testtuple in testtuples:
         print(
             f"testtuple({testtuple.worker}) - rank {testtuple.rank} "
             f"- round {testtuple.metadata['round_idx']} "
-            f"perf: {list(testtuple.test.perfs.values())[0]}"
+            f"perf: {testtuple.outputs[OutputIdentifiers.performance]}"
         )
 
     nb_samples = (cfg.mnist_workflow.train_samples, cfg.mnist_workflow.test_samples)
@@ -390,7 +406,7 @@ def test_mnist(factory, inputs, clients, cfg: Settings):
         expected_perf = _EXPECTED_RESULTS[nb_samples]
         assert all(
             [
-                list(testtuple.test.perfs.values())[0] == pytest.approx(perf)
+                testtuple.outputs[OutputIdentifiers.performance].value == pytest.approx(perf)
                 for (perf, testtuple) in zip(expected_perf, testtuples)
             ]
         )
@@ -398,4 +414,6 @@ def test_mnist(factory, inputs, clients, cfg: Settings):
         # check perf is as good as expected: after 20 rounds we expect a performance of
         # around 0.86. To avoid a flaky test a lower performance is expected.
         mininum_expected_perf = 0.85
-        assert all([list(testtuple.test.perfs.values())[0] > mininum_expected_perf for testtuple in testtuples])
+        assert all(
+            [testtuple.outputs[OutputIdentifiers.performance] > mininum_expected_perf for testtuple in testtuples]
+        )

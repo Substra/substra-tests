@@ -76,25 +76,9 @@ class Client:
         key = self._client.add_algo(spec.dict(), *args, **kwargs)
         return self._client.get_algo(key)
 
-    def add_traintuple(self, spec, *args, **kwargs):
-        key = self._client.add_traintuple(spec.dict(), *args, **kwargs)
-        return self._client.get_traintuple(key)
-
-    def add_aggregatetuple(self, spec, *args, **kwargs):
-        key = self._client.add_aggregatetuple(spec.dict(), *args, **kwargs)
-        return self._client.get_aggregatetuple(key)
-
-    def add_composite_traintuple(self, spec, *args, **kwargs):
-        key = self._client.add_composite_traintuple(spec.dict(), *args, **kwargs)
-        return self._client.get_composite_traintuple(key)
-
-    def add_predicttuple(self, spec, *args, **kwargs):
-        key = self._client.add_predicttuple(spec.dict(), *args, **kwargs)
-        return self._client.get_predicttuple(key)
-
-    def add_testtuple(self, spec, *args, **kwargs):
-        key = self._client.add_testtuple(spec.dict(), *args, **kwargs)
-        return self._client.get_testtuple(key)
+    def add_task(self, spec, *args, **kwargs):
+        key = self._client.add_task(spec.dict(), *args, **kwargs)
+        return self._client.get_task(key)
 
     def add_compute_plan(self, spec, *args, **kwargs):
         return self._client.add_compute_plan(spec.dict(), *args, **kwargs)
@@ -132,35 +116,11 @@ class Client:
     def list_dataset(self, *args, **kwargs):
         return self._client.list_dataset(*args, **kwargs)
 
-    def get_traintuple(self, *args, **kwargs):
-        return self._client.get_traintuple(*args, **kwargs)
+    def get_task(self, *args, **kwargs):
+        return self._client.get_task(*args, **kwargs)
 
-    def list_traintuple(self, *args, **kwargs):
-        return self._client.list_traintuple(*args, **kwargs)
-
-    def get_aggregatetuple(self, *args, **kwargs):
-        return self._client.get_aggregatetuple(*args, **kwargs)
-
-    def list_aggregatetuple(self, *args, **kwargs):
-        return self._client.list_aggregatetuple(*args, **kwargs)
-
-    def get_composite_traintuple(self, *args, **kwargs):
-        return self._client.get_composite_traintuple(*args, **kwargs)
-
-    def list_composite_traintuple(self, *args, **kwargs):
-        return self._client.list_composite_traintuple(*args, **kwargs)
-
-    def get_predicttuple(self, *args, **kwargs):
-        return self._client.get_predicttuple(*args, **kwargs)
-
-    def list_predicttuple(self, *args, **kwargs):
-        return self._client.list_predicttuple(*args, **kwargs)
-
-    def get_testtuple(self, *args, **kwargs):
-        return self._client.get_testtuple(*args, **kwargs)
-
-    def list_testtuple(self, *args, **kwargs):
-        return self._client.list_testtuple(*args, **kwargs)
+    def list_task(self, *args, **kwargs):
+        return self._client.list_task(*args, **kwargs)
 
     def list_organization(self, *args, **kwargs):
         return self._client.list_organization(*args, **kwargs)
@@ -183,9 +143,9 @@ class Client:
             with open(path, "rb") as f:
                 return f.read()
 
-    def download_trunk_model_from_composite_traintuple(self, composite_traintuple_key):
+    def download_model_from_task(self, task_key, identifier):
         with tempfile.TemporaryDirectory() as tmp:
-            path = self._client.download_trunk_model_from_composite_traintuple(composite_traintuple_key, tmp)
+            path = self._client.download_model_from_task(task_key, identifier=identifier, folder=tmp)
             with open(path, "rb") as f:
                 return f.read()
 
@@ -210,46 +170,15 @@ class Client:
     def link_dataset_with_data_samples(self, dataset, data_samples):
         self._client.link_dataset_with_data_samples(dataset.key, data_samples)
 
-    def list_compute_plan_traintuples(self, compute_plan_key):
-        filters = {"compute_plan_key": [compute_plan_key]}
-        tuples = self.list_traintuple(filters=filters)
-        tuples = sorted(tuples, key=lambda t: t.rank)
-        return tuples
-
-    def list_compute_plan_composite_traintuples(self, compute_plan_key):
-        filters = {"compute_plan_key": [compute_plan_key]}
-        tuples = self.list_composite_traintuple(filters=filters)
-        tuples = sorted(tuples, key=lambda t: t.rank)
-        return tuples
-
-    def list_compute_plan_aggregatetuples(self, compute_plan_key):
-        filters = {"compute_plan_key": [compute_plan_key]}
-        tuples = self.list_aggregatetuple(filters=filters)
-        tuples = sorted(tuples, key=lambda t: t.rank)
-        return tuples
-
-    def list_compute_plan_predicttuples(self, compute_plan_key):
-        filters = {"compute_plan_key": [compute_plan_key]}
-        tuples = self.list_predicttuple(filters=filters)
-        tuples = sorted(tuples, key=lambda t: t.rank)
-        return tuples
-
-    def list_compute_plan_testtuples(self, compute_plan_key):
-        filters = {"compute_plan_key": [compute_plan_key]}
-        tuples = self.list_testtuple(filters=filters)
-        tuples = sorted(tuples, key=lambda t: t.rank)
-        return tuples
+    def list_compute_plan_tasks(self, compute_plan_key):
+        return self.list_task(filters={"compute_plan_key": [compute_plan_key]})
 
     def get(self, asset):
         """Asset getter (valid only for first class asset)."""
         getters = {
             models.Dataset: self.get_dataset,
             models.Algo: self.get_algo,
-            models.Traintuple: self.get_traintuple,
-            models.Predicttuple: self.get_predicttuple,
-            models.Testtuple: self.get_testtuple,
-            models.Aggregatetuple: self.get_aggregatetuple,
-            models.CompositeTraintuple: self.get_composite_traintuple,
+            models.Task: self.get_task,
             models.ComputePlan: self.get_compute_plan,
             models.DataSample: self.get_data_sample,
         }
@@ -318,3 +247,6 @@ class Client:
 
     def get_compute_task_profiling(self, task_key: str):
         return self._api_client.get_compute_task_profiling(task_key)
+
+    def organization_info(self):
+        return self._client.organization_info()
