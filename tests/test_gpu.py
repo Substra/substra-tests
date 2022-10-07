@@ -43,7 +43,7 @@ def save_model(model, path):
         return json.dump(model, f)
 
 if __name__ == '__main__':
-    tools.function.execute_cli([train, predict])
+    tools.execute([train, predict])
 """  # noqa
     spec = factory.create_algo(AlgoCategory.simple, dockerfile=dockerfile, py_script=script)
     algo = client.add_algo(spec)

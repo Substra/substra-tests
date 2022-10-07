@@ -821,7 +821,7 @@ def save_predictions(predictions, path):
         return json.dump(predictions, f)
 
 if __name__ == '__main__':
-    tools.function.execute_cli([train, predict])
+    tools.execute([train, predict])
 """  # noqa
     spec = factory.create_algo(AlgoCategory.simple, py_script=algo_script, dockerfile=dockerfile)
     algo = client.add_algo(spec)
@@ -864,7 +864,7 @@ def save_predictions(predictions, path):
         return json.dump(predictions, f)
 
 if __name__ == '__main__':
-    tools.function.execute_cli([train, predict])
+    tools.execute([train, predict])
 """  # noqa
 
 
