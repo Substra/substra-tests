@@ -264,8 +264,8 @@ def test_composite_traintuple_execution_failure(factory, client, default_dataset
 
         assert composite_traintuple.status == Status.failed
         assert composite_traintuple.error_type == substra.sdk.models.TaskErrorType.execution
-        assert composite_traintuple[OutputIdentifiers.local].value is None
-        assert composite_traintuple[OutputIdentifiers.shared].value is None
+        assert composite_traintuple.outputs[OutputIdentifiers.local].value is None
+        assert composite_traintuple.outputs[OutputIdentifiers.shared].value is None
         assert "Traceback (most recent call last):" in client.download_logs(composite_traintuple.key)
 
     elif client.backend_mode in (substra.BackendType.LOCAL_SUBPROCESS, substra.BackendType.LOCAL_DOCKER):

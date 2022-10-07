@@ -161,7 +161,7 @@ def test_permissions(permissions_1, permissions_2, expected_permissions, factory
         algo=algo_2,
         inputs=dataset_1.train_data_inputs,
         outputs=FLTaskOutputGenerator.traintuple(authorized_ids=expected_permissions.authorized_ids),
-        worker=workers[1],
+        worker=workers[0],
     )
     channel.wait_for_asset_synchronized(algo_2)
     traintuple = client_1.add_task(spec)
@@ -262,7 +262,7 @@ def test_permissions_model_process(
         algo=algo_2,
         inputs=dataset_2.train_data_inputs
         + FLTaskInputGenerator.trains_to_train([traintuple_1.key]),
-        worker=workers[0],
+        worker=workers[1],
     )
 
     if expected_success:

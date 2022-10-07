@@ -388,7 +388,7 @@ def test_compute_plan_single_client_failure(factory, client, default_dataset, de
     cp_spec.create_testtuple(
         algo=default_metric,
         inputs=default_dataset.test_data_inputs
-        + FLTaskInputGenerator.predict_to_test(predicttuple_spec_1.predicttuple_id),
+        + FLTaskInputGenerator.predict_to_test(predicttuple_spec_1.task_id),
         worker=worker,
     )
 
@@ -409,7 +409,7 @@ def test_compute_plan_single_client_failure(factory, client, default_dataset, de
     cp_spec.create_testtuple(
         algo=default_metric,
         inputs=default_dataset.test_data_inputs
-        + FLTaskInputGenerator.predict_to_test(predicttuple_spec_2.predicttuple_id),
+        + FLTaskInputGenerator.predict_to_test(predicttuple_spec_2.task_id),
         worker=worker,
     )
 
@@ -430,7 +430,7 @@ def test_compute_plan_single_client_failure(factory, client, default_dataset, de
     cp_spec.create_testtuple(
         algo=default_metric,
         inputs=default_dataset.test_data_inputs
-        + FLTaskInputGenerator.predict_to_test(predicttuple_spec_3.predicttuple_id),
+        + FLTaskInputGenerator.predict_to_test(predicttuple_spec_3.task_id),
         worker=worker,
     )
 

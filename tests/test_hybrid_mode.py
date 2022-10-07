@@ -137,7 +137,7 @@ def test_debug_compute_plan_aggregate_composite(network, client, hybrid_client, 
         )
         cp_spec.create_testtuple(
             algo=metric,
-            inputs=dataset.train_data_inputs + FLTaskInputGenerator.predict_to_test(spec.predicttuple_id),
+            inputs=dataset.train_data_inputs + FLTaskInputGenerator.predict_to_test(spec.task_id),
             worker=worker,
         )
 
