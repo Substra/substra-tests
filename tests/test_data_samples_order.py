@@ -118,7 +118,7 @@ import json
 
 def score(inputs, outputs, task_properties):
     datasamples = inputs['{InputIdentifiers.datasamples}']
-    y_pred = load_predictions(inputs['{InputIdentifiers.predictions}'])
+    y_pred = _load_predictions(inputs['{InputIdentifiers.predictions}'])
     y_pred_data_sample_keys = [folder.split('/')[-1] for folder in y_pred]
     assert y_pred_data_sample_keys == {{data_sample_keys}}
 
@@ -132,7 +132,7 @@ def score(inputs, outputs, task_properties):
 
     tools.save_performance(1.0, outputs['{OutputIdentifiers.performance}'])
 
-def load_predictions(path):
+def _load_predictions(path):
     with open(path) as f:
         return json.load(f)
 

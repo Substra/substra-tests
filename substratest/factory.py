@@ -66,12 +66,12 @@ import substratools as tools
 
 def score(inputs, outputs, task_properties):
     y_true = inputs['{InputIdentifiers.datasamples}'][1]
-    y_pred = load_predictions(inputs['{InputIdentifiers.predictions}'])
+    y_pred = _load_predictions(inputs['{InputIdentifiers.predictions}'])
     res = sum(y_pred) - sum(y_true)
     print(f'metrics, y_true: {{y_true}}, y_pred: {{y_pred}}, result: {{res}}')
     tools.save_performance(res + $offset, outputs['{OutputIdentifiers.performance}'])
 
-def load_predictions(path):
+def _load_predictions(path):
     with open(path) as f:
         return json.load(f)
 

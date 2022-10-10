@@ -5,12 +5,12 @@ from sklearn.metrics import accuracy_score
 
 def score(inputs, outputs, task_properties):
     y_true = inputs["datasamples"]["y"]
-    y_pred = load_predictions(inputs["predictions"])
+    y_pred = _load_predictions(inputs["predictions"])
     perf = accuracy_score(y_true=y_true, y_pred=y_pred)
     tools.save_performance(perf, outputs["performance"])
 
 
-def load_predictions(path):
+def _load_predictions(path):
     """Load predictions."""
     return np.load(path)
 
