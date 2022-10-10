@@ -13,11 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-<<<<<<< HEAD
 - Use the generic task (#221)
-=======
 - Apply changes from algo to function in substratools (#224)
->>>>>>> 3837460 (update changelog)
 
 ## [0.35.0] - 2022-10-03
 
