@@ -76,7 +76,7 @@ def load_predictions(path):
         return json.load(f)
 
 if __name__ == '__main__':
-    tools.execute([score])
+    tools.execute(score)
 """
 )  # noqa
 
@@ -130,7 +130,7 @@ def save_predictions(predictions, path):
         return json.dump(predictions, f)
 
 if __name__ == '__main__':
-    tools.execute([train, predict])
+    tools.execute(train, predict)
 """  # noqa
 
 DEFAULT_AGGREGATE_ALGO_SCRIPT = f"""
@@ -171,7 +171,7 @@ def save_predictions(predictions, path):
         return json.dump(predictions, f)
 
 if __name__ == '__main__':
-    tools.execute([aggregate, predict])
+    tools.execute(aggregate, predict)
 """  # noqa
 
 # TODO we should have a different serializer for head and trunk models
@@ -249,7 +249,7 @@ def save_predictions(predictions, path):
         return json.dump(predictions, f)
 
 if __name__ == '__main__':
-    tools.execute([train, predict])
+    tools.execute(train, predict)
 """  # noqa
 
 DEFAULT_ALGO_METHOD_NAME = {

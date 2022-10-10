@@ -56,7 +56,7 @@ def save_predictions(predictions, path):
         return json.dump(predictions, f)
 
 if __name__ == '__main__':
-    tools.execute([train, predict])
+    tools.execute(train, predict)
 """
 
 TEMPLATE_COMPOSITE_ALGO_SCRIPT = f"""
@@ -108,7 +108,7 @@ def save_predictions(predictions, path):
         return json.dump(predictions, f)
 
 if __name__ == '__main__':
-    tools.execute([train, predict])
+    tools.execute(train, predict)
 """
 
 TEMPLATE_METRIC_SCRIPT = f"""
@@ -137,7 +137,7 @@ def load_predictions(path):
         return json.load(f)
 
 if __name__ == "__main__":
-    tools.execute([score])
+    tools.execute(score)
 """
 
 
@@ -338,7 +338,7 @@ def save_predictions(predictions, path):
         return json.dump(predictions, f)
 
 if __name__ == '__main__':
-    tools.execute([train, predict])
+    tools.execute(train, predict)
 """,
     )
     algo = client.add_algo(spec)

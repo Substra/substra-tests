@@ -100,4 +100,4 @@ def save_predictions(predictions, predictions_path):
 
 
 if __name__ == "__main__":
-    tools.execute([aggregate, predict])
+    tools.execute(aggregate, predict)
