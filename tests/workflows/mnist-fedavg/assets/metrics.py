@@ -17,4 +17,4 @@ def _load_predictions(path):
 
 
 if __name__ == "__main__":
-    tools.execute(score)
+    tools.execute()

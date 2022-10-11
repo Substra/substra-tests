@@ -29,9 +29,10 @@ def train(inputs, outputs, task_properties):
     assert torch.cuda.is_available()
     save_model(['test'], outputs['{OutputIdentifiers.model}'])
 
-
 @tools.register
+def predict(X, model):
     assert torch.cuda.is_available()
+    res = [x * model['value'] for x in X]
     print(f'Predict, get X: {{X}}, model: {{model}}, return {{res}}')
     return res
 
