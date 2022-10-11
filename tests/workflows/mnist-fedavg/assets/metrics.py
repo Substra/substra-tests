@@ -3,6 +3,7 @@ import substratools as tools
 from sklearn.metrics import accuracy_score
 
 
+@tools.register
 def score(inputs, outputs, task_properties):
     y_true = inputs["datasamples"]["y"]
     y_pred = _load_predictions(inputs["predictions"])

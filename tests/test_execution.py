@@ -797,6 +797,8 @@ import json
 import substratools as tools
 
 from pathlib import Path
+
+@tools.register
 def train(inputs, outputs, task_properties):
     model_path = Path.cwd() / 'model' / 'model'
     assert model_path.is_file()
@@ -805,6 +807,7 @@ def train(inputs, outputs, task_properties):
     save_model(dict(), outputs['{OutputIdentifiers.model}'])
 
 
+@tools.register
 def predict(inputs, outputs, task_properties):
     save_predictions(None, outputs['{OutputIdentifiers.predictions}'])
 
@@ -821,7 +824,7 @@ def save_predictions(predictions, path):
         return json.dump(predictions, f)
 
 if __name__ == '__main__':
-    tools.execute(train, predict)
+    tools.execute()
 """  # noqa
     spec = factory.create_algo(AlgoCategory.simple, py_script=algo_script, dockerfile=dockerfile)
     algo = client.add_algo(spec)
@@ -835,6 +838,7 @@ import json
 import substratools as tools
 
 
+@tools.register
 def train(inputs, outputs, task_properties):
 
     from pathlib import Path
@@ -843,6 +847,7 @@ def train(inputs, outputs, task_properties):
 
     save_model({{'value': 42 }}, outputs['{OutputIdentifiers.model}'])
 
+@tools.register
 def predict(inputs, outputs, task_properties):
     X = inputs['{InputIdentifiers.datasamples}'][0]
     model = load_model(inputs['{InputIdentifiers.model}'])
@@ -864,7 +869,7 @@ def save_predictions(predictions, path):
         return json.dump(predictions, f)
 
 if __name__ == '__main__':
-    tools.execute(train, predict)
+    tools.execute()
 """  # noqa
 
 

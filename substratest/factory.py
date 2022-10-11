@@ -64,6 +64,10 @@ TEMPLATED_DEFAULT_METRICS_SCRIPT = string.Template(
 import json
 import substratools as tools
 
+<<<<<<< HEAD
+=======
+@tools.register
+>>>>>>> 5cc6037 (one commit)
 def score(inputs, outputs, task_properties):
     y_true = inputs['{InputIdentifiers.datasamples}'][1]
     y_pred = _load_predictions(inputs['{InputIdentifiers.predictions}'])
@@ -76,7 +80,11 @@ def _load_predictions(path):
         return json.load(f)
 
 if __name__ == '__main__':
+<<<<<<< HEAD
     tools.execute(score)
+=======
+    tools.execute()
+>>>>>>> 5cc6037 (one commit)
 """
 )  # noqa
 
@@ -84,6 +92,10 @@ DEFAULT_ALGO_SCRIPT = f"""
 import json
 import substratools as tools
 
+<<<<<<< HEAD
+=======
+@tools.register
+>>>>>>> 5cc6037 (one commit)
 def train(inputs, outputs, task_properties):
 
     X = inputs['{InputIdentifiers.datasamples}'][0]
@@ -109,6 +121,10 @@ def train(inputs, outputs, task_properties):
     print(f'Train, return {{res}}')
     save_model(res, outputs['{OutputIdentifiers.model}'])
 
+<<<<<<< HEAD
+=======
+@tools.register
+>>>>>>> 5cc6037 (one commit)
 def predict(inputs, outputs, task_properties):
     X = inputs['{InputIdentifiers.datasamples}'][0]
     model = load_model(inputs['{InputIdentifiers.model}'])
@@ -130,13 +146,21 @@ def save_predictions(predictions, path):
         return json.dump(predictions, f)
 
 if __name__ == '__main__':
+<<<<<<< HEAD
     tools.execute(train, predict)
+=======
+    tools.execute()
+>>>>>>> 5cc6037 (one commit)
 """  # noqa
 
 DEFAULT_AGGREGATE_ALGO_SCRIPT = f"""
 import json
 import substratools as tools
 
+<<<<<<< HEAD
+=======
+@tools.register
+>>>>>>> 5cc6037 (one commit)
 def aggregate(inputs, outputs, task_properties):
     rank = task_properties['{InputIdentifiers.rank}']
     models = []
@@ -150,6 +174,10 @@ def aggregate(inputs, outputs, task_properties):
     print(f'Aggregate result: {{res}}')
     save_model(res, outputs['{OutputIdentifiers.model}'])
 
+<<<<<<< HEAD
+=======
+@tools.register
+>>>>>>> 5cc6037 (one commit)
 def predict(inputs, outputs, task_properties):
     X = inputs['{InputIdentifiers.datasamples}'][0]
     model = load_model(inputs['{InputIdentifiers.model}'])
@@ -171,7 +199,7 @@ def save_predictions(predictions, path):
         return json.dump(predictions, f)
 
 if __name__ == '__main__':
-    tools.execute(aggregate, predict)
+    tools.execute()
 """  # noqa
 
 # TODO we should have a different serializer for head and trunk models
@@ -180,6 +208,7 @@ DEFAULT_COMPOSITE_ALGO_SCRIPT = f"""
 import json
 import substratools as tools
 
+@tools.register
 def train(inputs, outputs, task_properties):
     X = inputs['{InputIdentifiers.datasamples}'][0]
     y = inputs['{InputIdentifiers.datasamples}'][1]
@@ -211,7 +240,7 @@ def train(inputs, outputs, task_properties):
     save_head_model(res_head_model, outputs['{OutputIdentifiers.local}'])
     save_trunk_model(res_trunk_model, outputs['{OutputIdentifiers.shared}'])
 
-
+@tools.register
 def predict(inputs, outputs, task_properties):
     X = inputs['{InputIdentifiers.datasamples}'][0]
     head_model = load_head_model(inputs['{InputIdentifiers.local}'])
@@ -249,7 +278,7 @@ def save_predictions(predictions, path):
         return json.dump(predictions, f)
 
 if __name__ == '__main__':
-    tools.execute(train, predict)
+    tools.execute()
 """  # noqa
 
 DEFAULT_ALGO_METHOD_NAME = {

@@ -23,6 +23,7 @@ import json
 import substratools as tools
 
 
+@tools.register
 def train(inputs, outputs, task_properties):
 
     models = []
@@ -35,9 +36,8 @@ def train(inputs, outputs, task_properties):
 
     save_model(([0, 1], [0, 2]), outputs['{OutputIdentifiers.model}'])
 
-def predict(inputs, outputs, task_properties):
+@tools.register
     # Check that the order of X is the same as the one passed to add_task
-    datasamples = inputs['{InputIdentifiers.datasamples}']
     datasample_keys = [d.split("/")[-1] for d in datasamples]
     model = load_model(inputs['{InputIdentifiers.model}'])
     assert datasample_keys == {{test_data_sample_keys}}, datasample_keys
@@ -56,13 +56,14 @@ def save_predictions(predictions, path):
         return json.dump(predictions, f)
 
 if __name__ == '__main__':
-    tools.execute(train, predict)
+    tools.execute()
 """
 
 TEMPLATE_COMPOSITE_ALGO_SCRIPT = f"""
 import json
 import substratools as tools
 
+@tools.register
 def train(inputs, outputs, task_properties):
     # Check that the order of X is the same as the one passed to add_task
 
@@ -74,6 +75,7 @@ def train(inputs, outputs, task_properties):
     save_head_model([0, 1], outputs['{OutputIdentifiers.local}'])
     save_trunk_model([0, 2], outputs['{OutputIdentifiers.shared}'])
 
+@tools.register
 def predict(inputs, outputs, task_properties):
     # Check that the order of X is the same as the one passed to add_task
     data_samples = inputs['{InputIdentifiers.datasamples}']
@@ -108,7 +110,7 @@ def save_predictions(predictions, path):
         return json.dump(predictions, f)
 
 if __name__ == '__main__':
-    tools.execute(train, predict)
+    tools.execute()
 """
 
 TEMPLATE_METRIC_SCRIPT = f"""
@@ -116,6 +118,7 @@ import substratools as tools
 
 import json
 
+@tools.register
 def score(inputs, outputs, task_properties):
     datasamples = inputs['{InputIdentifiers.datasamples}']
     y_pred = _load_predictions(inputs['{InputIdentifiers.predictions}'])
@@ -137,7 +140,7 @@ def _load_predictions(path):
         return json.load(f)
 
 if __name__ == "__main__":
-    tools.execute(score)
+    tools.execute()
 """
 
 
@@ -316,12 +319,20 @@ import json
 import substratools as tools
 import os
 
+<<<<<<< HEAD
+=======
+@tools.register
+>>>>>>> 5cc6037 (one commit)
 def train(inputs, outputs, task_properties):
 
     datasamples = inputs['{InputIdentifiers.datasamples}']
     assert datasamples == list(range({batch_size})), datasamples
     save_model(0, outputs['{OutputIdentifiers.model}'])
 
+<<<<<<< HEAD
+=======
+@tools.register
+>>>>>>> 5cc6037 (one commit)
 def predict(inputs, outputs, task_properties):
     save_predictions(1, outputs['{OutputIdentifiers.predictions}'])
 
@@ -338,7 +349,11 @@ def save_predictions(predictions, path):
         return json.dump(predictions, f)
 
 if __name__ == '__main__':
+<<<<<<< HEAD
     tools.execute(train, predict)
+=======
+    tools.execute()
+>>>>>>> 5cc6037 (one commit)
 """,
     )
     algo = client.add_algo(spec)
