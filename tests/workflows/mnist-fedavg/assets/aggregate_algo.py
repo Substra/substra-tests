@@ -25,71 +25,79 @@ class Network(torch.nn.Module):
         return x
 
 
-class ModelAggregator(tools.AggregateAlgo):
-    """
-    Algo that aggregates models by simply averaging them as in FedAvg
-    """
+"""
+Algo that aggregates models by simply averaging them as in FedAvg
+"""
 
-    def aggregate(self, inputs, outputs, task_properties):
-        # get layers
-        inmodels = []
-        for m_path in inputs["models"]:
-            inmodels.append(self.load_model(m_path))
 
-        model = inmodels[0]
-        model_state_dict = model.state_dict()
+def aggregate(inputs, outputs, task_properties):
+    # get layers
+    inmodels = []
+    for m_path in inputs["models"]:
+        inmodels.append(load_model(m_path))
 
-        # average weights
-        for layer in model_state_dict:
-            weights = []
-            for _model in inmodels:
-                weights.append(_model.state_dict()[layer])
-            weights = torch.stack(weights)
-            model_state_dict[layer] = torch.mean(weights, dim=0)
+    model = inmodels[0]
+    model_state_dict = model.state_dict()
 
-        model.load_state_dict(model_state_dict)
+    # average weights
+    for layer in model_state_dict:
+        weights = []
+        for _model in inmodels:
+            weights.append(_model.state_dict()[layer])
+        weights = torch.stack(weights)
+        model_state_dict[layer] = torch.mean(weights, dim=0)
 
-        self.save_model(model, outputs["model"])
+    model.load_state_dict(model_state_dict)
 
-    def predict(self, inputs, outputs, task_properties):
-        X = inputs["datasamples"]["X"]
-        X = torch.FloatTensor(X)
+    save_model(model, outputs["model"])
 
-        model = self.load_model(inputs["models"])
-        model.eval()
-        # add the context manager to reduce computation overhead
-        with torch.no_grad():
-            y_pred = model(X)
 
-        y_pred = y_pred.data.cpu().numpy()
-        pred = np.argmax(y_pred, axis=1)
+def predict(inputs, outputs, task_properties):
+    X = inputs["datasamples"]["X"]
+    X = torch.FloatTensor(X)
 
-        self.save_predictions(pred, outputs["predictions"])
+    model = load_model(inputs["models"])
+    model.eval()
+    # add the context manager to reduce computation overhead
+    with torch.no_grad():
+        y_pred = model(X)
 
-    def load_model(self, path):
-        return torch.load(path)
+    y_pred = y_pred.data.cpu().numpy()
+    pred = np.argmax(y_pred, axis=1)
 
-    def save_model(self, model, path):
-        torch.save(model, path + ".h5")
-        shutil.move(path + ".h5", path)
-        assert os.path.isfile(path)
+    save_predictions(pred, outputs["predictions"])
 
-    def load_head_model(self, path):
-        return self.load_model(path)
 
-    def save_head_model(self, model, path):
-        self.save_model(model, path)
+def load_model(path):
+    return torch.load(path)
 
-    def load_trunk_model(self, path):
-        return self.load_model(path)
 
-    def save_trunk_model(self, model, path):
-        self.save_model(model, path)
+def save_model(model, path):
+    torch.save(model, path + ".h5")
+    shutil.move(path + ".h5", path)
+    assert os.path.isfile(path)
 
-    def save_predictions(self, predictions, predictions_path):
-        np.save(predictions_path, predictions)
-        shutil.move(str(predictions_path) + ".npy", predictions_path)
+
+def load_head_model(path):
+    return load_model(path)
+
+
+def save_head_model(model, path):
+    save_model(model, path)
+
+
+def load_trunk_model(path):
+    return load_model(path)
+
+
+def save_trunk_model(model, path):
+    save_model(model, path)
+
+
+def save_predictions(predictions, predictions_path):
+    np.save(predictions_path, predictions)
+    shutil.move(str(predictions_path) + ".npy", predictions_path)
 
 
 if __name__ == "__main__":
-    tools.algo.execute(ModelAggregator())
+    tools.execute(aggregate, predict)

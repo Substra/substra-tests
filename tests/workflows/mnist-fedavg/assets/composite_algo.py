@@ -59,74 +59,81 @@ def _fit(model, X, y, batch_size, num_updates, rank):
             optimizer.step()
 
 
-class ModelComp(tools.CompositeAlgo):
-    def train(self, inputs, outputs, task_properties):
-        torch.manual_seed(_SEED)  # initialize model weights
-        torch.use_deterministic_algorithms(True)
+def train(inputs, outputs, task_properties):
+    torch.manual_seed(_SEED)  # initialize model weights
+    torch.use_deterministic_algorithms(True)
 
-        head_model_path = inputs.get("local")
-        trunk_model_path = inputs.get("shared")
+    head_model_path = inputs.get("local")
+    trunk_model_path = inputs.get("shared")
 
-        head_model = self.load_head_model(head_model_path) if head_model_path is not None else torch.nn.Module()
-        trunk_model = self.load_trunk_model(trunk_model_path) if trunk_model_path is not None else Network()
+    head_model = load_head_model(head_model_path) if head_model_path is not None else torch.nn.Module()
+    trunk_model = load_trunk_model(trunk_model_path) if trunk_model_path is not None else Network()
 
-        X = inputs["datasamples"]["X"]
-        y = inputs["datasamples"]["y"]
-        rank = task_properties["rank"]
+    X = inputs["datasamples"]["X"]
+    y = inputs["datasamples"]["y"]
+    rank = task_properties["rank"]
 
-        _fit(
-            trunk_model,
-            X,
-            y,
-            batch_size=_BATCH_SIZE,
-            num_updates=_NUM_UPDATES,
-            rank=rank,
-        )
+    _fit(
+        trunk_model,
+        X,
+        y,
+        batch_size=_BATCH_SIZE,
+        num_updates=_NUM_UPDATES,
+        rank=rank,
+    )
 
-        self.save_head_model(head_model, outputs["local"])
-        self.save_trunk_model(trunk_model, outputs["shared"])
+    save_head_model(head_model, outputs["local"])
+    save_trunk_model(trunk_model, outputs["shared"])
 
-    def predict(self, inputs, outputs, task_properties):
 
-        trunk_model = self.load_trunk_model(inputs["shared"])
+def predict(inputs, outputs, task_properties):
 
-        X = inputs["datasamples"]["X"]
-        X = torch.FloatTensor(X)
-        trunk_model.eval()
+    trunk_model = load_trunk_model(inputs["shared"])
 
-        # add the context manager to reduce computation overhead
-        with torch.no_grad():
-            y_pred = trunk_model(X)
+    X = inputs["datasamples"]["X"]
+    X = torch.FloatTensor(X)
+    trunk_model.eval()
 
-        y_pred = y_pred.data.cpu().numpy()
-        pred = np.argmax(y_pred, axis=1)
+    # add the context manager to reduce computation overhead
+    with torch.no_grad():
+        y_pred = trunk_model(X)
 
-        self.save_predictions(pred, outputs["predictions"])
+    y_pred = y_pred.data.cpu().numpy()
+    pred = np.argmax(y_pred, axis=1)
 
-    def load_model(self, path):
-        return torch.load(path)
+    save_predictions(pred, outputs["predictions"])
 
-    def save_model(self, model, path):
-        torch.save(model, path + ".h5")
-        shutil.move(path + ".h5", path)
-        assert os.path.isfile(path)
 
-    def load_head_model(self, path):
-        return self.load_model(path)
+def load_model(path):
+    return torch.load(path)
 
-    def save_head_model(self, model, path):
-        self.save_model(model, path)
 
-    def load_trunk_model(self, path):
-        return self.load_model(path)
+def save_model(model, path):
+    torch.save(model, path + ".h5")
+    shutil.move(path + ".h5", path)
+    assert os.path.isfile(path)
 
-    def save_trunk_model(self, model, path):
-        self.save_model(model, path)
 
-    def save_predictions(self, predictions, predictions_path):
-        np.save(predictions_path, predictions)
-        shutil.move(str(predictions_path) + ".npy", predictions_path)
+def load_head_model(path):
+    return load_model(path)
+
+
+def save_head_model(model, path):
+    save_model(model, path)
+
+
+def load_trunk_model(path):
+    return load_model(path)
+
+
+def save_trunk_model(model, path):
+    save_model(model, path)
+
+
+def save_predictions(predictions, predictions_path):
+    np.save(predictions_path, predictions)
+    shutil.move(str(predictions_path) + ".npy", predictions_path)
 
 
 if __name__ == "__main__":
-    tools.algo.execute(ModelComp())
+    tools.execute(train, predict)

@@ -260,8 +260,7 @@ def test_permissions_model_process(
 
     spec = factory.create_traintuple(
         algo=algo_2,
-        inputs=dataset_2.train_data_inputs
-        + FLTaskInputGenerator.trains_to_train([traintuple_1.key]),
+        inputs=dataset_2.train_data_inputs + FLTaskInputGenerator.trains_to_train([traintuple_1.key]),
         worker=workers[1],
     )
 

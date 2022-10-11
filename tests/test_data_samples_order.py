@@ -23,87 +23,92 @@ import json
 import substratools as tools
 
 
-class TestAlgo(tools.Algo):
-    def train(self, inputs, outputs, task_properties):
+def train(inputs, outputs, task_properties):
 
-        models = []
-        for m_path in inputs.get('{InputIdentifiers.models}', []):
-            models.append(self.load_model(m_path))
+    models = []
+    for m_path in inputs.get('{InputIdentifiers.models}', []):
+        models.append(load_model(m_path))
 
-        # Check that the order of X is the same as the one passed to add_task
-        datasample_keys = [d.split("/")[-1] for d in inputs['{InputIdentifiers.datasamples}']]
-        assert datasample_keys == {{data_sample_keys}}, datasample_keys
+    # Check that the order of X is the same as the one passed to add_task
+    datasample_keys = [d.split("/")[-1] for d in inputs['{InputIdentifiers.datasamples}']]
+    assert datasample_keys == {{data_sample_keys}}, datasample_keys
 
-        self.save_model(([0, 1], [0, 2]), outputs['{OutputIdentifiers.model}'])
+    save_model(([0, 1], [0, 2]), outputs['{OutputIdentifiers.model}'])
 
-    def predict(self, inputs, outputs, task_properties):
-        # Check that the order of X is the same as the one passed to add_task
-        datasamples = inputs['{InputIdentifiers.datasamples}']
-        datasample_keys = [d.split("/")[-1] for d in datasamples]
-        model = self.load_model(inputs['{InputIdentifiers.model}'])
-        assert datasample_keys == {{test_data_sample_keys}}, datasample_keys
-        self.save_predictions(datasamples, outputs['{OutputIdentifiers.predictions}'])
+def predict(inputs, outputs, task_properties):
+    # Check that the order of X is the same as the one passed to add_task
+    datasamples = inputs['{InputIdentifiers.datasamples}']
+    datasample_keys = [d.split("/")[-1] for d in datasamples]
+    model = load_model(inputs['{InputIdentifiers.model}'])
+    assert datasample_keys == {{test_data_sample_keys}}, datasample_keys
+    save_predictions(datasamples, outputs['{OutputIdentifiers.predictions}'])
 
-    def load_model(self, path):
-        with open(path) as f:
-            return json.load(f)
+def load_model(path):
+    with open(path) as f:
+        return json.load(f)
 
-    def save_model(self, model, path):
-        with open(path, 'w') as f:
-            return json.dump(model, f)
+def save_model(model, path):
+    with open(path, 'w') as f:
+        return json.dump(model, f)
 
-    def save_predictions(self, predictions, path):
-        with open(path, 'w') as f:
-            return json.dump(predictions, f)
+def save_predictions(predictions, path):
+    with open(path, 'w') as f:
+        return json.dump(predictions, f)
 
 if __name__ == '__main__':
-    tools.algo.execute(TestAlgo())
+    tools.execute(train, predict)
 """
 
 TEMPLATE_COMPOSITE_ALGO_SCRIPT = f"""
 import json
 import substratools as tools
 
-class TestCompositeAlgo(tools.CompositeAlgo):
-    def train(self, inputs, outputs, task_properties):
-        # Check that the order of X is the same as the one passed to add_task
+def train(inputs, outputs, task_properties):
+    # Check that the order of X is the same as the one passed to add_task
 
-        data_samples = inputs['{InputIdentifiers.datasamples}']
+    data_samples = inputs['{InputIdentifiers.datasamples}']
 
-        data_sample_keys = [folder.split('/')[-1] for folder in data_samples]
-        assert data_sample_keys == {{data_sample_keys}}, data_sample_keys
+    data_sample_keys = [folder.split('/')[-1] for folder in data_samples]
+    assert data_sample_keys == {{data_sample_keys}}, data_sample_keys
 
-        self.save_head_model([0, 1], outputs['{OutputIdentifiers.local}'])
-        self.save_trunk_model([0, 2], outputs['{OutputIdentifiers.shared}'])
+    save_head_model([0, 1], outputs['{OutputIdentifiers.local}'])
+    save_trunk_model([0, 2], outputs['{OutputIdentifiers.shared}'])
 
-    def predict(self, inputs, outputs, task_properties):
-        # Check that the order of X is the same as the one passed to add_task
-        data_samples = inputs['{InputIdentifiers.datasamples}']
+def predict(inputs, outputs, task_properties):
+    # Check that the order of X is the same as the one passed to add_task
+    data_samples = inputs['{InputIdentifiers.datasamples}']
 
-        test_data_sample_keys = [folder.split('/')[-1] for folder in data_samples]
-        assert test_data_sample_keys == {{test_data_sample_keys}}, test_data_sample_keys
+    test_data_sample_keys = [folder.split('/')[-1] for folder in data_samples]
+    assert test_data_sample_keys == {{test_data_sample_keys}}, test_data_sample_keys
 
-        self.save_predictions(data_samples, outputs['{OutputIdentifiers.predictions}'])
+    save_predictions(data_samples, outputs['{OutputIdentifiers.predictions}'])
 
-    def load_head_model(self, path):
-        return self._load_model(path)
-    def save_head_model(self, model, path):
-        return self._save_model(model, path)
-    def load_trunk_model(self, path):
-        return self._load_model(path)
-    def save_trunk_model(self, model, path):
-        return self._save_model(model, path)
-    def _load_model(self, path):
-        with open(path) as f:
-            return json.load(f)
-    def _save_model(self, model, path):
-        with open(path, 'w') as f:
-            return json.dump(model, f)
-    def save_predictions(self, predictions, path):
-        with open(path, 'w') as f:
-            return json.dump(predictions, f)
+def load_head_model(path):
+    return _load_model(path)
+
+def save_head_model(model, path):
+    return _save_model(model, path)
+
+def load_trunk_model(path):
+    return _load_model(path)
+
+def save_trunk_model(model, path):
+    return _save_model(model, path)
+
+def _load_model(path):
+    with open(path) as f:
+        return json.load(f)
+
+def _save_model(model, path):
+    with open(path, 'w') as f:
+        return json.dump(model, f)
+
+def save_predictions(predictions, path):
+    with open(path, 'w') as f:
+        return json.dump(predictions, f)
+
 if __name__ == '__main__':
-    tools.algo.execute(TestCompositeAlgo())
+    tools.execute(train, predict)
 """
 
 TEMPLATE_METRIC_SCRIPT = f"""
@@ -111,29 +116,28 @@ import substratools as tools
 
 import json
 
-class Metrics(tools.MetricAlgo):
-    def score(self, inputs, outputs, task_properties):
-        datasamples = inputs['{InputIdentifiers.datasamples}']
-        y_pred = self.load_predictions(inputs['{InputIdentifiers.predictions}'])
-        y_pred_data_sample_keys = [folder.split('/')[-1] for folder in y_pred]
-        assert y_pred_data_sample_keys == {{data_sample_keys}}
+def score(inputs, outputs, task_properties):
+    datasamples = inputs['{InputIdentifiers.datasamples}']
+    y_pred = _load_predictions(inputs['{InputIdentifiers.predictions}'])
+    y_pred_data_sample_keys = [folder.split('/')[-1] for folder in y_pred]
+    assert y_pred_data_sample_keys == {{data_sample_keys}}
 
-        y_true_data_sample_keys = [folder.split('/')[-1] for folder in datasamples]
-        assert y_true_data_sample_keys == {{data_sample_keys}}
+    y_true_data_sample_keys = [folder.split('/')[-1] for folder in datasamples]
+    assert y_true_data_sample_keys == {{data_sample_keys}}
 
-        # y_true is a list of unordered data samples
-        # since the Algo returns y==x, y_pred should respect the same order
+    # y_true is a list of unordered data samples
+    # since the Algo returns y==x, y_pred should respect the same order
 
-        assert  y_true_data_sample_keys == y_pred_data_sample_keys, (y_true_data_sample_keys, y_pred_data_sample_keys)
+    assert  y_true_data_sample_keys == y_pred_data_sample_keys, (y_true_data_sample_keys, y_pred_data_sample_keys)
 
-        tools.save_performance(1.0, outputs['{OutputIdentifiers.performance}'])
+    tools.save_performance(1.0, outputs['{OutputIdentifiers.performance}'])
 
-    def load_predictions(self, path):
-        with open(path) as f:
-            return json.load(f)
+def _load_predictions(path):
+    with open(path) as f:
+        return json.load(f)
 
 if __name__ == "__main__":
-    tools.algo.execute(Metrics())
+    tools.execute(score)
 """
 
 
@@ -312,26 +316,29 @@ import json
 import substratools as tools
 import os
 
-class TestAlgo(tools.Algo):
-    def train(self, inputs, outputs, task_properties):
+def train(inputs, outputs, task_properties):
 
-        datasamples = inputs['{InputIdentifiers.datasamples}']
-        assert datasamples == list(range({batch_size})), datasamples
-        self.save_model(0, outputs['{OutputIdentifiers.model}'])
+    datasamples = inputs['{InputIdentifiers.datasamples}']
+    assert datasamples == list(range({batch_size})), datasamples
+    save_model(0, outputs['{OutputIdentifiers.model}'])
 
-    def predict(self, inputs, outputs, task_properties):
-        self.save_predictions(1, outputs['{OutputIdentifiers.predictions}'])
-    def load_model(self, path):
-        with open(path) as f:
-            return json.load(f)
-    def save_model(self, model, path):
-        with open(path, 'w') as f:
-            return json.dump(model, f)
-    def save_predictions(self, predictions, path):
-        with open(path, 'w') as f:
-            return json.dump(predictions, f)
+def predict(inputs, outputs, task_properties):
+    save_predictions(1, outputs['{OutputIdentifiers.predictions}'])
+
+def load_model(path):
+    with open(path) as f:
+        return json.load(f)
+
+def save_model(model, path):
+    with open(path, 'w') as f:
+        return json.dump(model, f)
+
+def save_predictions(predictions, path):
+    with open(path, 'w') as f:
+        return json.dump(predictions, f)
+
 if __name__ == '__main__':
-    tools.algo.execute(TestAlgo())
+    tools.execute(train, predict)
 """,
     )
     algo = client.add_algo(spec)

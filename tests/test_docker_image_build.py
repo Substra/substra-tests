@@ -21,7 +21,7 @@ FROM {substra_tools_image}
 
 COPY algo.py .
 
-ENTRYPOINT ["python3", "algo.py", "--method-name", "{DEFAULT_ALGO_METHOD_NAME[algo_category]}"]
+ENTRYPOINT ["python3", "algo.py", "--function-name", "{DEFAULT_ALGO_METHOD_NAME[algo_category]}"]
 """
     spec = factory.create_algo(algo_category, dockerfile=dockerfile)
     algo = client.add_algo(spec)
