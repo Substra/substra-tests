@@ -12,11 +12,10 @@ _CURRENT_DIR = os.path.dirname(__file__)
 _DEFAULT_NETWORK_CONFIGURATION_PATH = os.path.join(_CURRENT_DIR, "../", "values.yaml")
 _SUBSTRA_TESTS_CONFIG_FILEPATH = os.getenv("SUBSTRA_TESTS_CONFIG_FILEPATH", _DEFAULT_NETWORK_CONFIGURATION_PATH)
 
-_DEFAULT_SUBSTRA_TOOLS_TAG_LOCAL = "register-decorator"  # TODO CHANGE SUBSTRATOOLS IMAGE BEFORE MERGE
-# (
-#     f"latest-nvidiacuda11.6.0-base-ubuntu20.04-python{sys.version_info.major}.{sys.version_info.minor}"
-# )
-_DEFAULT_SUBSTRA_TOOLS_TAG_REMOTE = "register-decorator"  # "latest" TODO CHANGE SUBSTRATOOLS IMAGE BEFORE MERGE
+_DEFAULT_SUBSTRA_TOOLS_TAG_LOCAL = (
+    f"latest-nvidiacuda11.6.0-base-ubuntu20.04-python{sys.version_info.major}.{sys.version_info.minor}"
+)
+_DEFAULT_SUBSTRA_TOOLS_TAG_REMOTE = "latest"
 
 
 _DEFAULT_SUBSTRA_TOOLS_IMAGE_REMOTE = f"substra/substra-tools:{_DEFAULT_SUBSTRA_TOOLS_TAG_REMOTE}-minimal"
