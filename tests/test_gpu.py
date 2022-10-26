@@ -24,10 +24,12 @@ import json
 import substratools as tools
 import torch
 
+@tools.register
 def train(inputs, outputs, task_properties):
     assert torch.cuda.is_available()
     save_model(['test'], outputs['{OutputIdentifiers.model}'])
 
+@tools.register
 def predict(X, model):
     assert torch.cuda.is_available()
     res = [x * model['value'] for x in X]
@@ -43,7 +45,7 @@ def save_model(model, path):
         return json.dump(model, f)
 
 if __name__ == '__main__':
-    tools.execute(train, predict)
+    tools.execute()
 """  # noqa
     spec = factory.create_algo(AlgoCategory.simple, dockerfile=dockerfile, py_script=script)
     algo = client.add_algo(spec)

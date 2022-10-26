@@ -59,6 +59,7 @@ def _fit(model, X, y, batch_size, num_updates, rank):
             optimizer.step()
 
 
+@tools.register
 def train(inputs, outputs, task_properties):
     torch.manual_seed(_SEED)  # initialize model weights
     torch.use_deterministic_algorithms(True)
@@ -86,6 +87,7 @@ def train(inputs, outputs, task_properties):
     save_trunk_model(trunk_model, outputs["shared"])
 
 
+@tools.register
 def predict(inputs, outputs, task_properties):
 
     trunk_model = load_trunk_model(inputs["shared"])
@@ -136,4 +138,4 @@ def save_predictions(predictions, predictions_path):
 
 
 if __name__ == "__main__":
-    tools.execute(train, predict)
+    tools.execute()

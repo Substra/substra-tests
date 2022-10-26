@@ -30,6 +30,7 @@ Algo that aggregates models by simply averaging them as in FedAvg
 """
 
 
+@tools.register
 def aggregate(inputs, outputs, task_properties):
     # get layers
     inmodels = []
@@ -52,6 +53,7 @@ def aggregate(inputs, outputs, task_properties):
     save_model(model, outputs["model"])
 
 
+@tools.register
 def predict(inputs, outputs, task_properties):
     X = inputs["datasamples"]["X"]
     X = torch.FloatTensor(X)
@@ -100,4 +102,4 @@ def save_predictions(predictions, predictions_path):
 
 
 if __name__ == "__main__":
-    tools.execute(aggregate, predict)
+    tools.execute()
