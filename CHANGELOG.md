@@ -16,7 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Use the generic task (#221)
-- Apply changes from algo to function in substratools (#224)
+- Apply changes from algo to function in substratools (#224)sdf
 - Register functions in substratools using decorator `@tools.register` (#225)
 
 ## [0.35.0] - 2022-10-03
