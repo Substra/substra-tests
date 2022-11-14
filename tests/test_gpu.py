@@ -8,7 +8,7 @@ from substratest.fl_interface import OutputIdentifiers
 def test_gpu(factory, client, org_idx, default_datasets, workers):
     """Test that the task can see the GPU"""
     org_idx = 0
-    nvidia_drivers = "nvidiacuda11.6.0-base-ubuntu20.04"
+    nvidia_drivers = "nvidiacuda11.8.0-base-ubuntu22.04"
 
     # Need the base image, the minimal image does not have pip
     dockerfile = f"""
