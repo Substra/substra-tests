@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Unreleased
 
 - Update code owners (#229)
+- Update substratools Docker image (#230)
 
 ### Added
 
