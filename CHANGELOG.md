@@ -15,7 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Update code owners (#229)
+- Update code owners (#229) dsf
 - Update substratools Docker image (#230)
 - Use the generic task (#221)
 - Apply changes from algo to function in substratools (#224)
