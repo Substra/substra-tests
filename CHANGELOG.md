@@ -7,8 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
-- Update code owners (#229)
-- Update substratools Docker image (#230)
+## [0.36.0] - 2022-11-22
 
 ### Added
 
@@ -16,6 +15,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Update code owners (#229)
+- Update substratools Docker image (#230)
 - Use the generic task (#221)
 - Apply changes from algo to function in substratools (#224)
 - Register functions in substratools using decorator `@tools.register` (#225)
