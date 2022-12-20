@@ -94,8 +94,12 @@ def test_synchronized_computeplan(clients, factory, channel, current_client):
     # create algo
     cp_spec = factory.create_compute_plan()
     compute_plan = current_client.add_compute_plan(cp_spec)
+    assert compute_plan.creator != "external"
 
-    compute_plan = current_client.wait(compute_plan)
+    # Compute plan are created with None value as duration, but for filtering and sorting purpose
+    # remote api's get_compute_plan returns 0 as duration instead. We need to set it to 0
+    # here instead of None for wait_for_asset_synchronized to pass on compute plan.
+    compute_plan.duration = 0
     channel.wait_for_asset_synchronized(compute_plan)
 
     external_cp = clients[1].get_compute_plan(key=compute_plan.key)
