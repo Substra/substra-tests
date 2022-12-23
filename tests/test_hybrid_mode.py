@@ -35,7 +35,7 @@ def test_execution_debug(client, hybrid_client, debug_factory, default_dataset):
     # create traintuple
     spec = debug_factory.create_traintuple(
         algo=simple_algo,
-        inputs=default_dataset.opener_input + default_dataset.train_data_sample_inputs[:1],
+        inputs=default_dataset.opener_input + default_dataset.data_sample_inputs[:1],
         worker=hybrid_client.organization_info().organization_id,
     )
     traintuple = hybrid_client.add_task(spec)
@@ -46,7 +46,7 @@ def test_execution_debug(client, hybrid_client, debug_factory, default_dataset):
     spec = debug_factory.create_predicttuple(
         algo=predict_algo,
         inputs=default_dataset.opener_input
-        + default_dataset.train_data_sample_inputs[:1]
+        + default_dataset.data_sample_inputs[:1]
         + FLTaskInputGenerator.train_to_predict(traintuple.key),
         worker=hybrid_client.organization_info().organization_id,
     )
@@ -56,7 +56,7 @@ def test_execution_debug(client, hybrid_client, debug_factory, default_dataset):
     spec = debug_factory.create_testtuple(
         algo=metric,
         inputs=default_dataset.opener_input
-        + default_dataset.train_data_sample_inputs[:1]
+        + default_dataset.data_sample_inputs[:1]
         + FLTaskInputGenerator.predict_to_test(predicttuple.key),
         worker=hybrid_client.organization_info().organization_id,
     )
@@ -104,7 +104,7 @@ def test_debug_compute_plan_aggregate_composite(network, client, hybrid_client, 
 
             spec = cp_spec.create_composite_traintuple(
                 composite_algo=composite_algo,
-                inputs=dataset.opener_input + [dataset.train_data_sample_inputs[0 + round_]] + input_models,
+                inputs=dataset.opener_input + [dataset.data_sample_inputs[0 + round_]] + input_models,
                 worker=worker,
             )
             composite_traintuple_keys.append(spec.task_id)
@@ -132,12 +132,12 @@ def test_debug_compute_plan_aggregate_composite(network, client, hybrid_client, 
 
         spec = cp_spec.create_predicttuple(
             algo=predict_algo_composite,
-            inputs=dataset.train_data_inputs + FLTaskInputGenerator.composite_to_predict(composite_traintuple_key),
+            inputs=dataset.data_inputs + FLTaskInputGenerator.composite_to_predict(composite_traintuple_key),
             worker=worker,
         )
         cp_spec.create_testtuple(
             algo=metric,
-            inputs=dataset.train_data_inputs + FLTaskInputGenerator.predict_to_test(spec.task_id),
+            inputs=dataset.data_inputs + FLTaskInputGenerator.predict_to_test(spec.task_id),
             worker=worker,
         )
 

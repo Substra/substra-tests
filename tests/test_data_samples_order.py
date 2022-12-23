@@ -199,7 +199,7 @@ def test_task_data_samples_relative_order(factory, client, dataset, worker):
     metric_spec = factory.create_algo(category=AlgoCategory.metric, py_script=metric_script)
     metric = client.add_algo(metric_spec)
 
-    traintuple_spec = factory.create_traintuple(algo=algo, inputs=dataset.train_data_inputs, worker=worker)
+    traintuple_spec = factory.create_traintuple(algo=algo, inputs=dataset.data_inputs, worker=worker)
     traintuple = client.add_task(traintuple_spec)
 
     # Ensure the order of the data sample keys is correct at 2 levels: :
@@ -212,14 +212,14 @@ def test_task_data_samples_relative_order(factory, client, dataset, worker):
 
     predict_input_models = FLTaskInputGenerator.train_to_predict(traintuple.key)
     predicttuple_spec = factory.create_predicttuple(
-        algo=predict_algo, inputs=dataset.test_data_inputs + predict_input_models, worker=worker
+        algo=predict_algo, inputs=dataset.data_inputs + predict_input_models, worker=worker
     )
     predicttuple = client.add_task(predicttuple_spec)
 
     test_input_models = FLTaskInputGenerator.predict_to_test(predicttuple.key)
 
     testtuple_spec = factory.create_testtuple(
-        algo=metric, inputs=dataset.test_data_inputs + test_input_models, worker=worker
+        algo=metric, inputs=dataset.data_inputs + test_input_models, worker=worker
     )
     testtuple = client.add_task(testtuple_spec)
 
@@ -250,7 +250,7 @@ def test_composite_traintuple_data_samples_relative_order(factory, client, datas
     metric = client.add_algo(metric_spec)
 
     traintuple_spec = factory.create_composite_traintuple(
-        algo=composite_algo, inputs=dataset.train_data_inputs, worker=worker
+        algo=composite_algo, inputs=dataset.data_inputs, worker=worker
     )
     composite_traintuple = client.add_task(traintuple_spec)
     # Ensure the order of the data sample keys is correct at 2 levels: :
@@ -264,14 +264,14 @@ def test_composite_traintuple_data_samples_relative_order(factory, client, datas
     predict_input_models = FLTaskInputGenerator.composite_to_predict(composite_traintuple.key)
 
     predicttuple_spec = factory.create_predicttuple(
-        algo=predict_algo, inputs=dataset.test_data_inputs + predict_input_models, worker=worker
+        algo=predict_algo, inputs=dataset.data_inputs + predict_input_models, worker=worker
     )
     predicttuple = client.add_task(predicttuple_spec)
 
     test_input_models = FLTaskInputGenerator.predict_to_test(predicttuple.key)
 
     testtuple_spec = factory.create_testtuple(
-        algo=metric, inputs=dataset.test_data_inputs + test_input_models, worker=worker
+        algo=metric, inputs=dataset.data_inputs + test_input_models, worker=worker
     )
     testtuple = client.add_task(testtuple_spec)
 
