@@ -253,14 +253,12 @@ def inputs(datasamples_folders, factory, clients, channel, algo_dockerfile):
         train_keys = client.add_data_samples(
             sbt.factory.DataSampleBatchSpec(
                 paths=[str(folders.train)],
-                test_only=False,
                 data_manager_keys=[res.dataset.key],
             )
         )
         client.add_data_samples(
             sbt.factory.DataSampleBatchSpec(
                 paths=[str(folders.test)],
-                test_only=True,
                 data_manager_keys=[res.dataset.key],
             )
         )
