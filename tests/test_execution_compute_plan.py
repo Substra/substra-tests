@@ -51,16 +51,16 @@ def test_compute_plan_simple(
     )
 
     traintuple_spec_1 = cp_spec.create_traintuple(
-        algo=simple_algo_2, inputs=default_dataset_1.train_data_inputs, metadata=None, worker=workers[0]
+        algo=simple_algo_2, inputs=default_dataset_1.data_inputs, metadata=None, worker=workers[0]
     )
 
     traintuple_spec_2 = cp_spec.create_traintuple(
-        algo=simple_algo_2, inputs=default_dataset_2.train_data_inputs, metadata={}, worker=workers[1]
+        algo=simple_algo_2, inputs=default_dataset_2.data_inputs, metadata={}, worker=workers[1]
     )
 
     traintuple_spec_3 = cp_spec.create_traintuple(
         algo=simple_algo_2,
-        inputs=default_dataset_1.train_data_inputs
+        inputs=default_dataset_1.data_inputs
         + FLTaskInputGenerator.trains_to_train([traintuple_spec_1.task_id, traintuple_spec_2.task_id]),
         metadata={"foo": "bar"},
         worker=workers[0],
@@ -68,14 +68,14 @@ def test_compute_plan_simple(
 
     predicttuple_spec_3 = cp_spec.create_predicttuple(
         algo=predict_algo_2,
-        inputs=default_dataset_1.test_data_inputs + FLTaskInputGenerator.train_to_predict(traintuple_spec_3.task_id),
+        inputs=default_dataset_1.data_inputs + FLTaskInputGenerator.train_to_predict(traintuple_spec_3.task_id),
         metadata={"foo": "bar"},
         worker=workers[0],
     )
 
     testtuple_spec = cp_spec.create_testtuple(
         algo=default_metrics[0],
-        inputs=default_dataset_1.test_data_inputs + FLTaskInputGenerator.predict_to_test(predicttuple_spec_3.task_id),
+        inputs=default_dataset_1.data_inputs + FLTaskInputGenerator.predict_to_test(predicttuple_spec_3.task_id),
         metadata={"foo": "bar"},
         worker=workers[0],
     )
@@ -161,8 +161,8 @@ def test_compute_plan_single_client_success(factory, client, default_dataset, de
     # 1. traintuple + testtuple
     # 2. traintuple + testtuple
     # 3. traintuple + testtuple
-
-    data_sample_1_input, data_sample_2_input, data_sample_3_input, _ = default_dataset.data_sample_inputs
+    breakpoint()
+    data_sample_1_input, data_sample_2_input, data_sample_3_input, _, _ = default_dataset.data_sample_inputs
 
     simple_algo_spec = factory.create_algo(AlgoCategory.simple)
     simple_algo = client.add_algo(simple_algo_spec)
@@ -250,7 +250,7 @@ def test_compute_plan_update(factory, client, default_dataset, default_metric, w
     This is done by sending 3 requests (one create and two updates).
     """
 
-    data_sample_1_input, data_sample_2_input, data_sample_3_input, _ = default_dataset.data_sample_inputs
+    data_sample_1_input, data_sample_2_input, data_sample_3_input, _, _ = default_dataset.data_sample_inputs
 
     simple_algo_spec = factory.create_algo(AlgoCategory.simple)
     simple_algo = client.add_algo(simple_algo_spec)
@@ -364,7 +364,7 @@ def test_compute_plan_single_client_failure(factory, client, default_dataset, de
     #
     # Intentionally use an invalid (broken) algo.
 
-    data_sample_1_input, data_sample_2_input, data_sample_3_input, _ = default_dataset.data_sample_inputs
+    data_sample_1_input, data_sample_2_input, data_sample_3_input, _, _ = default_dataset.data_sample_inputs
 
     simple_algo_spec = factory.create_algo(AlgoCategory.simple, py_script=sbt.factory.INVALID_ALGO_SCRIPT)
     simple_algo = client.add_algo(simple_algo_spec)
@@ -524,13 +524,13 @@ def test_compute_plan_aggregate_composite_traintuples(  # noqa: C901
 
     predicttuple_from_aggregate_spec = cp_spec.create_predicttuple(
         algo=predict_algo,
-        inputs=default_datasets[0].test_data_inputs
+        inputs=default_datasets[0].data_inputs
         + FLTaskInputGenerator.aggregate_to_predict(previous_aggregatetuple_spec.task_id),
         worker=workers[0],
     )
     cp_spec.create_testtuple(
         algo=metric,
-        inputs=default_datasets[0].test_data_inputs
+        inputs=default_datasets[0].data_inputs
         + FLTaskInputGenerator.predict_to_test(predicttuple_from_aggregate_spec.task_id),
         worker=workers[0],
     )

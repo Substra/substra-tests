@@ -159,7 +159,7 @@ def test_tuples_execution_on_different_organizations(
     # add traintuple on organization 2; should execute on organization 2 (dataset located on organization 2)
     spec = factory.create_traintuple(
         algo=algo_2,
-        inputs=default_dataset_2.train_data_inputs,
+        inputs=default_dataset_2.data_inputs,
         worker=workers[1],
     )
     traintuple = client_1.add_task(spec)
@@ -173,7 +173,7 @@ def test_tuples_execution_on_different_organizations(
     # add testtuple; should execute on organization 1 (default_dataset_1 is located on organization 1)
     spec = factory.create_predicttuple(
         algo=predict_algo_2,
-        inputs=default_dataset_1.test_data_inputs + FLTaskInputGenerator.train_to_predict(traintuple.key),
+        inputs=default_dataset_1.data_inputs + FLTaskInputGenerator.train_to_predict(traintuple.key),
         worker=workers[0],
     )
     predicttuple = client_1.add_task(spec)
@@ -184,7 +184,7 @@ def test_tuples_execution_on_different_organizations(
 
     spec = factory.create_testtuple(
         algo=default_metric_1,
-        inputs=default_dataset_1.test_data_inputs + FLTaskInputGenerator.predict_to_test(predicttuple.key),
+        inputs=default_dataset_1.data_inputs + FLTaskInputGenerator.predict_to_test(predicttuple.key),
         worker=workers[0],
     )
     testtuple = client_1.add_task(spec)
@@ -205,7 +205,7 @@ def test_algo_build_failure(factory, network, default_dataset_1, worker):
     spec = factory.create_algo(category=AlgoCategory.simple, dockerfile=dockerfile)
     algo = network.clients[0].add_algo(spec)
 
-    spec = factory.create_traintuple(algo=algo, inputs=default_dataset_1.train_data_inputs, worker=worker)
+    spec = factory.create_traintuple(algo=algo, inputs=default_dataset_1.data_inputs, worker=worker)
 
     if network.clients[0].backend_mode != substra.BackendType.REMOTE:
         with pytest.raises(substra.sdk.backends.local.compute.spawner.base.BuildError):
@@ -231,7 +231,7 @@ def test_task_execution_failure(factory, network, default_dataset_1, worker):
     spec = factory.create_algo(category=AlgoCategory.simple, py_script=sbt.factory.INVALID_ALGO_SCRIPT)
     algo = network.clients[0].add_algo(spec)
 
-    spec = factory.create_traintuple(algo=algo, inputs=default_dataset_1.train_data_inputs, worker=worker)
+    spec = factory.create_traintuple(algo=algo, inputs=default_dataset_1.data_inputs, worker=worker)
 
     if network.clients[0].backend_mode != substra.BackendType.REMOTE:
         with pytest.raises(substra.sdk.backends.local.compute.spawner.base.ExecutionError):
@@ -564,7 +564,7 @@ def test_composite_traintuple_2_organizations_to_composite_traintuple(factory, c
 
     spec = factory.create_composite_traintuple(
         algo=composite_algo,
-        inputs=default_datasets[0].train_data_inputs
+        inputs=default_datasets[0].data_inputs
         + FLTaskInputGenerator.composite_to_composite(composite_traintuple_keys[0], composite_traintuple_keys[1]),
         rank=1,
         outputs=FLTaskOutputGenerator.composite_traintuple(
@@ -690,8 +690,7 @@ def test_aggregate_composite_traintuples(factory, network, clients, default_data
 
     spec = factory.create_predicttuple(
         algo=predict_algo,
-        inputs=default_datasets[0].test_data_inputs
-        + FLTaskInputGenerator.aggregate_to_predict(previous_aggregatetuple_key),
+        inputs=default_datasets[0].data_inputs + FLTaskInputGenerator.aggregate_to_predict(previous_aggregatetuple_key),
         worker=workers[0],
     )
     predicttuple = clients[0].add_task(spec)
@@ -699,7 +698,7 @@ def test_aggregate_composite_traintuples(factory, network, clients, default_data
 
     spec = factory.create_testtuple(
         algo=default_metrics[0],
-        inputs=default_datasets[0].test_data_inputs + FLTaskInputGenerator.predict_to_test(predicttuple.key),
+        inputs=default_datasets[0].data_inputs + FLTaskInputGenerator.predict_to_test(predicttuple.key),
         worker=workers[0],
     )
     testtuple = clients[0].add_task(spec)
