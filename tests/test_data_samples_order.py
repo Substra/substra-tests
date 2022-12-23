@@ -42,7 +42,7 @@ def predict(inputs, outputs, task_properties):
     datasamples = inputs['{InputIdentifiers.datasamples}']
     datasample_keys = [d.split("/")[-1] for d in datasamples]
     model = load_model(inputs['{InputIdentifiers.model}'])
-    assert datasample_keys == {{test_data_sample_keys}}, datasample_keys
+    assert datasample_keys == {{data_sample_keys}}, datasample_keys
     save_predictions(datasamples, outputs['{OutputIdentifiers.predictions}'])
 
 def load_model(path):
@@ -82,8 +82,8 @@ def predict(inputs, outputs, task_properties):
     # Check that the order of X is the same as the one passed to add_task
     data_samples = inputs['{InputIdentifiers.datasamples}']
 
-    test_data_sample_keys = [folder.split('/')[-1] for folder in data_samples]
-    assert test_data_sample_keys == {{test_data_sample_keys}}, test_data_sample_keys
+    data_sample_keys = [folder.split('/')[-1] for folder in data_samples]
+    assert data_sample_keys == {{data_sample_keys}}, data_sample_keys
 
     save_predictions(data_samples, outputs['{OutputIdentifiers.predictions}'])
 
@@ -195,7 +195,7 @@ def test_task_data_samples_relative_order(factory, client, dataset, worker):
     predict_algo_spec = factory.create_algo(category=AlgoCategory.predict, py_script=algo_script)
     predict_algo = client.add_algo(predict_algo_spec)
 
-    metric_script = TEMPLATE_METRIC_SCRIPT.format(data_sample_keys=dataset.test_data_sample_keys)
+    metric_script = TEMPLATE_METRIC_SCRIPT.format(data_sample_keys=dataset.data_sample_keys)
     metric_spec = factory.create_algo(category=AlgoCategory.metric, py_script=metric_script)
     metric = client.add_algo(metric_spec)
 
@@ -237,15 +237,14 @@ def test_composite_traintuple_data_samples_relative_order(factory, client, datas
     composite_algo = client.add_algo(algo_spec)
 
     predict_algo_script = TEMPLATE_COMPOSITE_ALGO_SCRIPT.format(
-        data_sample_keys=dataset.train_data_sample_keys,
-        test_data_sample_keys=dataset.test_data_sample_keys,
+        data_sample_keys=dataset.data_sample_keys,
         models=None,
     )
     predict_algo_spec = factory.create_algo(AlgoCategory.predict_composite, py_script=predict_algo_script)
     predict_algo = client.add_algo(predict_algo_spec)
 
     metric_script = TEMPLATE_METRIC_SCRIPT.format(
-        data_sample_keys=dataset.test_data_sample_keys,
+        data_sample_keys=dataset.data_sample_keys,
     )
     metric_spec = factory.create_algo(category=AlgoCategory.metric, py_script=metric_script)
     metric = client.add_algo(metric_spec)
@@ -259,7 +258,7 @@ def test_composite_traintuple_data_samples_relative_order(factory, client, datas
     #  2. In the train method of the algo. If the order is incorrect, wait() will fail.
     assert [
         i.asset_key for i in composite_traintuple.inputs if i.identifier == InputIdentifiers.datasamples
-    ] == dataset.train_data_sample_keys
+    ] == dataset.data_sample_keys
     client.wait(composite_traintuple)
 
     predict_input_models = FLTaskInputGenerator.composite_to_predict(composite_traintuple.key)

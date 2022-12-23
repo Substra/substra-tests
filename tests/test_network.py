@@ -63,10 +63,10 @@ def test_add_data_sample(factory, client):
     spec = factory.create_dataset()
     dataset = client.add_dataset(spec)
 
-    spec = factory.create_data_sample(test_only=True, datasets=[dataset])
+    spec = factory.create_data_sample(tdatasets=[dataset])
     client.add_data_sample(spec)
 
-    spec = factory.create_data_sample(test_only=False, datasets=[dataset])
+    spec = factory.create_data_sample(datasets=[dataset])
     client.add_data_sample(spec)
 
 
@@ -75,7 +75,7 @@ def test_add_data_samples_in_batch(factory, client):
     spec = factory.create_dataset()
     dataset = client.add_dataset(spec)
 
-    specs = [factory.create_data_sample(test_only=True, datasets=[dataset]) for _ in range(batch_size)]
+    specs = [factory.create_data_sample(datasets=[dataset]) for _ in range(batch_size)]
 
     spec = sbt.factory.DataSampleBatchSpec.from_data_sample_specs(specs)
 
@@ -96,12 +96,12 @@ def test_link_dataset_with_datasamples(factory, client):
     dataset = client.add_dataset(spec)
 
     dataset = client.get_dataset(dataset.key)
-    assert dataset.train_data_sample_keys == []
+    assert dataset.data_sample_keys == []
 
     client.link_dataset_with_data_samples(dataset, [data_sample_key])
 
     dataset = client.get_dataset(dataset.key)
-    assert dataset.train_data_sample_keys == [data_sample_key]
+    assert dataset.data_sample_keys == [data_sample_key]
 
 
 @pytest.mark.skip(reason="may fill up disk as shared folder is not cleanup")

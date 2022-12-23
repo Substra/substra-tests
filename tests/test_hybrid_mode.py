@@ -158,31 +158,10 @@ def test_debug_download_dataset(hybrid_client, default_dataset):
     hybrid_client.download_opener(default_dataset.key)
 
 
-@pytest.mark.skip(reason="Deprecated test case, to remove with test_only field.")
-@pytest.mark.remote_only
-@pytest.mark.slow
-def test_test_data_traintuple(client, hybrid_client, debug_factory, default_dataset):
-    """Check that we can't use test data samples for traintuples"""
-    spec = debug_factory.create_algo(AlgoCategory.simple)
-    algo = client.add_algo(spec)
-
-    #  Add the traintuple
-    # create traintuple
-    spec = debug_factory.create_traintuple(
-        algo=algo,
-        inputs=default_dataset.opener_input + default_dataset.test_data_sample_inputs[:1],
-        worker=hybrid_client.organization_info().organization_id,
-    )
-
-    with pytest.raises(InvalidRequest) as e:
-        hybrid_client.add_task(spec)
-    assert "Cannot create train task with test data" in str(e.value)
-
-
 @pytest.mark.remote_only
 @pytest.mark.slow
 def test_fake_data_sample_key(client, hybrid_client, debug_factory, default_dataset):
-    """Check that a traintuple can't run with a fake train_data_sample_keys"""
+    """Check that a traintuple can't run with a fake data_sample_keys"""
     spec = debug_factory.create_algo(AlgoCategory.simple)
     algo = client.add_algo(spec)
 

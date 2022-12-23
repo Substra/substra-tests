@@ -225,11 +225,11 @@ def default_data_env(cfg, network, client_mode):
 
             # create train data samples
             for _ in range(4):
-                spec = f.create_data_sample(datasets=[dataset], test_only=False)
+                spec = f.create_data_sample(datasets=[dataset])
                 client.add_data_sample(spec)
 
             # create test data sample
-            spec = f.create_data_sample(datasets=[dataset], test_only=True)
+            spec = f.create_data_sample(datasets=[dataset])
             client.add_data_sample(spec)
 
             # reload datasets (to ensure they are properly linked with the created data samples)

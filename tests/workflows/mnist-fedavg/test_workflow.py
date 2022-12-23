@@ -225,7 +225,7 @@ class _InputsSubset(pydantic.BaseModel):
 
     dataset: AugmentedDataset = None
     metric: sb.sdk.models.Algo = None
-    train_data_sample_keys: typing.List[str] = []
+    data_sample_keys: typing.List[str] = []
 
     class Config:
         arbitrary_types_allowed = True
@@ -274,8 +274,8 @@ def inputs(datasamples_folders, factory, clients, channel, algo_dockerfile):
         # refresh dataset (to be up-to-date with added samples)
         res.dataset = AugmentedDataset(client.get_dataset(res.dataset.key))
         # store also the train keys as the order might not be the same in the
-        # dataset.train_data_sample_keys field
-        res.train_data_sample_keys = train_keys
+        # dataset.data_sample_keys field
+        res.data_sample_keys = train_keys
 
     client = clients[0]
     spec = factory.create_algo(
