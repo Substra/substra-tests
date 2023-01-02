@@ -27,7 +27,7 @@ ENTRYPOINT ["python3", "algo.py", "--function-name", "{DEFAULT_ALGO_METHOD_NAME[
     algo = client.add_algo(spec)
     spec = factory.create_traintuple(
         algo=algo,
-        inputs=default_dataset.data_inputs,
+        inputs=default_dataset.train_data_inputs,
         worker=worker,
     )
     traintuple = client.add_task(spec)

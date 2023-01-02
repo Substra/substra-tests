@@ -42,7 +42,7 @@ def predict(inputs, outputs, task_properties):
     datasamples = inputs['{InputIdentifiers.datasamples}']
     datasample_keys = [d.split("/")[-1] for d in datasamples]
     model = load_model(inputs['{InputIdentifiers.model}'])
-    assert datasample_keys == {{data_sample_keys}}, datasample_keys
+    assert datasample_keys == {{test_data_sample_keys}}, datasample_keys
     save_predictions(datasamples, outputs['{OutputIdentifiers.predictions}'])
 
 def load_model(path):
@@ -82,8 +82,8 @@ def predict(inputs, outputs, task_properties):
     # Check that the order of X is the same as the one passed to add_task
     data_samples = inputs['{InputIdentifiers.datasamples}']
 
-    data_sample_keys = [folder.split('/')[-1] for folder in data_samples]
-    assert data_sample_keys == {{data_sample_keys}}, data_sample_keys
+    test_data_sample_keys = [folder.split('/')[-1] for folder in data_samples]
+    assert test_data_sample_keys == {{test_data_sample_keys}}, test_data_sample_keys
 
     save_predictions(data_samples, outputs['{OutputIdentifiers.predictions}'])
 
@@ -159,15 +159,19 @@ class Dataset:
         spec = factory.create_dataset(py_script=OPENER_SCRIPT)
         dataset = client.add_dataset(spec)
 
-        # create data samples
+        # create train data samples
         for _ in range(4):
-            spec = factory.create_data_sample(datasets=[dataset])
+            spec = factory.create_data_sample(datasets=[dataset], test_only=False)
+            client.add_data_sample(spec)
+
+        # create test data samples
+        for _ in range(2):
+            spec = factory.create_data_sample(datasets=[dataset], test_only=True)
             client.add_data_sample(spec)
 
         self.dataset = client.get_dataset(dataset.key)
-        self.train_data_sample_keys = _shuffle(self.dataset.data_sample_keys)
+        self.train_data_sample_keys = _shuffle(self.dataset.train_data_sample_keys)
         self.test_data_sample_keys = self.train_data_sample_keys[:2]
-
         self.train_data_inputs = FLTaskInputGenerator.tuple(
             opener_key=dataset.key,
             data_sample_keys=self.train_data_sample_keys,
@@ -187,7 +191,8 @@ def test_task_data_samples_relative_order(factory, client, dataset, worker):
 
     # Format TEMPLATE_ALGO_SCRIPT with current data_sample_keys
     algo_script = TEMPLATE_ALGO_SCRIPT.format(
-        data_sample_keys=dataset.data_sample_keys,
+        data_sample_keys=dataset.train_data_sample_keys,
+        test_data_sample_keys=dataset.test_data_sample_keys,
         models=None,
     )
     algo_spec = factory.create_algo(category=AlgoCategory.simple, py_script=algo_script)
@@ -196,11 +201,11 @@ def test_task_data_samples_relative_order(factory, client, dataset, worker):
     predict_algo_spec = factory.create_algo(category=AlgoCategory.predict, py_script=algo_script)
     predict_algo = client.add_algo(predict_algo_spec)
 
-    metric_script = TEMPLATE_METRIC_SCRIPT.format(data_sample_keys=dataset.data_sample_keys)
+    metric_script = TEMPLATE_METRIC_SCRIPT.format(data_sample_keys=dataset.test_data_sample_keys)
     metric_spec = factory.create_algo(category=AlgoCategory.metric, py_script=metric_script)
     metric = client.add_algo(metric_spec)
 
-    traintuple_spec = factory.create_traintuple(algo=algo, inputs=dataset.data_inputs, worker=worker)
+    traintuple_spec = factory.create_traintuple(algo=algo, inputs=dataset.train_data_inputs, worker=worker)
     traintuple = client.add_task(traintuple_spec)
 
     # Ensure the order of the data sample keys is correct at 2 levels: :
@@ -208,19 +213,19 @@ def test_task_data_samples_relative_order(factory, client, dataset, worker):
     #  2. In the train method of the algo. If the order is incorrect, wait() will fail.
     assert [
         i.asset_key for i in traintuple.inputs if i.identifier == InputIdentifiers.datasamples
-    ] == dataset.data_sample_keys
+    ] == dataset.train_data_sample_keys
     client.wait(traintuple)
 
     predict_input_models = FLTaskInputGenerator.train_to_predict(traintuple.key)
     predicttuple_spec = factory.create_predicttuple(
-        algo=predict_algo, inputs=dataset.data_inputs + predict_input_models, worker=worker
+        algo=predict_algo, inputs=dataset.test_data_inputs + predict_input_models, worker=worker
     )
     predicttuple = client.add_task(predicttuple_spec)
 
     test_input_models = FLTaskInputGenerator.predict_to_test(predicttuple.key)
 
     testtuple_spec = factory.create_testtuple(
-        algo=metric, inputs=dataset.data_inputs + test_input_models, worker=worker
+        algo=metric, inputs=dataset.test_data_inputs + test_input_models, worker=worker
     )
     testtuple = client.add_task(testtuple_spec)
 
@@ -231,27 +236,29 @@ def test_task_data_samples_relative_order(factory, client, dataset, worker):
 def test_composite_traintuple_data_samples_relative_order(factory, client, dataset, worker):
     # Format TEMPLATE_COMPOSITE_ALGO_SCRIPT with current data_sample_keys
     composite_algo_script = TEMPLATE_COMPOSITE_ALGO_SCRIPT.format(
-        data_sample_keys=dataset.data_sample_keys,
+        data_sample_keys=dataset.train_data_sample_keys,
+        test_data_sample_keys=dataset.test_data_sample_keys,
         models=None,
     )
     algo_spec = factory.create_algo(AlgoCategory.composite, py_script=composite_algo_script)
     composite_algo = client.add_algo(algo_spec)
 
     predict_algo_script = TEMPLATE_COMPOSITE_ALGO_SCRIPT.format(
-        data_sample_keys=dataset.data_sample_keys,
+        data_sample_keys=dataset.train_data_sample_keys,
+        test_data_sample_keys=dataset.test_data_sample_keys,
         models=None,
     )
     predict_algo_spec = factory.create_algo(AlgoCategory.predict_composite, py_script=predict_algo_script)
     predict_algo = client.add_algo(predict_algo_spec)
 
     metric_script = TEMPLATE_METRIC_SCRIPT.format(
-        data_sample_keys=dataset.data_sample_keys,
+        data_sample_keys=dataset.test_data_sample_keys,
     )
     metric_spec = factory.create_algo(category=AlgoCategory.metric, py_script=metric_script)
     metric = client.add_algo(metric_spec)
 
     traintuple_spec = factory.create_composite_traintuple(
-        algo=composite_algo, inputs=dataset.data_inputs, worker=worker
+        algo=composite_algo, inputs=dataset.train_data_inputs, worker=worker
     )
     composite_traintuple = client.add_task(traintuple_spec)
     # Ensure the order of the data sample keys is correct at 2 levels: :
@@ -259,20 +266,20 @@ def test_composite_traintuple_data_samples_relative_order(factory, client, datas
     #  2. In the train method of the algo. If the order is incorrect, wait() will fail.
     assert [
         i.asset_key for i in composite_traintuple.inputs if i.identifier == InputIdentifiers.datasamples
-    ] == dataset.data_sample_keys
+    ] == dataset.train_data_sample_keys
     client.wait(composite_traintuple)
 
     predict_input_models = FLTaskInputGenerator.composite_to_predict(composite_traintuple.key)
 
     predicttuple_spec = factory.create_predicttuple(
-        algo=predict_algo, inputs=dataset.data_inputs + predict_input_models, worker=worker
+        algo=predict_algo, inputs=dataset.test_data_inputs + predict_input_models, worker=worker
     )
     predicttuple = client.add_task(predicttuple_spec)
 
     test_input_models = FLTaskInputGenerator.predict_to_test(predicttuple.key)
 
     testtuple_spec = factory.create_testtuple(
-        algo=metric, inputs=dataset.data_inputs + test_input_models, worker=worker
+        algo=metric, inputs=dataset.test_data_inputs + test_input_models, worker=worker
     )
     testtuple = client.add_task(testtuple_spec)
 
