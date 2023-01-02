@@ -148,7 +148,7 @@ def test_permissions(permissions_1, permissions_2, expected_permissions, factory
     # add train data samples / dataset
     spec = factory.create_dataset(permissions=permissions_1)
     dataset_1 = client_1.add_dataset(spec)
-    spec = factory.create_data_sample(test_only=False, datasets=[dataset_1])
+    spec = factory.create_data_sample(datasets=[dataset_1])
     client_1.add_data_sample(spec)
     dataset_1 = AugmentedDataset(client_1.get_dataset(dataset_1.key))
 
@@ -185,7 +185,6 @@ def test_permissions_denied_process(factory, client_1, client_2, channel, worker
     dataset_1 = client_1.add_dataset(spec)
 
     spec = factory.create_data_sample(
-        test_only=False,
         datasets=[dataset_1],
     )
     client_1.add_data_sample(spec)
@@ -228,7 +227,6 @@ def test_permissions_model_process(
         spec = factory.create_dataset(permissions=permissions)
         dataset = client.add_dataset(spec)
         spec = factory.create_data_sample(
-            test_only=False,
             datasets=[dataset],
         )
         client.add_data_sample(spec)
@@ -305,12 +303,10 @@ def test_merge_permissions_denied_process(factory, clients, channel, workers):
         dataset_1 = client_1.add_dataset(spec)
         channel.wait_for_asset_synchronized(dataset_1)  # used by client_2 and client_3
         spec = factory.create_data_sample(
-            test_only=False,
             datasets=[dataset_1],
         )
         client_1.add_data_sample(spec)
         spec = factory.create_data_sample(
-            test_only=True,
             datasets=[dataset_1],
         )
 
@@ -356,7 +352,6 @@ def test_permissions_denied_head_model_process(factory, client_1, client_2, chan
         dataset = client.add_dataset(spec)
 
         spec = factory.create_data_sample(
-            test_only=False,
             datasets=[dataset],
         )
         client.add_data_sample(spec)

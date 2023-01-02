@@ -63,7 +63,7 @@ def test_add_data_sample(factory, client):
     spec = factory.create_dataset()
     dataset = client.add_dataset(spec)
 
-    spec = factory.create_data_sample(tdatasets=[dataset])
+    spec = factory.create_data_sample(datasets=[dataset])
     client.add_data_sample(spec)
 
     spec = factory.create_data_sample(datasets=[dataset])
