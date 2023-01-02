@@ -225,7 +225,7 @@ class _InputsSubset(pydantic.BaseModel):
 
     dataset: AugmentedDataset = None
     metric: sb.sdk.models.Algo = None
-    data_sample_keys: typing.List[str] = []
+    train_data_sample_keys: typing.List[str] = []
 
     class Config:
         arbitrary_types_allowed = True
@@ -253,12 +253,14 @@ def inputs(datasamples_folders, factory, clients, channel, algo_dockerfile):
         train_keys = client.add_data_samples(
             sbt.factory.DataSampleBatchSpec(
                 paths=[str(folders.train)],
+                test_only=False,
                 data_manager_keys=[res.dataset.key],
             )
         )
         client.add_data_samples(
             sbt.factory.DataSampleBatchSpec(
                 paths=[str(folders.test)],
+                test_only=True,
                 data_manager_keys=[res.dataset.key],
             )
         )
@@ -274,8 +276,8 @@ def inputs(datasamples_folders, factory, clients, channel, algo_dockerfile):
         # refresh dataset (to be up-to-date with added samples)
         res.dataset = AugmentedDataset(client.get_dataset(res.dataset.key))
         # store also the train keys as the order might not be the same in the
-        # dataset.data_sample_keys field
-        res.data_sample_keys = train_keys
+        # dataset.train_data_sample_keys field
+        res.train_data_sample_keys = train_keys
 
     client = clients[0]
     spec = factory.create_algo(
@@ -339,7 +341,7 @@ def test_mnist(factory, inputs, clients, cfg: Settings, workers: typing.List[str
 
             composite_specs[idx] = cp_spec.create_composite_traintuple(
                 composite_algo=inputs.composite_algo,
-                inputs=org_inputs.dataset.data_inputs + input_models,
+                inputs=org_inputs.dataset.train_data_inputs + input_models,
                 outputs=FLTaskOutputGenerator.composite_traintuple(
                     shared_authorized_ids=[aggregate_worker, clients[idx].organization_id],
                     local_authorized_ids=[clients[idx].organization_id],
@@ -366,7 +368,7 @@ def test_mnist(factory, inputs, clients, cfg: Settings, workers: typing.List[str
             for idx, org_inputs in enumerate(inputs.datasets):
                 predicttuple_spec = cp_spec.create_predicttuple(
                     algo=inputs.predict_algo,
-                    inputs=org_inputs.dataset.data_inputs
+                    inputs=org_inputs.dataset.test_data_inputs
                     + FLTaskInputGenerator.composite_to_predict(composite_specs[idx].task_id),
                     metadata={
                         "round_idx": round_idx,
@@ -375,7 +377,7 @@ def test_mnist(factory, inputs, clients, cfg: Settings, workers: typing.List[str
                 )
                 cp_spec.create_testtuple(
                     algo=org_inputs.metric,
-                    inputs=org_inputs.dataset.data_inputs
+                    inputs=org_inputs.dataset.test_data_inputs
                     + FLTaskInputGenerator.predict_to_test(predicttuple_spec.task_id),
                     metadata={
                         "round_idx": round_idx,
