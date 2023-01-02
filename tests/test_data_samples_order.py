@@ -159,21 +159,22 @@ class Dataset:
         spec = factory.create_dataset(py_script=OPENER_SCRIPT)
         dataset = client.add_dataset(spec)
 
-        # create train data samples
+        # create data samples
         for _ in range(4):
             spec = factory.create_data_sample(datasets=[dataset])
             client.add_data_sample(spec)
 
-        # create test data samples
-        for _ in range(2):
-            spec = factory.create_data_sample(datasets=[dataset])
-            client.add_data_sample(spec)
-
         self.dataset = client.get_dataset(dataset.key)
-        self.data_sample_keys = _shuffle(self.dataset.data_sample_keys)
-        self.data_inputs = FLTaskInputGenerator.tuple(
+        self.train_data_sample_keys = _shuffle(self.dataset.data_sample_keys)
+        self.test_data_sample_keys = self.train_data_sample_keys[:2]
+
+        self.train_data_inputs = FLTaskInputGenerator.tuple(
             opener_key=dataset.key,
-            data_sample_keys=self.data_sample_keys,
+            data_sample_keys=self.train_data_sample_keys,
+        )
+        self.test_data_inputs = FLTaskInputGenerator.tuple(
+            opener_key=dataset.key,
+            data_sample_keys=self.test_data_sample_keys,
         )
 
 

@@ -198,8 +198,7 @@ def default_data_env(cfg, network, client_mode):
     """Fixture with pre-existing assets in all organizations.
 
     The following assets will be created for each organization:
-    - 4 train data samples
-    - 1 test data sample
+    - 5 data samples
     - 1 dataset
     - 1 metric
 
@@ -223,14 +222,10 @@ def default_data_env(cfg, network, client_mode):
             spec = f.create_dataset()
             dataset = client.add_dataset(spec)
 
-            # create train data samples
-            for _ in range(4):
+            # create data samples
+            for _ in range(5):
                 spec = f.create_data_sample(datasets=[dataset])
                 client.add_data_sample(spec)
-
-            # create test data sample
-            spec = f.create_data_sample(datasets=[dataset])
-            client.add_data_sample(spec)
 
             # reload datasets (to ensure they are properly linked with the created data samples)
             dataset = client.get_dataset(dataset.key)
@@ -260,7 +255,7 @@ def data_env_2(default_data_env, client_2):
 @pytest.fixture
 def default_dataset_1(data_env_1):
     """Fixture with pre-existing dataset in first organization."""
-    return data_env_1.datasets[0]
+    return AugmentedDataset(data_env_1.datasets[0])
 
 
 @pytest.fixture
@@ -272,7 +267,7 @@ def default_metric_1(data_env_1):
 @pytest.fixture
 def default_dataset_2(data_env_2):
     """Fixture with pre-existing dataset in second organization."""
-    return data_env_2.datasets[0]
+    return AugmentedDataset(data_env_2.datasets[0])
 
 
 @pytest.fixture

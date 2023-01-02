@@ -382,10 +382,18 @@ class AugmentedDataset:
         self.owner = dataset.owner
         self.data_sample_keys = dataset.data_sample_keys
         self.opener_input = FLTaskInputGenerator.opener(dataset.key)
-        self.data_sample_inputs = FLTaskInputGenerator.data_samples(self.data_sample_keys)
-        self.data_inputs = FLTaskInputGenerator.tuple(
+
+        self.train_data_sample_keys = self.data_sample_keys[:4]
+        self.test_data_sample_keys = self.data_sample_keys[4:]
+        self.train_data_sample_inputs = FLTaskInputGenerator.data_samples(self.train_data_sample_keys)
+        self.test_data_sample_inputs = FLTaskInputGenerator.data_samples(self.test_data_sample_keys)
+        self.train_data_inputs = FLTaskInputGenerator.tuple(
             opener_key=dataset.key,
-            data_sample_keys=self.data_sample_keys,
+            data_sample_keys=self.train_data_sample_keys,
+        )
+        self.test_data_inputs = FLTaskInputGenerator.tuple(
+            opener_key=dataset.key,
+            data_sample_keys=self.test_data_sample_keys,
         )
 
 
