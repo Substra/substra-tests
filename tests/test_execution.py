@@ -751,7 +751,7 @@ def test_use_data_sample_located_in_shared_path(factory, network, client, organi
     spec.move_data_to_server(organization_cfg.shared_path, network.options.minikube)
     data_sample_key = client.add_data_sample(spec, local=False)  # should not raise
 
-    dataset = AugmentedDataset(client.get_dataset(dataset.key))
+    dataset = AugmentedDataset(client.get_dataset(dataset.key), number_of_train_data_samples=1)
 
     spec = factory.create_algo(AlgoCategory.simple)
     algo = client.add_algo(spec)

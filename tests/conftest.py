@@ -104,7 +104,7 @@ class _DataEnv:
     """
 
     def __init__(self, datasets, metrics) -> None:
-        self._datasets = [AugmentedDataset(dataset) for dataset in datasets] or []
+        self._datasets = [AugmentedDataset(dataset, number_of_train_data_samples=4) for dataset in datasets] or []
         self._metrics = metrics or []
 
     @property
@@ -255,7 +255,7 @@ def data_env_2(default_data_env, client_2):
 @pytest.fixture
 def default_dataset_1(data_env_1):
     """Fixture with pre-existing dataset in first organization."""
-    return AugmentedDataset(data_env_1.datasets[0])
+    return data_env_1.datasets[0]
 
 
 @pytest.fixture
@@ -267,7 +267,7 @@ def default_metric_1(data_env_1):
 @pytest.fixture
 def default_dataset_2(data_env_2):
     """Fixture with pre-existing dataset in second organization."""
-    return AugmentedDataset(data_env_2.datasets[0])
+    return data_env_2.datasets[0]
 
 
 @pytest.fixture
