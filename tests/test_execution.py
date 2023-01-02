@@ -62,7 +62,7 @@ def test_tuples_execution_on_same_organization(factory, network, client, default
 
     spec = factory.create_testtuple(
         algo=default_metric,
-        inputs=default_dataset.data_inputs + FLTaskInputGenerator.predict_to_test(predicttuple.key),
+        inputs=default_dataset.test_data_inputs + FLTaskInputGenerator.predict_to_test(predicttuple.key),
         worker=worker,
     )
     testtuple = client.add_task(spec)
@@ -687,7 +687,6 @@ def test_aggregate_composite_traintuples(factory, network, clients, default_data
         testtuple = clients[0].add_task(spec)
         testtuple = clients[0].wait(testtuple)
         # y_true: [20], y_pred: [52.0], result: 32.0
-        breakpoint()
         assert testtuple.outputs[OutputIdentifiers.performance].value == pytest.approx(32 + index)
 
     spec = factory.create_predicttuple(
