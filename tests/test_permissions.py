@@ -188,7 +188,7 @@ def test_permissions_denied_process(factory, client_1, client_2, channel, worker
         datasets=[dataset_1],
     )
     client_1.add_data_sample(spec)
-    dataset_1 = AugmentedDataset(client_1.get_dataset(dataset_1.key))
+    dataset_1 = AugmentedDataset(client_1.get_dataset(dataset_1.key), number_of_train_data_samples=1)
 
     # setup algo
 
@@ -358,7 +358,7 @@ def test_permissions_denied_head_model_process(factory, client_1, client_2, chan
 
         dataset = client.get_dataset(dataset.key)
         channel.wait_for_asset_synchronized(dataset)
-        datasets.append(AugmentedDataset(client.get_dataset(dataset.key)))
+        datasets.append(AugmentedDataset(client.get_dataset(dataset.key), number_of_train_data_samples=1))
 
     dataset_1, dataset_2 = datasets
 
