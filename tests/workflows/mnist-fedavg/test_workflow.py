@@ -272,7 +272,7 @@ def inputs(datasamples_folders, factory, clients, channel, algo_dockerfile):
         res.metric = client.add_algo(spec)
 
         # refresh dataset (to be up-to-date with added samples)
-        res.dataset = AugmentedDataset(client.get_dataset(res.dataset.key), number_of_train_data_samples=1)
+        res.dataset = AugmentedDataset(client.get_dataset(res.dataset.key), number_of_train_data_samples=_NB_ORGS)
         # store also the train keys as the order might not be the same in the
         # dataset.train_data_sample_keys field
         res.train_data_sample_keys = train_keys
