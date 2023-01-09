@@ -378,6 +378,14 @@ DEFAULT_ALGO_SCRIPTS = {
 
 class AugmentedDataset:
     def __init__(self, dataset, number_of_train_data_samples: typing.Optional[int] = None) -> None:
+        """Augment a dataset to create train and test datasamples.
+
+        Args:
+            dataset: dataset link to the datasamples.
+            number_of_train_data_samples (typing.Optional[int], optional): _description_. Defaults to None.
+                Number of datasamples to train on. The first n datasamples are taken for training, the rest
+                are selected for testing.
+        """
         self.key = dataset.key
         self.owner = dataset.owner
         self.data_sample_keys = dataset.data_sample_keys
