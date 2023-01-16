@@ -392,18 +392,24 @@ class AugmentedDataset:
         self.opener_input = FLTaskInputGenerator.opener(dataset.key)
 
         if number_of_train_data_samples is not None:
-            self.train_data_sample_keys = self.data_sample_keys[:number_of_train_data_samples]
-            self.test_data_sample_keys = self.data_sample_keys[number_of_train_data_samples:]
-            self.train_data_sample_inputs = FLTaskInputGenerator.data_samples(self.train_data_sample_keys)
-            self.test_data_sample_inputs = FLTaskInputGenerator.data_samples(self.test_data_sample_keys)
-            self.train_data_inputs = FLTaskInputGenerator.tuple(
-                opener_key=dataset.key,
-                data_sample_keys=self.train_data_sample_keys,
+            self.set_train_test_dasamples(
+                self.data_sample_keys[number_of_train_data_samples:],
+                self.data_sample_keys[:number_of_train_data_samples],
             )
-            self.test_data_inputs = FLTaskInputGenerator.tuple(
-                opener_key=dataset.key,
-                data_sample_keys=self.test_data_sample_keys,
-            )
+
+    def set_train_test_dasamples(self, train_data_sample_keys: list[str], test_data_sample_keys: list[str]):
+        self.train_data_sample_keys = train_data_sample_keys
+        self.test_data_sample_keys = test_data_sample_keys
+        self.train_data_sample_inputs = FLTaskInputGenerator.data_samples(self.train_data_sample_keys)
+        self.test_data_sample_inputs = FLTaskInputGenerator.data_samples(self.test_data_sample_keys)
+        self.train_data_inputs = FLTaskInputGenerator.tuple(
+            opener_key=self.key,
+            data_sample_keys=self.train_data_sample_keys,
+        )
+        self.test_data_inputs = FLTaskInputGenerator.tuple(
+            opener_key=self.key,
+            data_sample_keys=self.test_data_sample_keys,
+        )
 
 
 class _ComputePlanSpecFactory:
