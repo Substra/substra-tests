@@ -104,7 +104,16 @@ class _DataEnv:
     """
 
     def __init__(self, datasets, metrics) -> None:
-        self._datasets = [AugmentedDataset(dataset, number_of_train_data_samples=4) for dataset in datasets] or []
+        self._datasets = []
+
+        for dataset in datasets:
+            augmented_dataset = AugmentedDataset(dataset)
+            augmented_dataset.set_train_test_dasamples(
+                train_data_sample_keys=augmented_dataset.data_sample_keys[:4],
+                test_data_sample_keys=augmented_dataset.data_sample_keys[4:],
+            )
+            self._datasets.append(augmented_dataset)
+
         self._metrics = metrics or []
 
     @property
