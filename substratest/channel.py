@@ -12,6 +12,8 @@ _OVERRIDDEN_FIELDS = (
     # storage address is replaced by each backend with its internal address
     "storage_address",
     "host",
+    # creator is known only by the owning organization
+    "creator",
 )
 
 
