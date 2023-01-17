@@ -388,7 +388,7 @@ class AugmentedDataset:
         self.data_sample_keys = dataset.data_sample_keys
         self.opener_input = FLTaskInputGenerator.opener(dataset.key)
 
-    def set_train_test_dasamples(self, train_data_sample_keys: list[str] = [], test_data_sample_keys: list[str] = []):
+    def set_train_test_dasamples(self, train_data_sample_keys=(), test_data_sample_keys=()):
 
         self._check_data_sample_keys(train_data_sample_keys)
         self._check_data_sample_keys(test_data_sample_keys)
