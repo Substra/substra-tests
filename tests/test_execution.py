@@ -752,6 +752,9 @@ def test_use_data_sample_located_in_shared_path(factory, network, client, organi
     data_sample_key = client.add_data_sample(spec, local=False)  # should not raise
 
     dataset = AugmentedDataset(client.get_dataset(dataset.key))
+    dataset.set_train_test_dasamples(
+        train_data_sample_keys=[data_sample_key],
+    )
 
     spec = factory.create_algo(AlgoCategory.simple)
     algo = client.add_algo(spec)

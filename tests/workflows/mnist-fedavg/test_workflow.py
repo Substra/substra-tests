@@ -253,14 +253,12 @@ def inputs(datasamples_folders, factory, clients, channel, algo_dockerfile):
         train_keys = client.add_data_samples(
             sbt.factory.DataSampleBatchSpec(
                 paths=[str(folders.train)],
-                test_only=False,
                 data_manager_keys=[res.dataset.key],
             )
         )
-        client.add_data_samples(
+        test_keys = client.add_data_samples(
             sbt.factory.DataSampleBatchSpec(
                 paths=[str(folders.test)],
-                test_only=True,
                 data_manager_keys=[res.dataset.key],
             )
         )
@@ -275,6 +273,10 @@ def inputs(datasamples_folders, factory, clients, channel, algo_dockerfile):
 
         # refresh dataset (to be up-to-date with added samples)
         res.dataset = AugmentedDataset(client.get_dataset(res.dataset.key))
+        res.dataset.set_train_test_dasamples(
+            train_data_sample_keys=train_keys,
+            test_data_sample_keys=test_keys,
+        )
         # store also the train keys as the order might not be the same in the
         # dataset.train_data_sample_keys field
         res.train_data_sample_keys = train_keys

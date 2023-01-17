@@ -148,10 +148,13 @@ def test_permissions(permissions_1, permissions_2, expected_permissions, factory
     # add train data samples / dataset
     spec = factory.create_dataset(permissions=permissions_1)
     dataset_1 = client_1.add_dataset(spec)
-    spec = factory.create_data_sample(test_only=False, datasets=[dataset_1])
-    client_1.add_data_sample(spec)
-    dataset_1 = AugmentedDataset(client_1.get_dataset(dataset_1.key))
+    spec = factory.create_data_sample(datasets=[dataset_1])
+    data_sample_key_1 = client_1.add_data_sample(spec)
 
+    dataset_1 = AugmentedDataset(client_1.get_dataset(dataset_1.key))
+    dataset_1.set_train_test_dasamples(
+        train_data_sample_keys=[data_sample_key_1],
+    )
     # add algo
     spec = factory.create_algo(category=AlgoCategory.simple, permissions=permissions_2)
     algo_2 = client_2.add_algo(spec)
@@ -185,11 +188,13 @@ def test_permissions_denied_process(factory, client_1, client_2, channel, worker
     dataset_1 = client_1.add_dataset(spec)
 
     spec = factory.create_data_sample(
-        test_only=False,
         datasets=[dataset_1],
     )
-    client_1.add_data_sample(spec)
+    data_sample_key_1 = client_1.add_data_sample(spec)
     dataset_1 = AugmentedDataset(client_1.get_dataset(dataset_1.key))
+    dataset_1.set_train_test_dasamples(
+        train_data_sample_keys=[data_sample_key_1],
+    )
 
     # setup algo
 
@@ -228,11 +233,13 @@ def test_permissions_model_process(
         spec = factory.create_dataset(permissions=permissions)
         dataset = client.add_dataset(spec)
         spec = factory.create_data_sample(
-            test_only=False,
             datasets=[dataset],
         )
-        client.add_data_sample(spec)
-        datasets.append(AugmentedDataset(client.get_dataset(dataset.key)))
+        data_sample_key = client.add_data_sample(spec)
+        augmented_dataset = AugmentedDataset(client.get_dataset(dataset.key))
+        augmented_dataset.set_train_test_dasamples(train_data_sample_keys=[data_sample_key])
+
+        datasets.append(augmented_dataset)
 
         # algo
         spec = factory.create_algo(category=AlgoCategory.simple, permissions=permissions)
@@ -305,16 +312,14 @@ def test_merge_permissions_denied_process(factory, clients, channel, workers):
         dataset_1 = client_1.add_dataset(spec)
         channel.wait_for_asset_synchronized(dataset_1)  # used by client_2 and client_3
         spec = factory.create_data_sample(
-            test_only=False,
             datasets=[dataset_1],
         )
         client_1.add_data_sample(spec)
         spec = factory.create_data_sample(
-            test_only=True,
             datasets=[dataset_1],
         )
 
-        client_1.add_data_sample(spec)
+        data_sample_key_1 = client_1.add_data_sample(spec)
         spec = factory.create_algo(category=AlgoCategory.metric, permissions=permissions_1)
         metric_1 = client_1.add_algo(spec)
         channel.wait_for_asset_synchronized(metric_1)  # used by client_3
@@ -328,6 +333,7 @@ def test_merge_permissions_denied_process(factory, clients, channel, workers):
         predict_algo_1 = client_1.add_algo(spec)
 
         dataset_1 = AugmentedDataset(client_1.get_dataset(dataset_1.key))
+        dataset_1.set_train_test_dasamples(train_data_sample_keys=[data_sample_key_1])
 
         # add traintuple from node 2
         spec = factory.create_traintuple(algo=algo_2, inputs=dataset_1.train_data_inputs, worker=workers[0])
@@ -356,14 +362,17 @@ def test_permissions_denied_head_model_process(factory, client_1, client_2, chan
         dataset = client.add_dataset(spec)
 
         spec = factory.create_data_sample(
-            test_only=False,
             datasets=[dataset],
         )
-        client.add_data_sample(spec)
+        data_sample_key = client.add_data_sample(spec)
 
         dataset = client.get_dataset(dataset.key)
         channel.wait_for_asset_synchronized(dataset)
-        datasets.append(AugmentedDataset(client.get_dataset(dataset.key)))
+
+        augmented_dataset = AugmentedDataset(client.get_dataset(dataset.key))
+        augmented_dataset.set_train_test_dasamples(train_data_sample_keys=[data_sample_key])
+
+        datasets.append(augmented_dataset)
 
     dataset_1, dataset_2 = datasets
 

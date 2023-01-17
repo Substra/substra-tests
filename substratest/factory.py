@@ -308,7 +308,6 @@ SERVER_MEDIA_PATH = "/var/substra/servermedias/"
 
 class DataSampleSpec(_Spec):
     path: str
-    test_only: bool
     data_manager_keys: typing.List[str]
 
     def move_data_to_server(self, destination_folder, minikube=False):
@@ -340,7 +339,6 @@ class DataSampleSpec(_Spec):
 
 class DataSampleBatchSpec(_Spec):
     paths: typing.List[str]
-    test_only: bool
     data_manager_keys: typing.List[str]
 
     @classmethod
@@ -351,12 +349,10 @@ class DataSampleBatchSpec(_Spec):
             return all(first == x for x in iterator)
 
         assert len(specs)
-        assert _all_equal([s.test_only for s in specs])
         assert _all_equal([s.data_manager_keys for s in specs])
 
         return cls(
             paths=[s.path for s in specs],
-            test_only=specs[0].test_only,
             data_manager_keys=specs[0].data_manager_keys,
         )
 
@@ -382,21 +378,40 @@ DEFAULT_ALGO_SCRIPTS = {
 
 class AugmentedDataset:
     def __init__(self, dataset) -> None:
+        """Augment a dataset to create train and test datasamples.
+
+        Args:
+            dataset: dataset link to the datasamples.
+        """
         self.key = dataset.key
         self.owner = dataset.owner
-        self.train_data_sample_keys = dataset.train_data_sample_keys
-        self.test_data_sample_keys = dataset.test_data_sample_keys
+        self.data_sample_keys = dataset.data_sample_keys
         self.opener_input = FLTaskInputGenerator.opener(dataset.key)
-        self.train_data_sample_inputs = FLTaskInputGenerator.data_samples(self.train_data_sample_keys)
-        self.test_data_sample_inputs = FLTaskInputGenerator.data_samples(self.test_data_sample_keys)
+
+    def set_train_test_dasamples(self, train_data_sample_keys=(), test_data_sample_keys=()):
+
+        self._check_data_sample_keys(train_data_sample_keys)
+        self._check_data_sample_keys(test_data_sample_keys)
+
+        self.train_data_sample_keys = train_data_sample_keys
+        self.test_data_sample_keys = test_data_sample_keys
+
+        self.train_data_sample_inputs = FLTaskInputGenerator.data_samples(train_data_sample_keys)
+        self.test_data_sample_inputs = FLTaskInputGenerator.data_samples(test_data_sample_keys)
+
         self.train_data_inputs = FLTaskInputGenerator.tuple(
-            opener_key=dataset.key,
-            data_sample_keys=self.train_data_sample_keys,
+            opener_key=self.key,
+            data_sample_keys=train_data_sample_keys,
         )
         self.test_data_inputs = FLTaskInputGenerator.tuple(
-            opener_key=dataset.key,
-            data_sample_keys=self.test_data_sample_keys,
+            opener_key=self.key,
+            data_sample_keys=test_data_sample_keys,
         )
+
+    def _check_data_sample_keys(self, data_sample_keys):
+        for data_sample_key in data_sample_keys:
+            if data_sample_key not in self.data_sample_keys:
+                raise Exception(f"{data_sample_key} not in the dataset data samples.")
 
 
 class _ComputePlanSpecFactory:
@@ -520,7 +535,7 @@ class AssetsFactory:
             f'ENTRYPOINT ["python3", "algo.py", "--function-name", "{method_name}"]\n'
         )
 
-    def create_data_sample(self, content=None, datasets=None, test_only=False):
+    def create_data_sample(self, content=None, datasets=None):
         idx = self._data_sample_counter.inc()
         tmpdir = self._workdir / f"data-{idx}"
         tmpdir.mkdir()
@@ -536,7 +551,6 @@ class AssetsFactory:
 
         return DataSampleSpec(
             path=str(tmpdir),
-            test_only=test_only,
             data_manager_keys=[d.key for d in datasets],
         )
 

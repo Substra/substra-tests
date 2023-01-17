@@ -104,7 +104,16 @@ class _DataEnv:
     """
 
     def __init__(self, datasets, metrics) -> None:
-        self._datasets = [AugmentedDataset(dataset) for dataset in datasets] or []
+        self._datasets = []
+
+        for dataset in datasets:
+            augmented_dataset = AugmentedDataset(dataset)
+            augmented_dataset.set_train_test_dasamples(
+                train_data_sample_keys=augmented_dataset.data_sample_keys[:4],
+                test_data_sample_keys=augmented_dataset.data_sample_keys[4:],
+            )
+            self._datasets.append(augmented_dataset)
+
         self._metrics = metrics or []
 
     @property
@@ -198,8 +207,7 @@ def default_data_env(cfg, network, client_mode):
     """Fixture with pre-existing assets in all organizations.
 
     The following assets will be created for each organization:
-    - 4 train data samples
-    - 1 test data sample
+    - 5 data samples
     - 1 dataset
     - 1 metric
 
@@ -223,14 +231,10 @@ def default_data_env(cfg, network, client_mode):
             spec = f.create_dataset()
             dataset = client.add_dataset(spec)
 
-            # create train data samples
-            for _ in range(4):
-                spec = f.create_data_sample(datasets=[dataset], test_only=False)
+            # create data samples
+            for _ in range(5):
+                spec = f.create_data_sample(datasets=[dataset])
                 client.add_data_sample(spec)
-
-            # create test data sample
-            spec = f.create_data_sample(datasets=[dataset], test_only=True)
-            client.add_data_sample(spec)
 
             # reload datasets (to ensure they are properly linked with the created data samples)
             dataset = client.get_dataset(dataset.key)

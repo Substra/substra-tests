@@ -78,6 +78,7 @@ def test_synchronized_traintuple(clients, factory, channel, current_client, work
     channel.wait_for_asset_synchronized(datasample)  # required by traintuple
 
     dataset = AugmentedDataset(current_client.get_dataset(dataset.key))
+    dataset.set_train_test_dasamples(train_data_sample_keys=[datasample_key])
 
     # create traintuple
     spec = factory.create_traintuple(algo=algo, inputs=dataset.train_data_inputs, worker=worker)
