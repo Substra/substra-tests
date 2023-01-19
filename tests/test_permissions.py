@@ -403,3 +403,102 @@ def test_permissions_denied_head_model_process(factory, client_1, client_2, chan
     )
     with pytest.raises(substra.exceptions.AuthorizationError):
         client_2.add_task(spec)
+
+
+@pytest.mark.remote_only  # no check on permissions with the local backend
+@pytest.mark.parametrize(
+    "permission_train_output, authorize",
+    [
+        (pytest.lazy_fixture("organization_1_only"), False),
+        (pytest.lazy_fixture("organization_2_only"), True),
+    ],
+)
+def test_permission_to_test_on_org_without_training(
+    permission_train_output,
+    organization_1_only,
+    organization_2_only,
+    client_1,
+    client_2,
+    channel,
+    factory,
+    authorize,
+):
+
+    # training algo on client 1
+    spec = factory.create_algo(category=AlgoCategory.simple, permissions=organization_1_only)
+    train_algo = client_1.add_algo(spec)
+    channel.wait_for_asset_synchronized(train_algo)
+
+    # predict and metric algo on client 2
+    spec = factory.create_algo(category=AlgoCategory.predict, permissions=organization_2_only)
+    predict_algo = client_2.add_algo(spec)
+
+    # predict and metric algo on client 2
+    spec = factory.create_algo(category=AlgoCategory.metric, permissions=organization_2_only)
+    metric_algo = client_2.add_algo(spec)
+
+    # add train data samples on organization 1
+    spec = factory.create_dataset(permissions=organization_1_only)
+    dataset_1 = client_1.add_dataset(spec)
+    spec = factory.create_data_sample(
+        datasets=[dataset_1],
+    )
+    train_datasample = client_1.add_data_sample(spec)
+    dataset_1 = AugmentedDataset(client_1.get_dataset(dataset_1.key))
+    dataset_1.set_train_test_dasamples(train_data_sample_keys=[train_datasample])
+
+    # add test data samples on organization 2
+    spec = factory.create_dataset(permissions=organization_2_only)
+    dataset_2 = client_2.add_dataset(spec)
+    spec = factory.create_data_sample(
+        datasets=[dataset_2],
+    )
+    test_datasample = client_2.add_data_sample(spec)
+    dataset_2 = AugmentedDataset(client_2.get_dataset(dataset_2.key))
+    dataset_2.set_train_test_dasamples(test_data_sample_keys=[test_datasample])
+
+    # add traintuple on org 1
+    spec = factory.create_traintuple(
+        algo=train_algo,
+        inputs=dataset_1.train_data_inputs,
+        outputs=FLTaskOutputGenerator.traintuple(authorized_ids=permission_train_output.authorized_ids),
+        worker=client_1.organization_id,
+    )
+    traintuple_1 = client_1.add_task(spec)
+    traintuple_1 = client_1.wait(traintuple_1)
+
+    # add testtuple on org 2
+    if authorize:
+        spec = factory.create_predicttuple(
+            algo=predict_algo,
+            inputs=dataset_2.test_data_inputs + FLTaskInputGenerator.train_to_predict(traintuple_1.key),
+            worker=client_2.organization_id,
+        )
+        predicttuple_2 = client_2.add_task(spec)
+        predicttuple_2 = client_2.wait(predicttuple_2)
+
+        spec = factory.create_testtuple(
+            algo=metric_algo,
+            inputs=dataset_2.test_data_inputs + FLTaskInputGenerator.predict_to_test(predicttuple_2.key),
+            worker=client_2.organization_id,
+        )
+        testtuple_2 = client_2.add_task(spec)
+        testtuple_2 = client_2.wait(testtuple_2)
+
+    else:
+        with pytest.raises(substra.exceptions.AuthorizationError):
+
+            spec = factory.create_predicttuple(
+                algo=predict_algo,
+                inputs=dataset_2.test_data_inputs + FLTaskInputGenerator.train_to_predict(traintuple_1.key),
+                worker=client_2.organization_id,
+            )
+            predicttuple_2 = client_2.add_task(spec)
+            predicttuple_2 = client_2.wait(predicttuple_2)
+            spec = factory.create_testtuple(
+                algo=metric_algo,
+                inputs=dataset_2.test_data_inputs + FLTaskInputGenerator.predict_to_test(predicttuple_2.key),
+                worker=client_2.organization_id,
+            )
+            testtuple_2 = client_2.add_task(spec)
+            testtuple_2 = client_2.wait(testtuple_2)
