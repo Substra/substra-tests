@@ -1,7 +1,6 @@
+from contextlib import contextmanager
 import pytest
 import substra
-from contextlib import contextmanager
-
 
 from substratest.factory import AlgoCategory
 from substratest.factory import AugmentedDataset
