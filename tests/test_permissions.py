@@ -1,4 +1,5 @@
 from contextlib import contextmanager
+
 import pytest
 import substra
 
