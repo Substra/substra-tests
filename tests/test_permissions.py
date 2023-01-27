@@ -1,4 +1,4 @@
-from contextlib import contextmanager
+from contextlib import nullcontext as does_not_raise
 
 import pytest
 import substra
@@ -9,11 +9,6 @@ from substratest.factory import Permissions
 from substratest.fl_interface import FLTaskInputGenerator
 from substratest.fl_interface import FLTaskOutputGenerator
 from substratest.fl_interface import OutputIdentifiers
-
-
-@contextmanager
-def does_not_raise():
-    yield
 
 
 @pytest.fixture
