@@ -58,7 +58,7 @@ def test_synchronized_datasample(clients, factory, channel, current_client):
 
 
 @pytest.mark.remote_only
-def test_synchronized_traintuple(clients, factory, channel, current_client, worker):
+def test_synchronized_traintask(clients, factory, channel, current_client, worker):
     if len(clients) < 2:
         pytest.skip("requires at least 2 organizations")
 
@@ -75,16 +75,16 @@ def test_synchronized_traintuple(clients, factory, channel, current_client, work
     spec = factory.create_data_sample(datasets=[dataset])
     datasample_key = current_client.add_data_sample(spec)
     datasample = current_client.get_data_sample(datasample_key)
-    channel.wait_for_asset_synchronized(datasample)  # required by traintuple
+    channel.wait_for_asset_synchronized(datasample)  # required by traintask
 
     dataset = AugmentedDataset(current_client.get_dataset(dataset.key))
     dataset.set_train_test_dasamples(train_data_sample_keys=[datasample_key])
 
-    # create traintuple
-    spec = factory.create_traintuple(algo=algo, inputs=dataset.train_data_inputs, worker=worker)
-    traintuple = current_client.add_task(spec)
-    traintuple = current_client.wait(traintuple)
-    channel.wait_for_asset_synchronized(traintuple)
+    # create traintask
+    spec = factory.create_traintask(algo=algo, inputs=dataset.train_data_inputs, worker=worker)
+    traintask = current_client.add_task(spec)
+    traintask = current_client.wait(traintask)
+    channel.wait_for_asset_synchronized(traintask)
 
 
 @pytest.mark.remote_only

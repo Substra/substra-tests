@@ -399,11 +399,11 @@ class AugmentedDataset:
         self.train_data_sample_inputs = FLTaskInputGenerator.data_samples(train_data_sample_keys)
         self.test_data_sample_inputs = FLTaskInputGenerator.data_samples(test_data_sample_keys)
 
-        self.train_data_inputs = FLTaskInputGenerator.tuple(
+        self.train_data_inputs = FLTaskInputGenerator.task(
             opener_key=self.key,
             data_sample_keys=train_data_sample_keys,
         )
-        self.test_data_inputs = FLTaskInputGenerator.tuple(
+        self.test_data_inputs = FLTaskInputGenerator.task(
             opener_key=self.key,
             data_sample_keys=test_data_sample_keys,
         )
@@ -415,13 +415,13 @@ class AugmentedDataset:
 
 
 class _ComputePlanSpecFactory:
-    def create_traintuple(self, algo, worker, inputs=None, outputs=None, tag="", metadata=None) -> ComputePlanTaskSpec:
+    def create_traintask(self, algo, worker, inputs=None, outputs=None, tag="", metadata=None) -> ComputePlanTaskSpec:
 
         spec = ComputePlanTaskSpec(
             algo_key=algo.key,
             task_id=random_uuid(),
             inputs=inputs or [],
-            outputs=outputs if outputs is not None else FLTaskOutputGenerator.traintuple(),
+            outputs=outputs if outputs is not None else FLTaskOutputGenerator.traintask(),
             tag=tag,
             metadata=metadata,
             worker=worker,
@@ -429,7 +429,7 @@ class _ComputePlanSpecFactory:
         self.tasks.append(spec)
         return spec
 
-    def create_aggregatetuple(
+    def create_aggregatetask(
         self, aggregate_algo, worker, inputs=None, outputs=None, tag="", metadata=None
     ) -> ComputePlanTaskSpec:
 
@@ -438,14 +438,14 @@ class _ComputePlanSpecFactory:
             algo_key=aggregate_algo.key,
             worker=worker,
             inputs=inputs or [],
-            outputs=outputs if outputs is not None else FLTaskOutputGenerator.aggregatetuple(),
+            outputs=outputs if outputs is not None else FLTaskOutputGenerator.aggregatetask(),
             tag=tag,
             metadata=metadata,
         )
         self.tasks.append(spec)
         return spec
 
-    def create_composite_traintuple(
+    def create_composite_traintask(
         self,
         composite_algo,
         worker,
@@ -459,7 +459,7 @@ class _ComputePlanSpecFactory:
             task_id=random_uuid(),
             algo_key=composite_algo.key,
             inputs=inputs or [],
-            outputs=outputs if outputs is not None else FLTaskOutputGenerator.composite_traintuple(),
+            outputs=outputs if outputs is not None else FLTaskOutputGenerator.composite_traintask(),
             tag=tag,
             metadata=metadata,
             worker=worker,
@@ -467,15 +467,13 @@ class _ComputePlanSpecFactory:
         self.tasks.append(spec)
         return spec
 
-    def create_predicttuple(
-        self, algo, worker, inputs=None, outputs=None, tag="", metadata=None
-    ) -> ComputePlanTaskSpec:
+    def create_predicttask(self, algo, worker, inputs=None, outputs=None, tag="", metadata=None) -> ComputePlanTaskSpec:
 
         spec = ComputePlanTaskSpec(
             task_id=random_uuid(),
             algo_key=algo.key,
             inputs=inputs or [],
-            outputs=outputs if outputs is not None else FLTaskOutputGenerator.predicttuple(),
+            outputs=outputs if outputs is not None else FLTaskOutputGenerator.predicttask(),
             tag=tag,
             metadata=metadata,
             worker=worker,
@@ -483,12 +481,12 @@ class _ComputePlanSpecFactory:
         self.tasks.append(spec)
         return spec
 
-    def create_testtuple(self, algo, worker, inputs=None, outputs=None, tag="", metadata=None) -> ComputePlanTaskSpec:
+    def create_testtask(self, algo, worker, inputs=None, outputs=None, tag="", metadata=None) -> ComputePlanTaskSpec:
         spec = ComputePlanTaskSpec(
             task_id=random_uuid(),
             algo_key=algo.key,
             inputs=inputs or [],
-            outputs=outputs if outputs is not None else FLTaskOutputGenerator.testtuple(),
+            outputs=outputs if outputs is not None else FLTaskOutputGenerator.testtask(),
             tag=tag,
             metadata=metadata,
             worker=worker,
@@ -618,7 +616,7 @@ class AssetsFactory:
             metadata=metadata,
         )
 
-    def create_traintuple(
+    def create_traintask(
         self,
         algo=None,
         inputs=None,
@@ -636,12 +634,12 @@ class AssetsFactory:
             metadata=metadata,
             compute_plan_key=compute_plan_key,
             inputs=inputs or [],
-            outputs=outputs if outputs is not None else FLTaskOutputGenerator.traintuple(),
+            outputs=outputs if outputs is not None else FLTaskOutputGenerator.traintask(),
             rank=rank,
             worker=worker,
         )
 
-    def create_aggregatetuple(
+    def create_aggregatetask(
         self,
         algo=None,
         worker=None,
@@ -657,14 +655,14 @@ class AssetsFactory:
             algo_key=algo.key if algo else None,
             worker=worker,
             inputs=inputs or [],
-            outputs=outputs if outputs is not None else FLTaskOutputGenerator.aggregatetuple(),
+            outputs=outputs if outputs is not None else FLTaskOutputGenerator.aggregatetask(),
             tag=tag,
             metadata=metadata,
             compute_plan_key=compute_plan_key,
             rank=rank,
         )
 
-    def create_composite_traintuple(
+    def create_composite_traintask(
         self,
         algo=None,
         inputs=None,
@@ -679,7 +677,7 @@ class AssetsFactory:
         return TaskSpec(
             algo_key=algo.key if algo else None,
             inputs=inputs or [],
-            outputs=outputs if outputs is not None else FLTaskOutputGenerator.composite_traintuple(),
+            outputs=outputs if outputs is not None else FLTaskOutputGenerator.composite_traintask(),
             tag=tag,
             metadata=metadata,
             compute_plan_key=compute_plan_key,
@@ -687,21 +685,21 @@ class AssetsFactory:
             worker=worker,
         )
 
-    def create_predicttuple(self, algo, worker, inputs=None, outputs=None, tag=None, metadata=None) -> TaskSpec:
+    def create_predicttask(self, algo, worker, inputs=None, outputs=None, tag=None, metadata=None) -> TaskSpec:
         return TaskSpec(
             algo_key=algo.key,
             inputs=inputs or [],
-            outputs=outputs if outputs is not None else FLTaskOutputGenerator.predicttuple(),
+            outputs=outputs if outputs is not None else FLTaskOutputGenerator.predicttask(),
             tag=tag,
             metadata=metadata,
             worker=worker,
         )
 
-    def create_testtuple(self, algo, worker, inputs=None, outputs=None, tag=None, metadata=None) -> TaskSpec:
+    def create_testtask(self, algo, worker, inputs=None, outputs=None, tag=None, metadata=None) -> TaskSpec:
         return TaskSpec(
             algo_key=algo.key,
             inputs=inputs or [],
-            outputs=outputs if outputs is not None else FLTaskOutputGenerator.testtuple(),
+            outputs=outputs if outputs is not None else FLTaskOutputGenerator.testtask(),
             tag=tag,
             metadata=metadata,
             worker=worker,
@@ -717,7 +715,7 @@ class AssetsFactory:
             clean_models=clean_models,
         )
 
-    def add_compute_plan_tuples(self, compute_plan):
+    def add_compute_plan_tasks(self, compute_plan):
         return UpdateComputePlanTuplesSpec(
             tasks=[],
             key=compute_plan.key,

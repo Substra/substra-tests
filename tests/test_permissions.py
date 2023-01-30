@@ -161,25 +161,25 @@ def test_permissions(permissions_1, permissions_2, expected_permissions, factory
     spec = factory.create_algo(category=AlgoCategory.simple, permissions=permissions_2)
     algo_2 = client_2.add_algo(spec)
 
-    # add traintuple
-    spec = factory.create_traintuple(
+    # add traintask
+    spec = factory.create_traintask(
         algo=algo_2,
         inputs=dataset_1.train_data_inputs,
-        outputs=FLTaskOutputGenerator.traintuple(authorized_ids=expected_permissions.authorized_ids),
+        outputs=FLTaskOutputGenerator.traintask(authorized_ids=expected_permissions.authorized_ids),
         worker=workers[0],
     )
     channel.wait_for_asset_synchronized(algo_2)
-    traintuple = client_1.add_task(spec)
-    traintuple = client_1.wait(traintuple)
+    traintask = client_1.add_task(spec)
+    traintask = client_1.wait(traintask)
 
     # check the compute task executed on the correct worker
-    assert traintuple.outputs[OutputIdentifiers.model].value is not None
-    assert traintuple.worker == client_1.organization_id
+    assert traintask.outputs[OutputIdentifiers.model].value is not None
+    assert traintask.worker == client_1.organization_id
 
     # check the permissions
-    tuple_permissions = traintuple.outputs[OutputIdentifiers.model].permissions
-    assert tuple_permissions.process.public == expected_permissions.public
-    assert set(tuple_permissions.process.authorized_ids) == set(expected_permissions.authorized_ids)
+    task_permissions = traintask.outputs[OutputIdentifiers.model].permissions
+    assert task_permissions.process.public == expected_permissions.public
+    assert set(task_permissions.process.authorized_ids) == set(expected_permissions.authorized_ids)
 
 
 @pytest.mark.remote_only  # no check on permissions with the local backend
@@ -204,9 +204,9 @@ def test_permissions_denied_process(factory, client_1, client_2, channel, worker
     algo_2 = client_2.add_algo(spec)
     channel.wait_for_asset_synchronized(algo_2)
 
-    # traintuples
+    # traintasks
 
-    spec = factory.create_traintuple(algo=algo_2, inputs=dataset_1.train_data_inputs, worker=workers[0])
+    spec = factory.create_traintask(algo=algo_2, inputs=dataset_1.train_data_inputs, worker=workers[0])
 
     with pytest.raises(substra.exceptions.AuthorizationError):
         client_2.add_task(spec)
@@ -231,7 +231,7 @@ def test_permissions_denied_process(factory, client_1, client_2, channel, worker
 def test_permissions_model_process(
     client_1_permissions, client_2_permissions, expectation, factory, client_1, client_2, channel, workers
 ):
-    """Test that a traintuple can/cannot process an in-model depending on permissions."""
+    """Test that a traintask can/cannot process an in-model depending on permissions."""
     datasets = []
     algos = []
     for client, permissions in zip([client_1, client_2], [client_1_permissions, client_2_permissions]):
@@ -256,31 +256,31 @@ def test_permissions_model_process(
     dataset_1, dataset_2 = datasets
     algo_1, algo_2 = algos
 
-    # traintuples
-    spec = factory.create_traintuple(
+    # traintasks
+    spec = factory.create_traintask(
         algo=algo_1,
         inputs=dataset_1.train_data_inputs,
-        outputs=FLTaskOutputGenerator.traintuple(authorized_ids=client_1_permissions.authorized_ids),
+        outputs=FLTaskOutputGenerator.traintask(authorized_ids=client_1_permissions.authorized_ids),
         worker=workers[0],
     )
-    traintuple_1 = client_1.add_task(spec)
-    traintuple_1 = client_1.wait(traintuple_1)
+    traintask_1 = client_1.add_task(spec)
+    traintask_1 = client_1.wait(traintask_1)
 
-    assert not traintuple_1.outputs[OutputIdentifiers.model].permissions.process.public
-    assert set(traintuple_1.outputs[OutputIdentifiers.model].permissions.process.authorized_ids) == set(
+    assert not traintask_1.outputs[OutputIdentifiers.model].permissions.process.public
+    assert set(traintask_1.outputs[OutputIdentifiers.model].permissions.process.authorized_ids) == set(
         [client_1.organization_id] + client_1_permissions.authorized_ids
     )
 
-    spec = factory.create_traintuple(
+    spec = factory.create_traintask(
         algo=algo_2,
-        inputs=dataset_2.train_data_inputs + FLTaskInputGenerator.trains_to_train([traintuple_1.key]),
+        inputs=dataset_2.train_data_inputs + FLTaskInputGenerator.trains_to_train([traintask_1.key]),
         worker=workers[1],
     )
 
     with expectation:
-        traintuple_2 = client_2.add_task(spec)
+        traintask_2 = client_2.add_task(spec)
 
-        client_2.wait(traintuple_2)
+        client_2.wait(traintask_2)
 
 
 @pytest.mark.remote_only  # no check on permissions with the local backend
@@ -289,8 +289,8 @@ def test_merge_permissions_denied_process(factory, clients, channel, workers):
 
     - dataset and metrics located on organization 1
     - algo located on organization 2
-    - traintuple created on organization 2
-    - failed attempt to create testtuple using this traintuple from organization 3
+    - traintask created on organization 2
+    - failed attempt to create testtask using this traintask from organization 3
     """
     if len(clients) < 3:
         pytest.skip("requires at least 3 organizations")
@@ -331,23 +331,23 @@ def test_merge_permissions_denied_process(factory, clients, channel, workers):
         spec = factory.create_algo(category=AlgoCategory.simple, permissions=permissions_2)
         algo_2 = client_2.add_algo(spec)
 
-        # add traintuple from organization 2
+        # add traintask from organization 2
         spec = factory.create_algo(category=AlgoCategory.predict, permissions=permissions_1)
         predict_algo_1 = client_1.add_algo(spec)
 
         dataset_1 = AugmentedDataset(client_1.get_dataset(dataset_1.key))
         dataset_1.set_train_test_dasamples(train_data_sample_keys=[data_sample_key_1])
 
-        # add traintuple from node 2
-        spec = factory.create_traintuple(algo=algo_2, inputs=dataset_1.train_data_inputs, worker=workers[0])
-        traintuple_2 = client_2.add_task(spec)
-        traintuple_2 = client_2.wait(traintuple_2)
-        channel.wait_for_asset_synchronized(traintuple_2)  # used by client_3
+        # add traintask from node 2
+        spec = factory.create_traintask(algo=algo_2, inputs=dataset_1.train_data_inputs, worker=workers[0])
+        traintask_2 = client_2.add_task(spec)
+        traintask_2 = client_2.wait(traintask_2)
+        channel.wait_for_asset_synchronized(traintask_2)  # used by client_3
 
-        # failed to add predicttuple from organization 3
-        spec = factory.create_predicttuple(
+        # failed to add predicttask from organization 3
+        spec = factory.create_predicttask(
             algo=predict_algo_1,
-            inputs=dataset_1.test_data_inputs + FLTaskInputGenerator.train_to_predict(traintuple_2.key),
+            inputs=dataset_1.test_data_inputs + FLTaskInputGenerator.train_to_predict(traintask_2.key),
             worker=workers[0],
         )
 
@@ -385,23 +385,23 @@ def test_permissions_denied_head_model_process(factory, client_1, client_2, chan
     channel.wait_for_asset_synchronized(composite_algo)  # used by client_2
 
     # create composite task
-    spec = factory.create_composite_traintuple(
+    spec = factory.create_composite_traintask(
         algo=composite_algo,
         inputs=dataset_1.train_data_inputs,
-        outputs=FLTaskOutputGenerator.composite_traintuple(
+        outputs=FLTaskOutputGenerator.composite_traintask(
             shared_authorized_ids=[client_1.organization_id, client_2.organization_id],
             local_authorized_ids=[client_1.organization_id],
         ),
         worker=workers[0],
     )
 
-    composite_traintuple_1 = client_1.add_task(spec)
-    composite_traintuple_1 = client_1.wait(composite_traintuple_1)
-    channel.wait_for_asset_synchronized(composite_traintuple_1)  # used by client_2
+    composite_traintask_1 = client_1.add_task(spec)
+    composite_traintask_1 = client_1.wait(composite_traintask_1)
+    channel.wait_for_asset_synchronized(composite_traintask_1)  # used by client_2
 
-    spec = factory.create_composite_traintuple(
+    spec = factory.create_composite_traintask(
         algo=composite_algo,
-        inputs=dataset_2.train_data_inputs + FLTaskInputGenerator.composite_to_composite(composite_traintuple_1.key),
+        inputs=dataset_2.train_data_inputs + FLTaskInputGenerator.composite_to_composite(composite_traintask_1.key),
         worker=workers[1],
     )
     with pytest.raises(substra.exceptions.AuthorizationError):
