@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Update test after test only for datasample removal (#235)
+- chore: rename tuple to task (#239)
 
 ## [0.37.0] - 2022-12-19
 
