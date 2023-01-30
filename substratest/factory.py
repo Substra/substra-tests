@@ -499,7 +499,7 @@ class ComputePlanSpec(_ComputePlanSpecFactory, substra.sdk.schemas.ComputePlanSp
     pass
 
 
-class UpdateComputePlanTuplesSpec(_ComputePlanSpecFactory, substra.sdk.schemas.UpdateComputePlanTuplesSpec):
+class UpdateComputePlanTasksSpec(_ComputePlanSpecFactory, substra.sdk.schemas.UpdateComputePlanTasksSpec):
     pass
 
 
@@ -716,7 +716,7 @@ class AssetsFactory:
         )
 
     def add_compute_plan_tasks(self, compute_plan):
-        return UpdateComputePlanTuplesSpec(
+        return UpdateComputePlanTasksSpec(
             tasks=[],
             key=compute_plan.key,
             name=compute_plan.name,
