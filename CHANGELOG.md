@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Added
+
+- Remote test to verify that, with the right permission, we can test on an org from the training model of an other organization (#237)
+
 ## [0.38.0] - 2023-01-30
 
 ### Changed
