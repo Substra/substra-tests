@@ -3,7 +3,7 @@ from substra.sdk.models import Status
 
 import substratest as sbt
 from substratest.factory import DEFAULT_DATA_SAMPLE_FILENAME
-from substratest.fl_interface import AlgoCategory
+from substratest.fl_interface import FunctionCategory
 from substratest.fl_interface import FLTaskInputGenerator
 from substratest.fl_interface import InputIdentifiers
 from substratest.fl_interface import OutputIdentifiers
@@ -18,7 +18,7 @@ class TestOpener(tools.Opener):
         pass
 """
 
-TEMPLATE_ALGO_SCRIPT = f"""
+TEMPLATE_FUNCTION_SCRIPT = f"""
 import json
 import substratools as tools
 
@@ -61,7 +61,7 @@ if __name__ == '__main__':
     tools.execute()
 """
 
-TEMPLATE_COMPOSITE_ALGO_SCRIPT = f"""
+TEMPLATE_COMPOSITE_FUNCTION_SCRIPT = f"""
 import json
 import substratools as tools
 
@@ -131,7 +131,7 @@ def score(inputs, outputs, task_properties):
     assert y_true_data_sample_keys == {{data_sample_keys}}
 
     # y_true is a list of unordered data samples
-    # since the Algo returns y==x, y_pred should respect the same order
+    # since the Function returns y==x, y_pred should respect the same order
 
     assert  y_true_data_sample_keys == y_pred_data_sample_keys, (y_true_data_sample_keys, y_pred_data_sample_keys)
 
@@ -184,28 +184,28 @@ def dataset(factory, client):
 
 def test_task_data_samples_relative_order(factory, client, dataset, worker):
 
-    # Format TEMPLATE_ALGO_SCRIPT with current data_sample_keys
-    algo_script = TEMPLATE_ALGO_SCRIPT.format(
+    # Format TEMPLATE_FUNCTION_SCRIPT with current data_sample_keys
+    function_script = TEMPLATE_FUNCTION_SCRIPT.format(
         data_sample_keys=dataset.train_data_sample_keys,
         test_data_sample_keys=dataset.test_data_sample_keys,
         models=None,
     )
-    algo_spec = factory.create_algo(category=AlgoCategory.simple, py_script=algo_script)
-    algo = client.add_algo(algo_spec)
+    function_spec = factory.create_function(category=FunctionCategory.simple, py_script=function_script)
+    function = client.add_function(function_spec)
 
-    predict_algo_spec = factory.create_algo(category=AlgoCategory.predict, py_script=algo_script)
-    predict_algo = client.add_algo(predict_algo_spec)
+    predict_function_spec = factory.create_function(category=FunctionCategory.predict, py_script=function_script)
+    predict_function = client.add_function(predict_function_spec)
 
     metric_script = TEMPLATE_METRIC_SCRIPT.format(data_sample_keys=dataset.test_data_sample_keys)
-    metric_spec = factory.create_algo(category=AlgoCategory.metric, py_script=metric_script)
-    metric = client.add_algo(metric_spec)
+    metric_spec = factory.create_function(category=FunctionCategory.metric, py_script=metric_script)
+    metric = client.add_function(metric_spec)
 
-    traintask_spec = factory.create_traintask(algo=algo, inputs=dataset.train_data_inputs, worker=worker)
+    traintask_spec = factory.create_traintask(function=function, inputs=dataset.train_data_inputs, worker=worker)
     traintask = client.add_task(traintask_spec)
 
     # Ensure the order of the data sample keys is correct at 2 levels: :
     #  1. In the returned traintask
-    #  2. In the train method of the algo. If the order is incorrect, wait() will fail.
+    #  2. In the train method of the function. If the order is incorrect, wait() will fail.
     assert [
         i.asset_key for i in traintask.inputs if i.identifier == InputIdentifiers.datasamples
     ] == dataset.train_data_sample_keys
@@ -213,14 +213,14 @@ def test_task_data_samples_relative_order(factory, client, dataset, worker):
 
     predict_input_models = FLTaskInputGenerator.train_to_predict(traintask.key)
     predicttask_spec = factory.create_predicttask(
-        algo=predict_algo, inputs=dataset.test_data_inputs + predict_input_models, worker=worker
+        function=predict_function, inputs=dataset.test_data_inputs + predict_input_models, worker=worker
     )
     predicttask = client.add_task(predicttask_spec)
 
     test_input_models = FLTaskInputGenerator.predict_to_test(predicttask.key)
 
     testtask_spec = factory.create_testtask(
-        algo=metric, inputs=dataset.test_data_inputs + test_input_models, worker=worker
+        function=metric, inputs=dataset.test_data_inputs + test_input_models, worker=worker
     )
     testtask = client.add_task(testtask_spec)
 
@@ -229,36 +229,38 @@ def test_task_data_samples_relative_order(factory, client, dataset, worker):
 
 
 def test_composite_traintask_data_samples_relative_order(factory, client, dataset, worker):
-    # Format TEMPLATE_COMPOSITE_ALGO_SCRIPT with current data_sample_keys
-    composite_algo_script = TEMPLATE_COMPOSITE_ALGO_SCRIPT.format(
+    # Format TEMPLATE_COMPOSITE_FUNCTION_SCRIPT with current data_sample_keys
+    composite_function_script = TEMPLATE_COMPOSITE_FUNCTION_SCRIPT.format(
         data_sample_keys=dataset.train_data_sample_keys,
         test_data_sample_keys=dataset.test_data_sample_keys,
         models=None,
     )
-    algo_spec = factory.create_algo(AlgoCategory.composite, py_script=composite_algo_script)
-    composite_algo = client.add_algo(algo_spec)
+    function_spec = factory.create_function(FunctionCategory.composite, py_script=composite_function_script)
+    composite_function = client.add_function(function_spec)
 
-    predict_algo_script = TEMPLATE_COMPOSITE_ALGO_SCRIPT.format(
+    predict_function_script = TEMPLATE_COMPOSITE_FUNCTION_SCRIPT.format(
         data_sample_keys=dataset.train_data_sample_keys,
         test_data_sample_keys=dataset.test_data_sample_keys,
         models=None,
     )
-    predict_algo_spec = factory.create_algo(AlgoCategory.predict_composite, py_script=predict_algo_script)
-    predict_algo = client.add_algo(predict_algo_spec)
+    predict_function_spec = factory.create_function(
+        FunctionCategory.predict_composite, py_script=predict_function_script
+    )
+    predict_function = client.add_function(predict_function_spec)
 
     metric_script = TEMPLATE_METRIC_SCRIPT.format(
         data_sample_keys=dataset.test_data_sample_keys,
     )
-    metric_spec = factory.create_algo(category=AlgoCategory.metric, py_script=metric_script)
-    metric = client.add_algo(metric_spec)
+    metric_spec = factory.create_function(category=FunctionCategory.metric, py_script=metric_script)
+    metric = client.add_function(metric_spec)
 
     traintask_spec = factory.create_composite_traintask(
-        algo=composite_algo, inputs=dataset.train_data_inputs, worker=worker
+        function=composite_function, inputs=dataset.train_data_inputs, worker=worker
     )
     composite_traintask = client.add_task(traintask_spec)
     # Ensure the order of the data sample keys is correct at 2 levels: :
     #  1. In the returned composite traintask
-    #  2. In the train method of the algo. If the order is incorrect, wait() will fail.
+    #  2. In the train method of the function. If the order is incorrect, wait() will fail.
     assert [
         i.asset_key for i in composite_traintask.inputs if i.identifier == InputIdentifiers.datasamples
     ] == dataset.train_data_sample_keys
@@ -267,14 +269,14 @@ def test_composite_traintask_data_samples_relative_order(factory, client, datase
     predict_input_models = FLTaskInputGenerator.composite_to_predict(composite_traintask.key)
 
     predicttask_spec = factory.create_predicttask(
-        algo=predict_algo, inputs=dataset.test_data_inputs + predict_input_models, worker=worker
+        function=predict_function, inputs=dataset.test_data_inputs + predict_input_models, worker=worker
     )
     predicttask = client.add_task(predicttask_spec)
 
     test_input_models = FLTaskInputGenerator.predict_to_test(predicttask.key)
 
     testtask_spec = factory.create_testtask(
-        algo=metric, inputs=dataset.test_data_inputs + test_input_models, worker=worker
+        function=metric, inputs=dataset.test_data_inputs + test_input_models, worker=worker
     )
     testtask = client.add_task(testtask_spec)
 
@@ -309,8 +311,8 @@ class TestOpener(tools.Opener):
     keys = client.add_data_samples(spec)
     assert len(keys) == batch_size
 
-    spec = factory.create_algo(
-        category=AlgoCategory.simple,
+    spec = factory.create_function(
+        category=FunctionCategory.simple,
         py_script=f"""
 import json
 import substratools as tools
@@ -343,10 +345,10 @@ if __name__ == '__main__':
     tools.execute()
 """,
     )
-    algo = client.add_algo(spec)
+    function = client.add_function(spec)
 
     spec = factory.create_traintask(
-        algo=algo,
+        function=function,
         inputs=FLTaskInputGenerator.task(opener_key=dataset.key, data_sample_keys=keys),
         worker=worker,
     )

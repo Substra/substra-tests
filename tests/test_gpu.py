@@ -1,6 +1,6 @@
 import pytest
 
-from substratest.factory import AlgoCategory
+from substratest.factory import FunctionCategory
 from substratest.fl_interface import OutputIdentifiers
 
 
@@ -15,9 +15,9 @@ def test_gpu(factory, client, org_idx, default_datasets, workers):
 FROM ghcr.io/substra/substra-tools:latest-{nvidia_drivers}-python3.7
 
 RUN python3 -m pip install torch==1.11.0
-COPY algo.py .
+COPY function.py .
 
-ENTRYPOINT ["python3", "algo.py"]
+ENTRYPOINT ["python3", "function.py"]
 """
     script = f"""
 import json
@@ -47,11 +47,11 @@ def save_model(model, path):
 if __name__ == '__main__':
     tools.execute()
 """  # noqa
-    spec = factory.create_algo(AlgoCategory.simple, dockerfile=dockerfile, py_script=script)
-    algo = client.add_algo(spec)
+    spec = factory.create_function(FunctionCategory.simple, dockerfile=dockerfile, py_script=script)
+    function = client.add_function(spec)
     cp_spec = factory.create_compute_plan(tag=f"GPU test - org {default_datasets[org_idx].owner} - {nvidia_drivers}")
     cp_spec.create_traintask(
-        algo=algo,
+        function=function,
         inputs=default_datasets[org_idx].train_data_inputs,
         metadata={"docker_cuda_version": nvidia_drivers},
         workers=workers[org_idx],

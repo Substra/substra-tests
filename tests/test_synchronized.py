@@ -1,6 +1,6 @@
 import pytest
 
-from substratest.factory import AlgoCategory
+from substratest.factory import FunctionCategory
 from substratest.factory import AugmentedDataset
 
 
@@ -11,13 +11,13 @@ def current_client(clients):
 
 
 @pytest.mark.remote_only
-def test_synchronized_algo(clients, factory, channel, current_client):
+def test_synchronized_function(clients, factory, channel, current_client):
     if len(clients) < 2:
         pytest.skip("requires at least 2 organizations")
 
-    spec = factory.create_algo(AlgoCategory.simple)
-    algo = current_client.add_algo(spec)
-    channel.wait_for_asset_synchronized(algo)
+    spec = factory.create_function(FunctionCategory.simple)
+    function = current_client.add_function(spec)
+    channel.wait_for_asset_synchronized(function)
 
 
 @pytest.mark.remote_only
@@ -25,8 +25,8 @@ def test_synchronized_metric(clients, factory, channel, current_client):
     if len(clients) < 2:
         pytest.skip("requires at least 2 organizations")
 
-    spec = factory.create_algo(category=AlgoCategory.metric)
-    metric = current_client.add_algo(spec)
+    spec = factory.create_function(category=FunctionCategory.metric)
+    metric = current_client.add_function(spec)
     channel.wait_for_asset_synchronized(metric)
 
 
@@ -62,9 +62,9 @@ def test_synchronized_traintask(clients, factory, channel, current_client, worke
     if len(clients) < 2:
         pytest.skip("requires at least 2 organizations")
 
-    # create algo
-    spec = factory.create_algo(AlgoCategory.simple)
-    algo = current_client.add_algo(spec)
+    # create function
+    spec = factory.create_function(FunctionCategory.simple)
+    function = current_client.add_function(spec)
 
     # create dataset
     spec = factory.create_dataset()
@@ -81,7 +81,7 @@ def test_synchronized_traintask(clients, factory, channel, current_client, worke
     dataset.set_train_test_dasamples(train_data_sample_keys=[datasample_key])
 
     # create traintask
-    spec = factory.create_traintask(algo=algo, inputs=dataset.train_data_inputs, worker=worker)
+    spec = factory.create_traintask(function=function, inputs=dataset.train_data_inputs, worker=worker)
     traintask = current_client.add_task(spec)
     traintask = current_client.wait(traintask)
     channel.wait_for_asset_synchronized(traintask)
@@ -92,7 +92,7 @@ def test_synchronized_computeplan(clients, factory, channel, current_client):
     if len(clients) < 2:
         pytest.skip("requires at least 2 organizations")
 
-    # create algo
+    # create function
     cp_spec = factory.create_compute_plan()
     compute_plan = current_client.add_compute_plan(cp_spec)
     assert compute_plan.creator != "external"

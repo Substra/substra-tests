@@ -2,7 +2,7 @@ import enum
 
 
 class AssetType(enum.Enum):
-    algo = enum.auto()
+    function = enum.auto()
     compute_plan = enum.auto()
     data_sample = enum.auto()
     dataset = enum.auto()

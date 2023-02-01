@@ -62,7 +62,7 @@ def _fit(model, X, y, batch_size, num_updates, rank):
 @tools.register
 def train(inputs, outputs, task_properties):
     torch.manual_seed(_SEED)  # initialize model weights
-    torch.use_deterministic_algorithms(True)
+    torch.use_deterministic_functionrithms(True)
 
     head_model_path = inputs.get("local")
     trunk_model_path = inputs.get("shared")

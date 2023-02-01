@@ -6,13 +6,13 @@ import pytest
 import substra
 
 import substratest as sbt
-from substratest.factory import AlgoCategory
+from substratest.factory import FunctionCategory
 
 
 def test_connection_to_organizations(clients):
     """Connect to each substra organizations using the client."""
     for client in clients:
-        client.list_algo()
+        client.list_function()
 
 
 def test_add_dataset(factory, client):
@@ -32,12 +32,12 @@ def test_download_opener(factory, client):
     assert content == spec.read_opener()
 
 
-@pytest.mark.parametrize("category", [AlgoCategory.simple, AlgoCategory.aggregate, AlgoCategory.composite])
-def test_download_algo(factory, client, category):
-    spec = factory.create_algo(category)
-    algo = client.add_algo(spec)
+@pytest.mark.parametrize("category", [FunctionCategory.simple, FunctionCategory.aggregate, FunctionCategory.composite])
+def test_download_function(factory, client, category):
+    spec = factory.create_function(category)
+    function = client.add_function(spec)
 
-    content = client.download_algo(algo.key)
+    content = client.download_function(function.key)
     with open(spec.file, "rb") as f:
         expected_content = f.read()
     assert content == expected_content
@@ -120,7 +120,7 @@ def test_add_data_sample_path_big_files(network, filesize, factory, client, orga
     "asset_name,params",
     [
         ("dataset", {}),
-        ("algo", {"category": AlgoCategory.simple}),
+        ("function", {"category": FunctionCategory.simple}),
     ],
 )
 @pytest.mark.parametrize(
@@ -148,7 +148,7 @@ def test_asset_with_metadata(factory, client, asset_name, params, metadata, meta
     "asset_name,params",
     [
         ("dataset", {}),
-        ("algo", {"category": AlgoCategory.simple}),
+        ("function", {"category": FunctionCategory.simple}),
     ],
 )
 @pytest.mark.parametrize(
@@ -172,12 +172,12 @@ def test_asset_with_invalid_metadata(factory, client, asset_name, params, metada
         add_asset(spec)
 
 
-def test_add_algo(factory, client):
-    spec = factory.create_algo(category=AlgoCategory.simple)
-    algo = client.add_algo(spec)
+def test_add_function(factory, client):
+    spec = factory.create_function(category=FunctionCategory.simple)
+    function = client.add_function(spec)
 
-    algo_copy = client.get_algo(algo.key)
-    assert algo == algo_copy
+    function_copy = client.get_function(function.key)
+    assert function == function_copy
 
 
 @pytest.mark.remote_only  # No organization saved in the local backend
@@ -190,16 +190,16 @@ def test_list_organizations(client, network):
     assert set(network_organization_ids).issubset(set(organization_ids))
 
 
-def test_query_algos(factory, client):
-    """Check we can find a newly created algo through the list method."""
-    spec = factory.create_algo(category=AlgoCategory.simple)
-    algo = client.add_algo(spec)
+def test_query_functions(factory, client):
+    """Check we can find a newly created function through the list method."""
+    spec = factory.create_function(category=FunctionCategory.simple)
+    function = client.add_function(spec)
 
-    matching_algos = [a for a in client.list_algo() if a.key == algo.key]
-    assert len(matching_algos) == 1
+    matching_functions = [a for a in client.list_function() if a.key == function.key]
+    assert len(matching_functions) == 1
 
     # ensure the list method returns the same information as the add method
-    assert algo == matching_algos[0]
+    assert function == matching_functions[0]
 
 
 @pytest.mark.parametrize(
@@ -225,7 +225,7 @@ def test_error_get_asset_not_found(asset_type, client):
 @pytest.mark.parametrize(
     "asset_name,asset_params",
     [
-        ("algo", {"category": AlgoCategory.simple}),
+        ("function", {"category": FunctionCategory.simple}),
         ("compute_plan", {}),
         ("dataset", {}),
     ],
@@ -265,7 +265,7 @@ def test_update_name(asset_name, asset_params, client, factory, channel):
 @pytest.mark.parametrize(
     "asset_name,asset_params",
     [
-        ("algo", {"category": AlgoCategory.simple}),
+        ("function", {"category": FunctionCategory.simple}),
         ("compute_plan", {}),
         ("dataset", {}),
     ],

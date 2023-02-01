@@ -3,7 +3,7 @@ from contextlib import nullcontext as does_not_raise
 import pytest
 import substra
 
-from substratest.factory import AlgoCategory
+from substratest.factory import FunctionCategory
 from substratest.factory import AugmentedDataset
 from substratest.factory import Permissions
 from substratest.fl_interface import FLTaskInputGenerator
@@ -157,18 +157,18 @@ def test_permissions(permissions_1, permissions_2, expected_permissions, factory
     dataset_1.set_train_test_dasamples(
         train_data_sample_keys=[data_sample_key_1],
     )
-    # add algo
-    spec = factory.create_algo(category=AlgoCategory.simple, permissions=permissions_2)
-    algo_2 = client_2.add_algo(spec)
+    # add function
+    spec = factory.create_function(category=FunctionCategory.simple, permissions=permissions_2)
+    function_2 = client_2.add_function(spec)
 
     # add traintask
     spec = factory.create_traintask(
-        algo=algo_2,
+        function=function_2,
         inputs=dataset_1.train_data_inputs,
         outputs=FLTaskOutputGenerator.traintask(authorized_ids=expected_permissions.authorized_ids),
         worker=workers[0],
     )
-    channel.wait_for_asset_synchronized(algo_2)
+    channel.wait_for_asset_synchronized(function_2)
     traintask = client_1.add_task(spec)
     traintask = client_1.wait(traintask)
 
@@ -198,15 +198,17 @@ def test_permissions_denied_process(factory, client_1, client_2, channel, worker
         train_data_sample_keys=[data_sample_key_1],
     )
 
-    # setup algo
+    # setup function
 
-    spec = factory.create_algo(category=AlgoCategory.simple, permissions=Permissions(public=False, authorized_ids=[]))
-    algo_2 = client_2.add_algo(spec)
-    channel.wait_for_asset_synchronized(algo_2)
+    spec = factory.create_function(
+        category=FunctionCategory.simple, permissions=Permissions(public=False, authorized_ids=[])
+    )
+    function_2 = client_2.add_function(spec)
+    channel.wait_for_asset_synchronized(function_2)
 
     # traintasks
 
-    spec = factory.create_traintask(algo=algo_2, inputs=dataset_1.train_data_inputs, worker=workers[0])
+    spec = factory.create_traintask(function=function_2, inputs=dataset_1.train_data_inputs, worker=workers[0])
 
     with pytest.raises(substra.exceptions.AuthorizationError):
         client_2.add_task(spec)
@@ -233,7 +235,7 @@ def test_permissions_model_process(
 ):
     """Test that a traintask can/cannot process an in-model depending on permissions."""
     datasets = []
-    algos = []
+    functions = []
     for client, permissions in zip([client_1, client_2], [client_1_permissions, client_2_permissions]):
         # dataset
         spec = factory.create_dataset(permissions=permissions)
@@ -247,18 +249,18 @@ def test_permissions_model_process(
 
         datasets.append(augmented_dataset)
 
-        # algo
-        spec = factory.create_algo(category=AlgoCategory.simple, permissions=permissions)
-        algo = client.add_algo(spec)
-        channel.wait_for_asset_synchronized(algo)
-        algos.append(algo)
+        # function
+        spec = factory.create_function(category=FunctionCategory.simple, permissions=permissions)
+        function = client.add_function(spec)
+        channel.wait_for_asset_synchronized(function)
+        functions.append(function)
 
     dataset_1, dataset_2 = datasets
-    algo_1, algo_2 = algos
+    function_1, function_2 = functions
 
     # traintasks
     spec = factory.create_traintask(
-        algo=algo_1,
+        function=function_1,
         inputs=dataset_1.train_data_inputs,
         outputs=FLTaskOutputGenerator.traintask(authorized_ids=client_1_permissions.authorized_ids),
         worker=workers[0],
@@ -272,7 +274,7 @@ def test_permissions_model_process(
     )
 
     spec = factory.create_traintask(
-        algo=algo_2,
+        function=function_2,
         inputs=dataset_2.train_data_inputs + FLTaskInputGenerator.trains_to_train([traintask_1.key]),
         worker=workers[1],
     )
@@ -288,7 +290,7 @@ def test_merge_permissions_denied_process(factory, clients, channel, workers):
     """Test to process asset with merged permissions from 2 other organizations
 
     - dataset and metrics located on organization 1
-    - algo located on organization 2
+    - function located on organization 2
     - traintask created on organization 2
     - failed attempt to create testtask using this traintask from organization 3
     """
@@ -323,30 +325,30 @@ def test_merge_permissions_denied_process(factory, clients, channel, workers):
         )
 
         data_sample_key_1 = client_1.add_data_sample(spec)
-        spec = factory.create_algo(category=AlgoCategory.metric, permissions=permissions_1)
-        metric_1 = client_1.add_algo(spec)
+        spec = factory.create_function(category=FunctionCategory.metric, permissions=permissions_1)
+        metric_1 = client_1.add_function(spec)
         channel.wait_for_asset_synchronized(metric_1)  # used by client_3
 
-        # add algo on organization 2
-        spec = factory.create_algo(category=AlgoCategory.simple, permissions=permissions_2)
-        algo_2 = client_2.add_algo(spec)
+        # add function on organization 2
+        spec = factory.create_function(category=FunctionCategory.simple, permissions=permissions_2)
+        function_2 = client_2.add_function(spec)
 
         # add traintask from organization 2
-        spec = factory.create_algo(category=AlgoCategory.predict, permissions=permissions_1)
-        predict_algo_1 = client_1.add_algo(spec)
+        spec = factory.create_function(category=FunctionCategory.predict, permissions=permissions_1)
+        predict_function_1 = client_1.add_function(spec)
 
         dataset_1 = AugmentedDataset(client_1.get_dataset(dataset_1.key))
         dataset_1.set_train_test_dasamples(train_data_sample_keys=[data_sample_key_1])
 
         # add traintask from node 2
-        spec = factory.create_traintask(algo=algo_2, inputs=dataset_1.train_data_inputs, worker=workers[0])
+        spec = factory.create_traintask(function=function_2, inputs=dataset_1.train_data_inputs, worker=workers[0])
         traintask_2 = client_2.add_task(spec)
         traintask_2 = client_2.wait(traintask_2)
         channel.wait_for_asset_synchronized(traintask_2)  # used by client_3
 
         # failed to add predicttask from organization 3
         spec = factory.create_predicttask(
-            algo=predict_algo_1,
+            function=predict_function_1,
             inputs=dataset_1.test_data_inputs + FLTaskInputGenerator.train_to_predict(traintask_2.key),
             worker=workers[0],
         )
@@ -379,14 +381,14 @@ def test_permissions_denied_head_model_process(factory, client_1, client_2, chan
 
     dataset_1, dataset_2 = datasets
 
-    # create algo
-    spec = factory.create_algo(category=AlgoCategory.composite)
-    composite_algo = client_1.add_algo(spec)
-    channel.wait_for_asset_synchronized(composite_algo)  # used by client_2
+    # create function
+    spec = factory.create_function(category=FunctionCategory.composite)
+    composite_function = client_1.add_function(spec)
+    channel.wait_for_asset_synchronized(composite_function)  # used by client_2
 
     # create composite task
     spec = factory.create_composite_traintask(
-        algo=composite_algo,
+        function=composite_function,
         inputs=dataset_1.train_data_inputs,
         outputs=FLTaskOutputGenerator.composite_traintask(
             shared_authorized_ids=[client_1.organization_id, client_2.organization_id],
@@ -400,7 +402,7 @@ def test_permissions_denied_head_model_process(factory, client_1, client_2, chan
     channel.wait_for_asset_synchronized(composite_traintask_1)  # used by client_2
 
     spec = factory.create_composite_traintask(
-        algo=composite_algo,
+        function=composite_function,
         inputs=dataset_2.train_data_inputs + FLTaskInputGenerator.composite_to_composite(composite_traintask_1.key),
         worker=workers[1],
     )
@@ -426,17 +428,17 @@ def test_permission_to_test_on_org_without_training(
     expectation,
 ):
 
-    # training algo on client 1
-    spec = factory.create_algo(category=AlgoCategory.simple, permissions=organization_1_only)
-    train_algo = client_1.add_algo(spec)
+    # training function on client 1
+    spec = factory.create_function(category=FunctionCategory.simple, permissions=organization_1_only)
+    train_function = client_1.add_function(spec)
 
-    # predict and metric algo on client 2
-    spec = factory.create_algo(category=AlgoCategory.predict, permissions=organization_2_only)
-    predict_algo = client_2.add_algo(spec)
+    # predict and metric function on client 2
+    spec = factory.create_function(category=FunctionCategory.predict, permissions=organization_2_only)
+    predict_function = client_2.add_function(spec)
 
-    # predict and metric algo on client 2
-    spec = factory.create_algo(category=AlgoCategory.metric, permissions=organization_2_only)
-    metric_algo = client_2.add_algo(spec)
+    # predict and metric function on client 2
+    spec = factory.create_function(category=FunctionCategory.metric, permissions=organization_2_only)
+    metric_function = client_2.add_function(spec)
 
     # add train data samples on organization 1
     spec = factory.create_dataset(permissions=organization_1_only)
@@ -460,7 +462,7 @@ def test_permission_to_test_on_org_without_training(
 
     # add traintask on org 1
     spec = factory.create_traintask(
-        algo=train_algo,
+        function=train_function,
         inputs=dataset_1.train_data_inputs,
         outputs=FLTaskOutputGenerator.traintask(authorized_ids=permission_train_output.authorized_ids),
         worker=client_1.organization_id,
@@ -471,7 +473,7 @@ def test_permission_to_test_on_org_without_training(
     # add testtask on org 2
     with expectation:
         spec = factory.create_predicttask(
-            algo=predict_algo,
+            function=predict_function,
             inputs=dataset_2.test_data_inputs + FLTaskInputGenerator.train_to_predict(traintask_1.key),
             worker=client_2.organization_id,
         )
@@ -479,7 +481,7 @@ def test_permission_to_test_on_org_without_training(
         predicttask_2 = client_2.wait(predicttask_2)
 
         spec = factory.create_testtask(
-            algo=metric_algo,
+            function=metric_function,
             inputs=dataset_2.test_data_inputs + FLTaskInputGenerator.predict_to_test(predicttask_2.key),
             worker=client_2.organization_id,
         )

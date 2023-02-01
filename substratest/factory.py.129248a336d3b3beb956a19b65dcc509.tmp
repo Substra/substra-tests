@@ -81,7 +81,7 @@ if __name__ == '__main__':
 """
 )  # noqa
 
-DEFAULT_ALGO_SCRIPT = f"""
+DEFAULT_FUNCTION_SCRIPT = f"""
 import json
 import substratools as tools
 
@@ -136,7 +136,7 @@ if __name__ == '__main__':
     tools.execute()
 """  # noqa
 
-DEFAULT_AGGREGATE_ALGO_SCRIPT = f"""
+DEFAULT_AGGREGATE_FUNCTION_SCRIPT = f"""
 import json
 import substratools as tools
 
@@ -181,7 +181,7 @@ if __name__ == '__main__':
 
 # TODO we should have a different serializer for head and trunk models
 
-DEFAULT_COMPOSITE_ALGO_SCRIPT = f"""
+DEFAULT_COMPOSITE_FUNCTION_SCRIPT = f"""
 import json
 import substratools as tools
 
@@ -258,7 +258,7 @@ if __name__ == '__main__':
     tools.execute()
 """  # noqa
 
-DEFAULT_ALGO_METHOD_NAME = {
+DEFAULT_FUNCTION_METHOD_NAME = {
     FunctionCategory.simple: "train",
     FunctionCategory.composite: "train",
     FunctionCategory.aggregate: "aggregate",
@@ -267,9 +267,9 @@ DEFAULT_ALGO_METHOD_NAME = {
     FunctionCategory.predict_composite: "predict",
 }
 
-INVALID_ALGO_SCRIPT = DEFAULT_ALGO_SCRIPT.replace("train", "naitr")
-INVALID_COMPOSITE_ALGO_SCRIPT = DEFAULT_COMPOSITE_ALGO_SCRIPT.replace("train", "naitr")
-INVALID_AGGREGATE_ALGO_SCRIPT = DEFAULT_AGGREGATE_ALGO_SCRIPT.replace("aggregate", "etagergga")
+INVALID_FUNCTION_SCRIPT = DEFAULT_FUNCTION_SCRIPT.replace("train", "naitr")
+INVALID_COMPOSITE_FUNCTION_SCRIPT = DEFAULT_COMPOSITE_FUNCTION_SCRIPT.replace("train", "naitr")
+INVALID_AGGREGATE_FUNCTION_SCRIPT = DEFAULT_AGGREGATE_FUNCTION_SCRIPT.replace("aggregate", "etagergga")
 
 
 def random_uuid():
@@ -367,12 +367,12 @@ class DatasetSpec(substra.sdk.schemas.DatasetSpec):
             return f.read()
 
 
-DEFAULT_ALGO_SCRIPTS = {
-    FunctionCategory.simple: DEFAULT_ALGO_SCRIPT,
-    FunctionCategory.composite: DEFAULT_COMPOSITE_ALGO_SCRIPT,
-    FunctionCategory.aggregate: DEFAULT_AGGREGATE_ALGO_SCRIPT,
-    FunctionCategory.predict: DEFAULT_ALGO_SCRIPT,
-    FunctionCategory.predict_composite: DEFAULT_COMPOSITE_ALGO_SCRIPT,
+DEFAULT_FUNCTION_SCRIPTS = {
+    FunctionCategory.simple: DEFAULT_FUNCTION_SCRIPT,
+    FunctionCategory.composite: DEFAULT_COMPOSITE_FUNCTION_SCRIPT,
+    FunctionCategory.aggregate: DEFAULT_AGGREGATE_FUNCTION_SCRIPT,
+    FunctionCategory.predict: DEFAULT_FUNCTION_SCRIPT,
+    FunctionCategory.predict_composite: DEFAULT_COMPOSITE_FUNCTION_SCRIPT,
 }
 
 
@@ -600,11 +600,11 @@ class AssetsFactory:
             if category == FunctionCategory.metric:
                 function_content = py_script or TEMPLATED_DEFAULT_METRICS_SCRIPT.substitute(offset=offset)
             else:
-                function_content = py_script or DEFAULT_ALGO_SCRIPTS[category]
+                function_content = py_script or DEFAULT_FUNCTION_SCRIPTS[category]
         except KeyError:
             raise Exception("Invalid function category", category)
 
-        dockerfile = dockerfile or self.default_function_dockerfile(method_name=DEFAULT_ALGO_METHOD_NAME[category])
+        dockerfile = dockerfile or self.default_function_dockerfile(method_name=DEFAULT_FUNCTION_METHOD_NAME[category])
 
         function_zip = utils.create_archive(
             tmpdir / "function",

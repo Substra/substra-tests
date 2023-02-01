@@ -7,7 +7,7 @@ from substra.sdk import models
 import substratest as sbt
 from substratest.client import Client
 from substratest.factory import AssetsFactory
-from substratest.fl_interface import AlgoCategory
+from substratest.fl_interface import FunctionCategory
 from substratest.fl_interface import FLTaskInputGenerator
 from substratest.fl_interface import FLTaskOutputGenerator
 from substratest.fl_interface import InputIdentifiers
@@ -34,13 +34,13 @@ def test_compute_plan_simple(
 
     cp_key = str(uuid.uuid4())
 
-    simple_algo_spec = factory.create_algo(AlgoCategory.simple)
-    simple_algo_2 = client_2.add_algo(simple_algo_spec)
+    simple_function_spec = factory.create_function(FunctionCategory.simple)
+    simple_function_2 = client_2.add_function(simple_function_spec)
 
-    predict_algo_spec = factory.create_algo(AlgoCategory.predict)
-    predict_algo_2 = client_2.add_algo(predict_algo_spec)
+    predict_function_spec = factory.create_function(FunctionCategory.predict)
+    predict_function_2 = client_2.add_function(predict_function_spec)
 
-    channel.wait_for_asset_synchronized(simple_algo_2)
+    channel.wait_for_asset_synchronized(simple_function_2)
 
     # create compute plan
     cp_spec = factory.create_compute_plan(
@@ -51,15 +51,15 @@ def test_compute_plan_simple(
     )
 
     traintask_spec_1 = cp_spec.create_traintask(
-        algo=simple_algo_2, inputs=default_dataset_1.train_data_inputs, metadata=None, worker=workers[0]
+        function=simple_function_2, inputs=default_dataset_1.train_data_inputs, metadata=None, worker=workers[0]
     )
 
     traintask_spec_2 = cp_spec.create_traintask(
-        algo=simple_algo_2, inputs=default_dataset_2.train_data_inputs, metadata={}, worker=workers[1]
+        function=simple_function_2, inputs=default_dataset_2.train_data_inputs, metadata={}, worker=workers[1]
     )
 
     traintask_spec_3 = cp_spec.create_traintask(
-        algo=simple_algo_2,
+        function=simple_function_2,
         inputs=default_dataset_1.train_data_inputs
         + FLTaskInputGenerator.trains_to_train([traintask_spec_1.task_id, traintask_spec_2.task_id]),
         metadata={"foo": "bar"},
@@ -67,14 +67,14 @@ def test_compute_plan_simple(
     )
 
     predicttask_spec_3 = cp_spec.create_predicttask(
-        algo=predict_algo_2,
+        function=predict_function_2,
         inputs=default_dataset_1.test_data_inputs + FLTaskInputGenerator.train_to_predict(traintask_spec_3.task_id),
         metadata={"foo": "bar"},
         worker=workers[0],
     )
 
     testtask_spec = cp_spec.create_testtask(
-        algo=default_metrics[0],
+        function=default_metrics[0],
         inputs=default_dataset_1.test_data_inputs + FLTaskInputGenerator.predict_to_test(predicttask_spec_3.task_id),
         metadata={"foo": "bar"},
         worker=workers[0],
@@ -164,64 +164,64 @@ def test_compute_plan_single_client_success(factory, client, default_dataset, de
 
     data_sample_1_input, data_sample_2_input, data_sample_3_input, _ = default_dataset.train_data_sample_inputs
 
-    simple_algo_spec = factory.create_algo(AlgoCategory.simple)
-    simple_algo = client.add_algo(simple_algo_spec)
+    simple_function_spec = factory.create_function(FunctionCategory.simple)
+    simple_function = client.add_function(simple_function_spec)
 
-    predict_algo_spec = factory.create_algo(AlgoCategory.predict)
-    predict_algo = client.add_algo(predict_algo_spec)
+    predict_function_spec = factory.create_function(FunctionCategory.predict)
+    predict_function = client.add_function(predict_function_spec)
 
     cp_spec = factory.create_compute_plan()
 
     traintask_spec_1 = cp_spec.create_traintask(
-        algo=simple_algo,
+        function=simple_function,
         inputs=default_dataset.opener_input + [data_sample_1_input],
         worker=worker,
     )
 
     predicttask_spec_1 = cp_spec.create_predicttask(
-        algo=predict_algo,
+        function=predict_function,
         inputs=default_dataset.test_data_inputs + FLTaskInputGenerator.train_to_predict(traintask_spec_1.task_id),
         worker=worker,
     )
 
     cp_spec.create_testtask(
-        algo=default_metric,
+        function=default_metric,
         inputs=default_dataset.test_data_inputs + FLTaskInputGenerator.predict_to_test(predicttask_spec_1.task_id),
         worker=worker,
     )
 
     traintask_spec_2 = cp_spec.create_traintask(
-        algo=simple_algo,
+        function=simple_function,
         inputs=default_dataset.opener_input
         + [data_sample_2_input]
         + FLTaskInputGenerator.trains_to_train([traintask_spec_1.task_id]),
         worker=worker,
     )
     predicttask_spec_2 = cp_spec.create_predicttask(
-        algo=predict_algo,
+        function=predict_function,
         inputs=default_dataset.test_data_inputs + FLTaskInputGenerator.train_to_predict(traintask_spec_2.task_id),
         worker=worker,
     )
     cp_spec.create_testtask(
-        algo=default_metric,
+        function=default_metric,
         inputs=default_dataset.test_data_inputs + FLTaskInputGenerator.predict_to_test(predicttask_spec_2.task_id),
         worker=worker,
     )
 
     traintask_spec_3 = cp_spec.create_traintask(
-        algo=simple_algo,
+        function=simple_function,
         inputs=default_dataset.opener_input
         + [data_sample_3_input]
         + FLTaskInputGenerator.trains_to_train([traintask_spec_2.task_id]),
         worker=worker,
     )
     predicttask_spec_3 = cp_spec.create_predicttask(
-        algo=predict_algo,
+        function=predict_function,
         inputs=default_dataset.test_data_inputs + FLTaskInputGenerator.train_to_predict(traintask_spec_3.task_id),
         worker=worker,
     )
     cp_spec.create_testtask(
-        algo=default_metric,
+        function=default_metric,
         inputs=default_dataset.test_data_inputs + FLTaskInputGenerator.predict_to_test(predicttask_spec_3.task_id),
         worker=worker,
     )
@@ -252,29 +252,29 @@ def test_compute_plan_update(factory, client, default_dataset, default_metric, w
 
     data_sample_1_input, data_sample_2_input, data_sample_3_input, _ = default_dataset.train_data_sample_inputs
 
-    simple_algo_spec = factory.create_algo(AlgoCategory.simple)
-    simple_algo = client.add_algo(simple_algo_spec)
+    simple_function_spec = factory.create_function(FunctionCategory.simple)
+    simple_function = client.add_function(simple_function_spec)
 
-    predict_algo_spec = factory.create_algo(AlgoCategory.predict)
-    predict_algo = client.add_algo(predict_algo_spec)
+    predict_function_spec = factory.create_function(FunctionCategory.predict)
+    predict_function = client.add_function(predict_function_spec)
 
     # Create a compute plan with traintask + testtask
 
     cp_spec = factory.create_compute_plan()
     traintask_spec_1 = cp_spec.create_traintask(
-        algo=simple_algo,
+        function=simple_function,
         inputs=default_dataset.opener_input + [data_sample_1_input],
         worker=worker,
     )
 
     predicttask_spec_1 = cp_spec.create_predicttask(
-        algo=predict_algo,
+        function=predict_function,
         inputs=default_dataset.test_data_inputs + FLTaskInputGenerator.train_to_predict(traintask_spec_1.task_id),
         worker=worker,
     )
 
     cp_spec.create_testtask(
-        algo=default_metric,
+        function=default_metric,
         inputs=default_dataset.test_data_inputs + FLTaskInputGenerator.predict_to_test(predicttask_spec_1.task_id),
         worker=worker,
     )
@@ -284,7 +284,7 @@ def test_compute_plan_update(factory, client, default_dataset, default_metric, w
 
     cp_spec = factory.add_compute_plan_tasks(cp)
     traintask_spec_2 = cp_spec.create_traintask(
-        algo=simple_algo,
+        function=simple_function,
         inputs=default_dataset.opener_input
         + [data_sample_2_input]
         + FLTaskInputGenerator.trains_to_train([traintask_spec_1.task_id]),
@@ -292,13 +292,13 @@ def test_compute_plan_update(factory, client, default_dataset, default_metric, w
         worker=worker,
     )
     predicttask_spec_2 = cp_spec.create_predicttask(
-        algo=predict_algo,
+        function=predict_function,
         inputs=default_dataset.test_data_inputs + FLTaskInputGenerator.train_to_predict(traintask_spec_2.task_id),
         metadata={"foo": "bar"},
         worker=worker,
     )
     testtask_spec_2 = cp_spec.create_testtask(
-        algo=default_metric,
+        function=default_metric,
         inputs=default_dataset.test_data_inputs + FLTaskInputGenerator.predict_to_test(predicttask_spec_2.task_id),
         metadata={"foo": "bar"},
         worker=worker,
@@ -309,14 +309,14 @@ def test_compute_plan_update(factory, client, default_dataset, default_metric, w
 
     cp_spec = factory.add_compute_plan_tasks(cp)
     traintask_spec_3 = cp_spec.create_traintask(
-        algo=simple_algo,
+        function=simple_function,
         inputs=default_dataset.opener_input
         + [data_sample_3_input]
         + FLTaskInputGenerator.trains_to_train([traintask_spec_2.task_id]),
         worker=worker,
     )
     predicttask_spec_3 = cp_spec.create_predicttask(
-        algo=predict_algo,
+        function=predict_function,
         inputs=default_dataset.test_data_inputs + FLTaskInputGenerator.train_to_predict(traintask_spec_3.task_id),
         worker=worker,
     )
@@ -326,7 +326,7 @@ def test_compute_plan_update(factory, client, default_dataset, default_metric, w
 
     cp_spec = factory.add_compute_plan_tasks(cp)
     cp_spec.create_testtask(
-        algo=default_metric,
+        function=default_metric,
         inputs=default_dataset.test_data_inputs + FLTaskInputGenerator.predict_to_test(predicttask_spec_3.task_id),
         worker=worker,
     )
@@ -362,55 +362,57 @@ def test_compute_plan_single_client_failure(factory, client, default_dataset, de
     # 2. traintask + predicttask + testtask
     # 3. traintask + predicttask + testtask
     #
-    # Intentionally use an invalid (broken) algo.
+    # Intentionally use an invalid (broken) function.
 
     data_sample_1_input, data_sample_2_input, data_sample_3_input, _ = default_dataset.train_data_sample_inputs
 
-    simple_algo_spec = factory.create_algo(AlgoCategory.simple, py_script=sbt.factory.INVALID_ALGO_SCRIPT)
-    simple_algo = client.add_algo(simple_algo_spec)
+    simple_function_spec = factory.create_function(
+        FunctionCategory.simple, py_script=sbt.factory.INVALID_FUNCTION_SCRIPT
+    )
+    simple_function = client.add_function(simple_function_spec)
 
-    predict_algo_spec = factory.create_algo(AlgoCategory.predict)
-    predict_algo = client.add_algo(predict_algo_spec)
+    predict_function_spec = factory.create_function(FunctionCategory.predict)
+    predict_function = client.add_function(predict_function_spec)
 
     cp_spec = factory.create_compute_plan()
 
     traintask_spec_1 = cp_spec.create_traintask(
-        algo=simple_algo,
+        function=simple_function,
         inputs=default_dataset.opener_input + [data_sample_1_input],
         worker=worker,
     )
     predicttask_spec_1 = cp_spec.create_predicttask(
-        algo=predict_algo,
+        function=predict_function,
         inputs=default_dataset.test_data_inputs + FLTaskInputGenerator.train_to_predict(traintask_spec_1.task_id),
         worker=worker,
     )
     cp_spec.create_testtask(
-        algo=default_metric,
+        function=default_metric,
         inputs=default_dataset.test_data_inputs + FLTaskInputGenerator.predict_to_test(predicttask_spec_1.task_id),
         worker=worker,
     )
 
     traintask_spec_2 = cp_spec.create_traintask(
-        algo=simple_algo,
+        function=simple_function,
         inputs=default_dataset.opener_input
         + [data_sample_2_input]
         + FLTaskInputGenerator.trains_to_train([traintask_spec_1.task_id]),
         worker=worker,
     )
     predicttask_spec_2 = cp_spec.create_predicttask(
-        algo=predict_algo,
+        function=predict_function,
         inputs=default_dataset.test_data_inputs + FLTaskInputGenerator.train_to_predict(traintask_spec_2.task_id),
         worker=worker,
     )
 
     cp_spec.create_testtask(
-        algo=default_metric,
+        function=default_metric,
         inputs=default_dataset.test_data_inputs + FLTaskInputGenerator.predict_to_test(predicttask_spec_2.task_id),
         worker=worker,
     )
 
     traintask_spec_3 = cp_spec.create_traintask(
-        algo=simple_algo,
+        function=simple_function,
         inputs=default_dataset.opener_input
         + [data_sample_3_input]
         + FLTaskInputGenerator.trains_to_train([traintask_spec_2.task_id]),
@@ -418,12 +420,12 @@ def test_compute_plan_single_client_failure(factory, client, default_dataset, de
     )
 
     predicttask_spec_3 = cp_spec.create_predicttask(
-        algo=predict_algo,
+        function=predict_function,
         inputs=default_dataset.test_data_inputs + FLTaskInputGenerator.train_to_predict(traintask_spec_3.task_id),
         worker=worker,
     )
     cp_spec.create_testtask(
-        algo=default_metric,
+        function=default_metric,
         inputs=default_dataset.test_data_inputs + FLTaskInputGenerator.predict_to_test(predicttask_spec_3.task_id),
         worker=worker,
     )
@@ -452,15 +454,15 @@ def test_compute_plan_aggregate_composite_traintasks(  # noqa: C901
     aggregate_worker = clients[0].organization_id
     number_of_rounds = 2
 
-    # register algos on first organization
-    spec = factory.create_algo(AlgoCategory.composite)
-    composite_algo = clients[0].add_algo(spec)
-    spec = factory.create_algo(AlgoCategory.aggregate)
-    aggregate_algo = clients[0].add_algo(spec)
-    spec = factory.create_algo(AlgoCategory.predict)
-    predict_algo = clients[0].add_algo(spec)
-    spec = factory.create_algo(AlgoCategory.predict_composite)
-    predict_algo_composite = clients[0].add_algo(spec)
+    # register functions on first organization
+    spec = factory.create_function(FunctionCategory.composite)
+    composite_function = clients[0].add_function(spec)
+    spec = factory.create_function(FunctionCategory.aggregate)
+    aggregate_function = clients[0].add_function(spec)
+    spec = factory.create_function(FunctionCategory.predict)
+    predict_function = clients[0].add_function(spec)
+    spec = factory.create_function(FunctionCategory.predict_composite)
+    predict_function_composite = clients[0].add_function(spec)
 
     # launch execution
     previous_aggregatetask_spec = None
@@ -481,7 +483,7 @@ def test_compute_plan_aggregate_composite_traintasks(  # noqa: C901
                 shared_input = []
 
             spec = cp_spec.create_composite_traintask(
-                composite_algo=composite_algo,
+                composite_function=composite_function,
                 inputs=dataset.opener_input
                 + [dataset.train_data_sample_inputs[0 + round_]]
                 + local_input
@@ -497,7 +499,7 @@ def test_compute_plan_aggregate_composite_traintasks(  # noqa: C901
 
         # create aggregate on its organization
         spec = cp_spec.create_aggregatetask(
-            aggregate_algo=aggregate_algo,
+            aggregate_function=aggregate_function,
             worker=aggregate_worker,
             inputs=FLTaskInputGenerator.composites_to_aggregate(
                 [composite_traintask_spec.task_id for composite_traintask_spec in composite_traintask_specs]
@@ -513,24 +515,24 @@ def test_compute_plan_aggregate_composite_traintasks(  # noqa: C901
         previous_composite_traintask_specs, default_datasets, default_metrics, workers
     ):
         spec = cp_spec.create_predicttask(
-            algo=predict_algo_composite,
+            function=predict_function_composite,
             inputs=dataset.test_data_inputs + FLTaskInputGenerator.composite_to_predict(composite_traintask.task_id),
             worker=worker,
         )
         cp_spec.create_testtask(
-            algo=metric,
+            function=metric,
             inputs=dataset.test_data_inputs + FLTaskInputGenerator.predict_to_test(spec.task_id),
             worker=worker,
         )
 
     predicttask_from_aggregate_spec = cp_spec.create_predicttask(
-        algo=predict_algo,
+        function=predict_function,
         inputs=default_datasets[0].test_data_inputs
         + FLTaskInputGenerator.aggregate_to_predict(previous_aggregatetask_spec.task_id),
         worker=workers[0],
     )
     cp_spec.create_testtask(
-        algo=metric,
+        function=metric,
         inputs=default_datasets[0].test_data_inputs
         + FLTaskInputGenerator.predict_to_test(predicttask_from_aggregate_spec.task_id),
         worker=workers[0],
@@ -584,20 +586,20 @@ def test_compute_plan_aggregate_composite_traintasks(  # noqa: C901
 
 
 def test_compute_plan_circular_dependency_failure(factory, client, default_dataset, worker):
-    spec = factory.create_algo(AlgoCategory.simple)
-    algo = client.add_algo(spec)
+    spec = factory.create_function(FunctionCategory.simple)
+    function = client.add_function(spec)
 
     cp_spec = factory.create_compute_plan()
 
     traintask_spec_1 = cp_spec.create_traintask(
         inputs=default_dataset.train_data_inputs,
-        algo=algo,
+        function=function,
         worker=worker,
     )
 
     traintask_spec_2 = cp_spec.create_traintask(
         inputs=default_dataset.train_data_inputs,
-        algo=algo,
+        function=function,
         worker=worker,
     )
 
@@ -620,8 +622,8 @@ def test_execution_compute_plan_canceled(factory, client, default_dataset, cfg, 
     #     compute plan with a large amount of tasks.
     nb_traintasks = 32
 
-    spec = factory.create_algo(AlgoCategory.simple)
-    algo = client.add_algo(spec)
+    spec = factory.create_function(FunctionCategory.simple)
+    function = client.add_function(spec)
 
     cp_spec = factory.create_compute_plan()
     previous_traintask = None
@@ -632,7 +634,7 @@ def test_execution_compute_plan_canceled(factory, client, default_dataset, cfg, 
             FLTaskInputGenerator.trains_to_train([previous_traintask.task_id]) if previous_traintask is not None else []
         )
         previous_traintask = cp_spec.create_traintask(
-            algo=algo,
+            function=function,
             inputs=inputs + input_models,
             worker=worker,
         )
@@ -661,13 +663,13 @@ def test_execution_compute_plan_canceled(factory, client, default_dataset, cfg, 
 @pytest.mark.remote_only
 def test_compute_plan_no_batching(factory, client, default_dataset, worker):
 
-    spec = factory.create_algo(AlgoCategory.simple)
-    algo = client.add_algo(spec)
+    spec = factory.create_function(FunctionCategory.simple)
+    function = client.add_function(spec)
 
     # Create a compute plan
     cp_spec = factory.create_compute_plan()
     traintask_spec_1 = cp_spec.create_traintask(
-        algo=algo,
+        function=function,
         inputs=default_dataset.opener_input + default_dataset.train_data_sample_inputs[:1],
         worker=worker,
     )
@@ -681,7 +683,7 @@ def test_compute_plan_no_batching(factory, client, default_dataset, worker):
     # Update the compute plan
     cp_spec = factory.add_compute_plan_tasks(cp)
     cp_spec.create_traintask(
-        algo=algo,
+        function=function,
         inputs=default_dataset.opener_input
         + default_dataset.train_data_sample_inputs[1:2]
         + FLTaskInputGenerator.trains_to_train([traintask_spec_1.task_id]),
@@ -704,20 +706,20 @@ def test_compute_plan_transient_outputs(factory: AssetsFactory, client: Client, 
     """
     data_sample_1_input, data_sample_2_input, _, _ = default_dataset.train_data_sample_inputs
 
-    # Register the Algo
-    simple_algo_spec = factory.create_algo(AlgoCategory.simple)
-    simple_algo = client.add_algo(simple_algo_spec)
+    # Register the Function
+    simple_function_spec = factory.create_function(FunctionCategory.simple)
+    simple_function = client.add_function(simple_function_spec)
 
     cp_spec = factory.create_compute_plan()
     traintask_spec_1 = cp_spec.create_traintask(
-        algo=simple_algo,
+        function=simple_function,
         inputs=default_dataset.opener_input + [data_sample_1_input],
         outputs=FLTaskOutputGenerator.traintask(transient=True),
         worker=worker,
     )
 
     cp_spec.create_traintask(
-        algo=simple_algo,
+        function=simple_function,
         inputs=default_dataset.opener_input
         + [data_sample_2_input]
         + FLTaskInputGenerator.trains_to_train([traintask_spec_1.task_id]),
@@ -736,7 +738,7 @@ def test_compute_plan_transient_outputs(factory: AssetsFactory, client: Client, 
 
     # Validate that we can't create a new task that use this model
     traintask_spec_3 = factory.create_traintask(
-        algo=simple_algo,
+        function=simple_function,
         inputs=default_dataset.opener_input
         + [data_sample_2_input]
         + FLTaskInputGenerator.trains_to_train([traintask_spec_1.task_id]),
@@ -756,12 +758,12 @@ def test_compute_task_profile(factory, client, default_dataset, worker):
     Creates a simple task to check that tasks profiles are correctly produced
     """
     data_sample_1_input, _, _, _ = default_dataset.train_data_sample_inputs
-    simple_algo_spec = factory.create_algo(AlgoCategory.simple)
-    simple_algo = client.add_algo(simple_algo_spec)
+    simple_function_spec = factory.create_function(FunctionCategory.simple)
+    simple_function = client.add_function(simple_function_spec)
 
     cp_spec = factory.create_compute_plan()
     traintask_spec_1 = cp_spec.create_traintask(
-        algo=simple_algo,
+        function=simple_function,
         inputs=default_dataset.opener_input + [data_sample_1_input],
         outputs=FLTaskOutputGenerator.traintask(transient=True),
         worker=worker,
