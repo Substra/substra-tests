@@ -6,7 +6,7 @@ import pytest
 import substra as sb
 
 import substratest as sbt
-from substratest.factory import DEFAULT_ALGO_METHOD_NAME
+from substratest.factory import DEFAULT_FUNCTION_METHOD_NAME
 from substratest.factory import FunctionCategory
 from substratest.factory import AugmentedDataset
 from substratest.fl_interface import FLTaskInputGenerator
@@ -33,9 +33,9 @@ _CACHE_PATH = _PARENT_DIR / ".cache"
 
 _OPENER = _PARENT_DIR / "assets" / "opener.py"
 _METRICS = _PARENT_DIR / "assets" / "metrics.py"
-_AGGREGATE_ALGO = _PARENT_DIR / "assets" / "aggregate_function.py"
-_COMPOSITE_ALGO = _PARENT_DIR / "assets" / "composite_function.py"
-_PREDICT_ALGO = _PARENT_DIR / "assets" / "composite_function.py"
+_AGGREGATE_FUNCTION = _PARENT_DIR / "assets" / "aggregate_function.py"
+_COMPOSITE_FUNCTION = _PARENT_DIR / "assets" / "composite_function.py"
+_PREDICT_FUNCTION = _PARENT_DIR / "assets" / "composite_function.py"
 
 _SEED = 1
 
@@ -263,7 +263,9 @@ def inputs(datasamples_folders, factory, clients, channel, function_dockerfile):
             )
         )
 
-        metric_dockerfile = function_dockerfile.format(method_name=DEFAULT_ALGO_METHOD_NAME[FunctionCategory.metric])
+        metric_dockerfile = function_dockerfile.format(
+            method_name=DEFAULT_FUNCTION_METHOD_NAME[FunctionCategory.metric]
+        )
 
         spec = factory.create_function(
             category=FunctionCategory.metric, dockerfile=metric_dockerfile, py_script=_METRICS.open().read()
@@ -284,22 +286,24 @@ def inputs(datasamples_folders, factory, clients, channel, function_dockerfile):
     client = clients[0]
     spec = factory.create_function(
         FunctionCategory.composite,
-        py_script=_COMPOSITE_ALGO.open().read(),
-        dockerfile=function_dockerfile.format(method_name=DEFAULT_ALGO_METHOD_NAME[FunctionCategory.composite]),
+        py_script=_COMPOSITE_FUNCTION.open().read(),
+        dockerfile=function_dockerfile.format(method_name=DEFAULT_FUNCTION_METHOD_NAME[FunctionCategory.composite]),
     )
     results.composite_function = client.add_function(spec)
 
     spec = factory.create_function(
         FunctionCategory.aggregate,
-        py_script=_AGGREGATE_ALGO.open().read(),
-        dockerfile=function_dockerfile.format(method_name=DEFAULT_ALGO_METHOD_NAME[FunctionCategory.aggregate]),
+        py_script=_AGGREGATE_FUNCTION.open().read(),
+        dockerfile=function_dockerfile.format(method_name=DEFAULT_FUNCTION_METHOD_NAME[FunctionCategory.aggregate]),
     )
     results.aggregate_function = client.add_function(spec)
 
     spec = factory.create_function(
         FunctionCategory.predict_composite,
-        py_script=_PREDICT_ALGO.open().read(),
-        dockerfile=function_dockerfile.format(method_name=DEFAULT_ALGO_METHOD_NAME[FunctionCategory.predict_composite]),
+        py_script=_PREDICT_FUNCTION.open().read(),
+        dockerfile=function_dockerfile.format(
+            method_name=DEFAULT_FUNCTION_METHOD_NAME[FunctionCategory.predict_composite]
+        ),
     )
     results.predict_function = client.add_function(spec)
     # ensure last registered asset is synchronized on all organizations

@@ -11,12 +11,12 @@ PUBLIC_PERMISSIONS = Permissions(public=True, authorized_ids=[])
 
 
 class FunctionCategory(str, Enum):
-    simple = "ALGO_SIMPLE"
-    composite = "ALGO_COMPOSITE"
-    aggregate = "ALGO_AGGREGATE"
-    metric = "ALGO_METRIC"
-    predict = "ALGO_PREDICT"
-    predict_composite = "ALGO_PREDICT_COMPOSITE"
+    simple = "FUNCTION_SIMPLE"
+    composite = "FUNCTION_COMPOSITE"
+    aggregate = "FUNCTION_AGGREGATE"
+    metric = "FUNCTION_METRIC"
+    predict = "FUNCTION_PREDICT"
+    predict_composite = "FUNCTION_PREDICT_COMPOSITE"
 
 
 class InputIdentifiers(str, Enum):
@@ -42,10 +42,10 @@ class OutputIdentifiers(str, Enum):
 class FLFunctionInputs(list, Enum):
     """Substra function inputs by function category based on the InputIdentifiers"""
 
-    ALGO_AGGREGATE = [
+    FUNCTION_AGGREGATE = [
         FunctionInputSpec(identifier=InputIdentifiers.models, kind=AssetKind.model.value, optional=False, multiple=True)
     ]
-    ALGO_SIMPLE = [
+    FUNCTION_SIMPLE = [
         FunctionInputSpec(
             identifier=InputIdentifiers.datasamples,
             kind=AssetKind.data_sample.value,
@@ -57,7 +57,7 @@ class FLFunctionInputs(list, Enum):
         ),
         FunctionInputSpec(identifier=InputIdentifiers.models, kind=AssetKind.model.value, optional=True, multiple=True),
     ]
-    ALGO_COMPOSITE = [
+    FUNCTION_COMPOSITE = [
         FunctionInputSpec(
             identifier=InputIdentifiers.datasamples,
             kind=AssetKind.data_sample.value,
@@ -72,7 +72,7 @@ class FLFunctionInputs(list, Enum):
             identifier=InputIdentifiers.shared, kind=AssetKind.model.value, optional=True, multiple=False
         ),
     ]
-    ALGO_PREDICT = [
+    FUNCTION_PREDICT = [
         FunctionInputSpec(
             identifier=InputIdentifiers.datasamples,
             kind=AssetKind.data_sample.value,
@@ -86,7 +86,7 @@ class FLFunctionInputs(list, Enum):
             identifier=InputIdentifiers.model, kind=AssetKind.model.value, optional=False, multiple=False
         ),
     ]
-    ALGO_PREDICT_COMPOSITE = [
+    FUNCTION_PREDICT_COMPOSITE = [
         FunctionInputSpec(
             identifier=InputIdentifiers.datasamples,
             kind=AssetKind.data_sample.value,
@@ -103,7 +103,7 @@ class FLFunctionInputs(list, Enum):
             identifier=InputIdentifiers.shared, kind=AssetKind.model.value, optional=False, multiple=False
         ),
     ]
-    ALGO_METRIC = [
+    FUNCTION_METRIC = [
         FunctionInputSpec(
             identifier=InputIdentifiers.datasamples,
             kind=AssetKind.data_sample.value,
@@ -122,21 +122,23 @@ class FLFunctionInputs(list, Enum):
 class FLFunctionOutputs(list, Enum):
     """Substra function outputs by function category based on the OutputIdentifiers"""
 
-    ALGO_AGGREGATE = [
+    FUNCTION_AGGREGATE = [
         FunctionOutputSpec(identifier=OutputIdentifiers.model, kind=AssetKind.model.value, multiple=False)
     ]
-    ALGO_SIMPLE = [FunctionOutputSpec(identifier=OutputIdentifiers.model, kind=AssetKind.model.value, multiple=False)]
-    ALGO_COMPOSITE = [
+    FUNCTION_SIMPLE = [
+        FunctionOutputSpec(identifier=OutputIdentifiers.model, kind=AssetKind.model.value, multiple=False)
+    ]
+    FUNCTION_COMPOSITE = [
         FunctionOutputSpec(identifier=OutputIdentifiers.local, kind=AssetKind.model.value, multiple=False),
         FunctionOutputSpec(identifier=OutputIdentifiers.shared, kind=AssetKind.model.value, multiple=False),
     ]
-    ALGO_PREDICT = [
+    FUNCTION_PREDICT = [
         FunctionOutputSpec(identifier=OutputIdentifiers.predictions, kind=AssetKind.model.value, multiple=False)
     ]
-    ALGO_PREDICT_COMPOSITE = [
+    FUNCTION_PREDICT_COMPOSITE = [
         FunctionOutputSpec(identifier=OutputIdentifiers.predictions, kind=AssetKind.model.value, multiple=False)
     ]
-    ALGO_METRIC = [
+    FUNCTION_METRIC = [
         FunctionOutputSpec(identifier=OutputIdentifiers.performance, kind=AssetKind.performance.value, multiple=False)
     ]
 
