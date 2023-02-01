@@ -458,32 +458,32 @@ def test_permission_to_test_on_org_without_training(
     dataset_2 = AugmentedDataset(client_2.get_dataset(dataset_2.key))
     dataset_2.set_train_test_dasamples(test_data_sample_keys=[test_datasample])
 
-    # add traintuple on org 1
-    spec = factory.create_traintuple(
+    # add traintask on org 1
+    spec = factory.create_traintask(
         algo=train_algo,
         inputs=dataset_1.train_data_inputs,
-        outputs=FLTaskOutputGenerator.traintuple(authorized_ids=permission_train_output.authorized_ids),
+        outputs=FLTaskOutputGenerator.traintask(authorized_ids=permission_train_output.authorized_ids),
         worker=client_1.organization_id,
     )
-    traintuple_1 = client_1.add_task(spec)
-    traintuple_1 = client_1.wait(traintuple_1)
+    traintask_1 = client_1.add_task(spec)
+    traintask_1 = client_1.wait(traintask_1)
 
-    # add testtuple on org 2
+    # add testtask on org 2
     with expectation:
-        spec = factory.create_predicttuple(
+        spec = factory.create_predicttask(
             algo=predict_algo,
-            inputs=dataset_2.test_data_inputs + FLTaskInputGenerator.train_to_predict(traintuple_1.key),
+            inputs=dataset_2.test_data_inputs + FLTaskInputGenerator.train_to_predict(traintask_1.key),
             worker=client_2.organization_id,
         )
-        predicttuple_2 = client_2.add_task(spec)
-        predicttuple_2 = client_2.wait(predicttuple_2)
+        predicttask_2 = client_2.add_task(spec)
+        predicttask_2 = client_2.wait(predicttask_2)
 
-        spec = factory.create_testtuple(
+        spec = factory.create_testtask(
             algo=metric_algo,
-            inputs=dataset_2.test_data_inputs + FLTaskInputGenerator.predict_to_test(predicttuple_2.key),
+            inputs=dataset_2.test_data_inputs + FLTaskInputGenerator.predict_to_test(predicttask_2.key),
             worker=client_2.organization_id,
         )
-        testtuple_2 = client_2.add_task(spec)
-        testtuple_2 = client_2.wait(testtuple_2)
+        testtask_2 = client_2.add_task(spec)
+        testtask_2 = client_2.wait(testtask_2)
 
-        assert testtuple_2.outputs[OutputIdentifiers.performance].value == pytest.approx(2)
+        assert testtask_2.outputs[OutputIdentifiers.performance].value == pytest.approx(2)
