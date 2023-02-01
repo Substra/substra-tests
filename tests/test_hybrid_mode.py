@@ -31,38 +31,38 @@ def test_execution_debug(client, hybrid_client, debug_factory, default_dataset):
     metric_spec = debug_factory.create_algo(category=AlgoCategory.metric)
     metric = client.add_algo(metric_spec)
 
-    #  Add the traintuple
-    # create traintuple
-    spec = debug_factory.create_traintuple(
+    #  Add the traintask
+    # create traintask
+    spec = debug_factory.create_traintask(
         algo=simple_algo,
         inputs=default_dataset.opener_input + default_dataset.train_data_sample_inputs[:1],
         worker=hybrid_client.organization_info().organization_id,
     )
-    traintuple = hybrid_client.add_task(spec)
-    assert traintuple.status == models.Status.done
-    assert traintuple.outputs[OutputIdentifiers.model].value is not None
+    traintask = hybrid_client.add_task(spec)
+    assert traintask.status == models.Status.done
+    assert traintask.outputs[OutputIdentifiers.model].value is not None
 
-    # Add the testtuple
-    spec = debug_factory.create_predicttuple(
+    # Add the testtask
+    spec = debug_factory.create_predicttask(
         algo=predict_algo,
         inputs=default_dataset.opener_input
         + default_dataset.train_data_sample_inputs[:1]
-        + FLTaskInputGenerator.train_to_predict(traintuple.key),
+        + FLTaskInputGenerator.train_to_predict(traintask.key),
         worker=hybrid_client.organization_info().organization_id,
     )
-    predicttuple = hybrid_client.add_task(spec)
-    assert predicttuple.status == models.Status.done
+    predicttask = hybrid_client.add_task(spec)
+    assert predicttask.status == models.Status.done
 
-    spec = debug_factory.create_testtuple(
+    spec = debug_factory.create_testtask(
         algo=metric,
         inputs=default_dataset.opener_input
         + default_dataset.train_data_sample_inputs[:1]
-        + FLTaskInputGenerator.predict_to_test(predicttuple.key),
+        + FLTaskInputGenerator.predict_to_test(predicttask.key),
         worker=hybrid_client.organization_info().organization_id,
     )
-    testtuple = hybrid_client.add_task(spec)
-    assert testtuple.status == models.Status.done
-    assert testtuple.outputs[OutputIdentifiers.performance].value == 3
+    testtask = hybrid_client.add_task(spec)
+    assert testtask.status == models.Status.done
+    assert testtask.outputs[OutputIdentifiers.performance].value == 3
 
 
 @pytest.mark.remote_only
@@ -70,7 +70,7 @@ def test_execution_debug(client, hybrid_client, debug_factory, default_dataset):
 def test_debug_compute_plan_aggregate_composite(network, client, hybrid_client, debug_factory, default_datasets):
     """
     Debug / Compute plan version of the
-    `test_aggregate_composite_traintuples` method from `test_execution.py`
+    `test_aggregate_composite_traintasks` method from `test_execution.py`
     """
     worker = hybrid_client.organization_id
     number_of_rounds = 2
@@ -84,41 +84,41 @@ def test_debug_compute_plan_aggregate_composite(network, client, hybrid_client, 
     predict_algo_composite = client.add_algo(spec)
 
     # launch execution
-    previous_aggregate_tuple_key = None
-    previous_composite_traintuple_keys = []
+    previous_aggregate_task_key = None
+    previous_composite_traintask_keys = []
 
     cp_spec = debug_factory.create_compute_plan()
 
     for round_ in range(number_of_rounds):
-        # create composite traintuple on each organization
-        composite_traintuple_keys = []
+        # create composite traintask on each organization
+        composite_traintask_keys = []
         for index, dataset in enumerate(default_datasets):
 
-            if previous_aggregate_tuple_key:
+            if previous_aggregate_task_key:
                 input_models = FLTaskInputGenerator.composite_to_local(
-                    previous_composite_traintuple_keys[index]
-                ) + FLTaskInputGenerator.aggregate_to_shared(previous_aggregate_tuple_key)
+                    previous_composite_traintask_keys[index]
+                ) + FLTaskInputGenerator.aggregate_to_shared(previous_aggregate_task_key)
 
             else:
                 input_models = []
 
-            spec = cp_spec.create_composite_traintuple(
+            spec = cp_spec.create_composite_traintask(
                 composite_algo=composite_algo,
                 inputs=dataset.opener_input + [dataset.train_data_sample_inputs[0 + round_]] + input_models,
                 worker=worker,
             )
-            composite_traintuple_keys.append(spec.task_id)
+            composite_traintask_keys.append(spec.task_id)
 
         # create aggregate on its organization
-        spec = cp_spec.create_aggregatetuple(
+        spec = cp_spec.create_aggregatetask(
             aggregate_algo=aggregate_algo,
             worker=worker,
-            inputs=FLTaskInputGenerator.composites_to_aggregate(composite_traintuple_keys),
+            inputs=FLTaskInputGenerator.composites_to_aggregate(composite_traintask_keys),
         )
 
         # save state of round
-        previous_aggregate_tuple_key = spec.task_id
-        previous_composite_traintuple_keys = composite_traintuple_keys
+        previous_aggregate_task_key = spec.task_id
+        previous_composite_traintask_keys = composite_traintask_keys
 
     metrics = []
     for index, client in enumerate(network.clients):
@@ -127,29 +127,29 @@ def test_debug_compute_plan_aggregate_composite(network, client, hybrid_client, 
         metric = client.add_algo(spec)
         metrics.append(metric)
 
-    # last round: create associated testtuple
-    for composite_traintuple_key, dataset, metric in zip(previous_composite_traintuple_keys, default_datasets, metrics):
+    # last round: create associated testtask
+    for composite_traintask_key, dataset, metric in zip(previous_composite_traintask_keys, default_datasets, metrics):
 
-        spec = cp_spec.create_predicttuple(
+        spec = cp_spec.create_predicttask(
             algo=predict_algo_composite,
-            inputs=dataset.train_data_inputs + FLTaskInputGenerator.composite_to_predict(composite_traintuple_key),
+            inputs=dataset.train_data_inputs + FLTaskInputGenerator.composite_to_predict(composite_traintask_key),
             worker=worker,
         )
-        cp_spec.create_testtuple(
+        cp_spec.create_testtask(
             algo=metric,
             inputs=dataset.train_data_inputs + FLTaskInputGenerator.predict_to_test(spec.task_id),
             worker=worker,
         )
 
     cp = hybrid_client.add_compute_plan(cp_spec)
-    traintuples = hybrid_client.list_compute_plan_tasks(cp.key)
-    composite_traintuples = client.list_compute_plan_tasks(cp.key)
-    aggregatetuples = client.list_compute_plan_tasks(cp.key)
-    predicttuples = client.list_compute_plan_tasks(cp.key)
-    testtuples = client.list_compute_plan_tasks(cp.key)
+    traintasks = hybrid_client.list_compute_plan_tasks(cp.key)
+    composite_traintasks = client.list_compute_plan_tasks(cp.key)
+    aggregatetasks = client.list_compute_plan_tasks(cp.key)
+    predicttasks = client.list_compute_plan_tasks(cp.key)
+    testtasks = client.list_compute_plan_tasks(cp.key)
 
-    tuples = traintuples + composite_traintuples + aggregatetuples + predicttuples + testtuples
-    for t in tuples:
+    tasks = traintasks + composite_traintasks + aggregatetasks + predicttasks + testtasks
+    for t in tasks:
         assert t.status == models.Status.done
 
 
@@ -161,13 +161,13 @@ def test_debug_download_dataset(hybrid_client, default_dataset):
 @pytest.mark.remote_only
 @pytest.mark.slow
 def test_fake_data_sample_key(client, hybrid_client, debug_factory, default_dataset):
-    """Check that a traintuple can't run with a fake train_data_sample_keys"""
+    """Check that a traintask can't run with a fake train_data_sample_keys"""
     spec = debug_factory.create_algo(AlgoCategory.simple)
     algo = client.add_algo(spec)
 
-    #  Add the traintuple
-    # create traintuple
-    spec = debug_factory.create_traintuple(
+    #  Add the traintask
+    # create traintask
+    spec = debug_factory.create_traintask(
         algo=algo,
         inputs=default_dataset.opener_input + FLTaskInputGenerator.data_samples(["fake_key"]),
         worker=hybrid_client.organization_info().organization_id,

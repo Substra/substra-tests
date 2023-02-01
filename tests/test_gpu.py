@@ -50,7 +50,7 @@ if __name__ == '__main__':
     spec = factory.create_algo(AlgoCategory.simple, dockerfile=dockerfile, py_script=script)
     algo = client.add_algo(spec)
     cp_spec = factory.create_compute_plan(tag=f"GPU test - org {default_datasets[org_idx].owner} - {nvidia_drivers}")
-    cp_spec.create_traintuple(
+    cp_spec.create_traintask(
         algo=algo,
         inputs=default_datasets[org_idx].train_data_inputs,
         metadata={"docker_cuda_version": nvidia_drivers},

@@ -341,10 +341,10 @@ def test_mnist(factory, inputs, clients, cfg: Settings, workers: typing.List[str
             else:
                 input_models = []
 
-            composite_specs[idx] = cp_spec.create_composite_traintuple(
+            composite_specs[idx] = cp_spec.create_composite_traintask(
                 composite_algo=inputs.composite_algo,
                 inputs=org_inputs.dataset.train_data_inputs + input_models,
-                outputs=FLTaskOutputGenerator.composite_traintuple(
+                outputs=FLTaskOutputGenerator.composite_traintask(
                     shared_authorized_ids=[aggregate_worker, clients[idx].organization_id],
                     local_authorized_ids=[clients[idx].organization_id],
                 ),
@@ -354,7 +354,7 @@ def test_mnist(factory, inputs, clients, cfg: Settings, workers: typing.List[str
                 worker=workers[idx],
             )
 
-        aggregate_spec = cp_spec.create_aggregatetuple(
+        aggregate_spec = cp_spec.create_aggregatetask(
             aggregate_algo=inputs.aggregate_algo,
             worker=aggregate_worker,
             inputs=FLTaskInputGenerator.composites_to_aggregate(
@@ -365,10 +365,10 @@ def test_mnist(factory, inputs, clients, cfg: Settings, workers: typing.List[str
             },
         )
 
-        # add testtuples for specified rounds
+        # add testtasks for specified rounds
         if round_idx + 1 in testing_rounds:
             for idx, org_inputs in enumerate(inputs.datasets):
-                predicttuple_spec = cp_spec.create_predicttuple(
+                predicttask_spec = cp_spec.create_predicttask(
                     algo=inputs.predict_algo,
                     inputs=org_inputs.dataset.test_data_inputs
                     + FLTaskInputGenerator.composite_to_predict(composite_specs[idx].task_id),
@@ -377,10 +377,10 @@ def test_mnist(factory, inputs, clients, cfg: Settings, workers: typing.List[str
                     },
                     worker=workers[idx],
                 )
-                cp_spec.create_testtuple(
+                cp_spec.create_testtask(
                     algo=org_inputs.metric,
                     inputs=org_inputs.dataset.test_data_inputs
-                    + FLTaskInputGenerator.predict_to_test(predicttuple_spec.task_id),
+                    + FLTaskInputGenerator.predict_to_test(predicttask_spec.task_id),
                     metadata={
                         "round_idx": round_idx,
                     },
@@ -390,15 +390,15 @@ def test_mnist(factory, inputs, clients, cfg: Settings, workers: typing.List[str
     cp = client.add_compute_plan(cp_spec)
     cp = client.wait(cp, timeout=30 * 60 * 60)
 
-    # display all testtuples performances
+    # display all testtasks performances
     tasks = client.list_compute_plan_tasks(cp.key)
-    testtuples = [t for t in tasks if OutputIdentifiers.performance in t.outputs]
-    testtuples = sorted(testtuples, key=lambda x: (x.rank, x.worker))
-    for testtuple in testtuples:
+    testtasks = [t for t in tasks if OutputIdentifiers.performance in t.outputs]
+    testtasks = sorted(testtasks, key=lambda x: (x.rank, x.worker))
+    for testtask in testtasks:
         print(
-            f"testtuple({testtuple.worker}) - rank {testtuple.rank} "
-            f"- round {testtuple.metadata['round_idx']} "
-            f"perf: {testtuple.outputs[OutputIdentifiers.performance]}"
+            f"testtask({testtask.worker}) - rank {testtask.rank} "
+            f"- round {testtask.metadata['round_idx']} "
+            f"perf: {testtask.outputs[OutputIdentifiers.performance]}"
         )
 
     nb_samples = (cfg.mnist_workflow.train_samples, cfg.mnist_workflow.test_samples)
@@ -408,14 +408,12 @@ def test_mnist(factory, inputs, clients, cfg: Settings, workers: typing.List[str
         expected_perf = _EXPECTED_RESULTS[nb_samples]
         assert all(
             [
-                testtuple.outputs[OutputIdentifiers.performance].value == pytest.approx(perf)
-                for (perf, testtuple) in zip(expected_perf, testtuples)
+                testtask.outputs[OutputIdentifiers.performance].value == pytest.approx(perf)
+                for (perf, testtask) in zip(expected_perf, testtasks)
             ]
         )
     else:
         # check perf is as good as expected: after 20 rounds we expect a performance of
         # around 0.86. To avoid a flaky test a lower performance is expected.
         mininum_expected_perf = 0.85
-        assert all(
-            [testtuple.outputs[OutputIdentifiers.performance] > mininum_expected_perf for testtuple in testtuples]
-        )
+        assert all([testtask.outputs[OutputIdentifiers.performance] > mininum_expected_perf for testtask in testtasks])

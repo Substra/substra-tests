@@ -83,11 +83,11 @@ class Client:
     def add_compute_plan(self, spec, *args, **kwargs):
         return self._client.add_compute_plan(spec.dict(), *args, **kwargs)
 
-    def add_compute_plan_tuples(self, spec, *args, **kwargs):
+    def add_compute_plan_tasks(self, spec, *args, **kwargs):
         spec_dict = spec.dict()
         # Remove extra field from data
         spec_dict.pop("key")
-        return self._client.add_compute_plan_tuples(spec.key, spec_dict, *args, **kwargs)
+        return self._client.add_compute_plan_tasks(spec.key, spec_dict, *args, **kwargs)
 
     def list_compute_plan(self, *args, **kwargs):
         return self._client.list_compute_plan(*args, **kwargs)
@@ -152,12 +152,12 @@ class Client:
     def get_task_models(self, compute_task_key: str) -> typing.List[substra.models.OutModel]:
         return self._client.list_model(filters={"compute_task_key": [compute_task_key]})
 
-    def get_logs(self, tuple_key):
-        return self._client.get_logs(tuple_key)
+    def get_logs(self, task_key):
+        return self._client.get_logs(task_key)
 
-    def download_logs(self, tuple_key):
+    def download_logs(self, task_key):
         with tempfile.TemporaryDirectory() as tmp:
-            path = self._client.download_logs(tuple_key, tmp)
+            path = self._client.download_logs(task_key, tmp)
             with open(path, "r") as f:
                 return f.read()
 
@@ -207,7 +207,7 @@ class Client:
                 break
 
             if asset.status == Status.failed.value and asset.error_type is not None:
-                # when dealing with a failed tuple, wait for the error_type field of the tuple to be set
+                # when dealing with a failed task, wait for the error_type field of the task to be set
                 # i.e. wait for the registration of the failure report
                 break
 

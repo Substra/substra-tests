@@ -167,11 +167,11 @@ class Dataset:
         self.dataset = client.get_dataset(dataset.key)
         self.train_data_sample_keys = _shuffle(self.dataset.data_sample_keys)
         self.test_data_sample_keys = self.train_data_sample_keys[:2]
-        self.train_data_inputs = FLTaskInputGenerator.tuple(
+        self.train_data_inputs = FLTaskInputGenerator.task(
             opener_key=dataset.key,
             data_sample_keys=self.train_data_sample_keys,
         )
-        self.test_data_inputs = FLTaskInputGenerator.tuple(
+        self.test_data_inputs = FLTaskInputGenerator.task(
             opener_key=dataset.key,
             data_sample_keys=self.test_data_sample_keys,
         )
@@ -200,35 +200,35 @@ def test_task_data_samples_relative_order(factory, client, dataset, worker):
     metric_spec = factory.create_algo(category=AlgoCategory.metric, py_script=metric_script)
     metric = client.add_algo(metric_spec)
 
-    traintuple_spec = factory.create_traintuple(algo=algo, inputs=dataset.train_data_inputs, worker=worker)
-    traintuple = client.add_task(traintuple_spec)
+    traintask_spec = factory.create_traintask(algo=algo, inputs=dataset.train_data_inputs, worker=worker)
+    traintask = client.add_task(traintask_spec)
 
     # Ensure the order of the data sample keys is correct at 2 levels: :
-    #  1. In the returned traintuple
+    #  1. In the returned traintask
     #  2. In the train method of the algo. If the order is incorrect, wait() will fail.
     assert [
-        i.asset_key for i in traintuple.inputs if i.identifier == InputIdentifiers.datasamples
+        i.asset_key for i in traintask.inputs if i.identifier == InputIdentifiers.datasamples
     ] == dataset.train_data_sample_keys
-    client.wait(traintuple)
+    client.wait(traintask)
 
-    predict_input_models = FLTaskInputGenerator.train_to_predict(traintuple.key)
-    predicttuple_spec = factory.create_predicttuple(
+    predict_input_models = FLTaskInputGenerator.train_to_predict(traintask.key)
+    predicttask_spec = factory.create_predicttask(
         algo=predict_algo, inputs=dataset.test_data_inputs + predict_input_models, worker=worker
     )
-    predicttuple = client.add_task(predicttuple_spec)
+    predicttask = client.add_task(predicttask_spec)
 
-    test_input_models = FLTaskInputGenerator.predict_to_test(predicttuple.key)
+    test_input_models = FLTaskInputGenerator.predict_to_test(predicttask.key)
 
-    testtuple_spec = factory.create_testtuple(
+    testtask_spec = factory.create_testtask(
         algo=metric, inputs=dataset.test_data_inputs + test_input_models, worker=worker
     )
-    testtuple = client.add_task(testtuple_spec)
+    testtask = client.add_task(testtask_spec)
 
     # Assert order is correct in the metric. If not, wait() will fail.
-    client.wait(testtuple)
+    client.wait(testtask)
 
 
-def test_composite_traintuple_data_samples_relative_order(factory, client, dataset, worker):
+def test_composite_traintask_data_samples_relative_order(factory, client, dataset, worker):
     # Format TEMPLATE_COMPOSITE_ALGO_SCRIPT with current data_sample_keys
     composite_algo_script = TEMPLATE_COMPOSITE_ALGO_SCRIPT.format(
         data_sample_keys=dataset.train_data_sample_keys,
@@ -252,34 +252,34 @@ def test_composite_traintuple_data_samples_relative_order(factory, client, datas
     metric_spec = factory.create_algo(category=AlgoCategory.metric, py_script=metric_script)
     metric = client.add_algo(metric_spec)
 
-    traintuple_spec = factory.create_composite_traintuple(
+    traintask_spec = factory.create_composite_traintask(
         algo=composite_algo, inputs=dataset.train_data_inputs, worker=worker
     )
-    composite_traintuple = client.add_task(traintuple_spec)
+    composite_traintask = client.add_task(traintask_spec)
     # Ensure the order of the data sample keys is correct at 2 levels: :
-    #  1. In the returned composite traintuple
+    #  1. In the returned composite traintask
     #  2. In the train method of the algo. If the order is incorrect, wait() will fail.
     assert [
-        i.asset_key for i in composite_traintuple.inputs if i.identifier == InputIdentifiers.datasamples
+        i.asset_key for i in composite_traintask.inputs if i.identifier == InputIdentifiers.datasamples
     ] == dataset.train_data_sample_keys
-    client.wait(composite_traintuple)
+    client.wait(composite_traintask)
 
-    predict_input_models = FLTaskInputGenerator.composite_to_predict(composite_traintuple.key)
+    predict_input_models = FLTaskInputGenerator.composite_to_predict(composite_traintask.key)
 
-    predicttuple_spec = factory.create_predicttuple(
+    predicttask_spec = factory.create_predicttask(
         algo=predict_algo, inputs=dataset.test_data_inputs + predict_input_models, worker=worker
     )
-    predicttuple = client.add_task(predicttuple_spec)
+    predicttask = client.add_task(predicttask_spec)
 
-    test_input_models = FLTaskInputGenerator.predict_to_test(predicttuple.key)
+    test_input_models = FLTaskInputGenerator.predict_to_test(predicttask.key)
 
-    testtuple_spec = factory.create_testtuple(
+    testtask_spec = factory.create_testtask(
         algo=metric, inputs=dataset.test_data_inputs + test_input_models, worker=worker
     )
-    testtuple = client.add_task(testtuple_spec)
+    testtask = client.add_task(testtask_spec)
 
     # Assert order is correct in the metric. If not, wait() will fail.
-    client.wait(testtuple)
+    client.wait(testtask)
 
 
 @pytest.mark.slow
@@ -345,11 +345,11 @@ if __name__ == '__main__':
     )
     algo = client.add_algo(spec)
 
-    spec = factory.create_traintuple(
+    spec = factory.create_traintask(
         algo=algo,
-        inputs=FLTaskInputGenerator.tuple(opener_key=dataset.key, data_sample_keys=keys),
+        inputs=FLTaskInputGenerator.task(opener_key=dataset.key, data_sample_keys=keys),
         worker=worker,
     )
-    traintuple = client.add_task(spec)
-    traintuple = client.wait(traintuple)
-    assert traintuple.status == Status.done
+    traintask = client.add_task(spec)
+    traintask = client.wait(traintask)
+    assert traintask.status == Status.done
