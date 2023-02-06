@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## [0.38.1] - 2023-06-02
+
 ### Added
 
 - Remote test to verify that, with the right permission, we can test on an org from the training model of an other organization (#237)
@@ -14,11 +16,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - chore: rename tuple to task (#239)
-
-## [0.38.0] - 2023-01-30
-
-### Changed
-
 - Update test after test only for datasample removal (#235)
 
 ## [0.37.0] - 2022-12-19
