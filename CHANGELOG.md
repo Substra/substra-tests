@@ -12,7 +12,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Remote test to verify that, with the right permission, we can test on an org from the training model of an other organization (#237)
-  blanc
 
 ### Changed
 
