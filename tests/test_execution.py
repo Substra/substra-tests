@@ -105,7 +105,6 @@ def test_federated_learning_workflow(factory, client, default_datasets, workers)
     # default_datasets contains datasets on each organization and
     # that has a result we can use for federated learning
     for index, dataset in enumerate(default_datasets):
-
         traintasks = [traintask.key] if traintask else []
 
         spec = factory.create_traintask(
@@ -201,7 +200,7 @@ def test_function_build_failure(factory, network, default_dataset_1, worker):
     """Invalid Dockerfile is causing compute task failure."""
 
     dockerfile = factory.default_function_dockerfile(
-        method_name=sbt.factory.DEFAULT_FUNCTION_METHOD_NAME[FunctionCategory.simple]
+        method_name=sbt.factory.DEFAULT_FUNCTION_NAME[FunctionCategory.simple]
     )
     dockerfile += "\nRUN invalid_command"
     spec = factory.create_function(category=FunctionCategory.simple, dockerfile=dockerfile)
@@ -635,7 +634,6 @@ def test_aggregate_composite_traintasks(factory, network, clients, default_datas
         # create composite traintask on each organization
         composite_traintask_keys = []
         for index, dataset in enumerate(default_datasets):
-
             if previous_aggregatetask_key:
                 input_models = FLTaskInputGenerator.composite_to_local(
                     previous_composite_traintask_keys[index]

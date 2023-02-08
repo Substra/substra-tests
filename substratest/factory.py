@@ -258,7 +258,7 @@ if __name__ == '__main__':
     tools.execute()
 """  # noqa
 
-DEFAULT_FUNCTION_METHOD_NAME = {
+DEFAULT_FUNCTION_NAME = {
     FunctionCategory.simple: "train",
     FunctionCategory.composite: "train",
     FunctionCategory.aggregate: "aggregate",
@@ -389,7 +389,6 @@ class AugmentedDataset:
         self.opener_input = FLTaskInputGenerator.opener(dataset.key)
 
     def set_train_test_dasamples(self, train_data_sample_keys=(), test_data_sample_keys=()):
-
         self._check_data_sample_keys(train_data_sample_keys)
         self._check_data_sample_keys(test_data_sample_keys)
 
@@ -418,7 +417,6 @@ class _ComputePlanSpecFactory:
     def create_traintask(
         self, function, worker, inputs=None, outputs=None, tag="", metadata=None
     ) -> ComputePlanTaskSpec:
-
         spec = ComputePlanTaskSpec(
             function_key=function.key,
             task_id=random_uuid(),
@@ -434,7 +432,6 @@ class _ComputePlanSpecFactory:
     def create_aggregatetask(
         self, aggregate_function, worker, inputs=None, outputs=None, tag="", metadata=None
     ) -> ComputePlanTaskSpec:
-
         spec = ComputePlanTaskSpec(
             task_id=random_uuid(),
             function_key=aggregate_function.key,
@@ -456,7 +453,6 @@ class _ComputePlanSpecFactory:
         tag="",
         metadata=None,
     ) -> ComputePlanTaskSpec:
-
         spec = ComputePlanTaskSpec(
             task_id=random_uuid(),
             function_key=composite_function.key,
@@ -472,7 +468,6 @@ class _ComputePlanSpecFactory:
     def create_predicttask(
         self, function, worker, inputs=None, outputs=None, tag="", metadata=None
     ) -> ComputePlanTaskSpec:
-
         spec = ComputePlanTaskSpec(
             task_id=random_uuid(),
             function_key=function.key,
@@ -604,7 +599,7 @@ class AssetsFactory:
         except KeyError:
             raise Exception("Invalid function category", category)
 
-        dockerfile = dockerfile or self.default_function_dockerfile(method_name=DEFAULT_FUNCTION_METHOD_NAME[category])
+        dockerfile = dockerfile or self.default_function_dockerfile(method_name=DEFAULT_FUNCTION_NAME[category])
 
         function_zip = utils.create_archive(
             tmpdir / "function",
@@ -633,7 +628,6 @@ class AssetsFactory:
         metadata=None,
         worker=None,
     ) -> TaskSpec:
-
         return TaskSpec(
             function_key=function.key if function else None,
             tag=tag,
@@ -656,7 +650,6 @@ class AssetsFactory:
         rank=None,
         metadata=None,
     ) -> TaskSpec:
-
         return TaskSpec(
             function_key=function.key if function else None,
             worker=worker,
@@ -679,7 +672,6 @@ class AssetsFactory:
         metadata=None,
         worker=None,
     ) -> TaskSpec:
-
         return TaskSpec(
             function_key=function.key if function else None,
             inputs=inputs or [],

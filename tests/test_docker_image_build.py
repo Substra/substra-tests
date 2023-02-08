@@ -1,6 +1,6 @@
 import pytest
 
-from substratest.factory import DEFAULT_FUNCTION_METHOD_NAME
+from substratest.factory import DEFAULT_FUNCTION_NAME
 from substratest.fl_interface import FunctionCategory
 
 
@@ -21,7 +21,7 @@ FROM {substra_tools_image}
 
 COPY function.py .
 
-ENTRYPOINT ["python3", "function.py", "--function-name", "{DEFAULT_FUNCTION_METHOD_NAME[function_category]}"]
+ENTRYPOINT ["python3", "function.py", "--function-name", "{DEFAULT_FUNCTION_NAME[function_category]}"]
 """
     spec = factory.create_function(function_category, dockerfile=dockerfile)
     function = client.add_function(spec)

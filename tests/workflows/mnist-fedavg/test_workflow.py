@@ -6,7 +6,7 @@ import pytest
 import substra as sb
 
 import substratest as sbt
-from substratest.factory import DEFAULT_FUNCTION_METHOD_NAME
+from substratest.factory import DEFAULT_FUNCTION_NAME
 from substratest.factory import FunctionCategory
 from substratest.factory import AugmentedDataset
 from substratest.fl_interface import FLTaskInputGenerator
@@ -246,7 +246,7 @@ def inputs(datasamples_folders, factory, clients, channel, function_dockerfile):
     """Register for each orgs substra inputs (dataset, datasamples and metric)."""
     results = _Inputs(datasets=[_InputsSubset() for _ in range(_NB_ORGS)])
 
-    for (client, folders, res) in zip(clients, datasamples_folders, results.datasets):
+    for client, folders, res in zip(clients, datasamples_folders, results.datasets):
         spec = factory.create_dataset(py_script=_OPENER.open().read())
         res.dataset = client.add_dataset(spec)
 
@@ -263,9 +263,7 @@ def inputs(datasamples_folders, factory, clients, channel, function_dockerfile):
             )
         )
 
-        metric_dockerfile = function_dockerfile.format(
-            method_name=DEFAULT_FUNCTION_METHOD_NAME[FunctionCategory.metric]
-        )
+        metric_dockerfile = function_dockerfile.format(method_name=DEFAULT_FUNCTION_NAME[FunctionCategory.metric])
 
         spec = factory.create_function(
             category=FunctionCategory.metric, dockerfile=metric_dockerfile, py_script=_METRICS.open().read()
@@ -287,23 +285,21 @@ def inputs(datasamples_folders, factory, clients, channel, function_dockerfile):
     spec = factory.create_function(
         FunctionCategory.composite,
         py_script=_COMPOSITE_FUNCTION.open().read(),
-        dockerfile=function_dockerfile.format(method_name=DEFAULT_FUNCTION_METHOD_NAME[FunctionCategory.composite]),
+        dockerfile=function_dockerfile.format(method_name=DEFAULT_FUNCTION_NAME[FunctionCategory.composite]),
     )
     results.composite_function = client.add_function(spec)
 
     spec = factory.create_function(
         FunctionCategory.aggregate,
         py_script=_AGGREGATE_FUNCTION.open().read(),
-        dockerfile=function_dockerfile.format(method_name=DEFAULT_FUNCTION_METHOD_NAME[FunctionCategory.aggregate]),
+        dockerfile=function_dockerfile.format(method_name=DEFAULT_FUNCTION_NAME[FunctionCategory.aggregate]),
     )
     results.aggregate_function = client.add_function(spec)
 
     spec = factory.create_function(
         FunctionCategory.predict_composite,
         py_script=_PREDICT_FUNCTION.open().read(),
-        dockerfile=function_dockerfile.format(
-            method_name=DEFAULT_FUNCTION_METHOD_NAME[FunctionCategory.predict_composite]
-        ),
+        dockerfile=function_dockerfile.format(method_name=DEFAULT_FUNCTION_NAME[FunctionCategory.predict_composite]),
     )
     results.predict_function = client.add_function(spec)
     # ensure last registered asset is synchronized on all organizations
@@ -337,7 +333,6 @@ def test_mnist(factory, inputs, clients, cfg: Settings, workers: typing.List[str
     # next rounds
     for round_idx in range(nb_rounds):
         for idx, org_inputs in enumerate(inputs.datasets):
-
             if aggregate_spec:
                 input_models = FLTaskInputGenerator.composite_to_local(
                     composite_specs[idx].task_id
