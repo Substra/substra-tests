@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- BREAKING: rename Algo to Function ([#243](https://github.com/Substra/orchestrator/pull/243))
+- BREAKING: rename Algo to Function (#243)
 
 ## [0.38.1] - 2023-02-06
 
