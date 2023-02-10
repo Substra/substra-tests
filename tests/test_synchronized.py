@@ -1,7 +1,7 @@
 import pytest
 
-from substratest.factory import FunctionCategory
 from substratest.factory import AugmentedDataset
+from substratest.factory import FunctionCategory
 
 
 @pytest.fixture

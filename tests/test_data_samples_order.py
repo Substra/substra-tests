@@ -3,8 +3,8 @@ from substra.sdk.models import Status
 
 import substratest as sbt
 from substratest.factory import DEFAULT_DATA_SAMPLE_FILENAME
-from substratest.fl_interface import FunctionCategory
 from substratest.fl_interface import FLTaskInputGenerator
+from substratest.fl_interface import FunctionCategory
 from substratest.fl_interface import InputIdentifiers
 from substratest.fl_interface import OutputIdentifiers
 

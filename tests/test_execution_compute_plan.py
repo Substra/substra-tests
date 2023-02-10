@@ -7,9 +7,9 @@ from substra.sdk import models
 import substratest as sbt
 from substratest.client import Client
 from substratest.factory import AssetsFactory
-from substratest.fl_interface import FunctionCategory
 from substratest.fl_interface import FLTaskInputGenerator
 from substratest.fl_interface import FLTaskOutputGenerator
+from substratest.fl_interface import FunctionCategory
 from substratest.fl_interface import InputIdentifiers
 from substratest.fl_interface import OutputIdentifiers
 

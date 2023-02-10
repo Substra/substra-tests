@@ -7,8 +7,8 @@ import substra as sb
 
 import substratest as sbt
 from substratest.factory import DEFAULT_FUNCTION_NAME
-from substratest.factory import FunctionCategory
 from substratest.factory import AugmentedDataset
+from substratest.factory import FunctionCategory
 from substratest.fl_interface import FLTaskInputGenerator
 from substratest.fl_interface import FLTaskOutputGenerator
 from substratest.fl_interface import OutputIdentifiers

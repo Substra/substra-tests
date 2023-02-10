@@ -9,19 +9,19 @@ import uuid
 
 import pydantic
 import substra
-from substra.sdk.schemas import FunctionSpec
 from substra.sdk.schemas import ComputePlanTaskSpec
+from substra.sdk.schemas import FunctionSpec
 from substra.sdk.schemas import Permissions
 from substra.sdk.schemas import TaskSpec
-from substra.sdk.schemas import UpdateFunctionSpec
 from substra.sdk.schemas import UpdateComputePlanSpec
 from substra.sdk.schemas import UpdateDatasetSpec
+from substra.sdk.schemas import UpdateFunctionSpec
 
-from substratest.fl_interface import FunctionCategory
 from substratest.fl_interface import FLFunctionInputs
 from substratest.fl_interface import FLFunctionOutputs
 from substratest.fl_interface import FLTaskInputGenerator
 from substratest.fl_interface import FLTaskOutputGenerator
+from substratest.fl_interface import FunctionCategory
 from substratest.fl_interface import InputIdentifiers
 from substratest.fl_interface import OutputIdentifiers
 
