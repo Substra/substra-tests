@@ -795,7 +795,8 @@ def test_user_creates_model_folder(factory, client, default_dataset, worker):
     """Check that the model folder is not overwritten by substra"""
     dockerfile = (
         f"FROM {factory.default_tools_image}\nCOPY function.py .\nRUN mkdir model\n"
-        + 'RUN echo \'{"name":"Jane"}\' >> model/model\nENTRYPOINT ["python3", "function.py", "--function-name", "train"]\n'
+        + 'RUN echo \'{"name":"Jane"}\' >> model/model'
+        + '\nENTRYPOINT ["python3", "function.py", "--function-name", "train"]\n'
     )
     function_script = f"""
 import json
