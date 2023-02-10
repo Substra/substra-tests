@@ -72,9 +72,9 @@ class Client:
         key = self._client.add_dataset(spec.dict(), *args, **kwargs)
         return self._client.get_dataset(key)
 
-    def add_algo(self, spec, *args, **kwargs):
-        key = self._client.add_algo(spec.dict(), *args, **kwargs)
-        return self._client.get_algo(key)
+    def add_function(self, spec, *args, **kwargs):
+        key = self._client.add_function(spec.dict(), *args, **kwargs)
+        return self._client.get_function(key)
 
     def add_task(self, spec, *args, **kwargs):
         key = self._client.add_task(spec.dict(), *args, **kwargs)
@@ -101,11 +101,11 @@ class Client:
     def list_data_sample(self, *args, **kwargs):
         return self._client.list_data_sample(*args, **kwargs)
 
-    def get_algo(self, *args, **kwargs):
-        return self._client.get_algo(*args, **kwargs)
+    def get_function(self, *args, **kwargs):
+        return self._client.get_function(*args, **kwargs)
 
-    def list_algo(self, *args, **kwargs):
-        return self._client.list_algo(*args, **kwargs)
+    def list_function(self, *args, **kwargs):
+        return self._client.list_function(*args, **kwargs)
 
     def get_dataset(self, *args, **kwargs):
         return self._client.get_dataset(*args, **kwargs)
@@ -131,9 +131,9 @@ class Client:
             with open(path, "rb") as f:
                 return f.read()
 
-    def download_algo(self, key):
+    def download_function(self, key):
         with tempfile.TemporaryDirectory() as tmp:
-            path = self._client.download_algo(key, tmp)
+            path = self._client.download_function(key, tmp)
             with open(path, "rb") as f:
                 return f.read()
 
@@ -177,7 +177,7 @@ class Client:
         """Asset getter (valid only for first class asset)."""
         getters = {
             models.Dataset: self.get_dataset,
-            models.Algo: self.get_algo,
+            models.Function: self.get_function,
             models.Task: self.get_task,
             models.ComputePlan: self.get_compute_plan,
             models.DataSample: self.get_data_sample,
@@ -236,8 +236,8 @@ class Client:
             time.sleep(self.future_polling_period)
             model = self._client.get_model(model_key)
 
-    def update_algo(self, algo, name, *args, **kwargs):
-        return self._client.update_algo(algo.key, name, *args, **kwargs)
+    def update_function(self, function, name, *args, **kwargs):
+        return self._client.update_function(function.key, name, *args, **kwargs)
 
     def update_compute_plan(self, compute_plan, name, *args, **kwargs):
         return self._client.update_compute_plan(compute_plan.key, name, *args, **kwargs)

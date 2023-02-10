@@ -6,9 +6,9 @@ import pytest
 import substra as sb
 
 import substratest as sbt
-from substratest.factory import DEFAULT_ALGO_METHOD_NAME
-from substratest.factory import AlgoCategory
+from substratest.factory import DEFAULT_FUNCTION_NAME
 from substratest.factory import AugmentedDataset
+from substratest.factory import FunctionCategory
 from substratest.fl_interface import FLTaskInputGenerator
 from substratest.fl_interface import FLTaskOutputGenerator
 from substratest.fl_interface import OutputIdentifiers
@@ -33,9 +33,9 @@ _CACHE_PATH = _PARENT_DIR / ".cache"
 
 _OPENER = _PARENT_DIR / "assets" / "opener.py"
 _METRICS = _PARENT_DIR / "assets" / "metrics.py"
-_AGGREGATE_ALGO = _PARENT_DIR / "assets" / "aggregate_algo.py"
-_COMPOSITE_ALGO = _PARENT_DIR / "assets" / "composite_algo.py"
-_PREDICT_ALGO = _PARENT_DIR / "assets" / "composite_algo.py"
+_AGGREGATE_FUNCTION = _PARENT_DIR / "assets" / "aggregate_function.py"
+_COMPOSITE_FUNCTION = _PARENT_DIR / "assets" / "composite_function.py"
+_PREDICT_FUNCTION = _PARENT_DIR / "assets" / "composite_function.py"
 
 _SEED = 1
 
@@ -52,11 +52,11 @@ _EXPECTED_RESULTS = {
 
 
 @pytest.fixture
-def algo_dockerfile(cfg: Settings) -> str:
+def function_dockerfile(cfg: Settings) -> str:
     return (
         f"FROM {cfg.substra_tools.image_workflows}\n"
-        f"COPY algo.py .\n"
-        f'ENTRYPOINT ["python3", "algo.py", "--function-name", "{{method_name}}"]\n'
+        f"COPY function.py .\n"
+        f'ENTRYPOINT ["python3", "function.py", "--function-name", "{{method_name}}"]\n'
     )
 
 
@@ -224,7 +224,7 @@ class _InputsSubset(pydantic.BaseModel):
     """
 
     dataset: AugmentedDataset = None
-    metric: sb.sdk.models.Algo = None
+    metric: sb.sdk.models.Function = None
     train_data_sample_keys: typing.List[str] = []
 
     class Config:
@@ -236,17 +236,17 @@ class _Inputs(pydantic.BaseModel):
 
     # XXX datasets must have the same order as the clients fixture
     datasets: typing.List[_InputsSubset]
-    composite_algo: sb.sdk.models.Algo = None
-    aggregate_algo: sb.sdk.models.Algo = None
-    predict_algo: sb.sdk.models.Algo = None
+    composite_function: sb.sdk.models.Function = None
+    aggregate_function: sb.sdk.models.Function = None
+    predict_function: sb.sdk.models.Function = None
 
 
 @pytest.fixture
-def inputs(datasamples_folders, factory, clients, channel, algo_dockerfile):
+def inputs(datasamples_folders, factory, clients, channel, function_dockerfile):
     """Register for each orgs substra inputs (dataset, datasamples and metric)."""
     results = _Inputs(datasets=[_InputsSubset() for _ in range(_NB_ORGS)])
 
-    for (client, folders, res) in zip(clients, datasamples_folders, results.datasets):
+    for client, folders, res in zip(clients, datasamples_folders, results.datasets):
         spec = factory.create_dataset(py_script=_OPENER.open().read())
         res.dataset = client.add_dataset(spec)
 
@@ -263,13 +263,13 @@ def inputs(datasamples_folders, factory, clients, channel, algo_dockerfile):
             )
         )
 
-        metric_dockerfile = algo_dockerfile.format(method_name=DEFAULT_ALGO_METHOD_NAME[AlgoCategory.metric])
+        metric_dockerfile = function_dockerfile.format(method_name=DEFAULT_FUNCTION_NAME[FunctionCategory.metric])
 
-        spec = factory.create_algo(
-            category=AlgoCategory.metric, dockerfile=metric_dockerfile, py_script=_METRICS.open().read()
+        spec = factory.create_function(
+            category=FunctionCategory.metric, dockerfile=metric_dockerfile, py_script=_METRICS.open().read()
         )
 
-        res.metric = client.add_algo(spec)
+        res.metric = client.add_function(spec)
 
         # refresh dataset (to be up-to-date with added samples)
         res.dataset = AugmentedDataset(client.get_dataset(res.dataset.key))
@@ -282,28 +282,28 @@ def inputs(datasamples_folders, factory, clients, channel, algo_dockerfile):
         res.train_data_sample_keys = train_keys
 
     client = clients[0]
-    spec = factory.create_algo(
-        AlgoCategory.composite,
-        py_script=_COMPOSITE_ALGO.open().read(),
-        dockerfile=algo_dockerfile.format(method_name=DEFAULT_ALGO_METHOD_NAME[AlgoCategory.composite]),
+    spec = factory.create_function(
+        FunctionCategory.composite,
+        py_script=_COMPOSITE_FUNCTION.open().read(),
+        dockerfile=function_dockerfile.format(method_name=DEFAULT_FUNCTION_NAME[FunctionCategory.composite]),
     )
-    results.composite_algo = client.add_algo(spec)
+    results.composite_function = client.add_function(spec)
 
-    spec = factory.create_algo(
-        AlgoCategory.aggregate,
-        py_script=_AGGREGATE_ALGO.open().read(),
-        dockerfile=algo_dockerfile.format(method_name=DEFAULT_ALGO_METHOD_NAME[AlgoCategory.aggregate]),
+    spec = factory.create_function(
+        FunctionCategory.aggregate,
+        py_script=_AGGREGATE_FUNCTION.open().read(),
+        dockerfile=function_dockerfile.format(method_name=DEFAULT_FUNCTION_NAME[FunctionCategory.aggregate]),
     )
-    results.aggregate_algo = client.add_algo(spec)
+    results.aggregate_function = client.add_function(spec)
 
-    spec = factory.create_algo(
-        AlgoCategory.predict_composite,
-        py_script=_PREDICT_ALGO.open().read(),
-        dockerfile=algo_dockerfile.format(method_name=DEFAULT_ALGO_METHOD_NAME[AlgoCategory.predict_composite]),
+    spec = factory.create_function(
+        FunctionCategory.predict_composite,
+        py_script=_PREDICT_FUNCTION.open().read(),
+        dockerfile=function_dockerfile.format(method_name=DEFAULT_FUNCTION_NAME[FunctionCategory.predict_composite]),
     )
-    results.predict_algo = client.add_algo(spec)
+    results.predict_function = client.add_function(spec)
     # ensure last registered asset is synchronized on all organizations
-    channel.wait_for_asset_synchronized(results.aggregate_algo)
+    channel.wait_for_asset_synchronized(results.aggregate_function)
 
     return results
 
@@ -333,7 +333,6 @@ def test_mnist(factory, inputs, clients, cfg: Settings, workers: typing.List[str
     # next rounds
     for round_idx in range(nb_rounds):
         for idx, org_inputs in enumerate(inputs.datasets):
-
             if aggregate_spec:
                 input_models = FLTaskInputGenerator.composite_to_local(
                     composite_specs[idx].task_id
@@ -342,7 +341,7 @@ def test_mnist(factory, inputs, clients, cfg: Settings, workers: typing.List[str
                 input_models = []
 
             composite_specs[idx] = cp_spec.create_composite_traintask(
-                composite_algo=inputs.composite_algo,
+                composite_function=inputs.composite_function,
                 inputs=org_inputs.dataset.train_data_inputs + input_models,
                 outputs=FLTaskOutputGenerator.composite_traintask(
                     shared_authorized_ids=[aggregate_worker, clients[idx].organization_id],
@@ -355,7 +354,7 @@ def test_mnist(factory, inputs, clients, cfg: Settings, workers: typing.List[str
             )
 
         aggregate_spec = cp_spec.create_aggregatetask(
-            aggregate_algo=inputs.aggregate_algo,
+            aggregate_function=inputs.aggregate_function,
             worker=aggregate_worker,
             inputs=FLTaskInputGenerator.composites_to_aggregate(
                 [composite_spec.task_id for composite_spec in composite_specs]
@@ -369,7 +368,7 @@ def test_mnist(factory, inputs, clients, cfg: Settings, workers: typing.List[str
         if round_idx + 1 in testing_rounds:
             for idx, org_inputs in enumerate(inputs.datasets):
                 predicttask_spec = cp_spec.create_predicttask(
-                    algo=inputs.predict_algo,
+                    function=inputs.predict_function,
                     inputs=org_inputs.dataset.test_data_inputs
                     + FLTaskInputGenerator.composite_to_predict(composite_specs[idx].task_id),
                     metadata={
@@ -378,7 +377,7 @@ def test_mnist(factory, inputs, clients, cfg: Settings, workers: typing.List[str
                     worker=workers[idx],
                 )
                 cp_spec.create_testtask(
-                    algo=org_inputs.metric,
+                    function=org_inputs.metric,
                     inputs=org_inputs.dataset.test_data_inputs
                     + FLTaskInputGenerator.predict_to_test(predicttask_spec.task_id),
                     metadata={

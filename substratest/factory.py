@@ -9,19 +9,19 @@ import uuid
 
 import pydantic
 import substra
-from substra.sdk.schemas import AlgoSpec
 from substra.sdk.schemas import ComputePlanTaskSpec
+from substra.sdk.schemas import FunctionSpec
 from substra.sdk.schemas import Permissions
 from substra.sdk.schemas import TaskSpec
-from substra.sdk.schemas import UpdateAlgoSpec
 from substra.sdk.schemas import UpdateComputePlanSpec
 from substra.sdk.schemas import UpdateDatasetSpec
+from substra.sdk.schemas import UpdateFunctionSpec
 
-from substratest.fl_interface import AlgoCategory
-from substratest.fl_interface import FLAlgoInputs
-from substratest.fl_interface import FLAlgoOutputs
+from substratest.fl_interface import FLFunctionInputs
+from substratest.fl_interface import FLFunctionOutputs
 from substratest.fl_interface import FLTaskInputGenerator
 from substratest.fl_interface import FLTaskOutputGenerator
+from substratest.fl_interface import FunctionCategory
 from substratest.fl_interface import InputIdentifiers
 from substratest.fl_interface import OutputIdentifiers
 
@@ -81,7 +81,7 @@ if __name__ == '__main__':
 """
 )  # noqa
 
-DEFAULT_ALGO_SCRIPT = f"""
+DEFAULT_FUNCTION_SCRIPT = f"""
 import json
 import substratools as tools
 
@@ -136,7 +136,7 @@ if __name__ == '__main__':
     tools.execute()
 """  # noqa
 
-DEFAULT_AGGREGATE_ALGO_SCRIPT = f"""
+DEFAULT_AGGREGATE_FUNCTION_SCRIPT = f"""
 import json
 import substratools as tools
 
@@ -181,7 +181,7 @@ if __name__ == '__main__':
 
 # TODO we should have a different serializer for head and trunk models
 
-DEFAULT_COMPOSITE_ALGO_SCRIPT = f"""
+DEFAULT_COMPOSITE_FUNCTION_SCRIPT = f"""
 import json
 import substratools as tools
 
@@ -194,7 +194,7 @@ def train(inputs, outputs, task_properties):
     trunk_model = load_trunk_model(inputs['{InputIdentifiers.shared}']) if inputs.get('{InputIdentifiers.shared}') else None
 
 
-    print(f'Composite algo train X: {{X}}, y: {{y}}, head_model: {{head_model}}, trunk_model: {{trunk_model}}')
+    print(f'Composite function train X: {{X}}, y: {{y}}, head_model: {{head_model}}, trunk_model: {{trunk_model}}')
 
     ratio = sum(y) / sum(X)
     err_head = 0.1 * ratio  # Add a small error
@@ -213,7 +213,7 @@ def train(inputs, outputs, task_properties):
     res_head_model = {{'value' : res_head + err_head }}
     res_trunk_model =  {{'value' : res_trunk + err_trunk }}
 
-    print(f'Composite algo train head, trunk result: {{res_head_model}}, {{res_trunk_model}}')
+    print(f'Composite function train head, trunk result: {{res_head_model}}, {{res_trunk_model}}')
     save_head_model(res_head_model, outputs['{OutputIdentifiers.local}'])
     save_trunk_model(res_trunk_model, outputs['{OutputIdentifiers.shared}'])
 
@@ -223,10 +223,10 @@ def predict(inputs, outputs, task_properties):
     head_model = load_head_model(inputs['{InputIdentifiers.local}'])
     trunk_model = load_trunk_model(inputs['{InputIdentifiers.shared}'])
 
-    print(f'Composite algo predict X: {{X}}, head_model: {{head_model}}, trunk_model: {{trunk_model}}')
+    print(f'Composite function predict X: {{X}}, head_model: {{head_model}}, trunk_model: {{trunk_model}}')
     ratio_sum = head_model['value'] + trunk_model['value']
     res = [x * ratio_sum for x in X]
-    print(f'Composite algo predict result: {{res}}')
+    print(f'Composite function predict result: {{res}}')
 
     save_predictions(res, outputs['{OutputIdentifiers.predictions}'])
 
@@ -258,18 +258,18 @@ if __name__ == '__main__':
     tools.execute()
 """  # noqa
 
-DEFAULT_ALGO_METHOD_NAME = {
-    AlgoCategory.simple: "train",
-    AlgoCategory.composite: "train",
-    AlgoCategory.aggregate: "aggregate",
-    AlgoCategory.predict: "predict",
-    AlgoCategory.metric: "score",
-    AlgoCategory.predict_composite: "predict",
+DEFAULT_FUNCTION_NAME = {
+    FunctionCategory.simple: "train",
+    FunctionCategory.composite: "train",
+    FunctionCategory.aggregate: "aggregate",
+    FunctionCategory.predict: "predict",
+    FunctionCategory.metric: "score",
+    FunctionCategory.predict_composite: "predict",
 }
 
-INVALID_ALGO_SCRIPT = DEFAULT_ALGO_SCRIPT.replace("train", "naitr")
-INVALID_COMPOSITE_ALGO_SCRIPT = DEFAULT_COMPOSITE_ALGO_SCRIPT.replace("train", "naitr")
-INVALID_AGGREGATE_ALGO_SCRIPT = DEFAULT_AGGREGATE_ALGO_SCRIPT.replace("aggregate", "etagergga")
+INVALID_FUNCTION_SCRIPT = DEFAULT_FUNCTION_SCRIPT.replace("train", "naitr")
+INVALID_COMPOSITE_FUNCTION_SCRIPT = DEFAULT_COMPOSITE_FUNCTION_SCRIPT.replace("train", "naitr")
+INVALID_AGGREGATE_FUNCTION_SCRIPT = DEFAULT_AGGREGATE_FUNCTION_SCRIPT.replace("aggregate", "etagergga")
 
 
 def random_uuid():
@@ -367,12 +367,12 @@ class DatasetSpec(substra.sdk.schemas.DatasetSpec):
             return f.read()
 
 
-DEFAULT_ALGO_SCRIPTS = {
-    AlgoCategory.simple: DEFAULT_ALGO_SCRIPT,
-    AlgoCategory.composite: DEFAULT_COMPOSITE_ALGO_SCRIPT,
-    AlgoCategory.aggregate: DEFAULT_AGGREGATE_ALGO_SCRIPT,
-    AlgoCategory.predict: DEFAULT_ALGO_SCRIPT,
-    AlgoCategory.predict_composite: DEFAULT_COMPOSITE_ALGO_SCRIPT,
+DEFAULT_FUNCTION_SCRIPTS = {
+    FunctionCategory.simple: DEFAULT_FUNCTION_SCRIPT,
+    FunctionCategory.composite: DEFAULT_COMPOSITE_FUNCTION_SCRIPT,
+    FunctionCategory.aggregate: DEFAULT_AGGREGATE_FUNCTION_SCRIPT,
+    FunctionCategory.predict: DEFAULT_FUNCTION_SCRIPT,
+    FunctionCategory.predict_composite: DEFAULT_COMPOSITE_FUNCTION_SCRIPT,
 }
 
 
@@ -389,7 +389,6 @@ class AugmentedDataset:
         self.opener_input = FLTaskInputGenerator.opener(dataset.key)
 
     def set_train_test_dasamples(self, train_data_sample_keys=(), test_data_sample_keys=()):
-
         self._check_data_sample_keys(train_data_sample_keys)
         self._check_data_sample_keys(test_data_sample_keys)
 
@@ -415,10 +414,11 @@ class AugmentedDataset:
 
 
 class _ComputePlanSpecFactory:
-    def create_traintask(self, algo, worker, inputs=None, outputs=None, tag="", metadata=None) -> ComputePlanTaskSpec:
-
+    def create_traintask(
+        self, function, worker, inputs=None, outputs=None, tag="", metadata=None
+    ) -> ComputePlanTaskSpec:
         spec = ComputePlanTaskSpec(
-            algo_key=algo.key,
+            function_key=function.key,
             task_id=random_uuid(),
             inputs=inputs or [],
             outputs=outputs if outputs is not None else FLTaskOutputGenerator.traintask(),
@@ -430,12 +430,11 @@ class _ComputePlanSpecFactory:
         return spec
 
     def create_aggregatetask(
-        self, aggregate_algo, worker, inputs=None, outputs=None, tag="", metadata=None
+        self, aggregate_function, worker, inputs=None, outputs=None, tag="", metadata=None
     ) -> ComputePlanTaskSpec:
-
         spec = ComputePlanTaskSpec(
             task_id=random_uuid(),
-            algo_key=aggregate_algo.key,
+            function_key=aggregate_function.key,
             worker=worker,
             inputs=inputs or [],
             outputs=outputs if outputs is not None else FLTaskOutputGenerator.aggregatetask(),
@@ -447,17 +446,16 @@ class _ComputePlanSpecFactory:
 
     def create_composite_traintask(
         self,
-        composite_algo,
+        composite_function,
         worker,
         inputs=None,
         outputs=None,
         tag="",
         metadata=None,
     ) -> ComputePlanTaskSpec:
-
         spec = ComputePlanTaskSpec(
             task_id=random_uuid(),
-            algo_key=composite_algo.key,
+            function_key=composite_function.key,
             inputs=inputs or [],
             outputs=outputs if outputs is not None else FLTaskOutputGenerator.composite_traintask(),
             tag=tag,
@@ -467,11 +465,12 @@ class _ComputePlanSpecFactory:
         self.tasks.append(spec)
         return spec
 
-    def create_predicttask(self, algo, worker, inputs=None, outputs=None, tag="", metadata=None) -> ComputePlanTaskSpec:
-
+    def create_predicttask(
+        self, function, worker, inputs=None, outputs=None, tag="", metadata=None
+    ) -> ComputePlanTaskSpec:
         spec = ComputePlanTaskSpec(
             task_id=random_uuid(),
-            algo_key=algo.key,
+            function_key=function.key,
             inputs=inputs or [],
             outputs=outputs if outputs is not None else FLTaskOutputGenerator.predicttask(),
             tag=tag,
@@ -481,10 +480,12 @@ class _ComputePlanSpecFactory:
         self.tasks.append(spec)
         return spec
 
-    def create_testtask(self, algo, worker, inputs=None, outputs=None, tag="", metadata=None) -> ComputePlanTaskSpec:
+    def create_testtask(
+        self, function, worker, inputs=None, outputs=None, tag="", metadata=None
+    ) -> ComputePlanTaskSpec:
         spec = ComputePlanTaskSpec(
             task_id=random_uuid(),
-            algo_key=algo.key,
+            function_key=function.key,
             inputs=inputs or [],
             outputs=outputs if outputs is not None else FLTaskOutputGenerator.testtask(),
             tag=tag,
@@ -508,7 +509,7 @@ class AssetsFactory:
         self._data_sample_counter = Counter()
         self._dataset_counter = Counter()
         self._metric_counter = Counter()
-        self._algo_counter = Counter()
+        self._function_counter = Counter()
         self._workdir = pathlib.Path(tempfile.mkdtemp(prefix="/tmp/"))
         self._uuid = name
         self._cfg = cfg
@@ -527,10 +528,10 @@ class AssetsFactory:
     # We need to adapt the image base name base on the fact that
     # we run the cp in the docker context (debug)
     # or the kaniko pod (remote) to be able to pull the image
-    def default_algo_dockerfile(self, method_name):
+    def default_function_dockerfile(self, method_name):
         return (
-            f"FROM {self.default_tools_image}\nCOPY algo.py .\n"
-            f'ENTRYPOINT ["python3", "algo.py", "--function-name", "{method_name}"]\n'
+            f"FROM {self.default_tools_image}\nCOPY function.py .\n"
+            f'ENTRYPOINT ["python3", "function.py", "--function-name", "{method_name}"]\n'
         )
 
     def create_data_sample(self, content=None, datasets=None):
@@ -577,13 +578,13 @@ class AssetsFactory:
             logs_permission=logs_permission or DEFAULT_PERMISSIONS,
         )
 
-    def create_algo(
+    def create_function(
         self, category, py_script=None, dockerfile=None, permissions=None, metadata=None, offset=0
-    ) -> AlgoSpec:
-        idx = self._algo_counter.inc()
-        tmpdir = self._workdir / f"algo-{idx}"
+    ) -> FunctionSpec:
+        idx = self._function_counter.inc()
+        tmpdir = self._workdir / f"function-{idx}"
         tmpdir.mkdir()
-        name = _shorten_name(f"{self._uuid} - Algo {idx}")
+        name = _shorten_name(f"{self._uuid} - Function {idx}")
 
         description_path = tmpdir / "description.md"
         description_content = name
@@ -591,34 +592,34 @@ class AssetsFactory:
             f.write(description_content)
 
         try:
-            if category == AlgoCategory.metric:
-                algo_content = py_script or TEMPLATED_DEFAULT_METRICS_SCRIPT.substitute(offset=offset)
+            if category == FunctionCategory.metric:
+                function_content = py_script or TEMPLATED_DEFAULT_METRICS_SCRIPT.substitute(offset=offset)
             else:
-                algo_content = py_script or DEFAULT_ALGO_SCRIPTS[category]
+                function_content = py_script or DEFAULT_FUNCTION_SCRIPTS[category]
         except KeyError:
-            raise Exception("Invalid algo category", category)
+            raise Exception("Invalid function category", category)
 
-        dockerfile = dockerfile or self.default_algo_dockerfile(method_name=DEFAULT_ALGO_METHOD_NAME[category])
+        dockerfile = dockerfile or self.default_function_dockerfile(method_name=DEFAULT_FUNCTION_NAME[category])
 
-        algo_zip = utils.create_archive(
-            tmpdir / "algo",
-            ("algo.py", algo_content),
+        function_zip = utils.create_archive(
+            tmpdir / "function",
+            ("function.py", function_content),
             ("Dockerfile", dockerfile),
         )
 
-        return AlgoSpec(
-            inputs=FLAlgoInputs[category],
-            outputs=FLAlgoOutputs[category],
+        return FunctionSpec(
+            inputs=FLFunctionInputs[category],
+            outputs=FLFunctionOutputs[category],
             name=name,
             description=str(description_path),
-            file=str(algo_zip),
+            file=str(function_zip),
             permissions=permissions or DEFAULT_PERMISSIONS,
             metadata=metadata,
         )
 
     def create_traintask(
         self,
-        algo=None,
+        function=None,
         inputs=None,
         outputs=None,
         tag=None,
@@ -627,9 +628,8 @@ class AssetsFactory:
         metadata=None,
         worker=None,
     ) -> TaskSpec:
-
         return TaskSpec(
-            algo_key=algo.key if algo else None,
+            function_key=function.key if function else None,
             tag=tag,
             metadata=metadata,
             compute_plan_key=compute_plan_key,
@@ -641,7 +641,7 @@ class AssetsFactory:
 
     def create_aggregatetask(
         self,
-        algo=None,
+        function=None,
         worker=None,
         inputs=None,
         outputs=None,
@@ -650,9 +650,8 @@ class AssetsFactory:
         rank=None,
         metadata=None,
     ) -> TaskSpec:
-
         return TaskSpec(
-            algo_key=algo.key if algo else None,
+            function_key=function.key if function else None,
             worker=worker,
             inputs=inputs or [],
             outputs=outputs if outputs is not None else FLTaskOutputGenerator.aggregatetask(),
@@ -664,7 +663,7 @@ class AssetsFactory:
 
     def create_composite_traintask(
         self,
-        algo=None,
+        function=None,
         inputs=None,
         outputs=None,
         tag=None,
@@ -673,9 +672,8 @@ class AssetsFactory:
         metadata=None,
         worker=None,
     ) -> TaskSpec:
-
         return TaskSpec(
-            algo_key=algo.key if algo else None,
+            function_key=function.key if function else None,
             inputs=inputs or [],
             outputs=outputs if outputs is not None else FLTaskOutputGenerator.composite_traintask(),
             tag=tag,
@@ -685,9 +683,9 @@ class AssetsFactory:
             worker=worker,
         )
 
-    def create_predicttask(self, algo, worker, inputs=None, outputs=None, tag=None, metadata=None) -> TaskSpec:
+    def create_predicttask(self, function, worker, inputs=None, outputs=None, tag=None, metadata=None) -> TaskSpec:
         return TaskSpec(
-            algo_key=algo.key,
+            function_key=function.key,
             inputs=inputs or [],
             outputs=outputs if outputs is not None else FLTaskOutputGenerator.predicttask(),
             tag=tag,
@@ -695,9 +693,9 @@ class AssetsFactory:
             worker=worker,
         )
 
-    def create_testtask(self, algo, worker, inputs=None, outputs=None, tag=None, metadata=None) -> TaskSpec:
+    def create_testtask(self, function, worker, inputs=None, outputs=None, tag=None, metadata=None) -> TaskSpec:
         return TaskSpec(
-            algo_key=algo.key,
+            function_key=function.key,
             inputs=inputs or [],
             outputs=outputs if outputs is not None else FLTaskOutputGenerator.testtask(),
             tag=tag,
@@ -722,8 +720,8 @@ class AssetsFactory:
             name=compute_plan.name,
         )
 
-    def update_algo(self, name):
-        return UpdateAlgoSpec(name=name)
+    def update_function(self, name):
+        return UpdateFunctionSpec(name=name)
 
     def update_compute_plan(self, name):
         return UpdateComputePlanSpec(name=name)

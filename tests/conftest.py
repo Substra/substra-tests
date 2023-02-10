@@ -8,7 +8,7 @@ import substra
 import substratest as sbt
 from substratest import settings
 from substratest.factory import AugmentedDataset
-from substratest.fl_interface import AlgoCategory
+from substratest.fl_interface import FunctionCategory
 
 TESTS_RUN_UUID = uuid.uuid4().hex  # unique uuid identifying the tests run
 
@@ -241,8 +241,8 @@ def default_data_env(cfg, network, client_mode):
             datasets.append(dataset)
 
             # create metric
-            spec = f.create_algo(category=AlgoCategory.metric, offset=index)
-            metric = client.add_algo(spec)
+            spec = f.create_function(category=FunctionCategory.metric, offset=index)
+            metric = client.add_function(spec)
             metrics.append(metric)
 
         assets = _DataEnv(datasets=datasets, metrics=metrics)

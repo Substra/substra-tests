@@ -26,7 +26,7 @@ class Network(torch.nn.Module):
 
 
 """
-Algo that aggregates models by simply averaging them as in FedAvg
+Function that aggregates models by simply averaging them as in FedAvg
 """
 
 
