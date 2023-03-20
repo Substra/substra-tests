@@ -1,5 +1,6 @@
-from contextlib import nullcontext as does_not_raise
 import os
+
+from contextlib import nullcontext as does_not_raise
 
 import pytest
 import substra
