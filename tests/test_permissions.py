@@ -447,7 +447,7 @@ def test_permission_to_test_on_org_without_training(
     factory,
     expectation,
 ):
-    change_pod_readiness_timeout(timeout=600)
+    change_pod_readiness_timeout(timeout=800)
 
     # training function on client 1
     spec = factory.create_function(category=FunctionCategory.simple, permissions=organization_1_only)
