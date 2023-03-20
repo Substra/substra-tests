@@ -1,4 +1,5 @@
 from contextlib import nullcontext as does_not_raise
+import os
 
 import pytest
 import substra
@@ -9,6 +10,26 @@ from substratest.factory import Permissions
 from substratest.fl_interface import FLTaskInputGenerator
 from substratest.fl_interface import FLTaskOutputGenerator
 from substratest.fl_interface import OutputIdentifiers
+
+
+@pytest.fixture
+def change_pod_readiness_timeout():
+    var_env_name = "COMPUTE_POD_STARTUP_TIMEOUT_SECONDS"
+
+    if os.getenv(var_env_name) is not None:
+        old_pod_timeout = os.getenv(var_env_name)
+    else:
+        old_pod_timeout = None
+
+    def _change_pod_readiness_timeout(timeout: int):
+        os.environ[var_env_name] = timeout
+
+    yield _change_pod_readiness_timeout
+
+    if old_pod_timeout is not None:
+        os.environ[var_env_name] = old_pod_timeout
+    else:
+        del os.environ[var_env_name]
 
 
 @pytest.fixture
@@ -417,6 +438,7 @@ def test_permissions_denied_head_model_process(factory, client_1, client_2, chan
     ],
 )
 def test_permission_to_test_on_org_without_training(
+    change_pod_readiness_timeout,
     permission_train_output,
     organization_1_only,
     organization_2_only,
@@ -425,6 +447,8 @@ def test_permission_to_test_on_org_without_training(
     factory,
     expectation,
 ):
+    change_pod_readiness_timeout(timeout=600)
+
     # training function on client 1
     spec = factory.create_function(category=FunctionCategory.simple, permissions=organization_1_only)
     train_function = client_1.add_function(spec)
@@ -483,7 +507,7 @@ def test_permission_to_test_on_org_without_training(
             worker=client_2.organization_id,
         )
         testtask_2 = client_2.add_task(spec)
-        testtask_2 = client_2.wait(testtask_2, timeout=600)
+        testtask_2 = client_2.wait(testtask_2)
         # Augment timeout to wait for the parent train task on other org
 
         assert testtask_2.outputs[OutputIdentifiers.performance].value == pytest.approx(2)
