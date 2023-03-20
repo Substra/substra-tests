@@ -22,7 +22,7 @@ def change_pod_readiness_timeout():
         old_pod_timeout = None
 
     def _change_pod_readiness_timeout(timeout: int):
-        os.environ[var_env_name] = timeout
+        os.environ[var_env_name] = str(timeout)
 
     yield _change_pod_readiness_timeout
 
