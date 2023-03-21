@@ -391,13 +391,15 @@ def test_mnist(factory, inputs, clients, cfg: Settings, workers: typing.List[str
 
     # display all testtasks performances
     tasks = client.list_compute_plan_tasks(cp.key)
-    testtasks = [t for t in tasks if OutputIdentifiers.performance in t.outputs]
+    testtasks = [t for t in tasks if OutputIdentifiers.performance in t.function.outputs]
+    performances = client.get_performances(cp.key)
+    perf_dict = {task_key: perf for task_key, perf in zip(performances.task_key, performances.performance)}
     testtasks = sorted(testtasks, key=lambda x: (x.rank, x.worker))
     for testtask in testtasks:
         print(
             f"testtask({testtask.worker}) - rank {testtask.rank} "
             f"- round {testtask.metadata['round_idx']} "
-            f"perf: {testtask.outputs[OutputIdentifiers.performance]}"
+            f"perf: {perf_dict[testtask.key]}"
         )
 
     nb_samples = (cfg.mnist_workflow.train_samples, cfg.mnist_workflow.test_samples)
@@ -405,14 +407,9 @@ def test_mnist(factory, inputs, clients, cfg: Settings, workers: typing.List[str
     # performance should be deterministic a fixed number of samples:
     if nb_samples in _EXPECTED_RESULTS.keys():
         expected_perf = _EXPECTED_RESULTS[nb_samples]
-        assert all(
-            [
-                testtask.outputs[OutputIdentifiers.performance].value == pytest.approx(perf)
-                for (perf, testtask) in zip(expected_perf, testtasks)
-            ]
-        )
+        assert all(perf_dict[testtask.key] == pytest.approx(perf) for (perf, testtask) in zip(expected_perf, testtasks))
     else:
         # check perf is as good as expected: after 20 rounds we expect a performance of
         # around 0.86. To avoid a flaky test a lower performance is expected.
         mininum_expected_perf = 0.85
-        assert all([testtask.outputs[OutputIdentifiers.performance] > mininum_expected_perf for testtask in testtasks])
+        assert all(perf_dict[testtask.key] > mininum_expected_perf for testtask in testtasks)

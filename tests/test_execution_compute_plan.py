@@ -101,14 +101,16 @@ def test_compute_plan_simple(
         assert t.start_date is not None
         assert t.end_date is not None
 
-    traintask_1 = [t for t in tasks if t.key == traintask_spec_1.task_id][0]
-    traintask_2 = [t for t in tasks if t.key == traintask_spec_2.task_id][0]
-    traintask_3 = [t for t in tasks if t.key == traintask_spec_3.task_id][0]
+    full_tasks = [client_1.get_task(t.key) for t in tasks]
+
+    traintask_1 = [t for t in full_tasks if t.key == traintask_spec_1.task_id][0]
+    traintask_2 = [t for t in full_tasks if t.key == traintask_spec_2.task_id][0]
+    traintask_3 = [t for t in full_tasks if t.key == traintask_spec_3.task_id][0]
 
     assert len([i for i in traintask_3.inputs if i.identifier == InputIdentifiers.models]) == 2
 
-    predicttask = [t for t in tasks if t.key == predicttask_spec_3.task_id][0]
-    testtask = [t for t in tasks if t.key == testtask_spec.task_id][0]
+    predicttask = [t for t in full_tasks if t.key == predicttask_spec_3.task_id][0]
+    testtask = [t for t in full_tasks if t.key == testtask_spec.task_id][0]
 
     # check tasks metadata
     assert traintask_1.metadata == {}
@@ -135,8 +137,8 @@ def test_compute_plan_simple(
 
     # XXX as the first two tasks have the same rank, there is currently no way to know
     #     which one will be returned first
-    workers_rank_0 = set([traintask_1.worker, traintask_2.worker])
-    assert workers_rank_0 == set([client_1.organization_id, client_2.organization_id])
+    workers_rank_0 = {traintask_1.worker, traintask_2.worker}
+    assert workers_rank_0 == {client_1.organization_id, client_2.organization_id}
     assert traintask_3.worker == client_1.organization_id
     assert predicttask.worker == client_1.organization_id
     assert testtask.worker == client_1.organization_id
@@ -147,8 +149,8 @@ def test_compute_plan_simple(
     traintask_id_3 = traintask_spec_3.task_id
     generated_ids = [traintask_id_1, traintask_id_2, traintask_id_3]
     rank_0_traintask_keys = [traintask_1.key, traintask_2.key]
-    assert set(generated_ids) == set([traintask_id_1, traintask_id_2, traintask_id_3])
-    assert set(rank_0_traintask_keys) == set([traintask_id_1, traintask_id_2])
+    assert set(generated_ids) == {traintask_id_1, traintask_id_2, traintask_id_3}
+    assert set(rank_0_traintask_keys) == {traintask_id_1, traintask_id_2}
     assert traintask_3.key == traintask_id_3
 
 
@@ -615,7 +617,7 @@ def test_compute_plan_circular_dependency_failure(factory, client, default_datas
 @pytest.mark.slow
 @pytest.mark.remote_only
 def test_execution_compute_plan_canceled(factory, client, default_dataset, cfg, worker):
-    # XXX A canceled compute plan can be done if the it is canceled while it last tasks
+    # XXX A canceled compute plan can be done if it is canceled while it last tasks
     #     are executing on the workers. The compute plan status will in this case change
     #     from canceled to done.
     #     To increase our confidence that the compute plan won't be done, we create a
