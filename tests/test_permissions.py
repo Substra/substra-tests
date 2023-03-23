@@ -408,7 +408,6 @@ def test_permissions_denied_head_model_process(factory, client_1, client_2, chan
         client_2.add_task(spec)
 
 
-# @pytest.mark.skip(reason="Flaky test due to PodReadiness timeout. To be fixed ASAP")
 @pytest.mark.remote_only  # no check on permissions with the local backend
 @pytest.mark.parametrize(
     "permission_train_output, expectation",
