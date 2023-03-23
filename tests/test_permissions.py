@@ -311,7 +311,6 @@ def test_merge_permissions_denied_process(factory, clients, channel, workers):
         ),
     ]
     for permissions_1, permissions_2 in permissions_list:
-
         # add train data samples / dataset / metric on organization 1
         spec = factory.create_dataset(permissions=permissions_1)
         dataset_1 = client_1.add_dataset(spec)
@@ -362,7 +361,6 @@ def test_permissions_denied_head_model_process(factory, client_1, client_2, chan
     # setup data
     datasets = []
     for client in [client_1, client_2]:
-
         spec = factory.create_dataset(permissions=Permissions(public=False, authorized_ids=[client.organization_id]))
         dataset = client.add_dataset(spec)
 
@@ -427,7 +425,6 @@ def test_permission_to_test_on_org_without_training(
     factory,
     expectation,
 ):
-
     # training function on client 1
     spec = factory.create_function(category=FunctionCategory.simple, permissions=organization_1_only)
     train_function = client_1.add_function(spec)
@@ -468,7 +465,6 @@ def test_permission_to_test_on_org_without_training(
         worker=client_1.organization_id,
     )
     traintask_1 = client_1.add_task(spec)
-    traintask_1 = client_1.wait(traintask_1)
 
     # add testtask on org 2
     with expectation:
@@ -478,7 +474,6 @@ def test_permission_to_test_on_org_without_training(
             worker=client_2.organization_id,
         )
         predicttask_2 = client_2.add_task(spec)
-        predicttask_2 = client_2.wait(predicttask_2)
 
         spec = factory.create_testtask(
             function=metric_function,
