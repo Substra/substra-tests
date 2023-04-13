@@ -47,7 +47,6 @@ class Client:
         future_polling_period: int,
         token: Optional[str] = None,
     ):
-
         super().__init__()
 
         self.organization_id = organization_id
@@ -192,7 +191,6 @@ class Client:
         return getter(asset.key)
 
     def wait(self, asset, raises=True, timeout=None):
-
         if timeout is None:
             timeout = self.future_timeout
 

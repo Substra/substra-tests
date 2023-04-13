@@ -226,7 +226,6 @@ def default_data_env(cfg, network, client_mode):
         datasets = []
         metrics = []
         for index, client in enumerate(network.clients):
-
             # create dataset
             spec = f.create_dataset()
             dataset = client.add_dataset(spec)
