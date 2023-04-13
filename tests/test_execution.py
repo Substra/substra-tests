@@ -2,13 +2,12 @@ from contextlib import nullcontext as does_not_raise
 
 import pytest
 import substra
-
-from substra.sdk.schemas import AssetKind
 from substra.sdk.models import Status
-from substra.sdk.schemas import TaskSpec
+from substra.sdk.schemas import AssetKind
 from substra.sdk.schemas import ComputeTaskOutputSpec
-from substra.sdk.schemas import Permissions
 from substra.sdk.schemas import FunctionOutputSpec
+from substra.sdk.schemas import Permissions
+from substra.sdk.schemas import TaskSpec
 
 import substratest as sbt
 from substratest.factory import AugmentedDataset
