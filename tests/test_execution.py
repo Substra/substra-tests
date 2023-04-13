@@ -285,7 +285,7 @@ import substratools as tools
 def score(inputs, outputs, task_properties):
     tools.save_performance(1, outputs['{identifier_1}'])
     tools.save_performance(2, outputs['{identifier_2}'])
-
+az
 if __name__ == '__main__':
     tools.execute()
     """
