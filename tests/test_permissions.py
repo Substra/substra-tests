@@ -429,14 +429,17 @@ def test_permission_to_test_on_org_without_training(
     # training function on client 1
     spec = factory.create_function(category=FunctionCategory.simple, permissions=organization_1_only)
     train_function = client_1.add_function(spec)
+    channel.wait_for_asset_synchronized(train_function)
 
     # predict and metric function on client 2
     spec = factory.create_function(category=FunctionCategory.predict, permissions=organization_2_only)
     predict_function = client_2.add_function(spec)
+    channel.wait_for_asset_synchronized(predict_function)
 
     # predict and metric function on client 2
     spec = factory.create_function(category=FunctionCategory.metric, permissions=organization_2_only)
     metric_function = client_2.add_function(spec)
+    channel.wait_for_asset_synchronized(metric_function)
 
     # add train data samples on organization 1
     spec = factory.create_dataset(permissions=organization_1_only)
@@ -479,6 +482,7 @@ def test_permission_to_test_on_org_without_training(
             worker=client_2.organization_id,
         )
         predicttask_2 = client_2.add_task(spec)
+        channel.wait_for_asset_synchronized(predicttask_2)
 
         spec = factory.create_testtask(
             function=metric_function,
