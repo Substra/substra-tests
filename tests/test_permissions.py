@@ -490,6 +490,7 @@ def test_permission_to_test_on_org_without_training(
             worker=client_2.organization_id,
         )
         testtask_2 = client_2.add_task(spec)
+        channel.wait_for_asset_synchronized(testtask_2)
         testtask_2 = client_2.wait(testtask_2)
 
         assert testtask_2.outputs[OutputIdentifiers.performance].value == pytest.approx(2)
