@@ -429,28 +429,23 @@ def test_permission_to_test_on_org_without_training(
     # training function on client 1
     spec = factory.create_function(category=FunctionCategory.simple, permissions=organization_1_only)
     train_function = client_1.add_function(spec)
-    channel.wait_for_asset_synchronized(train_function)
 
     # predict and metric function on client 2
     spec = factory.create_function(category=FunctionCategory.predict, permissions=organization_2_only)
     predict_function = client_2.add_function(spec)
-    channel.wait_for_asset_synchronized(predict_function)
 
     # predict and metric function on client 2
     spec = factory.create_function(category=FunctionCategory.metric, permissions=organization_2_only)
     metric_function = client_2.add_function(spec)
-    channel.wait_for_asset_synchronized(metric_function)
 
     # add train data samples on organization 1
     spec = factory.create_dataset(permissions=organization_1_only)
     dataset_1 = client_1.add_dataset(spec)
-    channel.wait_for_asset_synchronized(dataset_1)
 
     spec = factory.create_data_sample(
         datasets=[dataset_1],
     )
     train_datasample = client_1.add_data_sample(spec)
-    channel.wait_for_asset_synchronized(train_datasample)
 
     dataset_1 = AugmentedDataset(client_1.get_dataset(dataset_1.key))
     dataset_1.set_train_test_dasamples(train_data_sample_keys=[train_datasample])
@@ -458,13 +453,11 @@ def test_permission_to_test_on_org_without_training(
     # add test data samples on organization 2
     spec = factory.create_dataset(permissions=organization_2_only)
     dataset_2 = client_2.add_dataset(spec)
-    channel.wait_for_asset_synchronized(dataset_2)
 
     spec = factory.create_data_sample(
         datasets=[dataset_2],
     )
     test_datasample = client_2.add_data_sample(spec)
-    channel.wait_for_asset_synchronized(test_datasample)
     dataset_2 = AugmentedDataset(client_2.get_dataset(dataset_2.key))
     dataset_2.set_train_test_dasamples(test_data_sample_keys=[test_datasample])
 
@@ -486,7 +479,6 @@ def test_permission_to_test_on_org_without_training(
             worker=client_2.organization_id,
         )
         predicttask_2 = client_2.add_task(spec)
-        channel.wait_for_asset_synchronized(predicttask_2)
 
         spec = factory.create_testtask(
             function=metric_function,
@@ -494,7 +486,6 @@ def test_permission_to_test_on_org_without_training(
             worker=client_2.organization_id,
         )
         testtask_2 = client_2.add_task(spec)
-        channel.wait_for_asset_synchronized(testtask_2)
         testtask_2 = client_2.wait(testtask_2)
 
         assert testtask_2.outputs[OutputIdentifiers.performance].value == pytest.approx(2)
