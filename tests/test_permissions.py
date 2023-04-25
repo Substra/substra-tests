@@ -424,7 +424,6 @@ def test_permission_to_test_on_org_without_training(
     client_2,
     factory,
     expectation,
-    channel,
 ):
     # training function on client 1
     spec = factory.create_function(category=FunctionCategory.simple, permissions=organization_1_only)
@@ -441,19 +440,16 @@ def test_permission_to_test_on_org_without_training(
     # add train data samples on organization 1
     spec = factory.create_dataset(permissions=organization_1_only)
     dataset_1 = client_1.add_dataset(spec)
-
     spec = factory.create_data_sample(
         datasets=[dataset_1],
     )
     train_datasample = client_1.add_data_sample(spec)
-
     dataset_1 = AugmentedDataset(client_1.get_dataset(dataset_1.key))
     dataset_1.set_train_test_dasamples(train_data_sample_keys=[train_datasample])
 
     # add test data samples on organization 2
     spec = factory.create_dataset(permissions=organization_2_only)
     dataset_2 = client_2.add_dataset(spec)
-
     spec = factory.create_data_sample(
         datasets=[dataset_2],
     )
@@ -484,4 +480,4 @@ def test_permission_to_test_on_org_without_training(
             inputs=dataset_2.test_data_inputs + FLTaskInputGenerator.predict_to_test(predicttask_2.key),
             worker=client_2.organization_id,
         )
-        _ = client_2.add_task(spec)
+        client_2.add_task(spec)
