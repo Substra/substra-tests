@@ -469,7 +469,6 @@ def test_permission_to_test_on_org_without_training(
         worker=client_1.organization_id,
     )
     traintask_1 = client_1.add_task(spec)
-    traintask_1 = client_1.wait(traintask_1)
 
     # add testtask on org 2
     with expectation:
