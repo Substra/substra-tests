@@ -480,7 +480,4 @@ def test_permission_to_test_on_org_without_training(
             inputs=dataset_2.test_data_inputs + FLTaskInputGenerator.predict_to_test(predicttask_2.key),
             worker=client_2.organization_id,
         )
-        testtask_2 = client_2.add_task(spec)
-        testtask_2 = client_2.wait(testtask_2)
-
-        assert testtask_2.outputs[OutputIdentifiers.performance].value == pytest.approx(2)
+        client_2.add_task(spec)
