@@ -664,7 +664,6 @@ def test_execution_compute_plan_canceled(factory, client, default_dataset, cfg, 
 @pytest.mark.slow
 @pytest.mark.remote_only
 def test_compute_plan_no_batching(factory, client, default_dataset, worker):
-
     spec = factory.create_function(FunctionCategory.simple)
     function = client.add_function(spec)
 

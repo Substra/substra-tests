@@ -47,13 +47,12 @@ class Client:
         future_polling_period: int,
         token: Optional[str] = None,
     ):
-
         super().__init__()
 
         self.organization_id = organization_id
-        self._client = substra.Client(backend_type=backend_type, url=address, insecure=False, token=token)
-        if not token:
-            token = self._client.login(user, password)
+        self._client = substra.Client(
+            backend_type=backend_type, url=address, insecure=False, token=token, username=user, password=password
+        )
         self._api_client = _APIClient(address, token)
         self.backend_mode = self._client.backend_mode
         self.token = token
@@ -192,7 +191,6 @@ class Client:
         return getter(asset.key)
 
     def wait(self, asset, raises=True, timeout=None):
-
         if timeout is None:
             timeout = self.future_timeout
 
