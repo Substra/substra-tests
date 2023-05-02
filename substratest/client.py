@@ -53,9 +53,9 @@ class Client:
         self._client = substra.Client(
             backend_type=backend_type, url=address, insecure=False, token=token, username=user, password=password
         )
-        self._api_client = _APIClient(address, token)
+        self._api_client = _APIClient(address, self._client._token)
         self.backend_mode = self._client.backend_mode
-        self.token = token
+        self.token = self._client._token
         self.future_timeout = future_timeout
         self.future_polling_period = future_polling_period
 
