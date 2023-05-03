@@ -89,7 +89,6 @@ def train(inputs, outputs, task_properties):
 
 @tools.register
 def predict(inputs, outputs, task_properties):
-
     trunk_model = load_trunk_model(inputs["shared"])
 
     X = inputs["datasamples"]["X"]

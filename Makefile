@@ -14,13 +14,13 @@ test: test-remote test-local
 test-remote: test-remote-sdk test-remote-workflows
 
 test-remote-sdk: pyclean
-	pytest tests -rs -v --durations=0 -m "not workflows" -n $(PARALLELISM)
+	pytest tests -rs -v --durations=0 -m "not workflows" -n $(PARALLELISM) --log-level=INFO
 
 test-remote-workflows: pyclean
-	pytest tests -v --durations=0 -m "workflows"
+	pytest tests -v --durations=0 -m "workflows" --log-level=INFO
 
 test-minimal: pyclean
-	pytest tests -rs -v --durations=0 -m "not slow and not workflows" -n $(PARALLELISM)
+	pytest tests -rs -v --durations=0 -m "not slow and not workflows" -n $(PARALLELISM) --log-level=INFO
 
 test-local: test-subprocess test-docker test-subprocess-workflows
 
@@ -28,10 +28,10 @@ test-docker: pyclean
 	pytest tests -rs -v --durations=0 -m "not workflows" --mode=docker
 
 test-subprocess: pyclean
-	pytest tests -rs -v --durations=0 -m "not workflows and not subprocess_skip" --mode=subprocess
+	pytest tests -rs -v --durations=0 -m "not workflows and not subprocess_skip" --mode=subprocess --log-level=INFO
 
 test-subprocess-workflows: pyclean
-	pytest tests -v --durations=0 -m "workflows" --mode=subprocess
+	pytest tests -v --durations=0 -m "workflows" --mode=subprocess --log-level=INFO
 
 test-all: test-local test-remote
 

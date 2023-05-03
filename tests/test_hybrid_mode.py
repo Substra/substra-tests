@@ -22,7 +22,6 @@ pytestmark = pytest.mark.skipif(not docker_available(), reason="requires docker"
 @pytest.mark.remote_only
 @pytest.mark.slow
 def test_execution_debug(client, hybrid_client, debug_factory, default_dataset):
-
     spec = debug_factory.create_function(FunctionCategory.simple)
     simple_function = client.add_function(spec)
     spec = debug_factory.create_function(FunctionCategory.predict)
@@ -93,7 +92,6 @@ def test_debug_compute_plan_aggregate_composite(network, client, hybrid_client, 
         # create composite traintask on each organization
         composite_traintask_keys = []
         for index, dataset in enumerate(default_datasets):
-
             if previous_aggregate_task_key:
                 input_models = FLTaskInputGenerator.composite_to_local(
                     previous_composite_traintask_keys[index]
@@ -129,7 +127,6 @@ def test_debug_compute_plan_aggregate_composite(network, client, hybrid_client, 
 
     # last round: create associated testtask
     for composite_traintask_key, dataset, metric in zip(previous_composite_traintask_keys, default_datasets, metrics):
-
         spec = cp_spec.create_predicttask(
             function=predict_function_composite,
             inputs=dataset.train_data_inputs + FLTaskInputGenerator.composite_to_predict(composite_traintask_key),

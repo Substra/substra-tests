@@ -183,7 +183,6 @@ def dataset(factory, client):
 
 
 def test_task_data_samples_relative_order(factory, client, dataset, worker):
-
     # Format TEMPLATE_FUNCTION_SCRIPT with current data_sample_keys
     function_script = TEMPLATE_FUNCTION_SCRIPT.format(
         data_sample_keys=dataset.train_data_sample_keys,
