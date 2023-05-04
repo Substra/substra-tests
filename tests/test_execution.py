@@ -325,11 +325,11 @@ if __name__ == '__main__':
     testtask = client.wait(testtask)
     assert testtask.status == Status.done
     assert testtask.error_type is None
-    assert testtask.outputs[identifier_1].value == pytest.approx(1)
-    assert testtask.outputs[identifier_2].value == pytest.approx(2)
+    assert testtask.outputs[identifier_1].value == 1
+    assert testtask.outputs[identifier_2].value == 2
 
 
-def test_testtask_with_same_output_identifer(factory, client, default_dataset, worker):
+def test_testtask_with_same_output_identifer(factory, client):
     identifier_1 = "same_name"
     identifier_2 = "same_name"
 
