@@ -258,23 +258,11 @@ def test_task_execution_failure(factory, network, default_dataset_1, worker):
 
 
 @pytest.mark.slow
-@pytest.mark.parametrize(
-    "identifier_1,identifier_2,expectation",
-    [
-        (
-            "name_1",
-            "name_2",
-            does_not_raise(),
-        ),
-        (
-            "same_name",
-            "same_name",
-            pytest.raises(ValueError),
-        ),
-    ],
-)
-def test_custom_testtask(factory, client, default_dataset, worker, identifier_1, identifier_2, expectation):
+def test_testtask_with_several_outputs(factory, client, default_dataset, worker):
     """Test with a test task with several performance output."""
+
+    identifier_1 = "name_1"
+    identifier_2 = "name_2"
 
     custom_metric_script = f"""
 import json
@@ -289,14 +277,14 @@ if __name__ == '__main__':
     tools.execute()
     """
 
-    # add test data samples / dataset / metric on organization 1
+    # add train and predict functions
     spec = factory.create_function(FunctionCategory.simple)
     function = client.add_function(spec)
 
     predict_function_spec = factory.create_function(FunctionCategory.predict)
     predict_function = client.add_function(predict_function_spec)
 
-    # add traintask on organization 2; should execute on organization 2 (dataset located on organization 2)
+    # add traintask
     spec = factory.create_traintask(
         function=function,
         inputs=default_dataset.train_data_inputs,
@@ -305,7 +293,7 @@ if __name__ == '__main__':
     traintask = client.add_task(spec)
     traintask = client.wait(traintask)
 
-    # add testtask; should execute on organization 1 (default_dataset_1 is located on organization 1)
+    # add predicttask
     spec = factory.create_predicttask(
         function=predict_function,
         inputs=default_dataset.test_data_inputs + FLTaskInputGenerator.train_to_predict(traintask.key),
@@ -314,31 +302,45 @@ if __name__ == '__main__':
     predicttask = client.add_task(spec)
     predicttask = client.wait(predicttask)
 
+    # add metric function
     spec = factory.create_function(category=FunctionCategory.metric, py_script=custom_metric_script)
     spec.outputs = [
         FunctionOutputSpec(identifier=identifier_1, kind=AssetKind.performance.value, multiple=False),
         FunctionOutputSpec(identifier=identifier_2, kind=AssetKind.performance.value, multiple=False),
     ]
 
-    with expectation:
-        metric = client.add_function(spec)
+    metric = client.add_function(spec)
 
-        spec = factory.create_testtask(
-            function=metric,
-            inputs=default_dataset.test_data_inputs + FLTaskInputGenerator.predict_to_test(predicttask.key),
-            outputs={
-                identifier_1: ComputeTaskOutputSpec(permissions=Permissions(public=True, authorized_ids=[])),
-                identifier_2: ComputeTaskOutputSpec(permissions=Permissions(public=True, authorized_ids=[])),
-            },
-            worker=worker,
-        )
+    spec = factory.create_testtask(
+        function=metric,
+        inputs=default_dataset.test_data_inputs + FLTaskInputGenerator.predict_to_test(predicttask.key),
+        outputs={
+            identifier_1: ComputeTaskOutputSpec(permissions=Permissions(public=True, authorized_ids=[])),
+            identifier_2: ComputeTaskOutputSpec(permissions=Permissions(public=True, authorized_ids=[])),
+        },
+        worker=worker,
+    )
 
-        testtask = client.add_task(spec)
-        testtask = client.wait(testtask)
-        assert testtask.status == Status.done
-        assert testtask.error_type is None
-        assert testtask.outputs[identifier_1].value == pytest.approx(1)
-        assert testtask.outputs[identifier_2].value == pytest.approx(2)
+    testtask = client.add_task(spec)
+    testtask = client.wait(testtask)
+    assert testtask.status == Status.done
+    assert testtask.error_type is None
+    assert testtask.outputs[identifier_1].value == pytest.approx(1)
+    assert testtask.outputs[identifier_2].value == pytest.approx(2)
+
+
+def test_testtask_with_same_output_identifer(factory, client, default_dataset, worker):
+    identifier_1 = "same_name"
+    identifier_2 = "same_name"
+
+    spec = factory.create_function(category=FunctionCategory.metric)
+    spec.outputs = [
+        FunctionOutputSpec(identifier=identifier_1, kind=AssetKind.performance.value, multiple=False),
+        FunctionOutputSpec(identifier=identifier_2, kind=AssetKind.performance.value, multiple=False),
+    ]
+
+    with pytest.raises(ValueError):
+        client.add_function(spec)
 
 
 @pytest.mark.slow
