@@ -1,6 +1,10 @@
 import pytest
 import substra
 from substra.sdk.models import Status
+from substra.sdk.schemas import AssetKind
+from substra.sdk.schemas import ComputeTaskOutputSpec
+from substra.sdk.schemas import FunctionOutputSpec
+from substra.sdk.schemas import Permissions
 from substra.sdk.schemas import TaskSpec
 
 import substratest as sbt
@@ -249,6 +253,92 @@ def test_task_execution_failure(factory, network, default_dataset_1, worker):
             logs = client.download_logs(traintask.key)
             assert "Traceback (most recent call last):" in logs
             assert client.get_logs(traintask.key) == logs
+
+
+@pytest.mark.slow
+def test_testtask_with_several_outputs(factory, client, default_dataset, worker):
+    """Test with a test task with several performance output."""
+
+    identifier_1 = "name_1"
+    identifier_2 = "name_2"
+
+    custom_metric_script = f"""
+import json
+import substratools as tools
+
+@tools.register
+def score(inputs, outputs, task_properties):
+    tools.save_performance(1, outputs['{identifier_1}'])
+    tools.save_performance(2, outputs['{identifier_2}'])
+
+if __name__ == '__main__':
+    tools.execute()
+    """
+
+    # add train and predict functions
+    spec = factory.create_function(FunctionCategory.simple)
+    function = client.add_function(spec)
+
+    predict_function_spec = factory.create_function(FunctionCategory.predict)
+    predict_function = client.add_function(predict_function_spec)
+
+    # add traintask
+    spec = factory.create_traintask(
+        function=function,
+        inputs=default_dataset.train_data_inputs,
+        worker=worker,
+    )
+    traintask = client.add_task(spec)
+    traintask = client.wait(traintask)
+
+    # add predicttask
+    spec = factory.create_predicttask(
+        function=predict_function,
+        inputs=default_dataset.test_data_inputs + FLTaskInputGenerator.train_to_predict(traintask.key),
+        worker=worker,
+    )
+    predicttask = client.add_task(spec)
+    predicttask = client.wait(predicttask)
+
+    # add metric function
+    spec = factory.create_function(category=FunctionCategory.metric, py_script=custom_metric_script)
+    spec.outputs = [
+        FunctionOutputSpec(identifier=identifier_1, kind=AssetKind.performance.value, multiple=False),
+        FunctionOutputSpec(identifier=identifier_2, kind=AssetKind.performance.value, multiple=False),
+    ]
+
+    metric = client.add_function(spec)
+
+    spec = factory.create_testtask(
+        function=metric,
+        inputs=default_dataset.test_data_inputs + FLTaskInputGenerator.predict_to_test(predicttask.key),
+        outputs={
+            identifier_1: ComputeTaskOutputSpec(permissions=Permissions(public=True, authorized_ids=[])),
+            identifier_2: ComputeTaskOutputSpec(permissions=Permissions(public=True, authorized_ids=[])),
+        },
+        worker=worker,
+    )
+
+    testtask = client.add_task(spec)
+    testtask = client.wait(testtask)
+    assert testtask.status == Status.done
+    assert testtask.error_type is None
+    assert testtask.outputs[identifier_1].value == 1
+    assert testtask.outputs[identifier_2].value == 2
+
+
+def test_testtask_with_same_output_identifer(factory, client):
+    identifier_1 = "same_name"
+    identifier_2 = "same_name"
+
+    spec = factory.create_function(category=FunctionCategory.metric)
+    spec.outputs = [
+        FunctionOutputSpec(identifier=identifier_1, kind=AssetKind.performance.value, multiple=False),
+        FunctionOutputSpec(identifier=identifier_2, kind=AssetKind.performance.value, multiple=False),
+    ]
+
+    with pytest.raises(ValueError):
+        client.add_function(spec)
 
 
 @pytest.mark.slow
