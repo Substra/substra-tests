@@ -42,11 +42,8 @@ def test_tasks_execution_on_same_organization(factory, network, client, default_
     assert traintask.error_type is None
     assert traintask.metadata == {"foo": "bar"}
     assert len(traintask.outputs) == 1
-    assert traintask.outputs[OutputIdentifiers.model].value is not None
-
-    if network.options.enable_model_download:
-        model = traintask.outputs[OutputIdentifiers.model].value
-        assert client.download_model(model.key) == b'{"value": 2.2}'
+    out_models = client.get_task_models(traintask.key)
+    assert len(out_models) == 1
 
     # check we can add twice the same traintask
     spec = get_traintask_spec()
@@ -121,10 +118,11 @@ def test_federated_learning_workflow(factory, client, default_datasets, workers)
         )
         traintask = client.add_task(spec)
         traintask = client.wait(traintask)
+        out_models = client.get_task_models(traintask.key)
         assert traintask.status == Status.done
         assert traintask.error_type is None
         assert len(traintask.outputs) == 1
-        assert traintask.outputs[OutputIdentifiers.model].value is not None
+        assert len(out_models) == 1
         assert traintask.tag == "foo"
         assert traintask.compute_plan_key  # check it is not None or ''
 

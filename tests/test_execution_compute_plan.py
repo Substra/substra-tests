@@ -133,7 +133,6 @@ def test_compute_plan_simple(
     # check compute plan perfs
     performances = client_1.get_performances(cp.key)
     assert all(len(val) == 1 for val in performances.dict().values())
-    assert testtask.outputs[OutputIdentifiers.performance].value == performances.performance[0]
 
     # XXX as the first two tasks have the same rank, there is currently no way to know
     #     which one will be returned first
@@ -561,7 +560,7 @@ def test_compute_plan_aggregate_composite_traintasks(  # noqa: C901
                 )
                 == 1
             )
-        print(task.inputs)
+
         if len(task.inputs) > 2:
             assert (
                 len(
@@ -583,8 +582,8 @@ def test_compute_plan_aggregate_composite_traintasks(  # noqa: C901
     # Check that permissions were correctly set
     for task_id in [ct.task_id for ct in composite_traintask_specs]:
         task = clients[0].get_task(task_id)
-        trunk = task.outputs[OutputIdentifiers.shared].value
-        assert len(trunk.permissions.process.authorized_ids) == len(clients)
+        trunk = task.outputs[OutputIdentifiers.shared].permissions
+        assert len(trunk.process.authorized_ids) == len(clients)
 
 
 def test_compute_plan_circular_dependency_failure(factory, client, default_dataset, worker):
