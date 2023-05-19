@@ -70,7 +70,8 @@ def test_tasks_execution_on_same_organization(factory, network, client, default_
     testtask = client.wait(testtask)
     assert testtask.status == Status.done
     assert testtask.error_type is None
-    assert testtask.outputs[OutputIdentifiers.performance].value == pytest.approx(2)
+    performance = client.get_task_output_asset(testtask.key, OutputIdentifiers.performance)
+    assert performance.asset == pytest.approx(2)
 
     # add a traintask depending on first traintask
     first_traintask_key = traintask.key
@@ -193,7 +194,8 @@ def test_tasks_execution_on_different_organizations(
     assert testtask.status == Status.done
     assert testtask.error_type is None
     assert testtask.worker == client_1.organization_id
-    assert testtask.outputs[OutputIdentifiers.performance].value == pytest.approx(2)
+    performance = client_1.get_task_output_asset(testtask.key, OutputIdentifiers.performance)
+    assert performance.asset == pytest.approx(2)
 
 
 @pytest.mark.slow
@@ -469,7 +471,8 @@ def test_composite_traintasks_execution(factory, client, default_dataset, defaul
     testtask = client.wait(testtask)
     assert testtask.status == Status.done
     assert testtask.error_type is None
-    assert testtask.outputs[OutputIdentifiers.performance].value == pytest.approx(32)
+    performance = client.get_task_output_asset(testtask.key, OutputIdentifiers.performance)
+    assert performance.asset == pytest.approx(32)
 
     # list composite traintask
     composite_traintasks = client.list_task()
@@ -777,7 +780,8 @@ def test_aggregate_composite_traintasks(factory, network, clients, default_datas
         testtask = clients[0].add_task(spec)
         testtask = clients[0].wait(testtask)
         # y_true: [20], y_pred: [52.0], result: 32.0
-        assert testtask.outputs[OutputIdentifiers.performance].value == pytest.approx(32 + index)
+        performance = clients[0].get_task_output_asset(testtask.key, OutputIdentifiers.performance)
+        assert performance.asset == pytest.approx(32 + index)
 
     spec = factory.create_predicttask(
         function=predict_function,
@@ -796,7 +800,8 @@ def test_aggregate_composite_traintasks(factory, network, clients, default_datas
     testtask = clients[0].add_task(spec)
     testtask = clients[0].wait(testtask)
     # y_true: [20], y_pred: [28.0], result: 8.0
-    assert testtask.outputs[OutputIdentifiers.performance].value == pytest.approx(8)
+    performance = clients[0].get_task_output_asset(testtask.key, OutputIdentifiers.performance)
+    assert performance.asset == pytest.approx(8)
 
     if network.options.enable_model_download:
         # Optional (if "enable_model_download" is True): ensure we can export out-models.
@@ -875,7 +880,8 @@ def test_use_data_sample_located_in_shared_path(factory, network, client, organi
     testtask = client.wait(testtask)
     assert testtask.status == Status.done
     assert testtask.error_type is None
-    assert testtask.outputs[OutputIdentifiers.performance].value == pytest.approx(2)
+    performance = client.get_task_output_asset(testtask.key, OutputIdentifiers.performance)
+    assert performance.asset == pytest.approx(2)
 
 
 @pytest.mark.subprocess_skip

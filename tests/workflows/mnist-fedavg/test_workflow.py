@@ -395,11 +395,13 @@ def test_mnist(factory, inputs, clients, cfg: Settings, workers: typing.List[str
     performances = client.get_performances(cp.key)
     perf_dict = {task_key: perf for task_key, perf in zip(performances.task_key, performances.performance)}
     testtasks = sorted(testtasks, key=lambda x: (x.rank, x.worker))
+    
     for testtask in testtasks:
+        output = client.get_task_output_asset(testtask.key, OutputIdentifiers.performance)
         print(
             f"testtask({testtask.worker}) - rank {testtask.rank} "
             f"- round {testtask.metadata['round_idx']} "
-            f"perf: {perf_dict[testtask.key]}"
+            f"perf: {output.asset}"
         )
 
     nb_samples = (cfg.mnist_workflow.train_samples, cfg.mnist_workflow.test_samples)
@@ -407,7 +409,12 @@ def test_mnist(factory, inputs, clients, cfg: Settings, workers: typing.List[str
     # performance should be deterministic a fixed number of samples:
     if nb_samples in _EXPECTED_RESULTS.keys():
         expected_perf = _EXPECTED_RESULTS[nb_samples]
-        assert all(perf_dict[testtask.key] == pytest.approx(perf) for (perf, testtask) in zip(expected_perf, testtasks))
+        assert all(
+            [
+                client.get_task_output_asset(testtask.key, OutputIdentifiers.performance).asset == pytest.approx(perf)
+                for (perf, testtask) in zip(expected_perf, testtasks)
+            ]
+        )
     else:
         # check perf is as good as expected: after 20 rounds we expect a performance of
         # around 0.86. To avoid a flaky test a lower performance is expected.

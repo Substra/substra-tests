@@ -205,9 +205,8 @@ def test_task_data_samples_relative_order(factory, client, dataset, worker):
     # Ensure the order of the data sample keys is correct at 2 levels: :
     #  1. In the returned traintask
     #  2. In the train method of the function. If the order is incorrect, wait() will fail.
-    traintask_input_assets = client.get_input_assets(traintask.key)
     assert [
-        i.key for i in traintask_input_assets if i.identifier == InputIdentifiers.datasamples
+        i.asset_key for i in traintask.inputs if i.identifier == InputIdentifiers.datasamples
     ] == dataset.train_data_sample_keys
     client.wait(traintask)
 
@@ -261,9 +260,8 @@ def test_composite_traintask_data_samples_relative_order(factory, client, datase
     # Ensure the order of the data sample keys is correct at 2 levels: :
     #  1. In the returned composite traintask
     #  2. In the train method of the function. If the order is incorrect, wait() will fail.
-    composite_traintask_input_assets = client.get_input_assets(composite_traintask.key)
     assert [
-        i.asset.key for i in composite_traintask_input_assets if i.identifier == InputIdentifiers.datasamples
+        i.asset_key for i in composite_traintask.inputs if i.identifier == InputIdentifiers.datasamples
     ] == dataset.train_data_sample_keys
     client.wait(composite_traintask)
 

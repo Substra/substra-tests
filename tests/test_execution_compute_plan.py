@@ -128,11 +128,14 @@ def test_compute_plan_simple(
 
     # check testtask perfs
     assert len(testtask.outputs) == 1
-    assert testtask.outputs[OutputIdentifiers.performance].value == pytest.approx(4)
+    performance = client_1.get_task_output_asset(testtask.key, OutputIdentifiers.performance)
+    assert performance.asset == pytest.approx(4)
 
     # check compute plan perfs
     performances = client_1.get_performances(cp.key)
     assert all(len(val) == 1 for val in performances.dict().values())
+    output = client_1.get_task_output_asset(testtask.key, OutputIdentifiers.performance)
+    assert output.asset == performances.performance[0]
 
     # XXX as the first two tasks have the same rank, there is currently no way to know
     #     which one will be returned first

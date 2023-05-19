@@ -90,6 +90,15 @@ class Client:
 
     def list_compute_plan(self, *args, **kwargs):
         return self._client.list_compute_plan(*args, **kwargs)
+    
+    def list_task_input_assets(self, *args, **kwargs):
+        return self._client.list_task_input_assets(*args, **kwargs)
+    
+    def list_task_output_assets(self, *args, **kwargs):
+        return self._client.list_task_output_assets(*args, **kwargs)
+        
+    def get_task_output_asset(self, *args, **kwargs):
+        return self._client.get_task_output_asset(*args, **kwargs)
 
     def get_compute_plan(self, *args, **kwargs):
         return self._client.get_compute_plan(*args, **kwargs)

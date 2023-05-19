@@ -61,7 +61,8 @@ def test_execution_debug(client, hybrid_client, debug_factory, default_dataset):
     )
     testtask = hybrid_client.add_task(spec)
     assert testtask.status == models.Status.done
-    assert testtask.outputs[OutputIdentifiers.performance].value == 3
+    performance = hybrid_client.get_task_output_asset(testtask.key, OutputIdentifiers.performance)
+    assert performance.asset == 3
 
 
 @pytest.mark.remote_only
