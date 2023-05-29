@@ -39,7 +39,8 @@ def test_execution_debug(client, hybrid_client, debug_factory, default_dataset):
     )
     traintask = hybrid_client.add_task(spec)
     assert traintask.status == models.Status.done
-    assert traintask.outputs[OutputIdentifiers.model].value is not None
+    output = hybrid_client.get_task_output_asset(traintask.key, OutputIdentifiers.model)
+    assert output.asset is not None
 
     # Add the testtask
     spec = debug_factory.create_predicttask(

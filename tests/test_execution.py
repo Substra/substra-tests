@@ -169,7 +169,8 @@ def test_tasks_execution_on_different_organizations(
     assert traintask.status == Status.done
     assert traintask.error_type is None
     assert len(traintask.outputs) == 1
-    assert traintask.outputs[OutputIdentifiers.model].value is not None
+    output = client_1.get_task_output_asset(traintask.key, OutputIdentifiers.model)
+    assert output.asset is not None
     assert traintask.worker == client_2.organization_id
 
     # add testtask; should execute on organization 1 (default_dataset_1 is located on organization 1)
@@ -194,7 +195,7 @@ def test_tasks_execution_on_different_organizations(
     assert testtask.status == Status.done
     assert testtask.error_type is None
     assert testtask.worker == client_1.organization_id
-    performance = client_1.get_task_output_asset(testtask.key, OutputIdentifiers.performance)
+    performance = client_2.get_task_output_asset(testtask.key, OutputIdentifiers.performance)
     assert performance.asset == pytest.approx(2)
 
 
@@ -221,7 +222,8 @@ def test_function_build_failure(factory, network, default_dataset_1, worker):
 
         assert traintask.status == Status.failed
         assert traintask.error_type == substra.sdk.models.TaskErrorType.build
-        assert traintask.outputs[OutputIdentifiers.model].value is None
+        with pytest.raises(ValueError):
+            network.clients[0].get_task_output_asset(traintask.key, OutputIdentifiers.model)
 
         for client in (network.clients[0], network.clients[1]):
             logs = client.download_logs(traintask.key)
@@ -247,7 +249,8 @@ def test_task_execution_failure(factory, network, default_dataset_1, worker):
 
         assert traintask.status == Status.failed
         assert traintask.error_type == substra.sdk.models.TaskErrorType.execution
-        assert traintask.outputs[OutputIdentifiers.model].value is None
+        with pytest.raises(ValueError):
+            network.clients[0].get_task_output_asset(traintask.key, OutputIdentifiers.model)
 
         for client in (network.clients[0], network.clients[1]):
             logs = client.download_logs(traintask.key)
@@ -357,8 +360,12 @@ def test_composite_traintask_execution_failure(factory, client, default_dataset,
 
         assert composite_traintask.status == Status.failed
         assert composite_traintask.error_type == substra.sdk.models.TaskErrorType.execution
-        assert composite_traintask.outputs[OutputIdentifiers.local].value is None
-        assert composite_traintask.outputs[OutputIdentifiers.shared].value is None
+        print(client.list_task_output_assets(composite_traintask.key))
+        with pytest.raises(ValueError):
+            client.get_task_output_asset(composite_traintask.key, OutputIdentifiers.local)
+        
+        with pytest.raises(ValueError):
+             client.get_task_output_asset(composite_traintask.key, OutputIdentifiers.shared)
         assert "Traceback (most recent call last):" in client.download_logs(composite_traintask.key)
 
     elif client.backend_mode in (substra.BackendType.LOCAL_SUBPROCESS, substra.BackendType.LOCAL_DOCKER):
@@ -405,7 +412,8 @@ def test_aggregatetask_execution_failure(factory, client, default_dataset, worke
 
         assert aggregatetask.status == Status.failed
         assert aggregatetask.error_type == substra.sdk.models.TaskErrorType.execution
-        assert aggregatetask.outputs[OutputIdentifiers.model].value is None
+        with pytest.raises(ValueError):
+            client.get_task_output_asset(aggregatetask.key, OutputIdentifiers.model)
         assert "Traceback (most recent call last):" in client.download_logs(aggregatetask.key)
 
     elif client.backend_mode in (substra.BackendType.LOCAL_SUBPROCESS, substra.BackendType.LOCAL_DOCKER):
@@ -862,7 +870,8 @@ def test_use_data_sample_located_in_shared_path(factory, network, client, organi
     traintask = client.wait(traintask)
     assert traintask.status == Status.done
     assert traintask.error_type is None
-    assert traintask.outputs[OutputIdentifiers.model].value is not None
+    output = client.get_task_output_asset(traintask.key, OutputIdentifiers.model)
+    assert output.asset is not None
 
     # create testtask
     spec = factory.create_predicttask(
