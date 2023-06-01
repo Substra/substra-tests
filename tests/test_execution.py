@@ -42,8 +42,12 @@ def test_tasks_execution_on_same_organization(factory, network, client, default_
     assert traintask.error_type is None
     assert traintask.metadata == {"foo": "bar"}
     assert len(traintask.outputs) == 1
-    out_models = client.get_task_models(traintask.key)
-    assert len(out_models) == 1
+    client.get_task_output_asset(traintask.key, OutputIdentifiers.model)
+    assert output.asset is not None
+
+    if network.options.enable_model_download:
+        model = output.asset
+        assert client.download_model(model.key) == b'{"value": 2.2}'
 
     # check we can add twice the same traintask
     spec = get_traintask_spec()
