@@ -42,7 +42,7 @@ def test_tasks_execution_on_same_organization(factory, network, client, default_
     assert traintask.error_type is None
     assert traintask.metadata == {"foo": "bar"}
     assert len(traintask.outputs) == 1
-    client.get_task_output_asset(traintask.key, OutputIdentifiers.model)
+    output = client.get_task_output_asset(traintask.key, OutputIdentifiers.model)
     assert output.asset is not None
 
     if network.options.enable_model_download:
@@ -366,9 +366,9 @@ def test_composite_traintask_execution_failure(factory, client, default_dataset,
         assert composite_traintask.error_type == substra.sdk.models.TaskErrorType.execution
         with pytest.raises(ValueError):
             client.get_task_output_asset(composite_traintask.key, OutputIdentifiers.local)
-        
+
         with pytest.raises(ValueError):
-             client.get_task_output_asset(composite_traintask.key, OutputIdentifiers.shared)
+            client.get_task_output_asset(composite_traintask.key, OutputIdentifiers.shared)
         assert "Traceback (most recent call last):" in client.download_logs(composite_traintask.key)
 
     elif client.backend_mode in (substra.BackendType.LOCAL_SUBPROCESS, substra.BackendType.LOCAL_DOCKER):
