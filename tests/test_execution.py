@@ -360,7 +360,6 @@ def test_composite_traintask_execution_failure(factory, client, default_dataset,
 
         assert composite_traintask.status == Status.failed
         assert composite_traintask.error_type == substra.sdk.models.TaskErrorType.execution
-        print(client.list_task_output_assets(composite_traintask.key))
         with pytest.raises(ValueError):
             client.get_task_output_asset(composite_traintask.key, OutputIdentifiers.local)
         
