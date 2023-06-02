@@ -349,7 +349,7 @@ def test_testtask_with_same_output_identifer(factory, client):
         FunctionOutputSpec(identifier=identifier_2, kind=AssetKind.performance.value, multiple=False),
     ]
 
-    with pytest.raises(TaskAssetNotFoundError):
+    with pytest.raises(ValueError):
         client.add_function(spec)
 
 
