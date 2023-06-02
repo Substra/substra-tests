@@ -173,8 +173,9 @@ def test_permissions(permissions_1, permissions_2, expected_permissions, factory
     traintask = client_1.wait(traintask)
 
     # check the compute task executed on the correct worker
-    output = client_1.get_task_output_asset(traintask.key, OutputIdentifiers.model)
-    assert output.asset is not None
+    with does_not_raise():
+        client_1.get_task_output_asset(traintask.key, OutputIdentifiers.model)
+
     assert traintask.worker == client_1.organization_id
 
     # check the permissions
