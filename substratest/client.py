@@ -187,7 +187,6 @@ class Client:
             models.Dataset: self.get_dataset,
             models.Function: self.get_function,
             models.Task: self.get_task,
-            models.SummaryTask: self.get_task,
             models.ComputePlan: self.get_compute_plan,
             models.DataSample: self.get_data_sample,
         }
