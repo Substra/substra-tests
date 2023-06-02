@@ -585,8 +585,8 @@ def test_compute_plan_aggregate_composite_traintasks(  # noqa: C901
     # Check that permissions were correctly set
     for task_id in [ct.task_id for ct in composite_traintask_specs]:
         task = clients[0].get_task(task_id)
-        trunk = task.outputs[OutputIdentifiers.shared].permissions
-        assert len(trunk.process.authorized_ids) == len(clients)
+        trunk_permissions = task.outputs[OutputIdentifiers.shared].permissions
+        assert len(trunk_permissions.process.authorized_ids) == len(clients)
 
 
 def test_compute_plan_circular_dependency_failure(factory, client, default_dataset, worker):
