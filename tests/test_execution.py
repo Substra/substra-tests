@@ -330,8 +330,10 @@ if __name__ == '__main__':
     testtask = client.wait(testtask)
     assert testtask.status == Status.done
     assert testtask.error_type is None
-    assert testtask.outputs[identifier_1].value == 1
-    assert testtask.outputs[identifier_2].value == 2
+    output_1 = client.get_task_output_asset(testtask.key, identifier_1)
+    output_2 = client.get_task_output_asset(testtask.key, identifier_2)
+    assert output_1.asset == 1
+    assert output_2.asset == 2
 
 
 def test_testtask_with_same_output_identifer(factory, client):
