@@ -1,5 +1,3 @@
-from contextlib import nullcontext as does_not_raise
-
 import docker
 import pytest
 from substra.sdk import models
@@ -41,8 +39,9 @@ def test_execution_debug(client, hybrid_client, debug_factory, default_dataset):
     )
     traintask = hybrid_client.add_task(spec)
     assert traintask.status == models.Status.done
-    with does_not_raise():
-        hybrid_client.get_task_output_asset(traintask.key, OutputIdentifiers.model)
+
+    # Raises an exception if the output asset have not been created
+    hybrid_client.get_task_output_asset(traintask.key, OutputIdentifiers.model)
 
     # Add the testtask
     spec = debug_factory.create_predicttask(

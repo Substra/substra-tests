@@ -1,5 +1,3 @@
-from contextlib import nullcontext as does_not_raise
-
 import pytest
 import substra
 from substra.sdk.exceptions import TaskAssetNotFoundError
@@ -45,8 +43,8 @@ def test_tasks_execution_on_same_organization(factory, network, client, default_
     assert traintask.error_type is None
     assert traintask.metadata == {"foo": "bar"}
     assert len(traintask.outputs) == 1
-    with does_not_raise():
-        output = client.get_task_output_asset(traintask.key, OutputIdentifiers.model)
+    # Raises an exception if the output asset have not been created
+    output = client.get_task_output_asset(traintask.key, OutputIdentifiers.model)
 
     if network.options.enable_model_download:
         model = output.asset
@@ -176,8 +174,8 @@ def test_tasks_execution_on_different_organizations(
     assert traintask.status == Status.done
     assert traintask.error_type is None
     assert len(traintask.outputs) == 1
-    with does_not_raise():
-        client_1.get_task_output_asset(traintask.key, OutputIdentifiers.model)
+    # Raises an exception if the output asset have not been created
+    client_1.get_task_output_asset(traintask.key, OutputIdentifiers.model)
     assert traintask.worker == client_2.organization_id
 
     # add testtask; should execute on organization 1 (default_dataset_1 is located on organization 1)
@@ -878,8 +876,9 @@ def test_use_data_sample_located_in_shared_path(factory, network, client, organi
     traintask = client.wait(traintask)
     assert traintask.status == Status.done
     assert traintask.error_type is None
-    with does_not_raise():
-        client.get_task_output_asset(traintask.key, OutputIdentifiers.model)
+
+    # Raises an exception if the output asset have not been created
+    client.get_task_output_asset(traintask.key, OutputIdentifiers.model)
 
     # create testtask
     spec = factory.create_predicttask(
