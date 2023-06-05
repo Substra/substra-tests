@@ -395,6 +395,7 @@ def test_mnist(factory, inputs, clients, cfg: Settings, workers: typing.List[str
     performances = client.get_performances(cp.key)
     perf_dict = {task_key: perf for task_key, perf in zip(performances.task_key, performances.performance)}
     testtasks = sorted(testtasks, key=lambda x: (x.rank, x.worker))
+
     for testtask in testtasks:
         print(
             f"testtask({testtask.worker}) - rank {testtask.rank} "

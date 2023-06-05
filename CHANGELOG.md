@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - BREAKING: rename Algo to Function (#243)
+- Replace `task.outputs[identifier].value` by `client.get_task_output_asset(task.key, identifier).asset` (#256)
 
 ## [0.38.1] - 2023-02-06
 
