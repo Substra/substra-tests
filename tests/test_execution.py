@@ -48,7 +48,7 @@ def test_tasks_execution_on_same_organization(factory, network, client, default_
 
     if network.options.enable_model_download:
         model = output.asset
-        assert client.download_model(model.key) == b'{"value": 2.2}'
+        assert client.get_model_content(model.key) == b'{"value": 2.2}'
 
     # check we can add twice the same traintask
     spec = get_traintask_spec()
@@ -823,7 +823,7 @@ def test_aggregate_composite_traintasks(factory, network, clients, default_datas
         # - One out-model download is not proxified (direct download)
         # - One out-model download is proxified (as it belongs to another org)
         for key in previous_composite_traintask_keys:
-            assert clients[0].download_model_from_task(key, identifier=OutputIdentifiers.shared) == b'{"value": 2.8}'
+            assert clients[0].get_model_content_from_task(key, identifier=OutputIdentifiers.shared) == b'{"value": 2.8}'
 
     if network.options.enable_intermediate_model_removal:
         # Optional (if "enable_intermediate_model_removal" is True): ensure the aggregatetask of round 1 has been

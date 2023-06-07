@@ -30,7 +30,7 @@ class _APIClient:
         return self._get(f"/task_profiling/{task_key}/").json()
 
 
-class Client:
+class Client(substra.Client):
     """Client to interact with a Organization of Substra.
 
     Parses responses from server to return Asset instances.
@@ -47,136 +47,80 @@ class Client:
         future_polling_period: int,
         token: Optional[str] = None,
     ):
-        super().__init__()
-
-        self.organization_id = organization_id
-        self._client = substra.Client(
+        super().__init__(
             backend_type=backend_type, url=address, insecure=False, token=token, username=user, password=password
         )
-        self._api_client = _APIClient(address, self._client._token)
-        self.backend_mode = self._client.backend_mode
-        self.token = self._client._token
+
+        self.organization_id = organization_id
+
+        self._api_client = _APIClient(address, self._token)
         self.future_timeout = future_timeout
         self.future_polling_period = future_polling_period
 
     def add_data_sample(self, spec, *args, **kwargs):
-        key = self._client.add_data_sample(spec.dict(), *args, **kwargs)
+        key = super().add_data_sample(spec.dict(), *args, **kwargs)
         return key
 
     def add_data_samples(self, spec, *args, **kwargs):
-        keys = self._client.add_data_samples(spec.dict(), *args, **kwargs)
+        keys = super().add_data_samples(spec.dict(), *args, **kwargs)
         return keys
 
     def add_dataset(self, spec, *args, **kwargs):
-        key = self._client.add_dataset(spec.dict(), *args, **kwargs)
-        return self._client.get_dataset(key)
+        key = super().add_dataset(spec.dict(), *args, **kwargs)
+        return super().get_dataset(key)
 
     def add_function(self, spec, *args, **kwargs):
-        key = self._client.add_function(spec.dict(), *args, **kwargs)
-        return self._client.get_function(key)
+        key = super().add_function(spec.dict(), *args, **kwargs)
+        return super().get_function(key)
 
     def add_task(self, spec, *args, **kwargs):
-        key = self._client.add_task(spec.dict(), *args, **kwargs)
-        return self._client.get_task(key)
+        key = super().add_task(spec.dict(), *args, **kwargs)
+        return super().get_task(key)
 
     def add_compute_plan(self, spec, *args, **kwargs):
-        return self._client.add_compute_plan(spec.dict(), *args, **kwargs)
+        return super().add_compute_plan(spec.dict(), *args, **kwargs)
 
     def add_compute_plan_tasks(self, spec, *args, **kwargs):
         spec_dict = spec.dict()
         # Remove extra field from data
         spec_dict.pop("key")
-        return self._client.add_compute_plan_tasks(spec.key, spec_dict, *args, **kwargs)
-
-    def list_compute_plan(self, *args, **kwargs):
-        return self._client.list_compute_plan(*args, **kwargs)
-
-    def list_task_input_assets(self, *args, **kwargs):
-        return self._client.list_task_input_assets(*args, **kwargs)
-
-    def list_task_output_assets(self, *args, **kwargs):
-        return self._client.list_task_output_assets(*args, **kwargs)
-
-    def get_task_output_asset(self, *args, **kwargs):
-        return self._client.get_task_output_asset(*args, **kwargs)
-
-    def get_compute_plan(self, *args, **kwargs):
-        return self._client.get_compute_plan(*args, **kwargs)
-
-    def get_performances(self, *args, **kwargs):
-        return self._client.get_performances(*args, **kwargs)
-
-    def list_data_sample(self, *args, **kwargs):
-        return self._client.list_data_sample(*args, **kwargs)
-
-    def get_function(self, *args, **kwargs):
-        return self._client.get_function(*args, **kwargs)
-
-    def list_function(self, *args, **kwargs):
-        return self._client.list_function(*args, **kwargs)
-
-    def get_dataset(self, *args, **kwargs):
-        return self._client.get_dataset(*args, **kwargs)
-
-    def get_data_sample(self, *args, **kwargs):
-        return self._client.get_data_sample(*args, **kwargs)
-
-    def list_dataset(self, *args, **kwargs):
-        return self._client.list_dataset(*args, **kwargs)
-
-    def get_task(self, *args, **kwargs):
-        return self._client.get_task(*args, **kwargs)
-
-    def list_task(self, *args, **kwargs):
-        return self._client.list_task(*args, **kwargs)
-
-    def list_organization(self, *args, **kwargs):
-        return self._client.list_organization(*args, **kwargs)
+        return super().add_compute_plan_tasks(spec.key, spec_dict, *args, **kwargs)
 
     def download_opener(self, key):
         with tempfile.TemporaryDirectory() as tmp:
-            path = self._client.download_dataset(key, tmp)
+            path = super().download_dataset(key, tmp)
             with open(path, "rb") as f:
                 return f.read()
 
     def download_function(self, key):
         with tempfile.TemporaryDirectory() as tmp:
-            path = self._client.download_function(key, tmp)
+            path = super().download_function(key, tmp)
             with open(path, "rb") as f:
                 return f.read()
 
-    def download_model(self, key):
+    def get_model_content(self, key):
         with tempfile.TemporaryDirectory() as tmp:
-            path = self._client.download_model(key, tmp)
+            path = super().download_model(key, tmp)
             with open(path, "rb") as f:
                 return f.read()
 
-    def download_model_from_task(self, task_key, identifier):
+    def get_model_content_from_task(self, task_key, identifier):
         with tempfile.TemporaryDirectory() as tmp:
-            path = self._client.download_model_from_task(task_key, identifier=identifier, folder=tmp)
+            path = super().download_model_from_task(task_key, identifier=identifier, folder=tmp)
             with open(path, "rb") as f:
                 return f.read()
 
     def get_task_models(self, compute_task_key: str) -> typing.List[substra.models.OutModel]:
-        return self._client.list_model(filters={"compute_task_key": [compute_task_key]})
-
-    def get_logs(self, task_key):
-        return self._client.get_logs(task_key)
+        return super().list_model(filters={"compute_task_key": [compute_task_key]})
 
     def download_logs(self, task_key):
         with tempfile.TemporaryDirectory() as tmp:
-            path = self._client.download_logs(task_key, tmp)
+            path = super().download_logs(task_key, tmp)
             with open(path, "r") as f:
                 return f.read()
 
-    def describe_dataset(self, key):
-        return self._client.describe_dataset(key)
-
-    def cancel_compute_plan(self, *args, **kwargs) -> None:
-        self._client.cancel_compute_plan(*args, **kwargs)
-
     def link_dataset_with_data_samples(self, dataset, data_samples):
-        self._client.link_dataset_with_data_samples(dataset.key, data_samples)
+        super().link_dataset_with_data_samples(dataset.key, data_samples)
 
     def list_compute_plan_tasks(self, compute_plan_key):
         return self.list_task(filters={"compute_plan_key": [compute_plan_key]})
@@ -235,25 +179,22 @@ class Client:
     def wait_model_deletion(self, model_key):
         """Wait for the model to be deleted (address unset)"""
         tstart = time.time()
-        model = self._client.get_model(model_key)
+        model = super().get_model(model_key)
         while model.address:
             if time.time() - tstart > self.future_timeout:
                 raise errors.FutureTimeoutError(f"Future timeout waiting on model deletion for {model_key}")
 
             time.sleep(self.future_polling_period)
-            model = self._client.get_model(model_key)
+            super().get_model(model_key)
 
     def update_function(self, function, name, *args, **kwargs):
-        return self._client.update_function(function.key, name, *args, **kwargs)
+        return super().update_function(function.key, name, *args, **kwargs)
 
     def update_compute_plan(self, compute_plan, name, *args, **kwargs):
-        return self._client.update_compute_plan(compute_plan.key, name, *args, **kwargs)
+        return super().update_compute_plan(compute_plan.key, name, *args, **kwargs)
 
     def update_dataset(self, dataset, name, *args, **kwargs):
-        return self._client.update_dataset(dataset.key, name, *args, **kwargs)
+        return super().update_dataset(dataset.key, name, *args, **kwargs)
 
     def get_compute_task_profiling(self, task_key: str):
         return self._api_client.get_compute_task_profiling(task_key)
-
-    def organization_info(self):
-        return self._client.organization_info()
