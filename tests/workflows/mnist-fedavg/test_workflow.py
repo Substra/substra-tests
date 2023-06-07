@@ -387,7 +387,7 @@ def test_mnist(factory, inputs, clients, cfg: Settings, workers: typing.List[str
                 )
 
     cp = client.add_compute_plan(cp_spec)
-    cp = client.wait(cp, timeout=30 * 60 * 60)
+    cp = client.wait_compute_plan(cp.key, timeout=30 * 60 * 60)
 
     # display all testtasks performances
     tasks = client.list_compute_plan_tasks(cp.key)

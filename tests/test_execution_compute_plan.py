@@ -83,7 +83,7 @@ def test_compute_plan_simple(
     # submit compute plan and wait for it to complete
     cp_added = client_1.add_compute_plan(cp_spec)
 
-    cp = client_1.wait(cp_added)
+    cp = client_1.wait_compute_plan(cp_added.key)
     assert cp.key == cp_key
     assert cp.tag == "foo"
     assert cp.metadata == {"foo": "bar"}
@@ -232,7 +232,7 @@ def test_compute_plan_single_client_success(factory, client, default_dataset, de
 
     # Submit compute plan and wait for it to complete
     cp_added = client.add_compute_plan(cp_spec)
-    cp = client.wait(cp_added)
+    cp = client.wait_compute_plan(cp_added.key)
 
     assert cp.status == "PLAN_STATUS_DONE"
     assert cp.end_date is not None
@@ -338,7 +338,7 @@ def test_compute_plan_update(factory, client, default_dataset, default_metric, w
 
     # All the train/test tasks should succeed
     cp_added = client.get_compute_plan(cp.key)
-    cp = client.wait(cp_added)
+    cp = client.wait_compute_plan(cp_added.key)
     tasks = client.list_compute_plan_tasks(cp.key)
     assert len(tasks) == 9
     for t in tasks:
@@ -436,7 +436,7 @@ def test_compute_plan_single_client_failure(factory, client, default_dataset, de
 
     # Submit compute plan and wait for it to complete
     cp_added = client.add_compute_plan(cp_spec)
-    cp = client.wait(cp_added, raises=False)
+    cp = client.wait_compute_plan(cp_added.key, raises=False)
 
     assert cp.status == "PLAN_STATUS_FAILED"
     assert cp.end_date is not None
@@ -543,7 +543,7 @@ def test_compute_plan_aggregate_composite_traintasks(  # noqa: C901
     )
 
     cp_added = clients[0].add_compute_plan(cp_spec)
-    cp = clients[0].wait(cp_added)
+    cp = clients[0].wait_compute_plan(cp_added.key)
 
     tasks = clients[0].list_compute_plan_tasks(cp.key)
 
@@ -648,12 +648,12 @@ def test_execution_compute_plan_canceled(factory, client, default_dataset, cfg, 
     # wait the first traintask to be executed to ensure that the compute plan is launched
     # and tasks are scheduled in the celery workers
     first_traintask = [t for t in client.list_compute_plan_tasks(cp.key) if t.rank == 0][0]
-    first_traintask = client.wait(first_traintask)
+    first_traintask = client.wait_task(first_traintask.key)
     assert first_traintask.status == models.Status.done
 
     client.cancel_compute_plan(cp.key)
     # as cancel request do not directly update localrep we need to wait for the sync
-    cp = client.wait(cp, raises=False, timeout=cfg.options.organization_sync_timeout)
+    cp = client.wait_compute_plan(cp.key, raises=False, timeout=cfg.options.organization_sync_timeout)
     assert cp.status == models.ComputePlanStatus.canceled
     assert cp.end_date is not None
     assert cp.duration is not None
@@ -677,7 +677,7 @@ def test_compute_plan_no_batching(factory, client, default_dataset, worker):
         worker=worker,
     )
     cp_added = client.add_compute_plan(cp_spec, auto_batching=False)
-    cp = client.wait(cp_added)
+    cp = client.wait_compute_plan(cp_added.key)
 
     traintasks = client.list_compute_plan_tasks(cp.key)
     assert len(traintasks) == 1
@@ -694,7 +694,7 @@ def test_compute_plan_no_batching(factory, client, default_dataset, worker):
         worker=worker,
     )
     cp_added = client.add_compute_plan_tasks(cp_spec, auto_batching=False)
-    cp = client.wait(cp_added)
+    cp = client.wait_compute_plan(cp_added.key)
 
     traintasks = client.list_compute_plan_tasks(cp.key)
     assert len(traintasks) == 2
@@ -730,7 +730,7 @@ def test_compute_plan_transient_outputs(factory: AssetsFactory, client: Client, 
     )
 
     cp_added = client.add_compute_plan(cp_spec)
-    client.wait(cp_added)
+    client.wait_compute_plan(cp_added.key)
 
     traintask_1 = client.get_task(traintask_spec_1.task_id)
     assert traintask_1.outputs[OutputIdentifiers.model].is_transient is True
@@ -773,7 +773,7 @@ def test_compute_task_profile(factory, client, default_dataset, worker):
     )
 
     cp_added = client.add_compute_plan(cp_spec)
-    client.wait(cp_added)
+    client.wait_compute_plan(cp_added.key)
 
     traintask_1_profile = client.get_compute_task_profiling(traintask_spec_1.task_id)
     assert len(traintask_1_profile["execution_rundown"]) == 4

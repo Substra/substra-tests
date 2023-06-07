@@ -142,19 +142,36 @@ class Client(substra.Client):
 
         return getter(asset.key)
 
-    def wait(self, asset, raises=True, timeout=None):
+    def wait_compute_plan(self, key: str, **kwargs):
+        return self._wait(key=key, asset_type=models.ComputePlan, **kwargs)
+
+    def wait_task(self, key: str, **kwargs):
+        return self._wait(key=key, asset_type=models.Task, **kwargs)
+
+    def _wait(self, *, key: str, asset_type, raises=True, timeout=None):
         if timeout is None:
             timeout = self.future_timeout
 
         tstart = time.time()
         while True:
-            if asset.status in (
-                Status.done.value,
-                Status.canceled.value,
-                ComputePlanStatus.done.value,
-                ComputePlanStatus.failed.value,
-                ComputePlanStatus.canceled.value,
-            ):
+            if asset_type == models.ComputePlan:
+                asset = self.get_compute_plan(key)
+                asset_failed = ComputePlanStatus.failed.value
+                asset_canceled = ComputePlanStatus.canceled.value
+                asset_stopped = (
+                    ComputePlanStatus.done.value,
+                    ComputePlanStatus.failed.value,
+                    ComputePlanStatus.canceled.value,
+                )
+            elif asset_type == models.Task:
+                asset = self.get_task(key)
+                asset_canceled = Status.canceled.value
+                asset_failed = Status.failed.value
+                asset_stopped = (Status.done.value, Status.canceled.value)
+            else:
+                raise ValueError(f"{asset_type} cannot be waited")
+
+            if asset.status in asset_stopped:
                 break
 
             if asset.status == Status.failed.value and asset.error_type is not None:
@@ -166,12 +183,11 @@ class Client(substra.Client):
                 raise errors.FutureTimeoutError(f"Future timeout on {asset}")
 
             time.sleep(self.future_polling_period)
-            asset = self.get(asset)
 
-        if raises and asset.status in (Status.failed.value, ComputePlanStatus.failed.value):
+        if raises and asset.status == asset_failed:
             raise errors.FutureFailureError(f"Future execution failed on {asset}")
 
-        if raises and asset.status in (Status.canceled.value, ComputePlanStatus.canceled.value):
+        if raises and asset.status == asset_canceled:
             raise errors.FutureFailureError(f"Future execution canceled on {asset}")
 
         return asset

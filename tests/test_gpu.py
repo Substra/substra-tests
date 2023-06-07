@@ -57,4 +57,4 @@ if __name__ == '__main__':
         workers=workers[org_idx],
     )
     cp_added = client.add_compute_plan(cp_spec)
-    client.wait(cp_added)
+    client.wait_compute_plan(cp_added.key)
