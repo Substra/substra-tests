@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.41.0] - 2023-06-12
 
+- Update tests using new substra sdk `list` and `get` functions ([#256](https://github.com/Substra/substra-tests/pull/256))
+
 ## [0.40.0] - 2023-05-11
 
 ### Added
