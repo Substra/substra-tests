@@ -204,11 +204,11 @@ def test_task_data_samples_relative_order(factory, client, dataset, worker):
 
     # Ensure the order of the data sample keys is correct at 2 levels: :
     #  1. In the returned traintask
-    #  2. In the train method of the function. If the order is incorrect, wait() will fail.
+    #  2. In the train method of the function. If the order is incorrect, wait_task() will fail.
     assert [
         i.asset_key for i in traintask.inputs if i.identifier == InputIdentifiers.datasamples
     ] == dataset.train_data_sample_keys
-    client.wait(traintask)
+    client.wait_task(traintask.key)
 
     predict_input_models = FLTaskInputGenerator.train_to_predict(traintask.key)
     predicttask_spec = factory.create_predicttask(
@@ -223,8 +223,8 @@ def test_task_data_samples_relative_order(factory, client, dataset, worker):
     )
     testtask = client.add_task(testtask_spec)
 
-    # Assert order is correct in the metric. If not, wait() will fail.
-    client.wait(testtask)
+    # Assert order is correct in the metric. If not, wait_task() will fail.
+    client.wait_task(testtask.key)
 
 
 def test_composite_traintask_data_samples_relative_order(factory, client, dataset, worker):
@@ -259,11 +259,11 @@ def test_composite_traintask_data_samples_relative_order(factory, client, datase
     composite_traintask = client.add_task(traintask_spec)
     # Ensure the order of the data sample keys is correct at 2 levels: :
     #  1. In the returned composite traintask
-    #  2. In the train method of the function. If the order is incorrect, wait() will fail.
+    #  2. In the train method of the function. If the order is incorrect, wait_task() will fail.
     assert [
         i.asset_key for i in composite_traintask.inputs if i.identifier == InputIdentifiers.datasamples
     ] == dataset.train_data_sample_keys
-    client.wait(composite_traintask)
+    client.wait_task(composite_traintask.key)
 
     predict_input_models = FLTaskInputGenerator.composite_to_predict(composite_traintask.key)
 
@@ -279,8 +279,8 @@ def test_composite_traintask_data_samples_relative_order(factory, client, datase
     )
     testtask = client.add_task(testtask_spec)
 
-    # Assert order is correct in the metric. If not, wait() will fail.
-    client.wait(testtask)
+    # Assert order is correct in the metric. If not, _wait() will fail.
+    client.wait_task(testtask.key)
 
 
 @pytest.mark.slow
@@ -352,5 +352,5 @@ if __name__ == '__main__':
         worker=worker,
     )
     traintask = client.add_task(spec)
-    traintask = client.wait(traintask)
+    traintask = client.wait_task(traintask.key)
     assert traintask.status == Status.done

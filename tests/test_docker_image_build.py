@@ -31,4 +31,4 @@ ENTRYPOINT ["python3", "function.py", "--function-name", "{DEFAULT_FUNCTION_NAME
         worker=worker,
     )
     traintask = client.add_task(spec)
-    traintask = client.wait(traintask)
+    traintask = client.wait_task(traintask.key)

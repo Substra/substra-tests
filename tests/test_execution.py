@@ -38,7 +38,7 @@ def test_tasks_execution_on_same_organization(factory, network, client, default_
 
     spec = get_traintask_spec()
     traintask = client.add_task(spec)
-    traintask = client.wait(traintask)
+    traintask = client.wait_task(traintask.key)
     assert traintask.status == Status.done
     assert traintask.error_type is None
     assert traintask.metadata == {"foo": "bar"}
@@ -48,7 +48,7 @@ def test_tasks_execution_on_same_organization(factory, network, client, default_
 
     if network.options.enable_model_download:
         model = output.asset
-        assert client.download_model(model.key) == b'{"value": 2.2}'
+        assert client.get_model_content(model.key) == b'{"value": 2.2}'
 
     # check we can add twice the same traintask
     spec = get_traintask_spec()
@@ -62,7 +62,7 @@ def test_tasks_execution_on_same_organization(factory, network, client, default_
     )
 
     predicttask = client.add_task(spec)
-    predicttask = client.wait(predicttask)
+    predicttask = client.wait_task(predicttask.key)
     assert predicttask.status == Status.done
     assert predicttask.error_type is None
 
@@ -72,7 +72,7 @@ def test_tasks_execution_on_same_organization(factory, network, client, default_
         worker=worker,
     )
     testtask = client.add_task(spec)
-    testtask = client.wait(testtask)
+    testtask = client.wait_task(testtask.key)
     assert testtask.status == Status.done
     assert testtask.error_type is None
     performance = client.get_task_output_asset(testtask.key, OutputIdentifiers.performance)
@@ -87,7 +87,7 @@ def test_tasks_execution_on_same_organization(factory, network, client, default_
         worker=worker,
     )
     traintask = client.add_task(spec)
-    traintask = client.wait(traintask)
+    traintask = client.wait_task(traintask.key)
     assert traintask.status == Status.done
     assert testtask.error_type is None
     assert traintask.metadata == {}
@@ -123,7 +123,7 @@ def test_federated_learning_workflow(factory, client, default_datasets, workers)
             worker=workers[index],
         )
         traintask = client.add_task(spec)
-        traintask = client.wait(traintask)
+        traintask = client.wait_task(traintask.key)
         out_models = client.get_task_models(traintask.key)
         assert traintask.status == Status.done
         assert traintask.error_type is None
@@ -170,7 +170,7 @@ def test_tasks_execution_on_different_organizations(
         worker=workers[1],
     )
     traintask = client_1.add_task(spec)
-    traintask = client_1.wait(traintask)
+    traintask = client_1.wait_task(traintask.key)
     assert traintask.status == Status.done
     assert traintask.error_type is None
     assert len(traintask.outputs) == 1
@@ -185,7 +185,7 @@ def test_tasks_execution_on_different_organizations(
         worker=workers[0],
     )
     predicttask = client_1.add_task(spec)
-    predicttask = client_1.wait(predicttask)
+    predicttask = client_1.wait_task(predicttask.key)
     assert predicttask.status == Status.done
     assert predicttask.error_type is None
     assert predicttask.worker == client_1.organization_id
@@ -196,7 +196,7 @@ def test_tasks_execution_on_different_organizations(
         worker=workers[0],
     )
     testtask = client_1.add_task(spec)
-    testtask = client_1.wait(testtask)
+    testtask = client_1.wait_task(testtask.key)
     assert testtask.status == Status.done
     assert testtask.error_type is None
     assert testtask.worker == client_1.organization_id
@@ -223,7 +223,7 @@ def test_function_build_failure(factory, network, default_dataset_1, worker):
             network.clients[0].add_task(spec)
     else:
         traintask = network.clients[0].add_task(spec)
-        traintask = network.clients[0].wait(traintask, raises=False)
+        traintask = network.clients[0].wait_task(traintask.key, raises=False)
 
         assert traintask.status == Status.failed
         assert traintask.error_type == substra.sdk.models.TaskErrorType.build
@@ -250,7 +250,7 @@ def test_task_execution_failure(factory, network, default_dataset_1, worker):
             network.clients[0].add_task(spec)
     else:
         traintask = network.clients[0].add_task(spec)
-        traintask = network.clients[0].wait(traintask, raises=False)
+        traintask = network.clients[0].wait_task(traintask.key, raises=False)
 
         assert traintask.status == Status.failed
         assert traintask.error_type == substra.sdk.models.TaskErrorType.execution
@@ -297,7 +297,7 @@ if __name__ == '__main__':
         worker=worker,
     )
     traintask = client.add_task(spec)
-    traintask = client.wait(traintask)
+    traintask = client.wait_task(traintask.key)
 
     # add predicttask
     spec = factory.create_predicttask(
@@ -306,7 +306,7 @@ if __name__ == '__main__':
         worker=worker,
     )
     predicttask = client.add_task(spec)
-    predicttask = client.wait(predicttask)
+    predicttask = client.wait_task(predicttask.key)
 
     # add metric function
     spec = factory.create_function(category=FunctionCategory.metric, py_script=custom_metric_script)
@@ -328,7 +328,7 @@ if __name__ == '__main__':
     )
 
     testtask = client.add_task(spec)
-    testtask = client.wait(testtask)
+    testtask = client.wait_task(testtask.key)
     assert testtask.status == Status.done
     assert testtask.error_type is None
     output_1 = client.get_task_output_asset(testtask.key, identifier_1)
@@ -363,7 +363,7 @@ def test_composite_traintask_execution_failure(factory, client, default_dataset,
     )
     if client.backend_mode == substra.BackendType.REMOTE:
         composite_traintask = client.add_task(spec)
-        composite_traintask = client.wait(composite_traintask, raises=False)
+        composite_traintask = client.wait_task(composite_traintask.key, raises=False)
 
         assert composite_traintask.status == Status.failed
         assert composite_traintask.error_type == substra.sdk.models.TaskErrorType.execution
@@ -409,7 +409,7 @@ def test_aggregatetask_execution_failure(factory, client, default_dataset, worke
 
     if client.backend_mode == substra.BackendType.REMOTE:
         aggregatetask = client.add_task(spec)
-        aggregatetask = client.wait(aggregatetask, raises=False)
+        aggregatetask = client.wait_task(aggregatetask.key, raises=False)
 
         for composite_traintask_key in composite_traintask_keys:
             composite_traintask = client.get_task(composite_traintask_key)
@@ -447,7 +447,7 @@ def test_composite_traintasks_execution(factory, client, default_dataset, defaul
         worker=worker,
     )
     composite_traintask_1 = client.add_task(spec)
-    composite_traintask_1 = client.wait(composite_traintask_1)
+    composite_traintask_1 = client.wait_task(composite_traintask_1.key)
     assert composite_traintask_1.status == Status.done
     assert composite_traintask_1.error_type is None
     assert len(composite_traintask_1.outputs) == 2
@@ -460,7 +460,7 @@ def test_composite_traintasks_execution(factory, client, default_dataset, defaul
         worker=worker,
     )
     composite_traintask_2 = client.add_task(spec)
-    composite_traintask_2 = client.wait(composite_traintask_2)
+    composite_traintask_2 = client.wait_task(composite_traintask_2.key)
     assert composite_traintask_2.status == Status.done
     assert composite_traintask_2.error_type is None
     assert len(composite_traintask_2.outputs) == 2
@@ -472,7 +472,7 @@ def test_composite_traintasks_execution(factory, client, default_dataset, defaul
         worker=worker,
     )
     predicttask = client.add_task(spec)
-    predicttask = client.wait(predicttask)
+    predicttask = client.wait_task(predicttask.key)
     assert predicttask.status == Status.done
     assert predicttask.error_type is None
 
@@ -482,7 +482,7 @@ def test_composite_traintasks_execution(factory, client, default_dataset, defaul
         worker=worker,
     )
     testtask = client.add_task(spec)
-    testtask = client.wait(testtask)
+    testtask = client.wait_task(testtask.key)
     assert testtask.status == Status.done
     assert testtask.error_type is None
     performance = client.get_task_output_asset(testtask.key, OutputIdentifiers.performance)
@@ -537,7 +537,7 @@ def test_aggregatetask(factory, client, default_metric, default_dataset, worker)
         worker=worker,
     )
     predicttask = client.add_task(spec)
-    predicttask = client.wait(predicttask)
+    predicttask = client.wait_task(predicttask.key)
 
     spec = factory.create_testtask(
         function=default_metric,
@@ -545,7 +545,7 @@ def test_aggregatetask(factory, client, default_metric, default_dataset, worker)
         worker=worker,
     )
     testtask = client.add_task(spec)
-    testtask = client.wait(testtask)
+    testtask = client.wait_task(testtask.key)
 
 
 @pytest.mark.slow
@@ -591,7 +591,7 @@ def test_aggregatetask_chained(factory, client, default_dataset, worker):
     )
 
     aggregatetask_2 = client.add_task(spec)
-    aggregatetask_2 = client.wait(aggregatetask_2)
+    aggregatetask_2 = client.wait_task(aggregatetask_2.key)
     assert aggregatetask_2.status == Status.done
     assert aggregatetask_2.error_type is None
     assert len([i for i in aggregatetask_2.inputs if i.identifier == InputIdentifiers.models]) == 1
@@ -640,7 +640,7 @@ def test_aggregatetask_traintask(factory, client, default_dataset, worker):
     )
 
     traintask_2 = client.add_task(spec)
-    traintask_2 = client.wait(traintask_2)
+    traintask_2 = client.wait_task(traintask_2.key)
 
     assert traintask_2.status == Status.done
     assert traintask_2.error_type is None
@@ -683,7 +683,7 @@ def test_composite_traintask_2_organizations_to_composite_traintask(factory, cli
         worker=workers[0],
     )
     composite_traintask = clients[0].add_task(spec)
-    composite_traintask = clients[0].wait(composite_traintask)
+    composite_traintask = clients[0].wait_task(composite_traintask.key)
 
     assert composite_traintask.status == Status.done
 
@@ -758,7 +758,7 @@ def test_aggregate_composite_traintasks(factory, network, clients, default_datas
             )
 
             t = clients[0].add_task(spec)
-            t = clients[0].wait(t)
+            t = clients[0].wait_task(t.key)
             composite_traintask_keys.append(t.key)
 
         # create aggregate on its organization
@@ -768,7 +768,7 @@ def test_aggregate_composite_traintasks(factory, network, clients, default_datas
             inputs=FLTaskInputGenerator.composites_to_aggregate(composite_traintask_keys),
         )
         aggregatetask = clients[0].add_task(spec)
-        aggregatetask = clients[0].wait(aggregatetask)
+        aggregatetask = clients[0].wait_task(aggregatetask.key)
 
         # save state of round
         previous_aggregatetask_key = aggregatetask.key
@@ -784,7 +784,7 @@ def test_aggregate_composite_traintasks(factory, network, clients, default_datas
             worker=workers[index],
         )
         predicttask = clients[0].add_task(spec)
-        predicttask = clients[0].wait(predicttask)
+        predicttask = clients[0].wait_task(predicttask.key)
 
         spec = factory.create_testtask(
             function=metric,
@@ -792,7 +792,7 @@ def test_aggregate_composite_traintasks(factory, network, clients, default_datas
             worker=workers[index],
         )
         testtask = clients[0].add_task(spec)
-        testtask = clients[0].wait(testtask)
+        testtask = clients[0].wait_task(testtask.key)
         # y_true: [20], y_pred: [52.0], result: 32.0
         performance = clients[0].get_task_output_asset(testtask.key, OutputIdentifiers.performance)
         assert performance.asset == pytest.approx(32 + index)
@@ -804,7 +804,7 @@ def test_aggregate_composite_traintasks(factory, network, clients, default_datas
         worker=workers[0],
     )
     predicttask = clients[0].add_task(spec)
-    predicttask = clients[0].wait(predicttask)
+    predicttask = clients[0].wait_task(predicttask.key)
 
     spec = factory.create_testtask(
         function=default_metrics[0],
@@ -812,7 +812,7 @@ def test_aggregate_composite_traintasks(factory, network, clients, default_datas
         worker=workers[0],
     )
     testtask = clients[0].add_task(spec)
-    testtask = clients[0].wait(testtask)
+    testtask = clients[0].wait_task(testtask.key)
     # y_true: [20], y_pred: [28.0], result: 8.0
     performance = clients[0].get_task_output_asset(testtask.key, OutputIdentifiers.performance)
     assert performance.asset == pytest.approx(8)
@@ -823,7 +823,7 @@ def test_aggregate_composite_traintasks(factory, network, clients, default_datas
         # - One out-model download is not proxified (direct download)
         # - One out-model download is proxified (as it belongs to another org)
         for key in previous_composite_traintask_keys:
-            assert clients[0].download_model_from_task(key, identifier=OutputIdentifiers.shared) == b'{"value": 2.8}'
+            assert clients[0].get_model_content_from_task(key, identifier=OutputIdentifiers.shared) == b'{"value": 2.8}'
 
     if network.options.enable_intermediate_model_removal:
         # Optional (if "enable_intermediate_model_removal" is True): ensure the aggregatetask of round 1 has been
@@ -843,7 +843,7 @@ def test_aggregate_composite_traintasks(factory, network, clients, default_datas
 
         spec = factory.create_traintask(function=function, inputs=dataset.train_data_inputs, worker=workers[0])
         traintask = client.add_task(spec)
-        traintask = client.wait(traintask)
+        traintask = client.wait_task(traintask.key)
         assert traintask.status == Status.failed
         assert traintask.error_type == substra.sdk.models.TaskErrorType.execution
 
@@ -873,7 +873,7 @@ def test_use_data_sample_located_in_shared_path(factory, network, client, organi
 
     spec = factory.create_traintask(function=function, inputs=dataset.train_data_inputs, worker=worker)
     traintask = client.add_task(spec)
-    traintask = client.wait(traintask)
+    traintask = client.wait_task(traintask.key)
     assert traintask.status == Status.done
     assert traintask.error_type is None
 
@@ -885,7 +885,7 @@ def test_use_data_sample_located_in_shared_path(factory, network, client, organi
         function=predict_function, traintask=traintask, dataset=dataset, data_samples=[data_sample_key], worker=worker
     )
     predicttask = client.add_task(spec)
-    predicttask = client.wait(predicttask)
+    predicttask = client.wait_task(predicttask.key)
     assert predicttask.status == Status.done
     assert predicttask.error_type is None
 
@@ -893,7 +893,7 @@ def test_use_data_sample_located_in_shared_path(factory, network, client, organi
         function=default_metric, predicttask=predicttask, dataset=dataset, data_samples=[data_sample_key], worker=worker
     )
     testtask = client.add_task(spec)
-    testtask = client.wait(testtask)
+    testtask = client.wait_task(testtask.key)
     assert testtask.status == Status.done
     assert testtask.error_type is None
     performance = client.get_task_output_asset(testtask.key, OutputIdentifiers.performance)
@@ -946,7 +946,7 @@ if __name__ == '__main__':
     function = client.add_function(spec)
     spec = factory.create_traintask(function=function, inputs=default_dataset.train_data_inputs, worker=worker)
     traintask = client.add_task(spec)
-    client.wait(traintask)
+    client.wait_task(traintask.key)
 
 
 WRITE_TO_HOME_DIRECTORY_FUNCTION = f"""
@@ -997,7 +997,7 @@ def test_write_to_home_directory(factory, client, default_dataset, worker):
     function = client.add_function(spec)
     spec = factory.create_traintask(function=function, inputs=default_dataset.train_data_inputs, worker=worker)
     traintask = client.add_task(spec)
-    traintask = client.wait(traintask)
+    traintask = client.wait_task(traintask.key)
 
     assert traintask.status == Status.done
     assert traintask.error_type is None
