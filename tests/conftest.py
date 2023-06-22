@@ -377,5 +377,5 @@ def hybrid_client(cfg, client):
         password=organization.password,
         future_timeout=cfg.options.future_timeout,
         future_polling_period=cfg.options.future_polling_period,
-        token=client.token,
+        token=client._token,
     )
