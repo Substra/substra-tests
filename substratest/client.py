@@ -201,7 +201,7 @@ class Client(substra.Client):
                 raise errors.FutureTimeoutError(f"Future timeout waiting on model deletion for {model_key}")
 
             time.sleep(self.future_polling_period)
-            super().get_model(model_key)
+            model = super().get_model(model_key)
 
     def update_function(self, function, name, *args, **kwargs):
         return super().update_function(function.key, name, *args, **kwargs)
