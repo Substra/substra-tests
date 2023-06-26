@@ -22,8 +22,6 @@ class FunctionCategory(str, Enum):
 class InputIdentifiers(str, Enum):
     local = "local"
     shared = "shared"
-    model = "model"
-    models = "models"
     predictions = "predictions"
     performance = "performance"
     opener = "opener"
@@ -34,7 +32,6 @@ class InputIdentifiers(str, Enum):
 class OutputIdentifiers(str, Enum):
     local = "local"
     shared = "shared"
-    model = "model"
     predictions = "predictions"
     performance = "performance"
 

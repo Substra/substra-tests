@@ -966,7 +966,7 @@ def train(inputs, outputs, task_properties):
 @tools.register
 def predict(inputs, outputs, task_properties):
     X = inputs['{InputIdentifiers.datasamples}'][0]
-    model = load_model(inputs['{InputIdentifiers.model}'])
+    model = load_model(inputs['{InputIdentifiers.shared}'])
 
     res = [x * model['value'] for x in X]
     print(f'Predict, get X: {{X}}, model: {{model}}, return {{res}}')
