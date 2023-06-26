@@ -1,5 +1,7 @@
 import os
 import shutil
+from substratest.fl_interface import InputIdentifiers
+from substratest.fl_interface import OutputIdentifiers
 
 import numpy as np
 import substratools as tools
@@ -64,14 +66,14 @@ def train(inputs, outputs, task_properties):
     torch.manual_seed(_SEED)  # initialize model weights
     torch.use_deterministic_algorithms(True)
 
-    head_model_path = inputs.get("local")
-    trunk_model_path = inputs.get("shared")
+    head_model_path = inputs.get(InputIdentifiers.local)
+    trunk_model_path = inputs.get(InputIdentifiers.shared)
 
     head_model = load_head_model(head_model_path) if head_model_path is not None else torch.nn.Module()
     trunk_model = load_trunk_model(trunk_model_path) if trunk_model_path is not None else Network()
 
-    X = inputs["datasamples"]["X"]
-    y = inputs["datasamples"]["y"]
+    X = inputs[InputIdentifiers.datasamples]["X"]
+    y = inputs[InputIdentifiers.datasamples]["y"]
     rank = task_properties["rank"]
 
     _fit(
@@ -83,15 +85,15 @@ def train(inputs, outputs, task_properties):
         rank=rank,
     )
 
-    save_head_model(head_model, outputs["local"])
-    save_trunk_model(trunk_model, outputs["shared"])
+    save_head_model(head_model, outputs[OutputIdentifiers.local])
+    save_trunk_model(trunk_model, outputs[OutputIdentifiers.shared])
 
 
 @tools.register
 def predict(inputs, outputs, task_properties):
-    trunk_model = load_trunk_model(inputs["shared"])
+    trunk_model = load_trunk_model(inputs[OutputIdentifiers.shared])
 
-    X = inputs["datasamples"]["X"]
+    X = inputs[InputIdentifiers.datasamples]["X"]
     X = torch.FloatTensor(X)
     trunk_model.eval()
 
@@ -102,7 +104,7 @@ def predict(inputs, outputs, task_properties):
     y_pred = y_pred.data.cpu().numpy()
     pred = np.argmax(y_pred, axis=1)
 
-    save_predictions(pred, outputs["predictions"])
+    save_predictions(pred, outputs[OutputIdentifiers.predictions])
 
 
 def load_model(path):
