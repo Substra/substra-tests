@@ -1,12 +1,13 @@
 import os
 import shutil
-from substratest.fl_interface import InputIdentifiers
-from substratest.fl_interface import OutputIdentifiers
 
 import numpy as np
 import substratools as tools
 import torch
 import torch.nn.functional as F
+
+from substratest.fl_interface import InputIdentifiers
+from substratest.fl_interface import OutputIdentifiers
 
 _INPUT_SAMPLE_SIZE = 21632
 _OUT_SAMPLE_SIZE = 10
