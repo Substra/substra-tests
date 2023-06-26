@@ -34,7 +34,7 @@ Function that aggregates models by simply averaging them as in FedAvg
 def aggregate(inputs, outputs, task_properties):
     # get layers
     inmodels = []
-    for m_path in inputs["models"]:
+    for m_path in inputs["shared"]:
         inmodels.append(load_model(m_path))
 
     model = inmodels[0]
