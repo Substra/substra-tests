@@ -6,9 +6,6 @@ import substratools as tools
 import torch
 import torch.nn.functional as F
 
-from substratest.fl_interface import InputIdentifiers
-from substratest.fl_interface import OutputIdentifiers
-
 _INPUT_SAMPLE_SIZE = 21632
 _OUT_SAMPLE_SIZE = 10
 _NB_CHANNELS = 32
@@ -37,7 +34,7 @@ Function that aggregates models by simply averaging them as in FedAvg
 def aggregate(inputs, outputs, task_properties):
     # get layers
     inmodels = []
-    for m_path in inputs[InputIdentifiers.shared]:
+    for m_path in inputs["models"]:
         inmodels.append(load_model(m_path))
 
     model = inmodels[0]
@@ -53,15 +50,15 @@ def aggregate(inputs, outputs, task_properties):
 
     model.load_state_dict(model_state_dict)
 
-    save_model(model, outputs[InputIdentifiers.shared])
+    save_model(model, outputs["shared"])
 
 
 @tools.register
 def predict(inputs, outputs, task_properties):
-    X = inputs[InputIdentifiers.datasamples]["X"]
+    X = inputs["datasamples"]["X"]
     X = torch.FloatTensor(X)
 
-    model = load_model(inputs[InputIdentifiers.shared])
+    model = load_model(inputs["shared"])
     model.eval()
     # add the context manager to reduce computation overhead
     with torch.no_grad():
@@ -70,7 +67,7 @@ def predict(inputs, outputs, task_properties):
     y_pred = y_pred.data.cpu().numpy()
     pred = np.argmax(y_pred, axis=1)
 
-    save_predictions(pred, outputs[OutputIdentifiers.predictions])
+    save_predictions(pred, outputs["predictions"])
 
 
 def load_model(path):
