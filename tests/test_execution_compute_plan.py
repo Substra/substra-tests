@@ -107,7 +107,7 @@ def test_compute_plan_simple(
     traintask_2 = [t for t in full_tasks if t.key == traintask_spec_2.task_id][0]
     traintask_3 = [t for t in full_tasks if t.key == traintask_spec_3.task_id][0]
 
-    assert len([i for i in traintask_3.inputs if i.identifier == InputIdentifiers.models]) == 2
+    assert len([i for i in traintask_3.inputs if i.identifier == InputIdentifiers.shared]) == 2
 
     predicttask = [t for t in full_tasks if t.key == predicttask_spec_3.task_id][0]
     testtask = [t for t in full_tasks if t.key == testtask_spec.task_id][0]
@@ -573,7 +573,7 @@ def test_compute_plan_aggregate_composite_traintasks(  # noqa: C901
                         if i.identifier == InputIdentifiers.shared
                         and i.parent_task_key
                         == [x for x in task.inputs if x.identifier == InputIdentifiers.shared][0].parent_task_key
-                        and i.parent_task_output_identifier == OutputIdentifiers.model
+                        and i.parent_task_output_identifier == OutputIdentifiers.shared
                     ]
                 )
                 == 1
@@ -733,7 +733,7 @@ def test_compute_plan_transient_outputs(factory: AssetsFactory, client: Client, 
     client.wait_compute_plan(cp_added.key)
 
     traintask_1 = client.get_task(traintask_spec_1.task_id)
-    assert traintask_1.outputs[OutputIdentifiers.model].is_transient is True
+    assert traintask_1.outputs[OutputIdentifiers.shared].is_transient is True
 
     # Validate that the transient model is properly deleted
     model = client.get_task_models(traintask_spec_1.task_id)[0]
