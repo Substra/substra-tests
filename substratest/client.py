@@ -6,8 +6,6 @@ from typing import Optional
 import requests
 import substra
 from substra.sdk import models
-from substra.sdk.models import ComputePlanStatus
-from substra.sdk.models import Status
 
 from . import errors
 
@@ -142,55 +140,9 @@ class Client(substra.Client):
 
         return getter(asset.key)
 
-    def wait_compute_plan(self, key: str, **kwargs):
-        return self._wait(key=key, asset_type=models.ComputePlan, **kwargs)
-
-    def wait_task(self, key: str, **kwargs):
-        return self._wait(key=key, asset_type=models.Task, **kwargs)
-
-    def _wait(self, *, key: str, asset_type, raises=True, timeout=None):
-        if timeout is None:
-            timeout = self.future_timeout
-
-        tstart = time.time()
-        while True:
-            if asset_type == models.ComputePlan:
-                asset = self.get_compute_plan(key)
-                asset_failed = ComputePlanStatus.failed.value
-                asset_canceled = ComputePlanStatus.canceled.value
-                asset_stopped = (
-                    ComputePlanStatus.done.value,
-                    ComputePlanStatus.failed.value,
-                    ComputePlanStatus.canceled.value,
-                )
-            elif asset_type == models.Task:
-                asset = self.get_task(key)
-                asset_canceled = Status.canceled.value
-                asset_failed = Status.failed.value
-                asset_stopped = (Status.done.value, Status.canceled.value)
-            else:
-                raise ValueError(f"{asset_type} cannot be waited")
-
-            if asset.status in asset_stopped:
-                break
-
-            if asset.status == Status.failed.value and asset.error_type is not None:
-                # when dealing with a failed task, wait for the error_type field of the task to be set
-                # i.e. wait for the registration of the failure report
-                break
-
-            if time.time() - tstart > timeout:
-                raise errors.FutureTimeoutError(f"Future timeout on {asset}")
-
-            time.sleep(self.future_polling_period)
-
-        if raises and asset.status == asset_failed:
-            raise errors.FutureFailureError(f"Future execution failed on {asset}")
-
-        if raises and asset.status == asset_canceled:
-            raise errors.FutureFailureError(f"Future execution canceled on {asset}")
-
-        return asset
+    def _wait(self, *, timeout=None, **kwargs):
+        timeout = timeout or self.future_timeout
+        return super().wait(timeout=timeout, polling_period=self.future_polling_period, **kwargs)
 
     def wait_model_deletion(self, model_key):
         """Wait for the model to be deleted (address unset)"""
