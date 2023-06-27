@@ -140,7 +140,8 @@ class Client(substra.Client):
 
         return getter(asset.key)
 
-    def _wait(self, *, timeout=None, **kwargs):
+    # Dismiss `polling_period`
+    def _wait(self, *, timeout=None, polling_period, **kwargs):
         timeout = timeout or self.future_timeout
         return super()._wait(timeout=timeout, polling_period=self.future_polling_period, **kwargs)
 
