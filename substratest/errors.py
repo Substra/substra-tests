@@ -1,4 +1,4 @@
-from substra.exception import FutureError
+from substra.sdk.exceptions import FutureError
 
 
 class SynchronizationTimeoutError(FutureError):
