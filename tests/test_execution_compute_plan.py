@@ -648,8 +648,8 @@ def test_execution_compute_plan_canceled(factory, client, default_dataset, cfg, 
     # wait the first traintask to be executed to ensure that the compute plan is launched
     # and tasks are scheduled in the celery workers
     first_traintask = [t for t in client.list_compute_plan_tasks(cp.key) if t.rank == 0][0]
-    first_traintask = client.wait_task(first_traintask.key)
-    assert first_traintask.status == models.Status.done
+    # `raises = True`, will fail if task not successful
+    client.wait_task(first_traintask.key, raises=True)
 
     client.cancel_compute_plan(cp.key)
     # as cancel request do not directly update localrep we need to wait for the sync
