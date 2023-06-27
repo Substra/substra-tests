@@ -142,7 +142,7 @@ class Client(substra.Client):
 
     def _wait(self, *, timeout=None, **kwargs):
         timeout = timeout or self.future_timeout
-        return super().wait(timeout=timeout, polling_period=self.future_polling_period, **kwargs)
+        return super()._wait(timeout=timeout, polling_period=self.future_polling_period, **kwargs)
 
     def wait_model_deletion(self, model_key):
         """Wait for the model to be deleted (address unset)"""
