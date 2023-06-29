@@ -170,7 +170,7 @@ def test_permissions(permissions_1, permissions_2, expected_permissions, factory
     )
     channel.wait_for_asset_synchronized(function_2)
     traintask = client_1.add_task(spec)
-    client_1.wait_task(traintask.key, raises=True)
+    client_1.wait_task(traintask.key, raise_on_failure=True)
 
     # check the compute task executed on the correct worker
     # Raises an exception if the output asset have not been created
@@ -268,7 +268,7 @@ def test_permissions_model_process(
         worker=workers[0],
     )
     traintask_1 = client_1.add_task(spec)
-    traintask_1 = client_1.wait_task(traintask_1.key, raises=True)
+    traintask_1 = client_1.wait_task(traintask_1.key, raise_on_failure=True)
 
     assert not traintask_1.outputs[OutputIdentifiers.model].permissions.process.public
     assert set(traintask_1.outputs[OutputIdentifiers.model].permissions.process.authorized_ids) == set(
@@ -284,7 +284,7 @@ def test_permissions_model_process(
     with expectation:
         traintask_2 = client_2.add_task(spec)
 
-        client_2.wait_task(traintask_2.key, raises=True)
+        client_2.wait_task(traintask_2.key, raise_on_failure=True)
 
 
 @pytest.mark.remote_only  # no check on permissions with the local backend
@@ -344,7 +344,7 @@ def test_merge_permissions_denied_process(factory, clients, channel, workers):
         # add traintask from node 2
         spec = factory.create_traintask(function=function_2, inputs=dataset_1.train_data_inputs, worker=workers[0])
         traintask_2 = client_2.add_task(spec)
-        traintask_2 = client_2.wait_task(traintask_2.key, raises=True)
+        traintask_2 = client_2.wait_task(traintask_2.key, raise_on_failure=True)
         channel.wait_for_asset_synchronized(traintask_2)  # used by client_3
 
         # failed to add predicttask from organization 3
@@ -398,7 +398,7 @@ def test_permissions_denied_head_model_process(factory, client_1, client_2, chan
     )
 
     composite_traintask_1 = client_1.add_task(spec)
-    composite_traintask_1 = client_1.wait_task(composite_traintask_1.key, raises=True)
+    composite_traintask_1 = client_1.wait_task(composite_traintask_1.key, raise_on_failure=True)
     channel.wait_for_asset_synchronized(composite_traintask_1)  # used by client_2
 
     spec = factory.create_composite_traintask(

@@ -436,7 +436,7 @@ def test_compute_plan_single_client_failure(factory, client, default_dataset, de
 
     # Submit compute plan and wait for it to complete
     cp_added = client.add_compute_plan(cp_spec)
-    cp = client.wait_compute_plan(cp_added.key, raises=False)
+    cp = client.wait_compute_plan(cp_added.key, raise_on_failure=False)
 
     assert cp.status == "PLAN_STATUS_FAILED"
     assert cp.end_date is not None
@@ -649,11 +649,11 @@ def test_execution_compute_plan_canceled(factory, client, default_dataset, cfg, 
     # and tasks are scheduled in the celery workers
     first_traintask = [t for t in client.list_compute_plan_tasks(cp.key) if t.rank == 0][0]
     # `raises = True`, will fail if task not successful
-    client.wait_task(first_traintask.key, raises=True)
+    client.wait_task(first_traintask.key, raise_on_failure=True)
 
     client.cancel_compute_plan(cp.key)
     # as cancel request do not directly update localrep we need to wait for the sync
-    cp = client.wait_compute_plan(cp.key, raises=False, timeout=cfg.options.organization_sync_timeout)
+    cp = client.wait_compute_plan(cp.key, raise_on_failure=False, timeout=cfg.options.organization_sync_timeout)
     assert cp.status == models.ComputePlanStatus.canceled
     assert cp.end_date is not None
     assert cp.duration is not None

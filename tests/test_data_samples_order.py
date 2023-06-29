@@ -208,7 +208,7 @@ def test_task_data_samples_relative_order(factory, client, dataset, worker):
         i.asset_key for i in traintask.inputs if i.identifier == InputIdentifiers.datasamples
     ] == dataset.train_data_sample_keys
     # `raises = True`, will fail if task not successful
-    client.wait_task(traintask.key, raises=True)
+    client.wait_task(traintask.key, raise_on_failure=True)
 
     predict_input_models = FLTaskInputGenerator.train_to_predict(traintask.key)
     predicttask_spec = factory.create_predicttask(
@@ -225,7 +225,7 @@ def test_task_data_samples_relative_order(factory, client, dataset, worker):
 
     # Assert order is correct in the metric. If not, wait_task() will fail.
     # `raises = True`, will fail if task not successful
-    client.wait_task(testtask.key, raises=True)
+    client.wait_task(testtask.key, raise_on_failure=True)
 
 
 def test_composite_traintask_data_samples_relative_order(factory, client, dataset, worker):
@@ -265,7 +265,7 @@ def test_composite_traintask_data_samples_relative_order(factory, client, datase
         i.asset_key for i in composite_traintask.inputs if i.identifier == InputIdentifiers.datasamples
     ] == dataset.train_data_sample_keys
     # `raises = True`, will fail if task not successful
-    client.wait_task(composite_traintask.key, raises=True)
+    client.wait_task(composite_traintask.key, raise_on_failure=True)
 
     predict_input_models = FLTaskInputGenerator.composite_to_predict(composite_traintask.key)
 
@@ -283,7 +283,7 @@ def test_composite_traintask_data_samples_relative_order(factory, client, datase
 
     # Assert order is correct in the metric. If not, _wait() will fail.
     # `raises = True`, will fail if task not successful
-    client.wait_task(testtask.key, raises=True)
+    client.wait_task(testtask.key, raise_on_failure=True)
 
 
 @pytest.mark.slow
@@ -357,4 +357,4 @@ if __name__ == '__main__':
     traintask = client.add_task(spec)
 
     # `raises = True`, will fail if task not successful
-    client.wait_task(traintask.key, raises=True)
+    client.wait_task(traintask.key, raise_on_failure=True)

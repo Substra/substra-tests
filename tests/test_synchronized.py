@@ -83,7 +83,7 @@ def test_synchronized_traintask(clients, factory, channel, current_client, worke
     # create traintask
     spec = factory.create_traintask(function=function, inputs=dataset.train_data_inputs, worker=worker)
     traintask = current_client.add_task(spec)
-    traintask = current_client.wait_task(traintask.key, raises=True)
+    traintask = current_client.wait_task(traintask.key, raise_on_failure=True)
     channel.wait_for_asset_synchronized(traintask)
 
 

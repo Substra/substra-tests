@@ -32,4 +32,4 @@ ENTRYPOINT ["python3", "function.py", "--function-name", "{DEFAULT_FUNCTION_NAME
     )
     traintask = client.add_task(spec)
     # `raises = True`, will fail if task not successful
-    client.wait_task(traintask.key, raises=True)
+    client.wait_task(traintask.key, raise_on_failure=True)
