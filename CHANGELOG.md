@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Define test client (`substratest.client.Client`) as child class of `substra.Client` (#205)
 ([#257](https://github.com/Substra/substra-tests/pull/257))
+- Moved `wait_task` and `wait_compute_task` from `substratest.client.Client` to `substra.Client` ([#263](https://github.com/Substra/substra-tests/pull/263))
 
 ## [0.41.0] - 2023-06-12
 

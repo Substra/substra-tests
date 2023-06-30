@@ -1,5 +1,4 @@
 import pytest
-from substra.sdk.models import Status
 
 import substratest as sbt
 from substratest.factory import DEFAULT_DATA_SAMPLE_FILENAME
@@ -208,7 +207,8 @@ def test_task_data_samples_relative_order(factory, client, dataset, worker):
     assert [
         i.asset_key for i in traintask.inputs if i.identifier == InputIdentifiers.datasamples
     ] == dataset.train_data_sample_keys
-    client.wait_task(traintask.key)
+    # `raises = True`, will fail if task not successful
+    client.wait_task(traintask.key, raise_on_failure=True)
 
     predict_input_models = FLTaskInputGenerator.train_to_predict(traintask.key)
     predicttask_spec = factory.create_predicttask(
@@ -224,7 +224,8 @@ def test_task_data_samples_relative_order(factory, client, dataset, worker):
     testtask = client.add_task(testtask_spec)
 
     # Assert order is correct in the metric. If not, wait_task() will fail.
-    client.wait_task(testtask.key)
+    # `raises = True`, will fail if task not successful
+    client.wait_task(testtask.key, raise_on_failure=True)
 
 
 def test_composite_traintask_data_samples_relative_order(factory, client, dataset, worker):
@@ -263,7 +264,8 @@ def test_composite_traintask_data_samples_relative_order(factory, client, datase
     assert [
         i.asset_key for i in composite_traintask.inputs if i.identifier == InputIdentifiers.datasamples
     ] == dataset.train_data_sample_keys
-    client.wait_task(composite_traintask.key)
+    # `raises = True`, will fail if task not successful
+    client.wait_task(composite_traintask.key, raise_on_failure=True)
 
     predict_input_models = FLTaskInputGenerator.composite_to_predict(composite_traintask.key)
 
@@ -280,7 +282,8 @@ def test_composite_traintask_data_samples_relative_order(factory, client, datase
     testtask = client.add_task(testtask_spec)
 
     # Assert order is correct in the metric. If not, _wait() will fail.
-    client.wait_task(testtask.key)
+    # `raises = True`, will fail if task not successful
+    client.wait_task(testtask.key, raise_on_failure=True)
 
 
 @pytest.mark.slow
@@ -352,5 +355,6 @@ if __name__ == '__main__':
         worker=worker,
     )
     traintask = client.add_task(spec)
-    traintask = client.wait_task(traintask.key)
-    assert traintask.status == Status.done
+
+    # `raises = True`, will fail if task not successful
+    client.wait_task(traintask.key, raise_on_failure=True)

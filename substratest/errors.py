@@ -1,14 +1,5 @@
-class TError(Exception):
-    """Substra Test Error."""
+from substra.sdk.exceptions import FutureError
 
 
-class FutureTimeoutError(TError):
-    """Future execution timed out."""
-
-
-class FutureFailureError(TError):
-    """Future execution failed."""
-
-
-class SynchronizationTimeoutError(TError):
+class SynchronizationTimeoutError(FutureError):
     """Asset could not be synchronized inn time."""
