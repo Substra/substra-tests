@@ -27,7 +27,7 @@ import torch
 @tools.register
 def train(inputs, outputs, task_properties):
     assert torch.cuda.is_available()
-    save_model(['test'], outputs['{OutputIdentifiers.model}'])
+    save_model(['test'], outputs['{OutputIdentifiers.shared}'])
 
 @tools.register
 def predict(X, model):

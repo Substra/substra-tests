@@ -22,8 +22,6 @@ class FunctionCategory(str, Enum):
 class InputIdentifiers(str, Enum):
     local = "local"
     shared = "shared"
-    model = "model"
-    models = "models"
     predictions = "predictions"
     performance = "performance"
     opener = "opener"
@@ -34,7 +32,6 @@ class InputIdentifiers(str, Enum):
 class OutputIdentifiers(str, Enum):
     local = "local"
     shared = "shared"
-    model = "model"
     predictions = "predictions"
     performance = "performance"
 
@@ -43,7 +40,7 @@ class FLFunctionInputs(list, Enum):
     """Substra function inputs by function category based on the InputIdentifiers"""
 
     FUNCTION_AGGREGATE = [
-        FunctionInputSpec(identifier=InputIdentifiers.models, kind=AssetKind.model.value, optional=False, multiple=True)
+        FunctionInputSpec(identifier=InputIdentifiers.shared, kind=AssetKind.model.value, optional=False, multiple=True)
     ]
     FUNCTION_SIMPLE = [
         FunctionInputSpec(
@@ -55,7 +52,7 @@ class FLFunctionInputs(list, Enum):
         FunctionInputSpec(
             identifier=InputIdentifiers.opener, kind=AssetKind.data_manager.value, optional=False, multiple=False
         ),
-        FunctionInputSpec(identifier=InputIdentifiers.models, kind=AssetKind.model.value, optional=True, multiple=True),
+        FunctionInputSpec(identifier=InputIdentifiers.shared, kind=AssetKind.model.value, optional=True, multiple=True),
     ]
     FUNCTION_COMPOSITE = [
         FunctionInputSpec(
@@ -83,7 +80,7 @@ class FLFunctionInputs(list, Enum):
             identifier=InputIdentifiers.opener, kind=AssetKind.data_manager.value, optional=False, multiple=False
         ),
         FunctionInputSpec(
-            identifier=InputIdentifiers.model, kind=AssetKind.model.value, optional=False, multiple=False
+            identifier=InputIdentifiers.shared, kind=AssetKind.model.value, optional=False, multiple=False
         ),
     ]
     FUNCTION_PREDICT_COMPOSITE = [
@@ -123,10 +120,10 @@ class FLFunctionOutputs(list, Enum):
     """Substra function outputs by function category based on the OutputIdentifiers"""
 
     FUNCTION_AGGREGATE = [
-        FunctionOutputSpec(identifier=OutputIdentifiers.model, kind=AssetKind.model.value, multiple=False)
+        FunctionOutputSpec(identifier=OutputIdentifiers.shared, kind=AssetKind.model.value, multiple=False)
     ]
     FUNCTION_SIMPLE = [
-        FunctionOutputSpec(identifier=OutputIdentifiers.model, kind=AssetKind.model.value, multiple=False)
+        FunctionOutputSpec(identifier=OutputIdentifiers.shared, kind=AssetKind.model.value, multiple=False)
     ]
     FUNCTION_COMPOSITE = [
         FunctionOutputSpec(identifier=OutputIdentifiers.local, kind=AssetKind.model.value, multiple=False),
@@ -166,9 +163,9 @@ class FLTaskInputGenerator:
     def trains_to_train(model_keys):
         return [
             InputRef(
-                identifier=InputIdentifiers.models,
+                identifier=InputIdentifiers.shared,
                 parent_task_key=model_key,
-                parent_task_output_identifier=OutputIdentifiers.model,
+                parent_task_output_identifier=OutputIdentifiers.shared,
             )
             for model_key in model_keys
         ]
@@ -177,9 +174,9 @@ class FLTaskInputGenerator:
     def trains_to_aggregate(model_keys):
         return [
             InputRef(
-                identifier=InputIdentifiers.models,
+                identifier=InputIdentifiers.shared,
                 parent_task_key=model_key,
-                parent_task_output_identifier=OutputIdentifiers.model,
+                parent_task_output_identifier=OutputIdentifiers.shared,
             )
             for model_key in model_keys
         ]
@@ -188,9 +185,9 @@ class FLTaskInputGenerator:
     def train_to_predict(model_key):
         return [
             InputRef(
-                identifier=InputIdentifiers.model,
+                identifier=InputIdentifiers.shared,
                 parent_task_key=model_key,
-                parent_task_output_identifier=OutputIdentifiers.model,
+                parent_task_output_identifier=OutputIdentifiers.shared,
             )
         ]
 
@@ -250,7 +247,7 @@ class FLTaskInputGenerator:
             InputRef(
                 identifier=InputIdentifiers.shared,
                 parent_task_key=model_key,
-                parent_task_output_identifier=OutputIdentifiers.model,
+                parent_task_output_identifier=OutputIdentifiers.shared,
             )
         ]
 
@@ -258,7 +255,7 @@ class FLTaskInputGenerator:
     def composites_to_aggregate(model_keys):
         return [
             InputRef(
-                identifier=InputIdentifiers.models,
+                identifier=InputIdentifiers.shared,
                 parent_task_key=model_key,
                 parent_task_output_identifier=OutputIdentifiers.shared,
             )
@@ -269,9 +266,9 @@ class FLTaskInputGenerator:
     def aggregate_to_predict(model_key):
         return [
             InputRef(
-                identifier=InputIdentifiers.model,
+                identifier=InputIdentifiers.shared,
                 parent_task_key=model_key,
-                parent_task_output_identifier=OutputIdentifiers.model,
+                parent_task_output_identifier=OutputIdentifiers.shared,
             )
         ]
 
@@ -279,7 +276,7 @@ class FLTaskInputGenerator:
     def local_to_aggregate(model_key):
         return [
             InputRef(
-                identifier=InputIdentifiers.models,
+                identifier=InputIdentifiers.shared,
                 parent_task_key=model_key,
                 parent_task_output_identifier=OutputIdentifiers.local,
             )
@@ -289,7 +286,7 @@ class FLTaskInputGenerator:
     def shared_to_aggregate(model_key):
         return [
             InputRef(
-                identifier=InputIdentifiers.models,
+                identifier=InputIdentifiers.shared,
                 parent_task_key=model_key,
                 parent_task_output_identifier=OutputIdentifiers.shared,
             )
@@ -309,14 +306,14 @@ class FLTaskOutputGenerator:
     @staticmethod
     def traintask(authorized_ids=None, transient=False):
         return {
-            OutputIdentifiers.model: ComputeTaskOutputSpec(
+            OutputIdentifiers.shared: ComputeTaskOutputSpec(
                 permissions=_permission_from_ids(authorized_ids), transient=transient
             )
         }
 
     @staticmethod
     def aggregatetask(authorized_ids=None):
-        return {OutputIdentifiers.model: ComputeTaskOutputSpec(permissions=_permission_from_ids(authorized_ids))}
+        return {OutputIdentifiers.shared: ComputeTaskOutputSpec(permissions=_permission_from_ids(authorized_ids))}
 
     @staticmethod
     def predicttask(authorized_ids=None):

@@ -41,7 +41,7 @@ def test_execution_debug(client, hybrid_client, debug_factory, default_dataset):
     assert traintask.status == models.Status.done
 
     # Raises an exception if the output asset have not been created
-    hybrid_client.get_task_output_asset(traintask.key, OutputIdentifiers.model)
+    hybrid_client.get_task_output_asset(traintask.key, OutputIdentifiers.shared)
 
     # Add the testtask
     spec = debug_factory.create_predicttask(

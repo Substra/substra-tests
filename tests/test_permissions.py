@@ -174,12 +174,12 @@ def test_permissions(permissions_1, permissions_2, expected_permissions, factory
 
     # check the compute task executed on the correct worker
     # Raises an exception if the output asset have not been created
-    client_1.get_task_output_asset(traintask.key, OutputIdentifiers.model)
+    client_1.get_task_output_asset(traintask.key, OutputIdentifiers.shared)
 
     assert traintask.worker == client_1.organization_id
 
     # check the permissions
-    task_permissions = traintask.outputs[OutputIdentifiers.model].permissions
+    task_permissions = traintask.outputs[OutputIdentifiers.shared].permissions
     assert task_permissions.process.public == expected_permissions.public
     assert set(task_permissions.process.authorized_ids) == set(expected_permissions.authorized_ids)
 
@@ -270,8 +270,8 @@ def test_permissions_model_process(
     traintask_1 = client_1.add_task(spec)
     traintask_1 = client_1.wait_task(traintask_1.key)
 
-    assert not traintask_1.outputs[OutputIdentifiers.model].permissions.process.public
-    assert set(traintask_1.outputs[OutputIdentifiers.model].permissions.process.authorized_ids) == set(
+    assert not traintask_1.outputs[OutputIdentifiers.shared].permissions.process.public
+    assert set(traintask_1.outputs[OutputIdentifiers.shared].permissions.process.authorized_ids) == set(
         [client_1.organization_id] + client_1_permissions.authorized_ids
     )
 

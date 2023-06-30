@@ -27,21 +27,21 @@ import substratools as tools
 def train(inputs, outputs, task_properties):
 
     models = []
-    for m_path in inputs.get('{InputIdentifiers.models}', []):
+    for m_path in inputs.get('{InputIdentifiers.shared}', []):
         models.append(load_model(m_path))
 
     # Check that the order of X is the same as the one passed to add_task
     datasample_keys = [d.split("/")[-1] for d in inputs['{InputIdentifiers.datasamples}']]
     assert datasample_keys == {{data_sample_keys}}, datasample_keys
 
-    save_model(([0, 1], [0, 2]), outputs['{OutputIdentifiers.model}'])
+    save_model(([0, 1], [0, 2]), outputs['{OutputIdentifiers.shared}'])
 
 @tools.register
 def predict(inputs, outputs, task_properties):
     # Check that the order of X is the same as the one passed to add_task
     datasamples = inputs['{InputIdentifiers.datasamples}']
     datasample_keys = [d.split("/")[-1] for d in datasamples]
-    model = load_model(inputs['{InputIdentifiers.model}'])
+    model = load_model(inputs['{InputIdentifiers.shared}'])
     assert datasample_keys == {{test_data_sample_keys}}, datasample_keys
     save_predictions(datasamples, outputs['{OutputIdentifiers.predictions}'])
 
@@ -322,7 +322,7 @@ def train(inputs, outputs, task_properties):
 
     datasamples = inputs['{InputIdentifiers.datasamples}']
     assert datasamples == list(range({batch_size})), datasamples
-    save_model(0, outputs['{OutputIdentifiers.model}'])
+    save_model(0, outputs['{OutputIdentifiers.shared}'])
 
 @tools.register
 def predict(inputs, outputs, task_properties):

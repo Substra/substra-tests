@@ -7,10 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Remove `model` and `models` for input and output identifiers in tests. Replace by `shared` instead. ([#261](https://github.com/Substra/substra-tests/pull/261))
+
 ## [0.42.0] - 2023-06-27
 
 ### Changed
- - Define test client (`substratest.client.Client`) as child class of `substra.Client` (#205)
+
+- Define test client (`substratest.client.Client`) as child class of `substra.Client` (#205)
 ([#257](https://github.com/Substra/substra-tests/pull/257))
 
 ## [0.41.0] - 2023-06-12
