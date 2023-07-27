@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.43.0] - 2023-07-27
+
 ### Changed
 
 - Remove `model` and `models` for input and output identifiers in tests. Replace by `shared` instead. ([#261](https://github.com/Substra/substra-tests/pull/261))
