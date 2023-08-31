@@ -13,6 +13,7 @@ from substratest.fl_interface import FLTaskInputGenerator
 from substratest.fl_interface import FLTaskOutputGenerator
 from substratest.fl_interface import OutputIdentifiers
 from substratest.settings import Settings
+from pydantic import ConfigDict
 
 # extra requirements located in requirements-workflows.txt
 try:
@@ -226,9 +227,7 @@ class _InputsSubset(pydantic.BaseModel):
     dataset: AugmentedDataset = None
     metric: sb.sdk.models.Function = None
     train_data_sample_keys: typing.List[str] = []
-
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
 
 class _Inputs(pydantic.BaseModel):
