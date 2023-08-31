@@ -12,7 +12,7 @@ from substratest.factory import FunctionCategory
 from substratest.fl_interface import FLTaskInputGenerator
 from substratest.fl_interface import FLTaskOutputGenerator
 from substratest.fl_interface import OutputIdentifiers
-from substratest.settings import Settings
+from substratest.settings import PytestConfig
 from pydantic import ConfigDict
 
 # extra requirements located in requirements-workflows.txt
@@ -53,7 +53,7 @@ _EXPECTED_RESULTS = {
 
 
 @pytest.fixture
-def function_dockerfile(cfg: Settings) -> str:
+def function_dockerfile(cfg: PytestConfig) -> str:
     return (
         f"FROM {cfg.substra_tools.image_workflows}\n"
         f"COPY function.py .\n"
@@ -96,7 +96,7 @@ def workers(clients):
 
 
 @pytest.fixture
-def mnist_train_test(cfg: Settings):
+def mnist_train_test(cfg: PytestConfig):
     """Download MNIST data using sklearn and store it to disk.
 
     This will check if MNIST is present in a cache data folder. If not it will download
@@ -309,7 +309,7 @@ def inputs(datasamples_folders, factory, clients, channel, function_dockerfile):
 
 @pytest.mark.slow
 @pytest.mark.workflows
-def test_mnist(factory, inputs, clients, cfg: Settings, workers: typing.List[str]):
+def test_mnist(factory, inputs, clients, cfg: PytestConfig, workers: typing.List[str]):
     client = clients[0]
     nb_rounds = 20
     testing_rounds = (1, 5, 10, 15, 20)

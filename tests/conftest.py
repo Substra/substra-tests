@@ -17,15 +17,16 @@ pytest_plugins = ["pytest_skipuntil"]
 
 def pytest_report_header(config):
     """Print network configuration in pytest header to help configuration debugging."""
-    cfg = settings.Settings.load()
+    cfg = settings.PytestConfig()
+    s = cfg.load()
     messages = [
         f"tests run uuid: {TESTS_RUN_UUID}",
-        f"substra network configuration loaded from: '{cfg.path}'",
+        f"substra network configuration loaded from: '{s.path}'",
         "substra network setup:",
     ]
-    for n in cfg.organizations:
+    for n in s.organizations:
         messages.append(f"  - organization: name={n.name} msp_id={n.msp_id} address={n.address}")
-    messages.append(f"substra tools images: {cfg.substra_tools}")
+    messages.append(f"substra tools images: {s.substra_tools}")
     return messages
 
 
@@ -155,10 +156,11 @@ def factory(request, cfg, client_mode):
 
 @pytest.fixture(scope="session")
 def cfg(client_mode):
+    cfg = settings.PytestConfig()
     if client_mode == substra.BackendType.REMOTE:
-        return settings.Settings.load()
+        return cfg.load()
     else:
-        return settings.Settings.load_local_backend()
+        return cfg.load_local_backend()
 
 
 @pytest.fixture

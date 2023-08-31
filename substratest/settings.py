@@ -61,9 +61,6 @@ class Options(pydantic.BaseModel):
 
 
 class Settings(pydantic.BaseModel):
-    _SETTINGS: Optional["Settings"] = None
-    _LOCAL_SETTINGS: Optional["Settings"] = None
-
     path: str
     options: Options
     substra_tools: SubstraToolsCfg = SubstraToolsCfg()
@@ -77,28 +74,31 @@ class Settings(pydantic.BaseModel):
             data = yaml.safe_load(f)
 
         data["path"] = path
-        return Settings.parse_obj(data)
+        return Settings.model_validate(data)
 
-    @classmethod
-    def load(cls) -> "Settings":
+
+class PytestConfig(pydantic.BaseModel):
+    static_settings: Optional[Settings] = None
+    local_settings: Optional[Settings] = None
+
+    def load(self) -> Settings:
         """Loads settings static configuration.
 
         As the configuration is static and immutable, it is loaded only once from the disk.
         """
-        if cls._SETTINGS is None:
+        if self.static_settings is None:
             s = Settings._from_yaml_file(_SUBSTRA_TESTS_CONFIG_FILEPATH)
             assert len(s.organizations) >= _MIN_ORGANIZATIONS, f"not enough organizations: {len(s.organizations)}"
-            cls._SETTINGS = s
+            self.static_settings = s
 
-        return cls._SETTINGS
+        return self.static_settings
 
-    @classmethod
-    def load_local_backend(cls) -> "Settings":
+    def load_local_backend(self) -> Settings:
         """Loads settings static configuration.
 
         As the configuration is static and immutable, it is loaded only once from the disk.
         """
-        if cls._LOCAL_SETTINGS is None:
-            cls._LOCAL_SETTINGS = Settings._from_yaml_file(_DEFAULT_NETWORK_LOCAL_CONFIGURATION_PATH)
+        if self.local_settings is None:
+            self.local_settings = Settings._from_yaml_file(_DEFAULT_NETWORK_LOCAL_CONFIGURATION_PATH)
 
-        return cls._LOCAL_SETTINGS
+        return self.local_settings
