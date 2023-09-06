@@ -347,7 +347,7 @@ def test_mnist(factory, inputs, clients, cfg: PytestConfig, workers: typing.List
                     local_authorized_ids=[clients[idx].organization_id],
                 ),
                 metadata={
-                    "round_idx": round_idx,
+                    "round_idx": str(round_idx),
                 },
                 worker=workers[idx],
             )
