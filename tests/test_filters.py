@@ -16,7 +16,7 @@ class TestFilterMetadata:
             metadata={
                 "test_filter_metadata": cp_key,
                 "test_2": "cp_1",
-                "key_only_1": 1,
+                "key_only_1": "1",
                 "same_value_both": "same",
             },
         )
