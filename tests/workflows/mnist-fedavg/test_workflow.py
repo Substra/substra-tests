@@ -359,7 +359,7 @@ def test_mnist(factory, inputs, clients, cfg: PytestConfig, workers: typing.List
                 [composite_spec.task_id for composite_spec in composite_specs]
             ),
             metadata={
-                "round_idx": round_idx,
+                "round_idx": str(round_idx),
             },
         )
 
@@ -371,7 +371,7 @@ def test_mnist(factory, inputs, clients, cfg: PytestConfig, workers: typing.List
                     inputs=org_inputs.dataset.test_data_inputs
                     + FLTaskInputGenerator.composite_to_predict(composite_specs[idx].task_id),
                     metadata={
-                        "round_idx": round_idx,
+                        "round_idx": str(round_idx),
                     },
                     worker=workers[idx],
                 )
@@ -380,7 +380,7 @@ def test_mnist(factory, inputs, clients, cfg: PytestConfig, workers: typing.List
                     inputs=org_inputs.dataset.test_data_inputs
                     + FLTaskInputGenerator.predict_to_test(predicttask_spec.task_id),
                     metadata={
-                        "round_idx": round_idx,
+                        "round_idx": str(round_idx),
                     },
                     worker=workers[idx],
                 )
