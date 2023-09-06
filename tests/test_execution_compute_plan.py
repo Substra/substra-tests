@@ -133,7 +133,7 @@ def test_compute_plan_simple(
 
     # check compute plan perfs
     performances = client_1.get_performances(cp.key)
-    assert all(len(val) == 1 for val in performances.dict().values())
+    assert all(len(val) == 1 for val in performances.model_dump().values())
     output = client_1.get_task_output_asset(testtask.key, OutputIdentifiers.performance)
     assert output.asset == performances.performance[0]
 
