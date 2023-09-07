@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.44.0] - 2023-09-07
+
+### Changed
+
+- Minor dependency updates. See commit history for more details.
+
 ## [0.43.0] - 2023-07-27
 
 ### Changed
@@ -19,7 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Define test client (`substratest.client.Client`) as child class of `substra.Client` (#205)
-([#257](https://github.com/Substra/substra-tests/pull/257))
+  ([#257](https://github.com/Substra/substra-tests/pull/257))
 
 ## [0.41.0] - 2023-06-12
 
