@@ -4,6 +4,7 @@ import typing
 import pydantic
 import pytest
 import substra as sb
+from pydantic import ConfigDict
 
 import substratest as sbt
 from substratest.factory import DEFAULT_FUNCTION_NAME
@@ -13,7 +14,6 @@ from substratest.fl_interface import FLTaskInputGenerator
 from substratest.fl_interface import FLTaskOutputGenerator
 from substratest.fl_interface import OutputIdentifiers
 from substratest.settings import PytestConfig
-from pydantic import ConfigDict
 
 # extra requirements located in requirements-workflows.txt
 try:

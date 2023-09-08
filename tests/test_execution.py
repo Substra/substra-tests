@@ -1,9 +1,8 @@
 import pytest
 import substra
 from substra.sdk.exceptions import TaskAssetNotFoundError
-from substra.sdk.models import Status
 from substra.sdk.models import InputRef
-
+from substra.sdk.models import Status
 from substra.sdk.schemas import AssetKind
 from substra.sdk.schemas import ComputeTaskOutputSpec
 from substra.sdk.schemas import FunctionOutputSpec
