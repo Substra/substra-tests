@@ -56,30 +56,30 @@ class Client(substra.Client):
         self.future_polling_period = future_polling_period
 
     def add_data_sample(self, spec, *args, **kwargs):
-        key = super().add_data_sample(spec.dict(), *args, **kwargs)
+        key = super().add_data_sample(spec.model_dump(), *args, **kwargs)
         return key
 
     def add_data_samples(self, spec, *args, **kwargs):
-        keys = super().add_data_samples(spec.dict(), *args, **kwargs)
+        keys = super().add_data_samples(spec.model_dump(), *args, **kwargs)
         return keys
 
     def add_dataset(self, spec, *args, **kwargs):
-        key = super().add_dataset(spec.dict(), *args, **kwargs)
+        key = super().add_dataset(spec.model_dump(), *args, **kwargs)
         return super().get_dataset(key)
 
     def add_function(self, spec, *args, **kwargs):
-        key = super().add_function(spec.dict(), *args, **kwargs)
+        key = super().add_function(spec.model_dump(), *args, **kwargs)
         return super().get_function(key)
 
     def add_task(self, spec, *args, **kwargs):
-        key = super().add_task(spec.dict(), *args, **kwargs)
+        key = super().add_task(spec.model_dump(), *args, **kwargs)
         return super().get_task(key)
 
     def add_compute_plan(self, spec, *args, **kwargs):
-        return super().add_compute_plan(spec.dict(), *args, **kwargs)
+        return super().add_compute_plan(spec.model_dump(), *args, **kwargs)
 
     def add_compute_plan_tasks(self, spec, *args, **kwargs):
-        spec_dict = spec.dict()
+        spec_dict = spec.model_dump()
         # Remove extra field from data
         spec_dict.pop("key")
         return super().add_compute_plan_tasks(spec.key, spec_dict, *args, **kwargs)

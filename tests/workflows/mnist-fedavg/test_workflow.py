@@ -4,6 +4,7 @@ import typing
 import pydantic
 import pytest
 import substra as sb
+from pydantic import ConfigDict
 
 import substratest as sbt
 from substratest.factory import DEFAULT_FUNCTION_NAME
@@ -12,7 +13,7 @@ from substratest.factory import FunctionCategory
 from substratest.fl_interface import FLTaskInputGenerator
 from substratest.fl_interface import FLTaskOutputGenerator
 from substratest.fl_interface import OutputIdentifiers
-from substratest.settings import Settings
+from substratest.settings import PytestConfig
 
 # extra requirements located in requirements-workflows.txt
 try:
@@ -52,7 +53,7 @@ _EXPECTED_RESULTS = {
 
 
 @pytest.fixture
-def function_dockerfile(cfg: Settings) -> str:
+def function_dockerfile(cfg: PytestConfig) -> str:
     return (
         f"FROM {cfg.substra_tools.image_workflows}\n"
         f"COPY function.py .\n"
@@ -95,7 +96,7 @@ def workers(clients):
 
 
 @pytest.fixture
-def mnist_train_test(cfg: Settings):
+def mnist_train_test(cfg: PytestConfig):
     """Download MNIST data using sklearn and store it to disk.
 
     This will check if MNIST is present in a cache data folder. If not it will download
@@ -226,9 +227,7 @@ class _InputsSubset(pydantic.BaseModel):
     dataset: AugmentedDataset = None
     metric: sb.sdk.models.Function = None
     train_data_sample_keys: typing.List[str] = []
-
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
 
 class _Inputs(pydantic.BaseModel):
@@ -310,7 +309,7 @@ def inputs(datasamples_folders, factory, clients, channel, function_dockerfile):
 
 @pytest.mark.slow
 @pytest.mark.workflows
-def test_mnist(factory, inputs, clients, cfg: Settings, workers: typing.List[str]):
+def test_mnist(factory, inputs, clients, cfg: PytestConfig, workers: typing.List[str]):
     client = clients[0]
     nb_rounds = 20
     testing_rounds = (1, 5, 10, 15, 20)
@@ -348,7 +347,7 @@ def test_mnist(factory, inputs, clients, cfg: Settings, workers: typing.List[str
                     local_authorized_ids=[clients[idx].organization_id],
                 ),
                 metadata={
-                    "round_idx": round_idx,
+                    "round_idx": str(round_idx),
                 },
                 worker=workers[idx],
             )
@@ -360,7 +359,7 @@ def test_mnist(factory, inputs, clients, cfg: Settings, workers: typing.List[str
                 [composite_spec.task_id for composite_spec in composite_specs]
             ),
             metadata={
-                "round_idx": round_idx,
+                "round_idx": str(round_idx),
             },
         )
 
@@ -372,7 +371,7 @@ def test_mnist(factory, inputs, clients, cfg: Settings, workers: typing.List[str
                     inputs=org_inputs.dataset.test_data_inputs
                     + FLTaskInputGenerator.composite_to_predict(composite_specs[idx].task_id),
                     metadata={
-                        "round_idx": round_idx,
+                        "round_idx": str(round_idx),
                     },
                     worker=workers[idx],
                 )
@@ -381,7 +380,7 @@ def test_mnist(factory, inputs, clients, cfg: Settings, workers: typing.List[str
                     inputs=org_inputs.dataset.test_data_inputs
                     + FLTaskInputGenerator.predict_to_test(predicttask_spec.task_id),
                     metadata={
-                        "round_idx": round_idx,
+                        "round_idx": str(round_idx),
                     },
                     worker=workers[idx],
                 )

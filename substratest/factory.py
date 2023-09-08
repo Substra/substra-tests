@@ -26,7 +26,7 @@ from substratest.fl_interface import InputIdentifiers
 from substratest.fl_interface import OutputIdentifiers
 
 from . import utils
-from .settings import Settings
+from .settings import PytestConfig
 
 DEFAULT_DATA_SAMPLE_FILENAME = "data.csv"
 
@@ -505,7 +505,7 @@ class UpdateComputePlanTasksSpec(_ComputePlanSpecFactory, substra.sdk.schemas.Up
 
 
 class AssetsFactory:
-    def __init__(self, name, cfg: Settings, client_debug_local=False):
+    def __init__(self, name, cfg: PytestConfig, client_debug_local=False):
         self._data_sample_counter = Counter()
         self._dataset_counter = Counter()
         self._metric_counter = Counter()

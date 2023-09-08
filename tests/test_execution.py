@@ -1,6 +1,7 @@
 import pytest
 import substra
 from substra.sdk.exceptions import TaskAssetNotFoundError
+from substra.sdk.models import InputRef
 from substra.sdk.models import Status
 from substra.sdk.schemas import AssetKind
 from substra.sdk.schemas import ComputeTaskOutputSpec
@@ -92,7 +93,7 @@ def test_tasks_execution_on_same_organization(factory, network, client, default_
     assert traintask.metadata == {}
 
     expected_inputs = default_dataset.train_data_inputs + FLTaskInputGenerator.trains_to_train([first_traintask_key])
-    assert traintask.inputs == expected_inputs
+    assert traintask.inputs == [InputRef.model_validate(exp_input.model_dump()) for exp_input in expected_inputs]
 
 
 @pytest.mark.slow

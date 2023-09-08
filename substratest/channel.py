@@ -50,7 +50,7 @@ class Channel:
         unsynchronized_clients = {c.organization_id: c for c in self.clients}
         unsynchronized_assets = {c.organization_id: None for c in self.clients}
 
-        reference_asset = _anonymize_asset(asset.dict())
+        reference_asset = _anonymize_asset(asset.model_dump())
 
         tstart = time.time()
 
@@ -71,7 +71,7 @@ class Channel:
                 except substra.exceptions.NotFound:
                     continue
 
-                anonymized_asset = _anonymize_asset(local_asset.dict())
+                anonymized_asset = _anonymize_asset(local_asset.model_dump())
 
                 if anonymized_asset == reference_asset:
                     del unsynchronized_clients[organization_id]
