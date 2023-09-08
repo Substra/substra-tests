@@ -18,15 +18,15 @@ pytest_plugins = ["pytest_skipuntil"]
 def pytest_report_header(config):
     """Print network configuration in pytest header to help configuration debugging."""
     cfg = settings.PytestConfig()
-    s = cfg.load()
+    pytest_settings = cfg.load()
     messages = [
         f"tests run uuid: {TESTS_RUN_UUID}",
-        f"substra network configuration loaded from: '{s.path}'",
+        f"substra network configuration loaded from: '{pytest_settings.path}'",
         "substra network setup:",
     ]
-    for n in s.organizations:
+    for n in pytest_settings.organizations:
         messages.append(f"  - organization: name={n.name} msp_id={n.msp_id} address={n.address}")
-    messages.append(f"substra tools images: {s.substra_tools}")
+    messages.append(f"substra tools images: {pytest_settings.substra_tools}")
     return messages
 
 
