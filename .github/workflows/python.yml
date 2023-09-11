@@ -25,17 +25,17 @@ jobs:
 
     steps:
       - name: checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: checkout substra
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: Substra/substra
           path: substra
           ref: ${{ env.SUBSTRA_REF }}
 
       - name: checkout substra tools
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: Substra/substra-tools
           path: substra-tools
