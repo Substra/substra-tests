@@ -5,6 +5,6 @@ pydantic>=2.3.0, <3.0.0
 pytest-xdist==3.0.2
 pytest-lazy-fixture==0.6.3
 flake8==6.1.0
-flake8-bugbear==23.7.10
+flake8-bugbear==23.9.16
 isort==5.10.1
 black==23.9.1
