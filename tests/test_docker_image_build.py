@@ -6,13 +6,9 @@ from substratest.fl_interface import FunctionCategory
 
 @pytest.mark.subprocess_skip
 def test_base_substra_tools_image(factory, cfg, client, default_dataset, worker):
-    """Test that an function created with the base substra-tools image instead of the minimal works"""
+    """Test that an function created with the base substra-tools image works"""
 
-    suffix = "-minimal"
-    if cfg.substra_tools.image_local.endswith(suffix):
-        substra_tools_image = cfg.substra_tools.image_local[: -len(suffix)]
-    else:
-        substra_tools_image = cfg.substra_tools.image_local
+    substra_tools_image = cfg.substra_tools.image_local
 
     function_category = FunctionCategory.simple
 
