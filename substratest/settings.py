@@ -20,8 +20,6 @@ _DEFAULT_SUBSTRA_TOOLS_TAG_REMOTE = "latest"
 _DEFAULT_SUBSTRA_TOOLS_IMAGE_REMOTE = f"substra/substra-tools:{_DEFAULT_SUBSTRA_TOOLS_TAG_REMOTE}-minimal"
 _DEFAULT_SUBSTRA_TOOLS_IMAGE_LOCAL = f"ghcr.io/substra/substra-tools:{_DEFAULT_SUBSTRA_TOOLS_TAG_LOCAL}-minimal"
 
-_DEFAULT_SUBSTRA_TOOLS_IMAGE_WORKFLOWS = f"ghcr.io/substra/substra-tools:{_DEFAULT_SUBSTRA_TOOLS_TAG_REMOTE}-workflows"
-
 _DEFAULT_NETWORK_LOCAL_CONFIGURATION_PATH = os.path.join(_CURRENT_DIR, "../", "local-backend-values.yaml")
 
 _MIN_ORGANIZATIONS = 1
@@ -48,7 +46,6 @@ class MnistWorkflowCfg(pydantic.BaseModel):
 class SubstraToolsCfg(pydantic.BaseModel):
     image_remote: str = _DEFAULT_SUBSTRA_TOOLS_IMAGE_REMOTE
     image_local: str = _DEFAULT_SUBSTRA_TOOLS_IMAGE_LOCAL
-    image_workflows: str = _DEFAULT_SUBSTRA_TOOLS_IMAGE_WORKFLOWS
 
 
 class Options(pydantic.BaseModel):

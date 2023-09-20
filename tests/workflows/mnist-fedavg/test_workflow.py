@@ -55,7 +55,7 @@ _EXPECTED_RESULTS = {
 @pytest.fixture
 def function_dockerfile(cfg: PytestConfig) -> str:
     return (
-        f"FROM {cfg.substra_tools.image_workflows}\n"
+        f"FROM {cfg.substra_tools.image_local}\n"
         f"COPY function.py .\n"
         f'ENTRYPOINT ["python3", "function.py", "--function-name", "{{method_name}}"]\n'
     )
