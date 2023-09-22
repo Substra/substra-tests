@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Remove minimal and workflow substra-tools images. Only one substra-tools image is used ([#284](https://github.com/Substra/substra-tests/pull/284))
+
 ## [0.45.0] - 2023-09-08
 
 ### Changed
