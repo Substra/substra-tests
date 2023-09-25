@@ -8,4 +8,4 @@ scikit-learn==1.3.0
 
 # Use the same version as in the substra-tools workflow image
 # otherwise torch is reinstalled, that takes a long time
-torch==1.13.1
+torch==2.0.1
