@@ -920,12 +920,12 @@ def train(inputs, outputs, task_properties):
     assert model_path.is_file()
     loaded = json.loads(model_path.read_text())
     assert loaded == {{'name':'Jane'}}
-    save_model(dict(), outputs['{OutputIdentifiers.shared}'])
+    save_model(dict(), outputs['{OutputIdentifiers.shared.value}'])
 
 
 @tools.register
 def predict(inputs, outputs, task_properties):
-    save_predictions(None, outputs['{OutputIdentifiers.predictions}'])
+    save_predictions(None, outputs['{OutputIdentifiers.predictions.value}'])
 
 def load_model(path):
     with open(path) as f:
@@ -961,16 +961,16 @@ def train(inputs, outputs, task_properties):
     with open(f"{{str(Path.home())}}/foo", "w") as f:
         f.write("test")
 
-    save_model({{'value': 42 }}, outputs['{OutputIdentifiers.shared}'])
+    save_model({{'value': 42 }}, outputs['{OutputIdentifiers.shared.value}'])
 
 @tools.register
 def predict(inputs, outputs, task_properties):
-    X = inputs['{InputIdentifiers.datasamples}'][0]
-    model = load_model(inputs['{InputIdentifiers.shared}'])
+    X = inputs['{InputIdentifiers.datasamples.value}'][0]
+    model = load_model(inputs['{InputIdentifiers.shared.value}'])
 
     res = [x * model['value'] for x in X]
     print(f'Predict, get X: {{X}}, model: {{model}}, return {{res}}')
-    save_predictions(res, outputs['{OutputIdentifiers.predictions}'])
+    save_predictions(res, outputs['{OutputIdentifiers.predictions.value}'])
 
 def load_model(path):
     with open(path) as f:

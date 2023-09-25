@@ -26,23 +26,23 @@ import substratools as tools
 def train(inputs, outputs, task_properties):
 
     models = []
-    for m_path in inputs.get('{InputIdentifiers.shared}', []):
+    for m_path in inputs.get('{InputIdentifiers.shared.value}', []):
         models.append(load_model(m_path))
 
     # Check that the order of X is the same as the one passed to add_task
-    datasample_keys = [d.split("/")[-1] for d in inputs['{InputIdentifiers.datasamples}']]
+    datasample_keys = [d.split("/")[-1] for d in inputs['{InputIdentifiers.datasamples.value}']]
     assert datasample_keys == {{data_sample_keys}}, datasample_keys
 
-    save_model(([0, 1], [0, 2]), outputs['{OutputIdentifiers.shared}'])
+    save_model(([0, 1], [0, 2]), outputs['{OutputIdentifiers.shared.value}'])
 
 @tools.register
 def predict(inputs, outputs, task_properties):
     # Check that the order of X is the same as the one passed to add_task
-    datasamples = inputs['{InputIdentifiers.datasamples}']
+    datasamples = inputs['{InputIdentifiers.datasamples.value}']
     datasample_keys = [d.split("/")[-1] for d in datasamples]
-    model = load_model(inputs['{InputIdentifiers.shared}'])
+    model = load_model(inputs['{InputIdentifiers.shared.value}'])
     assert datasample_keys == {{test_data_sample_keys}}, datasample_keys
-    save_predictions(datasamples, outputs['{OutputIdentifiers.predictions}'])
+    save_predictions(datasamples, outputs['{OutputIdentifiers.predictions.value}'])
 
 def load_model(path):
     with open(path) as f:
@@ -68,23 +68,23 @@ import substratools as tools
 def train(inputs, outputs, task_properties):
     # Check that the order of X is the same as the one passed to add_task
 
-    data_samples = inputs['{InputIdentifiers.datasamples}']
+    data_samples = inputs['{InputIdentifiers.datasamples.value}']
 
     data_sample_keys = [folder.split('/')[-1] for folder in data_samples]
     assert data_sample_keys == {{data_sample_keys}}, data_sample_keys
 
-    save_head_model([0, 1], outputs['{OutputIdentifiers.local}'])
-    save_trunk_model([0, 2], outputs['{OutputIdentifiers.shared}'])
+    save_head_model([0, 1], outputs['{OutputIdentifiers.local.value}'])
+    save_trunk_model([0, 2], outputs['{OutputIdentifiers.shared.value}'])
 
 @tools.register
 def predict(inputs, outputs, task_properties):
     # Check that the order of X is the same as the one passed to add_task
-    data_samples = inputs['{InputIdentifiers.datasamples}']
+    data_samples = inputs['{InputIdentifiers.datasamples.value}']
 
     test_data_sample_keys = [folder.split('/')[-1] for folder in data_samples]
     assert test_data_sample_keys == {{test_data_sample_keys}}, test_data_sample_keys
 
-    save_predictions(data_samples, outputs['{OutputIdentifiers.predictions}'])
+    save_predictions(data_samples, outputs['{OutputIdentifiers.predictions.value}'])
 
 def load_head_model(path):
     return _load_model(path)
@@ -121,8 +121,8 @@ import json
 
 @tools.register
 def score(inputs, outputs, task_properties):
-    datasamples = inputs['{InputIdentifiers.datasamples}']
-    y_pred = _load_predictions(inputs['{InputIdentifiers.predictions}'])
+    datasamples = inputs['{InputIdentifiers.datasamples.value}']
+    y_pred = _load_predictions(inputs['{InputIdentifiers.predictions.value}'])
     y_pred_data_sample_keys = [folder.split('/')[-1] for folder in y_pred]
     assert y_pred_data_sample_keys == {{data_sample_keys}}
 
@@ -134,7 +134,7 @@ def score(inputs, outputs, task_properties):
 
     assert  y_true_data_sample_keys == y_pred_data_sample_keys, (y_true_data_sample_keys, y_pred_data_sample_keys)
 
-    tools.save_performance(1.0, outputs['{OutputIdentifiers.performance}'])
+    tools.save_performance(1.0, outputs['{OutputIdentifiers.performance.value}'])
 
 def _load_predictions(path):
     with open(path) as f:
@@ -323,13 +323,13 @@ import os
 @tools.register
 def train(inputs, outputs, task_properties):
 
-    datasamples = inputs['{InputIdentifiers.datasamples}']
+    datasamples = inputs['{InputIdentifiers.datasamples.value}']
     assert datasamples == list(range({batch_size})), datasamples
-    save_model(0, outputs['{OutputIdentifiers.shared}'])
+    save_model(0, outputs['{OutputIdentifiers.shared.value}'])
 
 @tools.register
 def predict(inputs, outputs, task_properties):
-    save_predictions(1, outputs['{OutputIdentifiers.predictions}'])
+    save_predictions(1, outputs['{OutputIdentifiers.predictions.value}'])
 
 def load_model(path):
     with open(path) as f:
