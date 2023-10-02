@@ -7,7 +7,7 @@ build:
       docker:
         dockerfile: docker/substra-tests/Dockerfile
 deploy:
-  statusCheckDeadlineSeconds: 600
+  statusCheckDeadlineSeconds: 300
   helm:
     releases:
       - name: substra-tests
