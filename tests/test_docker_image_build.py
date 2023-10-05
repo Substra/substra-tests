@@ -1,9 +1,9 @@
+import time
+
 import pytest
 
 from substratest.factory import DEFAULT_FUNCTION_NAME
 from substratest.fl_interface import FunctionCategory
-import time
-from typing import Optional
 
 
 def get_dockerfile(substra_tools_image: str, function_category: FunctionCategory, extra_instructions: str = "") -> str:
@@ -38,7 +38,7 @@ def test_base_substra_tools_image(factory, cfg, client, default_dataset, worker)
 
 @pytest.mark.remote_only
 def test_function_build_when_submitted(factory, cfg, client, worker):
-    substra_tools_image = get_substra_tool_image_name(cfg)
+    substra_tools_image = cfg.substra_tools.image_local
     function_category = FunctionCategory.simple
     dockerfile = get_dockerfile(substra_tools_image, function_category, extra_instructions="ENV test=0\nsleep 1")
     spec = factory.create_function(function_category, dockerfile=dockerfile)
@@ -52,7 +52,7 @@ def test_function_build_when_submitted(factory, cfg, client, worker):
 
 @pytest.mark.remote_only
 def test_function_build_order(factory, cfg, client, worker):
-    substra_tools_image = get_substra_tool_image_name(cfg)
+    substra_tools_image = cfg.substra_tools.image_local
     function_category = FunctionCategory.simple
 
     dockerfile_1 = get_dockerfile(substra_tools_image, function_category, extra_instructions="ENV test=7\nRUN sleep 1")
