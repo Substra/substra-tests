@@ -2,7 +2,7 @@ import pytest
 
 from substratest.factory import DEFAULT_FUNCTION_NAME
 from substratest.fl_interface import FunctionCategory
-import time 
+import time
 from typing import Optional
 
 
@@ -14,6 +14,7 @@ COPY function.py .
 {extra_instructions}
 ENTRYPOINT ["python3", "function.py", "--function-name", "{DEFAULT_FUNCTION_NAME[function_category]}"]
 """
+
 
 @pytest.mark.subprocess_skip
 def test_base_substra_tools_image(factory, cfg, client, default_dataset, worker):
@@ -34,6 +35,7 @@ def test_base_substra_tools_image(factory, cfg, client, default_dataset, worker)
     # `raises = True`, will fail if task not successful
     client.wait_task(traintask.key, raise_on_failure=True)
 
+
 @pytest.mark.remote_only
 def test_function_build_when_submitted(factory, cfg, client, worker):
     substra_tools_image = get_substra_tool_image_name(cfg)
@@ -47,11 +49,12 @@ def test_function_build_when_submitted(factory, cfg, client, worker):
 
     assert function["status"] == "FUNCTION_STATUS_BUILDING"
 
+
 @pytest.mark.remote_only
 def test_function_build_order(factory, cfg, client, worker):
     substra_tools_image = get_substra_tool_image_name(cfg)
     function_category = FunctionCategory.simple
-    
+
     dockerfile_1 = get_dockerfile(substra_tools_image, function_category, extra_instructions="ENV test=7\nRUN sleep 1")
     spec_1 = factory.create_function(function_category, dockerfile=dockerfile_1)
     function_1 = client.add_function(spec_1)
