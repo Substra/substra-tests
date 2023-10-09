@@ -14,7 +14,7 @@ def test_gpu(factory, client, org_idx, default_datasets, workers):
     dockerfile = f"""
 FROM ghcr.io/substra/substra-tools:latest-{nvidia_drivers}-python3.7
 
-RUN python3 -m pip install torch==1.11.0
+RUN python3 --no-cache-dir -m pip install torch==2.0.1
 COPY function.py .
 
 ENTRYPOINT ["python3", "function.py"]

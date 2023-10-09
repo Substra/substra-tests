@@ -57,7 +57,7 @@ def function_dockerfile(cfg: PytestConfig) -> str:
     return (
         f"FROM {cfg.substra_tools.image_local}\n"
         f"COPY function.py .\n"
-        "RUN python3 -m pip install numpy==1.24.3 scikit-learn==1.3.0 torch==1.13.1\n"
+        "RUN python3 -m pip install numpy==1.24.3 scikit-learn==1.3.1 torch==2.0.1\n"
         f'ENTRYPOINT ["python3", "function.py", "--function-name", "{{method_name}}"]\n'
     )
 
