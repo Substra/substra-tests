@@ -7,8 +7,6 @@ on:
   pull_request:
     branches:
       - "main"
-  schedule:
-    - cron: "12 3 * * 2-6" # every Tuesday to Saturday at 3:12 AM
 
 jobs:
   test:
@@ -68,17 +66,4 @@ jobs:
 
       - name: Test
         run: |
-          start=`date +%s`
-          python -u ./run-local-test.py \
-            --write-summary-to-file ./.slack_message
-          end=`date +%s`
-          echo "LOCAL_TESTS_DURATION_SECONDS=$((end-start))" >> $GITHUB_ENV
-
-      - if: always() && github.event_name == 'schedule'
-        name: Send Slack report
-        run: |
-          ./send-slack-report.py '${{ secrets.SLACK_WEBHOOK }}' .slack_message \
-          --title 'SDK local tests' \
-          --status '${{ job.status }}' \
-          --link 'https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}' \
-          --duration-seconds "${LOCAL_TESTS_DURATION_SECONDS}"
+          make test-local
