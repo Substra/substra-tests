@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Nightly is now done on `owkin/substra-ci` repository ([#304](https://github.com/Substra/substra-tests/pull/304))
+
 ## [0.47.0] - 2023-10-18
 
 ### Added
