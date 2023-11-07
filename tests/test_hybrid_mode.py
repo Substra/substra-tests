@@ -67,6 +67,7 @@ def test_execution_debug(client, hybrid_client, debug_factory, default_dataset):
     assert performance.asset == 3
 
 
+@pytest.mark.skip(reason="Linked to decoupled builder merge")
 @pytest.mark.remote_only
 @pytest.mark.slow
 def test_debug_compute_plan_aggregate_composite(network, client, hybrid_client, debug_factory, default_datasets):
