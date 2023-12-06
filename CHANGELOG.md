@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Nightly is now done on `owkin/substra-ci` repository ([#304](https://github.com/Substra/substra-tests/pull/304))
+- Parallelism in SDK tests in deactivated until we fix the parallel compute plans issues ([#306](https://github.com/Substra/substra-tests/pull/306))
+- A bunch of SDK tests are skipped due to regressions following the decoupled builder merge ([#306](https://github.com/Substra/substra-tests/pull/306))
 
 ## [0.47.0] - 2023-10-18
 
