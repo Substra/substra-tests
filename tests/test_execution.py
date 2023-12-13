@@ -386,7 +386,7 @@ def test_composite_traintask_execution_failure(factory, client, default_dataset,
         raise NotImplementedError(f"Backend mode '{client.backend_mode}' is not supported.")
 
 
-@pytest.mark.skip(reason="Linked to decoupled builder merge")
+# @pytest.mark.skip(reason="Linked to decoupled builder merge")
 @pytest.mark.slow
 def test_aggregatetask_execution_failure(factory, client, default_dataset, worker):
     """Invalid function script is causing traintask failure."""
@@ -435,7 +435,7 @@ def test_aggregatetask_execution_failure(factory, client, default_dataset, worke
         raise NotImplementedError(f"Backend mode '{client.backend_mode}' is not supported.")
 
 
-@pytest.mark.skip(reason="Linked to decoupled builder merge")
+# @pytest.mark.skip(reason="Linked to decoupled builder merge")
 @pytest.mark.slow
 def test_composite_traintasks_execution(factory, client, default_dataset, default_metric, worker):
     """Execution of composite traintasks."""
@@ -500,7 +500,7 @@ def test_composite_traintasks_execution(factory, client, default_dataset, defaul
     assert set([composite_traintask_1.key, composite_traintask_2.key]).issubset(composite_traintask_keys)
 
 
-@pytest.mark.skip(reason="Linked to decoupled builder merge")
+# @pytest.mark.skip(reason="Linked to decoupled builder merge")
 @pytest.mark.slow
 def test_aggregatetask(factory, client, default_metric, default_dataset, worker):
     """Execution of aggregatetask aggregating traintasks. (traintasks -> aggregatetask)"""
