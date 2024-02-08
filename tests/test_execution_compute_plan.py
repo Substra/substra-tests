@@ -444,7 +444,6 @@ def test_compute_plan_single_client_failure(factory, client, default_dataset, de
 
 
 # FIXME: test_compute_plan_aggregate_composite_traintasks is too complex, consider refactoring
-@pytest.mark.skip(reason="Linked to decoupled builder merge")
 @pytest.mark.slow  # noqa: C901
 def test_compute_plan_aggregate_composite_traintasks(  # noqa: C901
     factory,
