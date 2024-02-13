@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Parallelism in SDK tests in deactivated until we fix the parallel compute plans issues ([#306](https://github.com/Substra/substra-tests/pull/306))
 - A bunch of SDK tests are skipped due to regressions following the decoupled builder merge ([#306](https://github.com/Substra/substra-tests/pull/306))
 - BREAKING: replace `todo_count` and `waiting_count` by the new counts following the new statuses in the backend ([#319](https://github.com/Substra/substra-tests/pull/319))
+- Reactivated tests and parallelism in SDK tests ([#315](https://github.com/Substra/substra-tests/pull/315), [#317](https://github.com/Substra/substra-tests/pull/317))
 
 ### Added
 

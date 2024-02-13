@@ -44,10 +44,8 @@ def test_function_build_when_submitted(factory, cfg, client, worker):
     spec = factory.create_function(function_category, dockerfile=dockerfile)
     function = client.add_function(spec)
 
-    # Cannot use `get_function` as status is not yet exposed through substra SDK
     function = client._backend._client.get("function", function.key)
-
-    assert function["status"] == "FUNCTION_STATUS_BUILDING"
+    assert function["status"] == "FUNCTION_STATUS_READY"
 
 
 @pytest.mark.remote_only

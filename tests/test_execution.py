@@ -527,7 +527,6 @@ def test_composite_traintasks_execution(factory, client, default_dataset, defaul
     assert set([composite_traintask_1.key, composite_traintask_2.key]).issubset(composite_traintask_keys)
 
 
-@pytest.mark.skip(reason="Linked to decoupled builder merge")
 @pytest.mark.slow
 def test_aggregatetask(factory, client, default_metric, default_dataset, worker):
     """Execution of aggregatetask aggregating traintasks. (traintasks -> aggregatetask)"""
