@@ -88,7 +88,16 @@ def test_compute_plan_simple(
     assert cp.tag == "foo"
     assert cp.metadata == {"foo": "bar"}
     assert cp.task_count == cp.done_count == 5
-    assert cp.todo_count == cp.waiting_count == cp.doing_count == cp.canceled_count == cp.failed_count == 0
+    assert (
+        cp.waiting_parent_tasks_count
+        == cp.waiting_executor_slot_count
+        == cp.waiting_builder_slot_count
+        == cp.building_count
+        == cp.doing_count
+        == cp.canceled_count
+        == cp.failed_count
+        == 0
+    )
     assert cp.end_date is not None
     assert cp.duration is not None
 
