@@ -203,7 +203,6 @@ def test_tasks_execution_on_different_organizations(
     assert performance.asset == pytest.approx(2)
 
 
-@pytest.mark.skip(reason="Linked to decoupled builder merge; Build failure propagation to be fixed")
 @pytest.mark.slow
 @pytest.mark.subprocess_skip
 def test_function_build_failure(factory, network, default_dataset_1, worker):
@@ -219,6 +218,38 @@ def test_function_build_failure(factory, network, default_dataset_1, worker):
     spec = factory.create_traintask(function=function, inputs=default_dataset_1.train_data_inputs, worker=worker)
 
     if network.clients[0].backend_mode != substra.BackendType.REMOTE:
+        with pytest.raises(substra.sdk.backends.local.compute.spawner.base.BuildError):
+            network.clients[0].add_task(spec)
+    else:
+        traintask = network.clients[0].add_task(spec)
+        traintask = network.clients[0].wait_task(traintask.key, raise_on_failure=False)
+
+        assert traintask.status == Status.failed
+        assert traintask.error_type == substra.sdk.models.TaskErrorType.build
+        with pytest.raises(TaskAssetNotFoundError):
+            network.clients[0].get_task_output_asset(traintask.key, OutputIdentifiers.shared)
+
+        for client in (network.clients[0], network.clients[1]):
+            logs = client.download_logs(traintask.key)
+            assert "invalid_command: not found" in logs
+            assert client.get_logs(traintask.key) == logs
+
+
+@pytest.mark.slow
+@pytest.mark.subprocess_skip
+def test_function_build_failure_different_backend(factory, network, default_dataset_1, worker):
+    """Invalid Dockerfile is causing compute task failure - function is built on a different backend."""
+
+    dockerfile = factory.default_function_dockerfile(
+        method_name=sbt.factory.DEFAULT_FUNCTION_NAME[FunctionCategory.simple]
+    )
+    dockerfile += "\nRUN invalid_command"
+    spec = factory.create_function(category=FunctionCategory.simple, dockerfile=dockerfile)
+    function = network.clients[1].add_function(spec)
+
+    spec = factory.create_traintask(function=function, inputs=default_dataset_1.train_data_inputs, worker=worker)
+
+    if network.clients[1].backend_mode != substra.BackendType.REMOTE:
         with pytest.raises(substra.sdk.backends.local.compute.spawner.base.BuildError):
             network.clients[0].add_task(spec)
     else:
