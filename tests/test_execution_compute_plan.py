@@ -106,7 +106,7 @@ def test_compute_plan_simple(
 
     # check all tasks are done and check they have been executed on the expected organization
     for t in tasks:
-        assert t.status == models.Status.done
+        assert t.status == models.ComputeTaskStatus.done
         assert t.start_date is not None
         assert t.end_date is not None
 
@@ -253,7 +253,7 @@ def test_compute_plan_single_client_success(factory, client, default_dataset, de
         + client.list_compute_plan_tasks(cp.key)
         + client.list_compute_plan_tasks(cp.key)
     ):
-        assert t.status == models.Status.done
+        assert t.status == models.ComputeTaskStatus.done
 
 
 @pytest.mark.slow
@@ -351,7 +351,7 @@ def test_compute_plan_update(factory, client, default_dataset, default_metric, w
     tasks = client.list_compute_plan_tasks(cp.key)
     assert len(tasks) == 9
     for t in tasks:
-        assert t.status == models.Status.done
+        assert t.status == models.ComputeTaskStatus.done
 
     # Check tasks metadata
     traintask = client.get_task(traintask_spec_2.task_id)
@@ -589,7 +589,7 @@ def test_compute_plan_aggregate_composite_traintasks(  # noqa: C901
             )
 
     for t in tasks:
-        assert t.status == models.Status.done, t
+        assert t.status == models.ComputeTaskStatus.done, t
 
     # Check that permissions were correctly set
     for task_id in [ct.task_id for ct in composite_traintask_specs]:
@@ -669,7 +669,7 @@ def test_execution_compute_plan_canceled(factory, client, default_dataset, cfg, 
 
     # check that the status of the done task as not been updated
     first_traintask = [t for t in client.list_compute_plan_tasks(cp.key) if t.rank == 0][0]
-    assert first_traintask.status == models.Status.done
+    assert first_traintask.status == models.ComputeTaskStatus.done
 
 
 @pytest.mark.slow
@@ -690,7 +690,7 @@ def test_compute_plan_no_batching(factory, client, default_dataset, worker):
 
     traintasks = client.list_compute_plan_tasks(cp.key)
     assert len(traintasks) == 1
-    assert all([task_.status == models.Status.done for task_ in traintasks])
+    assert all([task_.status == models.ComputeTaskStatus.done for task_ in traintasks])
 
     # Update the compute plan
     cp_spec = factory.add_compute_plan_tasks(cp)
@@ -707,7 +707,7 @@ def test_compute_plan_no_batching(factory, client, default_dataset, worker):
 
     traintasks = client.list_compute_plan_tasks(cp.key)
     assert len(traintasks) == 2
-    assert all([task_.status == models.Status.done for task_ in traintasks])
+    assert all([task_.status == models.ComputeTaskStatus.done for task_ in traintasks])
 
 
 @pytest.mark.slow
