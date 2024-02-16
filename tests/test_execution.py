@@ -1,8 +1,8 @@
 import pytest
 import substra
 from substra.sdk.exceptions import TaskAssetNotFoundError
+from substra.sdk.models import ComputeTaskStatus
 from substra.sdk.models import InputRef
-from substra.sdk.models import Status
 from substra.sdk.schemas import AssetKind
 from substra.sdk.schemas import ComputeTaskOutputSpec
 from substra.sdk.schemas import FunctionOutputSpec
@@ -148,7 +148,6 @@ def test_tasks_execution_on_different_organizations(
     default_metric_1,
     default_dataset_1,
     default_dataset_2,
-    channel,
     workers,
 ):
     """Execution of a traintask on organization 1 and the following testtask on organization 2."""
@@ -159,8 +158,8 @@ def test_tasks_execution_on_different_organizations(
     predict_function_spec = factory.create_function(FunctionCategory.predict)
     predict_function_2 = client_2.add_function(predict_function_spec)
 
-    channel.wait_for_asset_synchronized(function_2)
-    channel.wait_for_asset_synchronized(predict_function_2)
+    client_2.wait_function(function_2.key)
+    client_2.wait_function(predict_function_2.key)
 
     # add traintask on organization 2; should execute on organization 2 (dataset located on organization 2)
     spec = factory.create_traintask(
@@ -224,7 +223,7 @@ def test_function_build_failure(factory, network, default_dataset_1, worker):
         traintask = network.clients[0].add_task(spec)
         traintask = network.clients[0].wait_task(traintask.key, raise_on_failure=False)
 
-        assert traintask.status == Status.failed
+        assert traintask.status == ComputeTaskStatus.failed
         assert traintask.error_type == substra.sdk.models.TaskErrorType.build
         with pytest.raises(TaskAssetNotFoundError):
             network.clients[0].get_task_output_asset(traintask.key, OutputIdentifiers.shared)
@@ -256,7 +255,7 @@ def test_function_build_failure_different_backend(factory, network, default_data
         traintask = network.clients[0].add_task(spec)
         traintask = network.clients[0].wait_task(traintask.key, raise_on_failure=False)
 
-        assert traintask.status == Status.failed
+        assert traintask.status == ComputeTaskStatus.failed
         assert traintask.error_type == substra.sdk.models.TaskErrorType.build
         with pytest.raises(TaskAssetNotFoundError):
             network.clients[0].get_task_output_asset(traintask.key, OutputIdentifiers.shared)
@@ -283,7 +282,7 @@ def test_task_execution_failure(factory, network, default_dataset_1, worker):
         traintask = network.clients[0].add_task(spec)
         traintask = network.clients[0].wait_task(traintask.key, raise_on_failure=False)
 
-        assert traintask.status == Status.failed
+        assert traintask.status == ComputeTaskStatus.failed
         assert traintask.error_type == substra.sdk.models.TaskErrorType.execution
         with pytest.raises(TaskAssetNotFoundError):
             network.clients[0].get_task_output_asset(traintask.key, OutputIdentifiers.shared)
@@ -398,7 +397,7 @@ def test_composite_traintask_execution_failure(factory, client, default_dataset,
         composite_traintask = client.add_task(spec)
         composite_traintask = client.wait_task(composite_traintask.key, raise_on_failure=False)
 
-        assert composite_traintask.status == Status.failed
+        assert composite_traintask.status == ComputeTaskStatus.failed
         assert composite_traintask.error_type == substra.sdk.models.TaskErrorType.execution
         with pytest.raises(TaskAssetNotFoundError):
             client.get_task_output_asset(composite_traintask.key, OutputIdentifiers.local)
@@ -446,10 +445,10 @@ def test_aggregatetask_execution_failure(factory, client, default_dataset, worke
 
         for composite_traintask_key in composite_traintask_keys:
             composite_traintask = client.get_task(composite_traintask_key)
-            assert composite_traintask.status == Status.done
+            assert composite_traintask.status == ComputeTaskStatus.done
             assert composite_traintask.error_type is None
 
-        assert aggregatetask.status == Status.failed
+        assert aggregatetask.status == ComputeTaskStatus.failed
         assert aggregatetask.error_type == substra.sdk.models.TaskErrorType.execution
         with pytest.raises(TaskAssetNotFoundError):
             client.get_task_output_asset(aggregatetask.key, OutputIdentifiers.shared)
@@ -507,7 +506,7 @@ def test_composite_traintasks_execution(factory, client, default_dataset, defaul
     predicttask = client.add_task(spec)
     # `raises = True`, will fail if task not successful
     predicttask = client.wait_task(predicttask.key, raise_on_failure=True)
-    assert predicttask.status == Status.done
+    assert predicttask.status == ComputeTaskStatus.done
     assert predicttask.error_type is None
 
     spec = factory.create_testtask(
@@ -527,7 +526,6 @@ def test_composite_traintasks_execution(factory, client, default_dataset, defaul
     assert set([composite_traintask_1.key, composite_traintask_2.key]).issubset(composite_traintask_keys)
 
 
-@pytest.mark.skip(reason="Linked to decoupled builder merge")
 @pytest.mark.slow
 def test_aggregatetask(factory, client, default_metric, default_dataset, worker):
     """Execution of aggregatetask aggregating traintasks. (traintasks -> aggregatetask)"""
@@ -679,7 +677,7 @@ def test_aggregatetask_traintask(factory, client, default_dataset, worker):
     # `raises = True`, will fail if task not successful
     traintask_2 = client.wait_task(traintask_2.key, raise_on_failure=True)
 
-    assert traintask_2.status == Status.done
+    assert traintask_2.status == ComputeTaskStatus.done
     assert traintask_2.error_type is None
 
 
@@ -880,7 +878,7 @@ def test_aggregate_composite_traintasks(factory, network, clients, default_datas
         spec = factory.create_traintask(function=function, inputs=dataset.train_data_inputs, worker=workers[0])
         traintask = client.add_task(spec)
         traintask = client.wait_task(traintask.key)
-        assert traintask.status == Status.failed
+        assert traintask.status == ComputeTaskStatus.failed
         assert traintask.error_type == substra.sdk.models.TaskErrorType.execution
 
 

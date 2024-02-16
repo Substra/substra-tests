@@ -38,7 +38,7 @@ def test_execution_debug(client, hybrid_client, debug_factory, default_dataset):
         worker=hybrid_client.organization_info().organization_id,
     )
     traintask = hybrid_client.add_task(spec)
-    assert traintask.status == models.Status.done
+    assert traintask.status == models.ComputeTaskStatus.done
 
     # Raises an exception if the output asset have not been created
     hybrid_client.get_task_output_asset(traintask.key, OutputIdentifiers.shared)
@@ -52,7 +52,7 @@ def test_execution_debug(client, hybrid_client, debug_factory, default_dataset):
         worker=hybrid_client.organization_info().organization_id,
     )
     predicttask = hybrid_client.add_task(spec)
-    assert predicttask.status == models.Status.done
+    assert predicttask.status == models.ComputeTaskStatus.done
 
     spec = debug_factory.create_testtask(
         function=metric,
@@ -62,7 +62,7 @@ def test_execution_debug(client, hybrid_client, debug_factory, default_dataset):
         worker=hybrid_client.organization_info().organization_id,
     )
     testtask = hybrid_client.add_task(spec)
-    assert testtask.status == models.Status.done
+    assert testtask.status == models.ComputeTaskStatus.done
     performance = hybrid_client.get_task_output_asset(testtask.key, OutputIdentifiers.performance)
     assert performance.asset == 3
 
@@ -150,7 +150,7 @@ def test_debug_compute_plan_aggregate_composite(network, client, hybrid_client, 
 
     tasks = traintasks + composite_traintasks + aggregatetasks + predicttasks + testtasks
     for t in tasks:
-        assert t.status == models.Status.done
+        assert t.status == models.ComputeTaskStatus.done
 
 
 @pytest.mark.remote_only

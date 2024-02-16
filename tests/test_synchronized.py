@@ -17,6 +17,7 @@ def test_synchronized_function(clients, factory, channel, current_client):
 
     spec = factory.create_function(FunctionCategory.simple)
     function = current_client.add_function(spec)
+    function = current_client.wait_function(function.key, raise_on_failure=True)
     channel.wait_for_asset_synchronized(function)
 
 
@@ -27,6 +28,7 @@ def test_synchronized_metric(clients, factory, channel, current_client):
 
     spec = factory.create_function(category=FunctionCategory.metric)
     metric = current_client.add_function(spec)
+    metric = current_client.wait_function(metric.key, raise_on_failure=True)
     channel.wait_for_asset_synchronized(metric)
 
 

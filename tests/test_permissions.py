@@ -168,7 +168,7 @@ def test_permissions(permissions_1, permissions_2, expected_permissions, factory
         outputs=FLTaskOutputGenerator.traintask(authorized_ids=expected_permissions.authorized_ids),
         worker=workers[0],
     )
-    channel.wait_for_asset_synchronized(function_2)
+
     traintask = client_1.add_task(spec)
     client_1.wait_task(traintask.key, raise_on_failure=True)
 
@@ -206,7 +206,7 @@ def test_permissions_denied_process(factory, client_1, client_2, channel, worker
         category=FunctionCategory.simple, permissions=Permissions(public=False, authorized_ids=[])
     )
     function_2 = client_2.add_function(spec)
-    channel.wait_for_asset_synchronized(function_2)
+    client_2.wait_function(function_2.key)
 
     # traintasks
 
@@ -254,7 +254,7 @@ def test_permissions_model_process(
         # function
         spec = factory.create_function(category=FunctionCategory.simple, permissions=permissions)
         function = client.add_function(spec)
-        channel.wait_for_asset_synchronized(function)
+        client.wait_function(function.key)
         functions.append(function)
 
     dataset_1, dataset_2 = datasets
@@ -327,8 +327,7 @@ def test_merge_permissions_denied_process(factory, clients, channel, workers):
 
         data_sample_key_1 = client_1.add_data_sample(spec)
         spec = factory.create_function(category=FunctionCategory.metric, permissions=permissions_1)
-        metric_1 = client_1.add_function(spec)
-        channel.wait_for_asset_synchronized(metric_1)  # used by client_3
+        client_1.add_function(spec)
 
         # add function on organization 2
         spec = factory.create_function(category=FunctionCategory.simple, permissions=permissions_2)
@@ -384,7 +383,6 @@ def test_permissions_denied_head_model_process(factory, client_1, client_2, chan
     # create function
     spec = factory.create_function(category=FunctionCategory.composite)
     composite_function = client_1.add_function(spec)
-    channel.wait_for_asset_synchronized(composite_function)  # used by client_2
 
     # create composite task
     spec = factory.create_composite_traintask(
