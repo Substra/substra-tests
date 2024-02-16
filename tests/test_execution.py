@@ -148,7 +148,6 @@ def test_tasks_execution_on_different_organizations(
     default_metric_1,
     default_dataset_1,
     default_dataset_2,
-    channel,
     workers,
 ):
     """Execution of a traintask on organization 1 and the following testtask on organization 2."""
@@ -159,8 +158,8 @@ def test_tasks_execution_on_different_organizations(
     predict_function_spec = factory.create_function(FunctionCategory.predict)
     predict_function_2 = client_2.add_function(predict_function_spec)
 
-    channel.wait_for_asset_synchronized(function_2)
-    channel.wait_for_asset_synchronized(predict_function_2)
+    client_2.wait_function(function_2.key)
+    client_2.wait_function(predict_function_2.key)
 
     # add traintask on organization 2; should execute on organization 2 (dataset located on organization 2)
     spec = factory.create_traintask(
@@ -256,7 +255,7 @@ def test_function_build_failure_different_backend(factory, network, default_data
         traintask = network.clients[0].add_task(spec)
         traintask = network.clients[0].wait_task(traintask.key, raise_on_failure=False)
 
-        assert traintask.status == Status.failed
+        assert traintask.status == ComputeTaskStatus.failed
         assert traintask.error_type == substra.sdk.models.TaskErrorType.build
         with pytest.raises(TaskAssetNotFoundError):
             network.clients[0].get_task_output_asset(traintask.key, OutputIdentifiers.shared)

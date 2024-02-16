@@ -21,7 +21,6 @@ def test_compute_plan_simple(
     default_dataset_1,
     default_dataset_2,
     default_metrics,
-    channel,
     workers,
 ):
     """Execution of a compute plan containing multiple traintasks:
@@ -40,7 +39,7 @@ def test_compute_plan_simple(
     predict_function_spec = factory.create_function(FunctionCategory.predict)
     predict_function_2 = client_2.add_function(predict_function_spec)
 
-    channel.wait_for_asset_synchronized(simple_function_2)
+    client_2.wait_function(simple_function_2.key)
 
     # create compute plan
     cp_spec = factory.create_compute_plan(

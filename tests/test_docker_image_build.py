@@ -40,12 +40,12 @@ def test_base_substra_tools_image(factory, cfg, client, default_dataset, worker)
 def test_function_build_when_submitted(factory, cfg, client, worker):
     substra_tools_image = cfg.substra_tools.image_local
     function_category = FunctionCategory.simple
-    dockerfile = get_dockerfile(substra_tools_image, function_category, extra_instructions="ENV test=0\nsleep 1")
+    dockerfile = get_dockerfile(substra_tools_image, function_category, extra_instructions="ENV test=0\nRUN sleep 1")
     spec = factory.create_function(function_category, dockerfile=dockerfile)
     function = client.add_function(spec)
 
-    function = client._backend._client.get("function", function.key)
-    assert function["status"] == "FUNCTION_STATUS_READY"
+    function = client.wait_function(function.key, raise_on_failure=True)
+    assert function.status == "FUNCTION_STATUS_READY"
 
 
 @pytest.mark.remote_only
