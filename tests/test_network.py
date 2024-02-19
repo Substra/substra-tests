@@ -4,6 +4,7 @@ import uuid
 
 import pytest
 import substra
+from substra.sdk import models
 
 import substratest as sbt
 from substratest.factory import FunctionCategory
@@ -287,6 +288,10 @@ def test_update_name_unauthorized(asset_name, asset_params, clients, factory, ch
     # here instead of None for wait_for_asset_synchronized to pass on compute plan.
     if asset_name == "compute_plan":
         asset.duration = 0
+    # Function status will be updated during the asset lifecycle. We override with the final value
+    # that will be reached at the end of function status
+    elif asset_name == "function":
+        asset.status = models.FunctionStatus.ready
     channel.wait_for_asset_synchronized(asset)
 
     # update asset from different user
