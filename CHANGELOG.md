@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - A bunch of SDK tests are skipped due to regressions following the decoupled builder merge ([#306](https://github.com/Substra/substra-tests/pull/306))
 - BREAKING: replace `todo_count` and `waiting_count` by the new counts following the new statuses in the backend ([#319](https://github.com/Substra/substra-tests/pull/319))
 - Reactivated tests and parallelism in SDK tests ([#315](https://github.com/Substra/substra-tests/pull/315), [#317](https://github.com/Substra/substra-tests/pull/317))
+- `wait_for_asset_synchronized` is now ignoring the `status` field, that can change over time ([#322](https://github.com/Substra/substra-tests/pull/322))
 
 ### Added
 

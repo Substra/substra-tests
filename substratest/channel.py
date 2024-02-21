@@ -14,6 +14,8 @@ _OVERRIDDEN_FIELDS = (
     "host",
     # creator is known only by the owning organization
     "creator",
+    # status is changing over time
+    "status",
 )
 
 
