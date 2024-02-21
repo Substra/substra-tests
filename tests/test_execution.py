@@ -236,7 +236,7 @@ def test_function_build_failure(factory, network, default_dataset_1, worker):
 
 @pytest.mark.slow
 @pytest.mark.subprocess_skip
-def test_function_build_failure_different_backend(factory, network, default_dataset_1, worker):
+def test_function_build_failure_different_backend(factory, network, default_dataset_1, worker, channel):
     """Invalid Dockerfile is causing compute task failure - function is built on a different backend."""
 
     dockerfile = factory.default_function_dockerfile(
@@ -245,6 +245,7 @@ def test_function_build_failure_different_backend(factory, network, default_data
     dockerfile += "\nRUN invalid_command"
     spec = factory.create_function(category=FunctionCategory.simple, dockerfile=dockerfile)
     function = network.clients[1].add_function(spec)
+    channel.wait_for_asset_synchronized(function)
 
     spec = factory.create_traintask(function=function, inputs=default_dataset_1.train_data_inputs, worker=worker)
 
