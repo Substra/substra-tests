@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Compute task status `DOING` is renamed `EXECUTING` ([#371](https://github.com/Substra/substra-tests/pull/371))
+
 ## [0.48.0] - 2024-02-26
 
 ### Changed
