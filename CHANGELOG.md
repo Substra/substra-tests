@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.48.0] - 2024-02-26
+
 ### Changed
 
 - Nightly is now done on `owkin/substra-ci` repository ([#304](https://github.com/Substra/substra-tests/pull/304))
@@ -19,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Test case for function build on another backend than the task owner ([#318](https://github.com/Substra/substra-tests/pull/318))
+
 ## [0.47.0] - 2023-10-18
 
 ### Added
