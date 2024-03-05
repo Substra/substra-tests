@@ -92,7 +92,7 @@ def test_compute_plan_simple(
         == cp.waiting_executor_slot_count
         == cp.waiting_builder_slot_count
         == cp.building_count
-        == cp.doing_count
+        == cp.executing_count
         == cp.canceled_count
         == cp.failed_count
         == 0
