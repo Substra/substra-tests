@@ -2,7 +2,7 @@
 # they have been separated from the tests main requirements to keep the main tests
 # dependencies as light as possible.
 h5py==3.10.0
-numpy==1.24.3
+numpy==1.26.3
 pandas==1.5.3
 scikit-learn==1.3.2
 torch==2.2.1+cpu
