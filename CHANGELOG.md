@@ -5,11 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+<!-- towncrier release notes start -->
+
+## [0.49.0] - 2024-03-07
 
 ### Changed
 
 - Compute task status `DOING` is renamed `EXECUTING` ([#371](https://github.com/Substra/substra-tests/pull/371))
+- Drop Python 3.8 support
 
 ## [0.48.0] - 2024-02-26
 
