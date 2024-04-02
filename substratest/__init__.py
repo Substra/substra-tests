@@ -1,4 +1,5 @@
 """Substra tester package."""
+
 from . import assets
 from . import factory
 from . import utils
