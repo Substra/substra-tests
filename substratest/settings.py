@@ -1,4 +1,5 @@
 """Global settings for all tests environment."""
+
 import os
 import sys
 from typing import List

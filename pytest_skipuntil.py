@@ -1,4 +1,5 @@
 """custom plugin to fail skipped tests after a given date"""
+
 from datetime import date
 
 import pytest
