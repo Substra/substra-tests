@@ -784,4 +784,4 @@ def test_compute_task_profile(factory, client, default_dataset, worker):
     client.wait_compute_plan(cp_added.key)
 
     traintask_1_profile = client.get_compute_task_profiling(traintask_spec_1.task_id)
-    assert len(traintask_1_profile["execution_rundown"]) == 4
+    assert len(traintask_1_profile["execution_rundown"]) == 3
