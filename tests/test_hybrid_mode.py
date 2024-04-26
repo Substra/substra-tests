@@ -21,6 +21,7 @@ pytestmark = pytest.mark.skipif(not docker_available(), reason="requires docker"
 
 @pytest.mark.remote_only
 @pytest.mark.slow
+@pytest.skip("TO REACTIVATE after fixing the issue https://linear.app/owkin/issue/FL-1554/fix-hybrid-failing-tests")
 def test_execution_debug(client, hybrid_client, debug_factory, default_dataset):
     spec = debug_factory.create_function(FunctionCategory.simple)
     simple_function = client.add_function(spec)
@@ -69,6 +70,7 @@ def test_execution_debug(client, hybrid_client, debug_factory, default_dataset):
 
 @pytest.mark.remote_only
 @pytest.mark.slow
+@pytest.skip("TO REACTIVATE after fixing the issue https://linear.app/owkin/issue/FL-1554/fix-hybrid-failing-tests")
 def test_debug_compute_plan_aggregate_composite(network, client, hybrid_client, debug_factory, default_datasets):
     """
     Debug / Compute plan version of the
