@@ -13,8 +13,8 @@ RUN apt update && apt install --yes docker-ce-cli
 
 COPY substra ./substra
 RUN pip install ./substra
-COPY substratools ./substratools
-RUN pip install ./substratools
+COPY substra-tools ./substra-tools
+RUN pip install ./substra-tools
 
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
