@@ -372,7 +372,7 @@ def hybrid_client(cfg, client):
     # token, otherwise when one connects the other
     # is disconnected.
     return sbt.Client(
-        backend_type=substra.BackendType.LOCAL_DOCKER,
+        backend_type=substra.BackendType.LOCAL_SUBPROCESS,
         organization_id=organization.msp_id,
         address=organization.address,
         user=organization.user,
