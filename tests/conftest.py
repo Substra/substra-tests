@@ -26,7 +26,7 @@ def pytest_report_header(config):
     ]
     for n in pytest_settings.organizations:
         messages.append(f"  - organization: name={n.name} msp_id={n.msp_id} address={n.address}")
-    messages.append(f"substra tools images: {pytest_settings.substra_tools}")
+    messages.append(f"substra tools images: {pytest_settings.base_docker_image}")
     return messages
 
 
