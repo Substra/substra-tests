@@ -1041,7 +1041,7 @@ def test_write_to_home_directory(factory, client, default_dataset, worker):
     assert traintask.error_type is None
 
 
-@pytest.mark.subprocess_skip
+@pytest.mark.remote_only
 def test_function_build_failure_error_orchestrator_task_creation(factory, client, network, default_dataset_1, worker):
     """Check if transient outputs are correctly deleted when a build failure is propagated to a task created after the
     failure."""
@@ -1069,7 +1069,7 @@ def test_function_build_failure_error_orchestrator_task_creation(factory, client
         worker=worker,
     )
     # Needed otherwise cleaning of transient output oin final task are not cleaned
-    network.clients[0].add_task(task_2)
+    network.clients[1].add_task(task_2)
 
     try:
         # Calling this endpoint will do a synchronous call to the orchestrator
@@ -1081,7 +1081,7 @@ def test_function_build_failure_error_orchestrator_task_creation(factory, client
         )
 
 
-@pytest.mark.subprocess_skip
+@pytest.mark.remote_only
 def test_function_build_failure_error_orchestrator_task_update(factory, client, network, default_dataset_1, worker):
     """Check if transient outputs are correctly deleted when a build failure is propagated to a task created before the
     failure."""
@@ -1108,7 +1108,7 @@ def test_function_build_failure_error_orchestrator_task_update(factory, client, 
         inputs=default_dataset_1.train_data_inputs + FLTaskInputGenerator.trains_to_train([task_1.key]),
         worker=worker,
     )
-    network.clients[0].add_task(task_2)
+    network.clients[1].add_task(task_2)
 
     try:
         # Calling this endpoint will do a synchronous call to the orchestrator
