@@ -2,6 +2,7 @@ import os
 
 import pytest
 import substra
+from substra.sdk.exceptions import InternalServerError
 from substra.sdk.exceptions import TaskAssetNotFoundError
 from substra.sdk.models import ComputeTaskStatus
 from substra.sdk.models import InputRef
@@ -1038,3 +1039,82 @@ def test_write_to_home_directory(factory, client, default_dataset, worker):
     traintask = client.wait_task(traintask.key, raise_on_failure=True)
 
     assert traintask.error_type is None
+
+
+@pytest.mark.subprocess_skip
+def test_function_build_failure_error_orchestrator_task_creation(factory, client, network, default_dataset_1, worker):
+    """Check if transient outputs are correctly deleted when a build failure is propagated to a task created after the
+    failure."""
+
+    dockerfile = factory.default_function_dockerfile(
+        method_name=sbt.factory.DEFAULT_FUNCTION_NAME[FunctionCategory.simple]
+    )
+    dockerfile += "\nRUN invalid_command"
+    spec = factory.create_function(category=FunctionCategory.simple, dockerfile=dockerfile)
+    function_1 = network.clients[0].add_function(spec)
+
+    network.clients[0].wait_function(function_1.key, raise_on_failure=False)
+
+    task_1 = factory.create_traintask(
+        function=function_1,
+        inputs=default_dataset_1.train_data_inputs,
+        outputs=FLTaskOutputGenerator.traintask(transient=True),
+        worker=worker,
+    )
+    network.clients[0].add_task(task_1)
+
+    task_2 = factory.create_traintask(
+        function=function_1,
+        inputs=default_dataset_1.train_data_inputs + FLTaskInputGenerator.trains_to_train([task_1.key]),
+        worker=worker,
+    )
+    # Needed otherwise cleaning of transient output oin final task are not cleaned
+    network.clients[0].add_task(task_2)
+
+    try:
+        # Calling this endpoint will do a synchronous call to the orchestrator
+        network.clients[0].organization_info()
+    except InternalServerError:
+        pytest.fail(
+            "Trying to remove transient output assets of a task created in a non-succesful end status. These output "
+            "assets were not created"
+        )
+
+
+@pytest.mark.subprocess_skip
+def test_function_build_failure_error_orchestrator_task_update(factory, client, network, default_dataset_1, worker):
+    """Check if transient outputs are correctly deleted when a build failure is propagated to a task created before the
+    failure."""
+
+    dockerfile = factory.default_function_dockerfile(
+        method_name=sbt.factory.DEFAULT_FUNCTION_NAME[FunctionCategory.simple]
+    )
+    dockerfile += "\nRUN invalid_command"
+    spec = factory.create_function(category=FunctionCategory.simple, dockerfile=dockerfile)
+    function_1 = network.clients[0].add_function(spec)
+
+    task_1 = factory.create_traintask(
+        function=function_1,
+        inputs=default_dataset_1.train_data_inputs,
+        outputs=FLTaskOutputGenerator.traintask(transient=True),
+        worker=worker,
+    )
+    network.clients[0].add_task(task_1)
+    network.clients[0].wait_task(task_1.key, raise_on_failure=False)
+
+    # Needed otherwise cleaning of transient output oin final task are not cleaned
+    task_2 = factory.create_traintask(
+        function=function_1,
+        inputs=default_dataset_1.train_data_inputs + FLTaskInputGenerator.trains_to_train([task_1.key]),
+        worker=worker,
+    )
+    network.clients[0].add_task(task_2)
+
+    try:
+        # Calling this endpoint will do a synchronous call to the orchestrator
+        network.clients[0].organization_info()
+    except InternalServerError:
+        pytest.fail(
+            "Trying to remove transient output assets of a task created in a non-succesful end status. These output "
+            "assets were not created"
+        )
