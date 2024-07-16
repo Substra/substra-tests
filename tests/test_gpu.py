@@ -11,9 +11,12 @@ def test_gpu(factory, client, org_idx, default_datasets, workers):
     nvidia_drivers = "nvidiacuda11.8.0-base-ubuntu22.04"
 
     # Need the base image, the minimal image does not have pip
-    dockerfile = f"""
-FROM ghcr.io/substra/substra-tools:latest-{nvidia_drivers}-python3.7
+    dockerfile = """
+FROM python:3.11-slim
 
+RUN apt-get update -y && apt-get install -y git
+RUN python3 -m pip install -U pip
+RUN python3 -m pip install git+https://github.com/Substra/substra-tools.git@{substratools_git_ref}
 RUN python3 -m pip install --no-cache-dir torch==2.0.1
 COPY function.py .
 

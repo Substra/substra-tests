@@ -1,3 +1,4 @@
+import os
 import time
 
 import pytest
@@ -7,8 +8,13 @@ from substratest.fl_interface import FunctionCategory
 
 
 def get_dockerfile(substra_tools_image: str, function_category: FunctionCategory, extra_instructions: str = "") -> str:
+    substratools_git_ref = os.getenv("SUBSTRATOOLS_GIT_REF", "main")
     return f"""
 FROM {substra_tools_image}
+
+RUN apt-get update -y && apt-get install -y git
+RUN python3 -m pip install -U pip
+RUN python3 -m pip install git+https://github.com/Substra/substra-tools.git@{substratools_git_ref}
 
 COPY function.py .
 {extra_instructions}
@@ -18,12 +24,12 @@ ENTRYPOINT ["python3", "function.py", "--function-name", "{DEFAULT_FUNCTION_NAME
 
 @pytest.mark.subprocess_skip
 def test_base_substra_tools_image(factory, cfg, client, default_dataset, worker):
-    """Test that an function created with the base substra-tools image works"""
+    """Test that a function created with the base substra-tools image works"""
 
-    substra_tools_image = cfg.substra_tools.image_local
+    docker_image = cfg.base_docker_image
 
     function_category = FunctionCategory.simple
-    dockerfile = get_dockerfile(substra_tools_image, function_category)
+    dockerfile = get_dockerfile(docker_image, function_category)
     spec = factory.create_function(function_category, dockerfile=dockerfile)
     function = client.add_function(spec)
     spec = factory.create_traintask(
@@ -38,9 +44,9 @@ def test_base_substra_tools_image(factory, cfg, client, default_dataset, worker)
 
 @pytest.mark.remote_only
 def test_function_build_when_submitted(factory, cfg, client, worker):
-    substra_tools_image = cfg.substra_tools.image_local
+    docker_image = cfg.base_docker_image
     function_category = FunctionCategory.simple
-    dockerfile = get_dockerfile(substra_tools_image, function_category, extra_instructions="ENV test=0\nRUN sleep 1")
+    dockerfile = get_dockerfile(docker_image, function_category, extra_instructions="ENV test=0\nRUN sleep 1")
     spec = factory.create_function(function_category, dockerfile=dockerfile)
     function = client.add_function(spec)
 
@@ -50,16 +56,16 @@ def test_function_build_when_submitted(factory, cfg, client, worker):
 
 @pytest.mark.remote_only
 def test_function_build_order(factory, cfg, client, worker):
-    substra_tools_image = cfg.substra_tools.image_local
+    docker_image = cfg.base_docker_image
     function_category = FunctionCategory.simple
 
-    dockerfile_1 = get_dockerfile(substra_tools_image, function_category, extra_instructions="ENV test=7\nRUN sleep 1")
+    dockerfile_1 = get_dockerfile(docker_image, function_category, extra_instructions="ENV test=7\nRUN sleep 1")
     spec_1 = factory.create_function(function_category, dockerfile=dockerfile_1)
     function_1 = client.add_function(spec_1)
-    dockerfile_2 = get_dockerfile(substra_tools_image, function_category, extra_instructions="ENV test=8\nRUN sleep 1")
+    dockerfile_2 = get_dockerfile(docker_image, function_category, extra_instructions="ENV test=8\nRUN sleep 1")
     spec_2 = factory.create_function(function_category, dockerfile=dockerfile_2)
     function_2 = client.add_function(spec_2)
-    dockerfile_3 = get_dockerfile(substra_tools_image, function_category, extra_instructions="ENV test=9\nRUN sleep 1")
+    dockerfile_3 = get_dockerfile(docker_image, function_category, extra_instructions="ENV test=9\nRUN sleep 1")
     spec_3 = factory.create_function(function_category, dockerfile=dockerfile_3)
     function_3 = client.add_function(spec_3)
 

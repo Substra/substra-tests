@@ -523,14 +523,22 @@ class AssetsFactory:
 
     @property
     def default_tools_image(self):
-        return self._cfg.substra_tools.image_local if self._client_debug_local else self._cfg.substra_tools.image_remote
+        return self._cfg.base_docker_image
 
     # We need to adapt the image base name base on the fact that
     # we run the cp in the docker context (debug)
     # or the kaniko pod (remote) to be able to pull the image
     def default_function_dockerfile(self, method_name):
+        substratools_git_ref = os.getenv("SUBSTRATOOLS_GIT_REF", "main")
         return (
-            f"FROM {self.default_tools_image}\nCOPY function.py .\n"
+            f"FROM {self.default_tools_image}\nRUN apt update -y && apt-get install -y git\n"
+            "RUN python3 -m pip install -U pip\n"
+            f"RUN python3 -m pip install git+https://github.com/Substra/substra-tools.git@{substratools_git_ref}\n"
+            "RUN addgroup --gid 1001 sandbox\n"
+            'RUN adduser --disabled-password --gecos "" --uid 1001 --gid 1001 --home /sandbox sandbox \n'
+            "ENV PYTHONPATH /sandbox \n"
+            "WORKDIR /sandbox \n"
+            "COPY function.py . \n"
             f'ENTRYPOINT ["python3", "function.py", "--function-name", "{method_name}"]\n'
         )
 
