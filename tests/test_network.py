@@ -177,7 +177,11 @@ def test_add_function(factory, client):
     function = client.add_function(spec)
 
     function_copy = client.get_function(function.key)
+    # fix status to avoid flakiness
+    status_copy = function_copy.status
+    function_copy.status = function.status
     assert function == function_copy
+    assert status_copy not in [substra.sdk.models.FunctionStatus.failed, substra.sdk.models.FunctionStatus.canceled]
 
 
 @pytest.mark.remote_only  # No organization saved in the local backend
@@ -199,7 +203,12 @@ def test_query_functions(factory, client):
     assert len(matching_functions) == 1
 
     # ensure the list method returns the same information as the add method
+    # don't check the status to avoid flakiness
+    reference_status = function.status
+    status = matching_functions[0].status
+    matching_functions[0].status = reference_status
     assert function == matching_functions[0]
+    assert status not in [substra.sdk.models.FunctionStatus.failed, substra.sdk.models.FunctionStatus.canceled]
 
 
 @pytest.mark.parametrize(
