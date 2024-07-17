@@ -1,3 +1,4 @@
+import time
 from contextlib import nullcontext as does_not_raise
 
 import pytest
@@ -169,6 +170,7 @@ def test_permissions(permissions_1, permissions_2, expected_permissions, factory
         worker=workers[0],
     )
 
+    time.sleep(2)
     traintask = client_1.add_task(spec)
     client_1.wait_task(traintask.key, raise_on_failure=True)
 
@@ -466,6 +468,7 @@ def test_permission_to_test_on_org_without_training(
     )
     traintask_1 = client_1.add_task(spec)
 
+    time.sleep(2)
     # add testtask on org 2
     with expectation:
         spec = factory.create_predicttask(
