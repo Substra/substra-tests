@@ -1,3 +1,4 @@
+import os
 import pathlib
 import typing
 
@@ -54,8 +55,16 @@ _EXPECTED_RESULTS = {
 
 @pytest.fixture
 def function_dockerfile(cfg: PytestConfig) -> str:
+    substratools_git_ref = os.getenv("SUBSTRATOOLS_GIT_REF", "main")
     return (
         f"FROM {cfg.base_docker_image}\n"
+        "RUN apt update -y && apt-get install -y git\n"
+        "RUN python3 -m pip install -U pip\n"
+        f"RUN python3 -m pip install git+https://github.com/Substra/substra-tools.git@{substratools_git_ref}\n"
+        "RUN addgroup --gid 1001 sandbox\n"
+        'RUN adduser --disabled-password --gecos "" --uid 1001 --gid 1001 --home /sandbox sandbox \n'
+        "ENV PYTHONPATH /sandbox \n"
+        "WORKDIR /sandbox \n"
         f"COPY function.py .\n"
         "RUN python3 -m pip install --no-cache-dir --extra-index-url https://download.pytorch.org/whl/cpu \
             numpy==1.24.3 scikit-learn==1.3.1 torch==2.0.1\n"
