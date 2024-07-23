@@ -37,7 +37,7 @@ def pytest_make_parametrize_id(
         argname (str): automatic parameter name.
 
     Returns:
-        str: new parameter id.
+        typing.Optional[str]: new parameter id.
     """
     if is_lazy_fixture(val):
         return typing.cast(LazyFixture, val).name
@@ -62,7 +62,7 @@ def pytest_fixture_setup(
         request (pytest.FixtureRequest): fixture request object.
 
     Returns:
-        object | None: fixture value or None otherwise.
+        typing.Optional[object]: fixture value or None otherwise.
     """
     if hasattr(request, "param") and request.param:
         request.param = _resolve_lazy_fixture(request.param, request)
@@ -79,7 +79,7 @@ def _resolve_lazy_fixture(__val: object, request: pytest.FixtureRequest) -> obje
     Returns:
         object: resolved fixture value.
     """
-    if isinstance(__val, list | tuple):
+    if isinstance(__val, (list, tuple)):
         return tuple(_resolve_lazy_fixture(v, request) for v in __val)
     if isinstance(__val, typing.Mapping):
         return {k: _resolve_lazy_fixture(v, request) for k, v in __val.items()}
