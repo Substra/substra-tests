@@ -29,7 +29,7 @@ def pytest_make_parametrize_id(
     """Inject lazy fixture parametrized id.
 
     Reference:
-    - https://bit.ly/48Off6r
+    - https://docs.pytest.org/en/latest/reference/reference.html#pytest.hookspec.pytest_make_parametrize_id
 
     Args:
         config (pytest.Config): pytest configuration.
@@ -55,7 +55,7 @@ def pytest_fixture_setup(
     try to resolve recursively any lazy fixture found in request.param.
 
     Reference:
-    - https://bit.ly/3SyvsXJ
+    - https://docs.pytest.org/en/latest/reference/reference.html#pytest.hookspec.pytest_fixture_setup
 
     Args:
         fixturedef (pytest.FixtureDef): fixture definition object.
