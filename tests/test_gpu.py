@@ -12,7 +12,7 @@ def test_gpu(factory, client, org_idx, default_datasets, workers):
 
     # Need the base image, the minimal image does not have pip
     dockerfile = """
-FROM python:3.11-slim
+FROM python:3.12-slim
 
 RUN apt-get update -y && apt-get install -y git
 RUN python3 -m pip install -U pip
