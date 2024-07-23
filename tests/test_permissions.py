@@ -11,6 +11,8 @@ from substratest.fl_interface import FLTaskInputGenerator
 from substratest.fl_interface import FLTaskOutputGenerator
 from substratest.fl_interface import OutputIdentifiers
 
+from .lazy_fixture import lazy_fixture
+
 
 @pytest.fixture
 def public():
@@ -56,11 +58,11 @@ def test_permission_creation(is_public, factory, client):
 @pytest.mark.parametrize(
     "permissions",
     [
-        pytest.lazy_fixture("public"),
-        pytest.lazy_fixture("private"),
-        pytest.lazy_fixture("all_organizations"),
-        pytest.lazy_fixture("organization_1_only"),
-        pytest.lazy_fixture("organization_2_only"),
+        lazy_fixture("public"),
+        lazy_fixture("private"),
+        lazy_fixture("all_organizations"),
+        lazy_fixture("organization_1_only"),
+        lazy_fixture("organization_2_only"),
     ],
 )
 def test_get_metadata(permissions, factory, clients, channel):
@@ -99,8 +101,8 @@ def test_permission_invalid_organization_id(factory, client):
 @pytest.mark.parametrize(
     "permissions",
     [
-        pytest.lazy_fixture("public"),
-        pytest.lazy_fixture("organization_2_only"),
+        lazy_fixture("public"),
+        lazy_fixture("organization_2_only"),
     ],
 )
 def test_download_asset_access_granted(permissions, factory, client_1, client_2, channel):
@@ -136,14 +138,14 @@ def test_download_asset_access_restricted(factory, client_1, client_2, channel):
     "permissions_1,permissions_2,expected_permissions",
     [
         (
-            pytest.lazy_fixture("organization_2_only"),
-            pytest.lazy_fixture("organization_1_only"),
-            pytest.lazy_fixture("organizations_1_and_2_only"),
+            lazy_fixture("organization_2_only"),
+            lazy_fixture("organization_1_only"),
+            lazy_fixture("organizations_1_and_2_only"),
         ),
         (
-            pytest.lazy_fixture("public"),
-            pytest.lazy_fixture("organization_1_only"),
-            pytest.lazy_fixture("organizations_1_and_2_only"),
+            lazy_fixture("public"),
+            lazy_fixture("organization_1_only"),
+            lazy_fixture("organizations_1_and_2_only"),
         ),
     ],
 )
@@ -227,11 +229,11 @@ def test_permissions_denied_process(factory, client_1, client_2, channel, worker
     "client_1_permissions,client_2_permissions,expectation",
     [
         (
-            pytest.lazy_fixture("private"),
-            pytest.lazy_fixture("private"),
+            lazy_fixture("private"),
+            lazy_fixture("private"),
             pytest.raises(substra.exceptions.AuthorizationError),
         ),
-        (pytest.lazy_fixture("organization_2_only"), pytest.lazy_fixture("private"), does_not_raise()),
+        (lazy_fixture("organization_2_only"), lazy_fixture("private"), does_not_raise()),
     ],
 )
 def test_permissions_model_process(
@@ -414,8 +416,8 @@ def test_permissions_denied_head_model_process(factory, client_1, client_2, chan
 @pytest.mark.parametrize(
     "permission_train_output, expectation",
     [
-        (pytest.lazy_fixture("organization_1_only"), pytest.raises(substra.exceptions.AuthorizationError)),
-        (pytest.lazy_fixture("organization_2_only"), does_not_raise()),
+        (lazy_fixture("organization_1_only"), pytest.raises(substra.exceptions.AuthorizationError)),
+        (lazy_fixture("organization_2_only"), does_not_raise()),
     ],
 )
 def test_permission_to_test_on_org_without_training(
