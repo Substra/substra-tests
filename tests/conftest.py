@@ -10,6 +10,8 @@ from substratest import settings
 from substratest.factory import AugmentedDataset
 from substratest.fl_interface import FunctionCategory
 
+from .lazy_fixture import pytest_fixture_setup  # noqa: F401, needed to set-up fixture
+
 TESTS_RUN_UUID = uuid.uuid4().hex  # unique uuid identifying the tests run
 
 pytest_plugins = ["pytest_skipuntil"]
