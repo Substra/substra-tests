@@ -67,7 +67,7 @@ def function_dockerfile(cfg: PytestConfig) -> str:
         "WORKDIR /sandbox \n"
         f"COPY function.py .\n"
         "RUN python3 -m pip install --no-cache-dir --extra-index-url https://download.pytorch.org/whl/cpu \
-            numpy==1.24.3 scikit-learn==1.3.1 torch==2.2.1\n"
+            numpy==1.26.4 scikit-learn==1.3.1 torch==2.2.1\n"
         f'ENTRYPOINT ["python3", "function.py", "--function-name", "{{method_name}}"]\n'
     )
 
