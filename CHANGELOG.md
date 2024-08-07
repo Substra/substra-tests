@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- towncrier release notes start -->
 
+# ## [0.51.10fake](https://github.com/Substra/substra-tests/releases/tag/0.51.10fake) - 2024-08-07
+
+### Added
+
+- Python 3.12 support. ([#363](https://github.com/Substra/substra-tests/pull/363))
+
+### Fixed
+
+- Bump pytorch version to 2.2.1 in tests. ([#369](https://github.com/Substra/substra-tests/pull/369))
+
+### Removed
+
+- Dependency `pytest-lazy-fixture` ([#1509](https://github.com/Substra/substra-tests/pull/1509))
+
+
 ## [0.51.0](https://github.com/Substra/substra-tests/releases/tag/0.51.0) - 2024-06-03
 
 
