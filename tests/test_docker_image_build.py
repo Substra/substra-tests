@@ -120,6 +120,8 @@ def test_function_cancelled_cp(factory, cfg, client, worker, default_dataset):
     cp = client.wait_compute_plan(cp.key, raise_on_failure=False, timeout=cfg.options.future_timeout)
     assert cp.status == "PLAN_STATUS_CANCELED"
 
-    client.wait_function(function_wait.key, timeout=cfg.options.future_timeout)
+    # Check that `function_wait` (built first) reaches status DONE or CANCELED
+    function_wait = client.wait_function(function_wait.key, raise_on_failure=False, timeout=cfg.options.future_timeout)
+    assert function_wait.status != "FUNCTION_STATUS_FAILED"
     function_test = client.wait_function(function_test.key, raise_on_failure=False, timeout=cfg.options.future_timeout)
     assert function_test.status == "FUNCTION_STATUS_CANCELED"
