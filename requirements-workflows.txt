@@ -2,8 +2,8 @@
 # they have been separated from the tests main requirements to keep the main tests
 # dependencies as light as possible.
 h5py==3.11.0
-numpy==1.26.3
-pandas==2.2.2
+numpy==2.1.1
+pandas==2.2.3
 scikit-learn==1.5.2
-torch==2.4.0+cpu
+torch==2.4.1+cpu
 --extra-index-url https://download.pytorch.org/whl/cpu
