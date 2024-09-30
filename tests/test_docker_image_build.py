@@ -110,15 +110,16 @@ def test_function_cancelled_cp(factory, cfg, client, worker, default_dataset):
 
     inputs = default_dataset.opener_input + default_dataset.train_data_sample_inputs
     cp = factory.create_compute_plan()
-    function = client.add_function(function_wait_spec)
-    cp.create_traintask(function=function, worker=worker, inputs=inputs)
-    function = client.add_function(function_test_spec)
-    cp.create_traintask(function=function, worker=worker, inputs=inputs)
+    function_wait = client.add_function(function_wait_spec)
+    cp.create_traintask(function=function_wait, worker=worker, inputs=inputs)
+    function_test = client.add_function(function_test_spec)
+    cp.create_traintask(function=function_test, worker=worker, inputs=inputs)
     client.add_compute_plan(cp)
 
     client.cancel_compute_plan(cp.key)
     cp = client.wait_compute_plan(cp.key, raise_on_failure=False, timeout=cfg.options.future_timeout)
     assert cp.status == "PLAN_STATUS_CANCELED"
 
-    function = client.wait_function(function.key, raise_on_failure=False, timeout=cfg.options.future_timeout)
-    assert function.status == "FUNCTION_STATUS_CANCELED"
+    client.wait_function(function_wait.key, timeout=cfg.options.future_timeout)
+    function_test = client.wait_function(function_test.key, raise_on_failure=False, timeout=cfg.options.future_timeout)
+    assert function_test.status == "FUNCTION_STATUS_CANCELED"
