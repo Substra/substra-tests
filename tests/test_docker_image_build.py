@@ -86,3 +86,42 @@ def test_function_build_order(factory, cfg, client, worker):
     function_3 = function_getter("function", function_3["key"])
     assert function_2["status"] == "FUNCTION_STATUS_BUILDING"
     assert function_3["status"] == "FUNCTION_STATUS_WAITING"
+
+
+@pytest.mark.remote_only
+def test_function_cancelled_cp(factory, cfg, client, worker, default_dataset):
+    """
+    Test that if you cancelled a CP and a function is linked to tasks that are oinly in CP canceled or faiuled,
+    the function will be canceled
+    """
+    docker_image = cfg.base_docker_image
+    function_category = FunctionCategory.simple
+
+    # We create 2 functions, so when the second one should start building, the CP is already been canceled
+    dockerfile_wait = get_dockerfile(
+        docker_image, function_category, extra_instructions="ENV test=test_function_cancelled_cp_wait\nRUN sleep 5"
+    )
+    dockerfile_test = get_dockerfile(
+        docker_image, function_category, extra_instructions="ENV test=test_function_cancelled_cp_test"
+    )
+
+    function_wait_spec = factory.create_function(function_category, dockerfile=dockerfile_wait)
+    function_test_spec = factory.create_function(function_category, dockerfile=dockerfile_test)
+
+    inputs = default_dataset.opener_input + default_dataset.train_data_sample_inputs
+    cp = factory.create_compute_plan()
+    function_wait = client.add_function(function_wait_spec)
+    cp.create_traintask(function=function_wait, worker=worker, inputs=inputs)
+    function_test = client.add_function(function_test_spec)
+    cp.create_traintask(function=function_test, worker=worker, inputs=inputs)
+    client.add_compute_plan(cp)
+
+    client.cancel_compute_plan(cp.key)
+    cp = client.wait_compute_plan(cp.key, raise_on_failure=False, timeout=cfg.options.future_timeout)
+    assert cp.status == "PLAN_STATUS_CANCELED"
+
+    # Check that `function_wait` (built first) reaches status DONE or CANCELED
+    function_wait = client.wait_function(function_wait.key, raise_on_failure=False, timeout=cfg.options.future_timeout)
+    assert function_wait.status != "FUNCTION_STATUS_FAILED"
+    function_test = client.wait_function(function_test.key, raise_on_failure=False, timeout=cfg.options.future_timeout)
+    assert function_test.status == "FUNCTION_STATUS_CANCELED"
