@@ -9,7 +9,7 @@ from substratest.fl_interface import OutputIdentifiers
 
 OPENER_SCRIPT = """
 import json
-import substratools as tools
+from substra import tools
 class TestOpener(tools.Opener):
     def get_data(self, folders):
         return folders
@@ -19,7 +19,7 @@ class TestOpener(tools.Opener):
 
 TEMPLATE_FUNCTION_SCRIPT = f"""
 import json
-import substratools as tools
+from substra import tools
 
 
 @tools.register
@@ -62,7 +62,7 @@ if __name__ == '__main__':
 
 TEMPLATE_COMPOSITE_FUNCTION_SCRIPT = f"""
 import json
-import substratools as tools
+from substra import tools
 
 @tools.register
 def train(inputs, outputs, task_properties):
@@ -115,7 +115,7 @@ if __name__ == '__main__':
 """
 
 TEMPLATE_METRIC_SCRIPT = f"""
-import substratools as tools
+from substra import tools
 
 import json
 
@@ -294,7 +294,7 @@ def test_execution_data_sample_values(factory, client, worker):
         py_script=f"""
 import json
 import os
-import substratools as tools
+from substra import tools
 class TestOpener(tools.Opener):
     def get_data(self, folders):
         res = []
@@ -317,7 +317,7 @@ class TestOpener(tools.Opener):
         category=FunctionCategory.simple,
         py_script=f"""
 import json
-import substratools as tools
+from substra import tools
 import os
 
 @tools.register

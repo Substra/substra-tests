@@ -2,7 +2,7 @@
 import os
 
 import numpy as np
-import substratools as tools
+from substra import tools
 
 
 class OrganizationOpener(tools.Opener):

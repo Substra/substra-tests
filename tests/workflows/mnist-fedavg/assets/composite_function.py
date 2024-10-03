@@ -2,7 +2,7 @@ import os
 import shutil
 
 import numpy as np
-import substratools as tools
+from substra import tools
 import torch
 import torch.nn.functional as F
 

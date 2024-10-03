@@ -24,7 +24,7 @@ ENTRYPOINT ["python3", "function.py"]
 """
     script = f"""
 import json
-import substratools as tools
+from substra import tools
 import torch
 
 @tools.register

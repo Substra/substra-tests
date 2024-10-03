@@ -34,7 +34,7 @@ DEFAULT_OPENER_SCRIPT = f"""
 import csv
 import json
 import os
-import substratools as tools
+from substra import tools
 class TestOpener(tools.Opener):
     def get_data(self, folders):
         X, y = [], []
@@ -62,7 +62,7 @@ class TestOpener(tools.Opener):
 TEMPLATED_DEFAULT_METRICS_SCRIPT = string.Template(
     f"""
 import json
-import substratools as tools
+from substra import tools
 
 @tools.register
 def score(inputs, outputs, task_properties):
@@ -83,7 +83,7 @@ if __name__ == '__main__':
 
 DEFAULT_FUNCTION_SCRIPT = f"""
 import json
-import substratools as tools
+from substra import tools
 
 @tools.register
 def train(inputs, outputs, task_properties):
@@ -138,7 +138,7 @@ if __name__ == '__main__':
 
 DEFAULT_AGGREGATE_FUNCTION_SCRIPT = f"""
 import json
-import substratools as tools
+from substra import tools
 
 @tools.register
 def aggregate(inputs, outputs, task_properties):
@@ -183,7 +183,7 @@ if __name__ == '__main__':
 
 DEFAULT_COMPOSITE_FUNCTION_SCRIPT = f"""
 import json
-import substratools as tools
+from substra import tools
 
 @tools.register
 def train(inputs, outputs, task_properties):

@@ -306,7 +306,7 @@ def test_testtask_with_several_outputs(factory, client, default_dataset, worker)
 
     custom_metric_script = f"""
 import json
-import substratools as tools
+from substra import tools
 
 @tools.register
 def score(inputs, outputs, task_properties):
@@ -949,7 +949,7 @@ def test_user_creates_model_folder(factory, client, default_dataset, worker):
     )
     function_script = f"""
 import json
-import substratools as tools
+from substra import tools
 
 from pathlib import Path
 
@@ -990,7 +990,7 @@ if __name__ == '__main__':
 
 WRITE_TO_HOME_DIRECTORY_FUNCTION = f"""
 import json
-import substratools as tools
+from substra import tools
 
 
 @tools.register
