@@ -32,13 +32,6 @@ jobs:
           path: substra
           ref: ${{ env.SUBSTRA_REF }}
 
-      - name: checkout substra tools
-        uses: actions/checkout@v4
-        with:
-          repository: Substra/substra-tools
-          path: substra-tools
-          ref: ${{ env.TOOLS_REF }}
-
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
@@ -59,7 +52,6 @@ jobs:
 
       - name: Install requirements
         run: |
-          pip install --no-cache-dir ./substra-tools
           pip install --no-cache-dir ./substra
           pip install --no-cache-dir -r requirements.txt
           pip install -r requirements-workflows.txt

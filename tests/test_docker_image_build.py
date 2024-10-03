@@ -14,7 +14,7 @@ FROM {base_image}
 
 RUN apt-get update -y && apt-get install -y git
 RUN python3 -m pip install -U pip
-RUN python3 -m pip install git+https://github.com/Substra/substra-tools.git@{substra_git_ref}
+RUN python3 -m pip install git+https://github.com/Substra/substra.git@{substra_git_ref}
 
 COPY function.py .
 {extra_instructions}
