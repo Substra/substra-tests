@@ -7,14 +7,14 @@ from substratest.factory import DEFAULT_FUNCTION_NAME
 from substratest.fl_interface import FunctionCategory
 
 
-def get_dockerfile(substra_tools_image: str, function_category: FunctionCategory, extra_instructions: str = "") -> str:
-    substratools_git_ref = os.getenv("SUBSTRATOOLS_GIT_REF", "main")
+def get_dockerfile(base_image: str, function_category: FunctionCategory, extra_instructions: str = "") -> str:
+    substra_git_ref = os.getenv("SUBSTRA_GIT_REF", "main")
     return f"""
-FROM {substra_tools_image}
+FROM {base_image}
 
 RUN apt-get update -y && apt-get install -y git
 RUN python3 -m pip install -U pip
-RUN python3 -m pip install git+https://github.com/Substra/substra-tools.git@{substratools_git_ref}
+RUN python3 -m pip install git+https://github.com/Substra/substra-tools.git@{substra_git_ref}
 
 COPY function.py .
 {extra_instructions}
@@ -23,8 +23,8 @@ ENTRYPOINT ["python3", "function.py", "--function-name", "{DEFAULT_FUNCTION_NAME
 
 
 @pytest.mark.subprocess_skip
-def test_base_substra_tools_image(factory, cfg, client, default_dataset, worker):
-    """Test that a function created with the base substra-tools image works"""
+def test_base_docker_image(factory, cfg, client, default_dataset, worker):
+    """Test that a function created with the base docker image works"""
 
     docker_image = cfg.base_docker_image
 

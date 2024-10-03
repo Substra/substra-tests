@@ -16,7 +16,7 @@ FROM python:3.12-slim
 
 RUN apt-get update -y && apt-get install -y git
 RUN python3 -m pip install -U pip
-RUN python3 -m pip install git+https://github.com/Substra/substra-tools.git@{substratools_git_ref}
+RUN python3 -m pip install git+https://github.com/Substra/substra.git@{substra_git_ref}
 RUN python3 -m pip install --no-cache-dir torch==2.2.0
 COPY function.py .
 

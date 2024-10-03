@@ -938,11 +938,11 @@ def test_use_data_sample_located_in_shared_path(factory, network, client, organi
 @pytest.mark.subprocess_skip
 def test_user_creates_model_folder(factory, client, default_dataset, worker):
     """Check that the model folder is not overwritten by substra"""
-    substratools_git_ref = os.getenv("SUBSTRATOOLS_GIT_REF", "main")
+    substra_git_ref = os.getenv("SUBSTRA_GIT_REF", "main")
     dockerfile = (
         f"FROM {factory.default_tools_image}\n"
         "RUN apt-get update -y && apt-get install -y git\nRUN python3 -m pip install -U pip\n"
-        f"RUN python3 -m pip install git+https://github.com/Substra/substra-tools.git@{substratools_git_ref}\n"
+        f"RUN python3 -m pip install git+https://github.com/Substra/substra.git@{substra_git_ref}\n"
         "COPY function.py .\nRUN mkdir model\n"
         + 'RUN echo \'{"name":"Jane"}\' >> model/model'
         + '\nENTRYPOINT ["python3", "function.py", "--function-name", "train"]\n'
