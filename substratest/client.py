@@ -25,7 +25,7 @@ class _APIClient:
         return response
 
     def get_compute_task_profiling(self, task_key: str):
-        return self._get(f"/task_profiling/{task_key}/").json()
+        return self._get(f"/task/{task_key}/profiling").json()
 
 
 class Client(substra.Client):
