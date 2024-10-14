@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- towncrier release notes start -->
 
+## [1.0.0](https://github.com/Substra/substra-tests/releases/tag/1.0.0) - 2024-10-14
+
+### Added
+
+- Add test checking function cancelation when linked compute plans are all canceled. ([#383](https://github.com/Substra/substra-tests/pull/383))
+
+### Changed
+
+- Upgraded scikit-learn and pandas test dependencies. ([#391](https://github.com/Substra/substra-tests/pull/391))
+- Upgraded workflow dependencies. ([#393](https://github.com/Substra/substra-tests/pull/393))
+
+### Removed
+
+- Drop Python 3.9 support. ([#382](https://github.com/Substra/substra-tests/pull/382))
+
+
 ## [0.52.0](https://github.com/Substra/substra-tests/releases/tag/0.52.0) - 2024-09-12
 
 ### Added
