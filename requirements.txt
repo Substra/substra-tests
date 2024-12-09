@@ -1,10 +1,10 @@
 docker==7.1.0
-pytest==8.3.3
+pytest==8.3.4
 dataclasses==0.7;python_version<"3.7"
 pydantic>=2.3.0, <3.0.0
 pytest-xdist==3.6.1
 flake8==7.1.1
-flake8-bugbear==24.8.19
+flake8-bugbear==24.10.31
 isort==5.13.2
 black==24.8.0
 towncrier
